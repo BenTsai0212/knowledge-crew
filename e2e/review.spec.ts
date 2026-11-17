@@ -48,7 +48,7 @@ async function setup(page: Page, viewport = { width: 1440, height: 900 }) {
 for (const [label, width, height] of [["桌機 1440", 1440, 900], ["手機 390", 390, 844]] as const) {
   test.describe(label, () => {
     test("接縫是 AI 在問你的卡片、照畫板的外觀；其餘在「已直接收錄」，預設收合", async ({ page }, testInfo) => {
-      const { auto, asks, lin, yating } = await setup(page, { width, height });
+      const { card, auto, asks, lin, yating } = await setup(page, { width, height });
       await expect(page.locator(width < 600 ? ".review-page--phone" : ".review-page--desktop")).toBeVisible();
       await expect(asks).toHaveCount(2);
       await expect(lin).toHaveCount(1);
@@ -60,6 +60,18 @@ for (const [label, width, height] of [["桌機 1440", 1440, 900], ["手機 390",
       await expect(rel).toContainText("林志明");
       await expect(rel.getByRole("button")).toHaveCount(0);
 
+      // 項目本身（S-Review ①，#400）：surfaceRaised 底的方塊，類型膠囊（色點＋類型名稱）、粗體名稱、「出處（N）」文字連結
+      const item = lin.locator(".ask-card__item");
+      await expect(item).toHaveCSS("background-color", await tokenColor(page, "surfaceRaised"));
+      await expect(item.locator(".ask-card__kind .type-dot")).toBeVisible();
+      await expect(item.locator(".ask-card__kind")).toHaveText(/\S/);
+      await expect(item.locator("strong")).toHaveText("林志明");
+      const sources = item.locator("button.ask-card__sources");
+      await expect(sources).toContainText(s.reviewSources.split("{count}")[0]);
+      await expect(sources).toHaveCSS("border-top-width", "0px");
+      await expect(sources).toHaveCSS("text-decoration-line", "underline");
+      await expect(sources).toHaveCSS("color", await tokenColor(page, "primary"));
+
       // 選項（兩個候選、我覺得是新的、都不是）：至少 44px、14px、一般字重；出口是 textMuted
       const options = lin.locator(".refusal-ask__options button");
       await expect(options).toHaveCount(4);
@@ -69,6 +81,11 @@ for (const [label, width, height] of [["桌機 1440", 1440, 900], ["手機 390",
         await expect(option).toHaveCSS("font-weight", "400");
       }
       await expect(lin.getByRole("button", { name: s.commonExplain })).toHaveCSS("color", await tokenColor(page, "textMuted"));
+      // 接縫卡直接放在文件卡的列表中，外面沒有多一層框線與內距（手機，#400；桌機原本就沒有）
+      for (const item of await card.locator(".review-seams > li").all()) {
+        await expect(item).toHaveCSS("border-top-width", "0px");
+        await expect(item).toHaveCSS("padding-left", "0px");
+      }
 
       // 已直接收錄：預設收合（標題、說明與兩個按鈕，沒有列）
       await expect(auto.locator(".review-auto__title")).toContainText(fill(s.seamAutoSection, { count: 3 }));
@@ -92,6 +109,8 @@ for (const [label, width, height] of [["桌機 1440", 1440, 900], ["手機 390",
       await auto.getByRole("button", { name: s.seamAutoShowAll }).click();
       await expect(auto.locator(".review-auto__item")).toHaveCount(3);
       await expect(auto.getByRole("button", { name: s.seamAutoRetract, exact: true })).toHaveCount(3);
+      // 實體的列顯示類型名稱，不留下空膠囊（S-Review ⑥，#400）
+      await expect(auto.locator(".entity-badge__label").first()).toBeVisible();
       expect(await noHorizontalScroll(page)).toBe(true);
       await screenshot(page, testInfo, `seam-auto-${width}px.png`);
     });
@@ -135,4 +154,27 @@ test("選了候選、寫了說明之後接縫消失；抽查 3 項，撤回關�
   await expect(card).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
   await screenshot(page, testInfo, "seam-retracted-1440px.png");
+
+  // 撤回後回到待審的關係（#400）：和其他接縫同樣是「問你」的卡片與選項，不是逐筆核准的列（沒有「退回」「核准這份文件的全部」）
+  await expect(asks).toHaveCount(1);
+  await expect(asks.locator(".refusal-ask__question")).toContainText(s.seamAskOther.split("{name}")[0]);
+  for (const name of [s.seamOptionKeep, s.seamOptionExclude, s.commonExplain]) await expect(asks.getByRole("button", { name, exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: s.reviewReject, exact: true })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: s.reviewApproveDocument })).toHaveCount(0);
+  // 項目本身是關係的名稱與「出處（N）」文字連結，不是外框按鈕（S-Review ①）
+  const relationSources = asks.locator(".ask-card__item button.ask-card__sources");
+  await expect(relationSources).toHaveCSS("border-top-width", "0px");
+  await expect(relationSources).toHaveCSS("text-decoration-line", "underline");
+  await asks.scrollIntoViewIfNeeded();
+  await screenshot(page, testInfo, "seam-retracted-pending-1440px.png");
+
+  // 手機 390：同樣的卡片，直接放在文件卡的列表中（外面沒有框線與內距）
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".review-page--phone")).toBeVisible();
+  await expect(asks).toHaveCount(1);
+  const item = card.locator(".review-seams > li").first();
+  await expect(item).toHaveCSS("border-top-width", "0px");
+  await expect(item).toHaveCSS("padding-left", "0px");
+  expect(await noHorizontalScroll(page)).toBe(true);
+  await screenshot(page, testInfo, "seam-retracted-pending-390px.png");
 });
