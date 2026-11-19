@@ -39,4 +39,5 @@ ADR（Architecture Decision Record）記錄「決定了什麼、為什麼、放�
 
 | 編號 | 決策 | 狀態 |
 | --- | --- | --- |
-| 0001 | [技術選型（第 0 階段）](0001-tech-stack.md) | Accepted |
+| 0001 | [技術選型（第 0 階段）](0001-tech-stack.md) | Superseded by ADR 0002 |
+| 0002 | [以 knowledge-kit 為上游](0002-knowledge-kit-upstream.md) | Accepted |
