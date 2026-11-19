@@ -1,0 +1,190 @@
+import { Fragment, useState, type CSSProperties } from "react";
+import { clientConfig } from "../client/load";
+import type { DocumentRetraction } from "../extraction/store";
+import type { Graph } from "../graph/read";
+import { relationCounts } from "../graph/search";
+import { entityDocuments, entityOptionLabel, entityTypeLabel, relatedEntities, relatedEntityGroups, relationGroupLabel, relationTypeLabel, sourcesForLanguage } from "./graph-labels";
+import { presentationMode } from "./online-demo";
+import { entityTypeShape } from "./timeline-view";
+import { fill, strings } from "../client/i18n";
+
+interface Props {
+  graph: Graph;
+  entityId: string;
+  language: string;
+  // 點關係清單中的實體：從它繼續展開（#199）
+  onSelect(entityId: string): void;
+  // 只看它：從它重新開始展開
+  onShowOnly(entityId: string): void;
+  // 在問答中問：填進問答頁的輸入框，不送出
+  onAskAbout(entityId: string): void;
+  onOpenSource(passageId: string): void;
+  // 經審核進來、目前身分可以撤回的文件（ADR 0007；沒有 canReview 時為空）
+  retractions: DocumentRetraction[];
+  // 撤回此文件對這個實體的核准（含連帶的關係）；失敗時回傳錯誤訊息
+  onRetract(retraction: DocumentRetraction): Promise<string | null>;
+  // 桌機（#336，畫板 Graph）：右側整高欄。相關實體是 52px 的列（類型的形狀＋名稱＋右側關係名稱），
+  // 出現的文件是 surfaceRaised 卡片（文件名＋摘錄，實體名稱用 mark）；展示模式的桌機也用（#349，畫板 H-Graph，數量只列「關聯 N · 出現在 N 份文件」）；
+  // 手機與平板不傳
+  wide?: boolean;
+  // 手機的底部面板（#357，畫板 G-Mobile-Graph）：類型膠囊、名稱與「關聯 N · 文件 N」同一列，相關實體依實體合併成每則一列（與 wide 的列相同），
+  // 引用段落沿用 reading 紙面；不套卡片
+  sheet?: boolean;
+}
+
+// 圖譜頁右側的實體面板（#199，設計系統 v1 #240）：類型徽章（類型色淡底＋形狀）、名稱、關聯／文件／出處數；
+// 在問答中問（主要按鈕）、只看它（次要按鈕）；關係清單（方向、關係名稱、對方、出處數，點對方從它展開）；
+// 出現的文件：每份文件一張 reading 紙面，列出提到它的原文片段並以 <mark> 標出名稱（點標題打開原文）。全部只用可見圖。
+// 經審核進來的文件可以「撤回此文件對它的核准」：先列出撤回後會從圖譜消失的實體與關係，確認後才撤回（ADR 0007）。
+// 名稱與搜尋結果相同，同名的實體加上第一個相關實體的名稱（#198）
+const typeColor = (type: string) => clientConfig.knowledgeModel.entityTypes.find((t) => t.id === type)?.color ?? "var(--color-graphFallback)";
+
+export function EntityPanel({ graph, entityId, language, onSelect, onShowOnly, onAskAbout, onOpenSource, retractions, onRetract, wide = false, sheet = false }: Props) {
+  const s = strings(language);
+  // 正在確認撤回的文件、撤回中、錯誤訊息
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const entity = graph.entities.find((e) => e.id === entityId);
+  if (entity === undefined) return null;
+  const name = entityOptionLabel(graph, entity, language);
+  const relations = new Map(graph.relations.map((r) => [r.id, r]));
+  // 出處依文件分組，點標題打開第一段；出處優先顯示介面語言（#36）
+  const documents = entityDocuments(entity, language);
+  // 相關實體畫成列（桌機、展示模式與手機）；展示模式與手機依實體合併
+  const rows = wide || sheet;
+  const grouped = sheet || (wide && presentationMode);
+
+  const retractionOf = (documentId: string) => retractions.find((r) => r.documentId === documentId);
+  const entityName = (id: string) => {
+    const e = graph.entities.find((x) => x.id === id);
+    return e === undefined ? id : entityOptionLabel(graph, e, language);
+  };
+  const relationLabel = (id: string) => {
+    const r = relations.get(id);
+    return r === undefined ? id : `${entityName(r.from)} —${relationTypeLabel(r.type, language)}→ ${entityName(r.to)}`;
+  };
+  const confirmBox = (r: DocumentRetraction) => {
+    const removed = [...r.entities.map(entityName), ...r.relations.map(relationLabel)];
+    const submit = async () => {
+      setBusy(true);
+      const message = await onRetract(r);
+      setBusy(false);
+      setError(message);
+      if (message === null) setConfirming(null);
+    };
+    return (
+      <div className="retract-confirm" role="group" aria-label={s.graphRetract}>
+        {removed.length > 0 ? (
+          <>
+            <p>{s.graphRetractWillRemove}</p>
+            <ul>
+              {removed.map((label, i) => (
+                <li key={i}>{label}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p>{s.graphRetractNoChange}</p>
+        )}
+        {error !== null && <p className="error">{error}</p>}
+        <button type="button" disabled={busy} onClick={() => void submit()}>
+          {s.graphRetractConfirm}
+        </button>{" "}
+        <button type="button" className="secondary" disabled={busy} onClick={() => setConfirming(null)}>
+          {s.graphRetractCancel}
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <section className={wide ? "entity entity--wide" : sheet ? "entity entity--sheet" : "card entity"} aria-label={name}>
+      <span className={`entity-badge shape-${entityTypeShape(entity.type)}`} style={{ "--type-color": typeColor(entity.type) } as CSSProperties}>
+        <span className="type-dot" aria-hidden="true" />
+        {entityTypeLabel(entity.type, language)}
+      </span>
+      <h2>{name}</h2>
+      <p className="entity-counts muted">
+        {fill(s.graphRelationCount, { count: relationCounts(graph).get(entityId) ?? 0 })}
+        {" · "}
+        {wide && presentationMode ? (
+          fill(s.presentation.entityDocuments, { count: documents.length }, language)
+        ) : sheet ? (
+          fill(s.graphDocumentCount, { count: documents.length })
+        ) : (
+          <>
+            {fill(s.graphDocumentCount, { count: documents.length })}
+            {" · "}
+            {fill(s.graphSourceCount, { count: sourcesForLanguage(entity.sources, language).length })}
+          </>
+        )}
+      </p>
+      <div className="entity-actions">
+        <button type="button" onClick={() => onAskAbout(entityId)}>
+          {s.graphAskAbout}
+        </button>
+        <button type="button" className="secondary" onClick={() => onShowOnly(entityId)}>
+          {s.graphShowOnly}
+        </button>
+      </div>
+      <h3>{s.relatedEntities}</h3>
+      {rows ? (
+        // 整列可點（按鈕的 ::after 蓋住整列），按鈕的名稱只有實體名稱；關係名稱在右側，方向以箭頭表示
+        // 展示模式（#349，畫板 H-Graph）：同一個實體的多則關係合併成一列（「← 隸屬 · 負責」）
+        <ul className="entity-rows">
+          {(grouped
+            ? relatedEntityGroups(graph, entityId, language).map((g) => ({ key: g.entity.id, entity: g.entity, relation: relationGroupLabel(g.relations) }))
+            : relatedEntities(graph, entityId, language).map((r) => ({ key: r.relationId, entity: r.entity, relation: relationGroupLabel([r]) }))
+          ).map((r) => (
+            <li key={r.key} className="entity-row">
+              <span
+                className={`type-dot shape-${entityTypeShape(r.entity.type)}`}
+                aria-hidden="true"
+                style={{ "--type-color": typeColor(r.entity.type) } as CSSProperties}
+              />
+              <button type="button" className="link" onClick={() => onSelect(r.entity.id)}>
+                {entityOptionLabel(graph, r.entity, language)}
+              </button>
+              <span className="entity-row__relation muted">{r.relation}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul>
+          {relatedEntities(graph, entityId, language).map((r) => (
+            <li key={r.relationId}>
+              {r.outgoing ? `${r.label} → ` : `← ${r.label} `}
+              <button type="button" className="link" onClick={() => onSelect(r.entity.id)}>
+                {entityOptionLabel(graph, r.entity, language)}
+              </button>{" "}
+              <span className="muted">{fill(s.graphSourceCount, { count: relations.get(r.relationId)?.sources.length ?? 0 })}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <h3>{s.entitySources}</h3>
+      <ul className={wide ? "entity-documents entity-documents--cards" : "entity-documents"}>
+        {documents.map((d) => (
+          <li key={d.documentId} className="entity-document">
+            <button type="button" className="link" onClick={() => onOpenSource(d.passages[0].id)}>
+              {d.documentTitle}
+            </button>
+            {d.languageLabel !== undefined && <span className="badge">{d.languageLabel}</span>}
+            {retractionOf(d.documentId) !== undefined && confirming !== d.documentId && (
+              <button type="button" className="chip retract" onClick={() => (setConfirming(d.documentId), setError(null))}>
+                {s.graphRetract}
+              </button>
+            )}
+            {confirming === d.documentId && confirmBox(retractionOf(d.documentId)!)}
+            {d.passages.map((p) => (
+              <p key={p.id} className="entity-excerpt">
+                {p.segments.map((seg, i) => (seg.mark ? <mark key={i}>{seg.text}</mark> : <Fragment key={i}>{seg.text}</Fragment>))}
+              </p>
+            ))}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}

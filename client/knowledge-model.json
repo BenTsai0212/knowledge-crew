@@ -1,0 +1,65 @@
+{
+  "entityTypes": [
+    {
+      "id": "person",
+      "label": { "zh-TW": "人員", "en": "Person" },
+      "color": "#3D7AB8",
+      "icon": "person",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": true },
+      "nearName": true,
+      "mergeStrategy": "review"
+    },
+    {
+      "id": "team",
+      "label": { "zh-TW": "部門", "en": "Team" },
+      "color": "#2E7D5B",
+      "icon": "team",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": true },
+      "nearName": false,
+      "container": true,
+      "mergeStrategy": "auto"
+    },
+    {
+      "id": "project",
+      "label": { "zh-TW": "專案", "en": "Project" },
+      "color": "#7A52C7",
+      "icon": "folder",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": false },
+      "nearName": false,
+      "container": true
+    }
+  ],
+  "relationTypes": [
+    {
+      "id": "member-of",
+      "label": { "zh-TW": "隸屬", "en": "Member of" },
+      "from": ["person"],
+      "to": ["team"],
+      "questions": {
+        "outgoing": { "zh-TW": "{name}隸屬哪些{type}？", "en": "Which teams is {name} a member of?" },
+        "incoming": { "zh-TW": "哪些{type}隸屬{name}？", "en": "Who are the members of {name}?" }
+      }
+    },
+    {
+      "id": "works-on",
+      "label": { "zh-TW": "參與", "en": "Works on" },
+      "from": ["person", "team"],
+      "to": ["project"],
+      "questions": {
+        "outgoing": { "zh-TW": "{name}參與哪些{type}？", "en": "Which projects does {name} work on?" },
+        "incoming": { "zh-TW": "哪些{type}參與{name}？", "en": "Who works on {name}?" }
+      }
+    },
+    {
+      "id": "leads",
+      "label": { "zh-TW": "負責", "en": "Leads" },
+      "from": ["person"],
+      "to": ["team", "project"],
+      "questions": {
+        "outgoing": { "zh-TW": "{name}負責哪些{type}？", "en": "What does {name} lead?" },
+        "incoming": { "zh-TW": "誰負責{name}？", "en": "Who leads {name}?" }
+      },
+      "owner": { "zh-TW": "負責人", "en": "lead" }
+    }
+  ]
+}

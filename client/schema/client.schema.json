@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "client.schema.json",
+  "title": "client.json：基本資訊、語言、模型、資料位置",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["displayName", "defaultLanguage", "languages", "model", "dataset", "evals"],
+  "properties": {
+    "displayName": { "$ref": "common.schema.json#/definitions/LocalizedText" },
+    "defaultLanguage": { "$ref": "common.schema.json#/definitions/LanguageCode" },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/definitions/LanguageCode" },
+      "default": ["zh-TW", "en"]
+    },
+    "model": { "$ref": "common.schema.json#/definitions/ModelCode" },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": { "path": { "$ref": "common.schema.json#/definitions/RelativePath" } }
+    },
+    "evals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "$ref": "common.schema.json#/definitions/RelativePath" },
+        "thresholds": {
+          "description": "評測台的門檻；省略的欄位使用預設值。權限滲漏固定是 0 題，不在此設定（docs/evals.md）",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "citation": { "description": "引用正確的比例下限", "type": "number", "minimum": 0, "maximum": 1, "default": 0.9 },
+            "answer": { "description": "答案正確的比例下限", "type": "number", "minimum": 0, "maximum": 1, "default": 0.8 },
+            "refusal": { "description": "正確拒答的比例下限", "type": "number", "minimum": 0, "maximum": 1, "default": 1 }
+          }
+        }
+      }
+    },
+    "retrieval": {
+      "description": "檢索參數；省略的欄位使用預設值（docs/client-config.md）",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "description": "使用哪個 VectorProvider（app/src/retrieval/providers.ts 的 PROVIDERS）；multilingual-e5-small 是語意向量，準備失敗時改用 keyword-hash（docs/retrieval.md）",
+          "type": "string",
+          "enum": ["keyword-hash", "multilingual-e5-small"],
+          "default": "keyword-hash"
+        },
+        "topK": { "description": "回傳前幾名", "type": "integer", "minimum": 1, "maximum": 20, "default": 5 },
+        "minScore": {
+          "description": "最低分數門檻，低於此分數的段落不回傳；省略時依 provider：keyword-hash 是 0.1，multilingual-e5-small 是 0.7",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.1
+        }
+      }
+    },
+    "upload": {
+      "description": "上傳文件的參數；省略的欄位使用預設值（docs/client-config.md）",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "passageMaxChars": {
+          "description": "切段時每段的字元數上限",
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 1000,
+          "default": 300
+        },
+        "extractMaxBatches": {
+          "description": "每份上傳文件最多以幾批段落呼叫模型萃取實體與關係；超過的段落不萃取（docs/extraction.md）",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        }
+      }
+    },
+    "conflicts": {
+      "description": "上傳文件與既有段落說法不同的比對；省略的欄位使用預設值（docs/conflicts.md）",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "description": "萃取完成後是否比對（營運開關，預設關閉）", "type": "boolean", "default": false },
+        "candidatesPerPassage": {
+          "description": "每個新段落最多比對幾段既有段落",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        },
+        "minScore": { "description": "既有段落的最低檢索分數，低於此分數的段落不比對", "type": "number", "minimum": 0, "maximum": 1, "default": 0.15 }
+      }
+    },
+    "review": {
+      "description": "待審的方式（ADR 0011，docs/client-config.md）；省略的欄位使用預設值",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "description": "item：逐筆核准（現行）；seams：只審接縫，其餘由上傳者直接收錄",
+          "enum": ["item", "seams"],
+          "default": "item"
+        }
+      }
+    },
+    "qa": {
+      "description": "問答的方式（ADR 0012，docs/client-config.md）；省略的欄位使用預設值",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dialogue": {
+          "description": "true：討論版（同名時先反問等接縫提問）；false：查詢版（現行）",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}

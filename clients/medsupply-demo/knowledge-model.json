@@ -1,0 +1,99 @@
+{
+  "entityTypes": [
+    {
+      "id": "product",
+      "label": { "zh-TW": "產品", "en": "Product" },
+      "color": "#3D7AB8",
+      "icon": "box",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": true },
+      "nearName": false,
+      "mergeStrategy": "review"
+    },
+    {
+      "id": "manufacturer",
+      "label": { "zh-TW": "原廠", "en": "Manufacturer" },
+      "color": "#8A5CC2",
+      "icon": "building",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": true },
+      "mergeStrategy": "review"
+    },
+    {
+      "id": "hospital",
+      "label": { "zh-TW": "醫院", "en": "Hospital" },
+      "color": "#2E7D5B",
+      "icon": "hospital",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": true },
+      "nearName": false,
+      "mergeStrategy": "review"
+    },
+    {
+      "id": "person",
+      "label": { "zh-TW": "人員", "en": "Person" },
+      "color": "#C2410C",
+      "icon": "person",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": true },
+      "mergeStrategy": "review"
+    },
+    {
+      "id": "tender",
+      "label": { "zh-TW": "標案", "en": "Tender" },
+      "color": "#B26A00",
+      "icon": "gavel",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": false },
+      "nearName": false,
+      "mergeStrategy": "review"
+    },
+    {
+      "id": "policy",
+      "label": { "zh-TW": "規章", "en": "Policy" },
+      "color": "#0E7C86",
+      "icon": "document",
+      "aliasRules": { "ignoreCase": true, "normalizeWidth": true, "ignoreWhitespace": true },
+      "nearName": false,
+      "mergeStrategy": "review"
+    }
+  ],
+  "relationTypes": [
+    {
+      "id": "supplies",
+      "label": { "zh-TW": "供應", "en": "Supplies" },
+      "from": ["manufacturer"],
+      "to": ["product"],
+      "questions": {
+        "outgoing": { "zh-TW": "{name}供應哪些{type}？", "en": "Which products does {name} supply?" },
+        "incoming": { "zh-TW": "{name}由哪些{type}供應？", "en": "Which manufacturers supply {name}?" }
+      }
+    },
+    {
+      "id": "responsible-for",
+      "label": { "zh-TW": "負責", "en": "Responsible for" },
+      "from": ["person"],
+      "to": ["hospital", "tender"],
+      "questions": {
+        "outgoing": { "zh-TW": "{name}負責哪些{type}？", "en": "What is {name} responsible for?" },
+        "incoming": { "zh-TW": "誰負責{name}？", "en": "Who is responsible for {name}?" }
+      },
+      "owner": { "zh-TW": "負責人", "en": "person in charge" }
+    },
+    {
+      "id": "uses",
+      "label": { "zh-TW": "使用", "en": "Uses" },
+      "from": ["hospital"],
+      "to": ["product"],
+      "questions": {
+        "outgoing": { "zh-TW": "{name}使用哪些{type}？", "en": "Which products does {name} use?" },
+        "incoming": { "zh-TW": "哪些{type}使用{name}？", "en": "Which hospitals use {name}?" }
+      }
+    },
+    {
+      "id": "involves",
+      "label": { "zh-TW": "涉及", "en": "Involves" },
+      "from": ["tender"],
+      "to": ["product"],
+      "questions": {
+        "outgoing": { "zh-TW": "{name}涉及哪些{type}？", "en": "Which products does {name} cover?" },
+        "incoming": { "zh-TW": "哪些{type}涉及{name}？", "en": "Which tenders cover {name}?" }
+      }
+    }
+  ]
+}

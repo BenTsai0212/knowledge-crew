@@ -1,0 +1,263 @@
+// 評測的執行：測試只使用假的 /api/ask（fakeTransport），不呼叫真實 API。
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { clientConfig } from "../client/load";
+import { dataset } from "../dataset/load";
+import type { Database } from "../db/database";
+import { answered, fakeTransport } from "../qa/testing";
+import type { AskBody, AskEvent } from "../qa/types";
+import { openRetriever } from "../retrieval/retrieve";
+import { GRADE_SYSTEM_PROMPT } from "./grade";
+import { evalQuestions } from "./load";
+import { estimateCalls, openEvalDatabase, runEvals, type EvalContext, type EvalRun, type EvalSettings } from "./run";
+import { summarize } from "./score";
+
+const { retrieval, evals } = clientConfig.client;
+const DEFAULT: EvalSettings = { topK: retrieval.topK, minScore: retrieval.minScore };
+const all = evalQuestions.questions;
+const pick = (...ids: string[]) => ids.map((id) => all.find((q) => q.id === id)!);
+// 會送出的回答題、本機就拒答的題庫外問題（檢索不到段落）、英文的說法不同題、主管才看得到的回答題
+const sample = pick("annual-leave-staff", "weather-staff", "bluewing-launch-staff-en", "bluewing-cost-manager");
+
+let db: Database;
+beforeAll(async () => {
+  db = await openEvalDatabase(clientConfig, dataset);
+});
+afterAll(async () => {
+  await db.close();
+});
+
+const isGrade = (body: AskBody) => body.system === GRADE_SYSTEM_PROMPT;
+// 問答回一個引用第 1 段的回答，模型評分回 correct
+const reply = (grade = '{"verdict":"correct","reason":"ok"}') => (body: AskBody): AskEvent[] => (isGrade(body) ? answered(grade) : answered("第二季 Q3 7 天 [1]"));
+
+const context = (questions = sample, send: (body: AskBody) => AskEvent[] = reply()) => {
+  const transport = fakeTransport(send);
+  const ctx: EvalContext = { retriever: openRetriever(db, retrieval), transport, config: clientConfig, data: dataset, questions, providerId: "keyword-hash" };
+  return { ctx, transport };
+};
+
+describe("estimateCalls", () => {
+  it.each(["keyPoints", "model"] as const)("與實際送出的次數相同（%s）", async (mode) => {
+    const { ctx, transport } = context(all);
+    const estimate = await estimateCalls(ctx, [DEFAULT], mode);
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode });
+    expect(run.status).toBe("done");
+    expect(estimate.total).toBe(transport.bodies.length);
+    expect(estimate.ask).toBe(transport.bodies.filter((b) => !isGrade(b)).length);
+    expect(estimate.grade).toBe(mode === "model" ? transport.bodies.filter(isGrade).length : 0);
+    expect(estimate.ask).toBeGreaterThan(0);
+    // 有些題目在本機就拒答，不呼叫
+    expect(estimate.ask).toBeLessThan(all.length);
+  });
+
+  it("兩組設定各算一次；門檻高到檢索不到段落時為 0", async () => {
+    const { ctx } = context();
+    const one = await estimateCalls(ctx, [DEFAULT], "keyPoints");
+    expect(await estimateCalls(ctx, [DEFAULT, DEFAULT], "keyPoints")).toEqual({ ask: one.ask * 2, grade: 0, total: one.ask * 2 });
+    expect(await estimateCalls(ctx, [{ topK: 5, minScore: 1.01 }], "model")).toEqual({ ask: 0, grade: 0, total: 0 });
+  });
+});
+
+describe("適用的題目與 passageLanguage（#163 決定 3）", () => {
+  const semantic = all.filter((q) => q.requires === "semantic");
+
+  it("keyword-hash 時 requires: semantic 的題目不執行、不計入預計次數", async () => {
+    expect(semantic.length).toBeGreaterThan(0);
+    const { ctx } = context([...sample, ...semantic]);
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode: "keyPoints" });
+    expect(run.providerId).toBe("keyword-hash");
+    expect(run.sets[0].results.map((r) => r.question)).toEqual(sample.map((q) => q.id));
+    expect(await estimateCalls(ctx, [DEFAULT], "keyPoints")).toEqual(await estimateCalls(context().ctx, [DEFAULT], "keyPoints"));
+  });
+
+  it("語意向量 provider 時全部執行；passageLanguage 帶入每次檢索的 language", async () => {
+    const q = semantic.find((q) => q.passageLanguage !== undefined)!;
+    const { ctx } = context([q]);
+    const languages: (string | undefined)[] = [];
+    const spy: EvalContext = {
+      ...ctx,
+      providerId: "multilingual-e5-small",
+      retriever: { retrieve: (id, text, options) => (languages.push(options?.language), ctx.retriever.retrieve(id, text, options)) },
+    };
+    const run = await runEvals(spy, { sets: [DEFAULT], mode: "keyPoints" });
+    expect(run.sets[0].results.map((r) => r.question)).toEqual([q.id]);
+    expect(languages.length).toBeGreaterThan(0);
+    expect(new Set(languages)).toEqual(new Set([q.passageLanguage]));
+  });
+});
+
+// requires 的標記與 keyword-hash 的實際結果一致：沒標記的題目在範例客戶（keyword-hash）照常計分
+describe("參考題庫的 requires 與 keyword-hash（#163 決定 3）", () => {
+  const retriever = () => openRetriever(db, retrieval);
+  const top = async (q: (typeof all)[number]) =>
+    (await retriever().retrieve(q.role, q.question, { ...DEFAULT, ...(q.passageLanguage ? { language: q.passageLanguage } : {}) })).map((p) => p.id);
+
+  it("跨語言題都標記 requires: semantic", () => {
+    const cross = all.filter((q) => q.category === "cross-language");
+    expect(cross.length).toBeGreaterThanOrEqual(19);
+    expect(cross.filter((q) => q.requires !== "semantic").map((q) => q.id)).toEqual([]);
+  });
+
+  it("同義詞題：沒標記的，keyword-hash 能檢索到答案段落；標記的，檢索不到", async () => {
+    const synonyms = all.filter((q) => q.category === "synonym");
+    expect(synonyms.length).toBeGreaterThanOrEqual(6);
+    for (const q of synonyms) {
+      const found = (await top(q)).some((id) => q.answerPassages.includes(id));
+      expect(found, q.id).toBe(q.requires !== "semantic");
+    }
+  });
+
+  it("完全無關的題目：keyword-hash 檢索不到段落，在本機拒答", async () => {
+    const unrelated = all.filter((q) => q.category === "unrelated");
+    expect(unrelated.length).toBeGreaterThanOrEqual(5);
+    for (const q of unrelated) {
+      expect(q.requires, q.id).toBeUndefined();
+      expect(await top(q), q.id).toEqual([]);
+    }
+  });
+});
+
+describe("runEvals", () => {
+  it("每題以題庫的角色與語言執行，依設定的 topK 檢索；兩組設定依序跑完", async () => {
+    const { ctx, transport } = context();
+    const changes: EvalRun[] = [];
+    const run = await runEvals(ctx, { sets: [DEFAULT, { topK: 1, minScore: 0 }], mode: "keyPoints" }, (r) => changes.push(r));
+    expect(run).toMatchObject({ status: "done", mode: "keyPoints" });
+    expect(run.finishedAt).toBeDefined();
+    expect(run.sets.map((s) => s.results.map((r) => r.question))).toEqual([sample.map((q) => q.id), sample.map((q) => q.id)]);
+    // 設定 B 的每次問答只送出一段
+    const b = transport.bodies.slice(transport.bodies.length / 2);
+    for (const body of b) expect(body.messages[0].content.match(/<passage number=/g)).toHaveLength(1);
+    expect(transport.bodies[0].system).toContain("Answer in Chinese (Taiwan)");
+    // 開始、每題完成、結束都通知
+    expect(changes).toHaveLength(1 + sample.length * 2 + 1);
+    expect(changes.at(-1)).toBe(run);
+  });
+
+  it("評分與一般問答相同：本機拒答記為拒答，回答題記下引用", async () => {
+    const { ctx } = context();
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode: "keyPoints" });
+    const byId = new Map(run.sets[0].results.map((r) => [r.question, r]));
+    expect(byId.get("weather-staff")!.score).toMatchObject({ outcome: "refusal", refused: true, leaks: [] });
+    expect(byId.get("bluewing-cost-manager")!.score).toMatchObject({ outcome: "answer", leaks: [] });
+    expect(byId.get("annual-leave-staff")!.score.citation?.cited).toHaveLength(1);
+    expect(byId.get("annual-leave-staff")!.grade).toBeUndefined();
+  });
+
+  it("答案要點、引用與模型評分都用移除外層標籤後的文字（#237）", async () => {
+    const wrapped = (body: AskBody): AskEvent[] =>
+      isGrade(body) ? answered('{"verdict":"correct","reason":"ok"}') : answered("<citation_response>第二季 Q3 7 天 [1]</citation_response>");
+    const { ctx, transport } = context(pick("annual-leave-staff"), wrapped);
+    const [result] = (await runEvals(ctx, { sets: [DEFAULT], mode: "model" })).sets[0].results;
+    expect(result.answer).toMatchObject({ kind: "answer", text: "第二季 Q3 7 天 [1]" });
+    expect(result.score.citation?.cited).toHaveLength(1);
+    expect(transport.bodies.find(isGrade)!.messages[0].content).toContain("<answer>\n第二季 Q3 7 天 [1]\n</answer>");
+    const plain = await runEvals(context(pick("annual-leave-staff")).ctx, { sets: [DEFAULT], mode: "model" });
+    expect(result.score).toEqual(plain.sets[0].results[0].score);
+  });
+
+  it("遇到 daily_limit 時停止，保留已完成的結果", async () => {
+    let calls = 0;
+    const { ctx } = context(sample, (body) => (++calls === 2 ? [{ type: "error", error: "daily_limit" }] : reply()(body)));
+    const run = await runEvals(ctx, { sets: [DEFAULT, DEFAULT], mode: "keyPoints" });
+    expect(run).toMatchObject({ status: "stopped", stopReason: "daily_limit" });
+    // 第 1 題送出、第 2 題本機拒答、第 3 題遇到 daily_limit：不記錄
+    expect(run.sets[0].results.map((r) => r.question)).toEqual(["annual-leave-staff", "weather-staff"]);
+    expect(run.sets[1].results).toEqual([]);
+    expect(summarize(sample, run.sets[0].results.map((r) => r.score), evals.thresholds).complete).toBe(false);
+  });
+
+  it.each(["invalid_access_code", "global_daily_limit", "network", "upstream_quota"])("%s 也停止", async (error) => {
+    const { ctx } = context(sample, () => [{ type: "error", error }]);
+    expect(await runEvals(ctx, { sets: [DEFAULT], mode: "keyPoints" })).toMatchObject({ status: "stopped", stopReason: error });
+  });
+
+  it("其他錯誤記在該題，接著跑下一題", async () => {
+    const { ctx } = context(sample, () => [{ type: "error", error: "upstream_overloaded" }]);
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode: "keyPoints" });
+    expect(run.status).toBe("done");
+    expect(run.sets[0].results).toHaveLength(sample.length);
+    expect(run.sets[0].results[0].score).toMatchObject({ outcome: "error", error: "upstream_overloaded", citation: { pass: false } });
+  });
+
+  it("按停止時中止進行中的題目，不記錄該題", async () => {
+    const controller = new AbortController();
+    const { ctx } = context();
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode: "keyPoints" }, (r) => r.sets[0].results.length === 1 && controller.abort(), controller.signal);
+    expect(run).toMatchObject({ status: "stopped", stopReason: "aborted" });
+    expect(run.sets[0].results).toHaveLength(1);
+  });
+
+  it("中止後檢索因資料庫關閉而失敗：記為停止，不停在執行中", async () => {
+    const controller = new AbortController();
+    const { ctx } = context();
+    const closing: EvalContext = {
+      ...ctx,
+      retriever: {
+        retrieve: async () => {
+          controller.abort();
+          throw new Error("database closed");
+        },
+      },
+    };
+    const seen: EvalRun[] = [];
+    const run = await runEvals(closing, { sets: [DEFAULT], mode: "keyPoints" }, (r) => seen.push(r), controller.signal);
+    expect(run).toMatchObject({ status: "stopped", stopReason: "aborted" });
+    expect(seen.at(-1)?.status).toBe("stopped");
+  });
+
+  it("沒有中止時的例外照常拋出", async () => {
+    const { ctx } = context();
+    const broken: EvalContext = { ...ctx, retriever: { retrieve: async () => Promise.reject(new Error("boom")) } };
+    await expect(runEvals(broken, { sets: [DEFAULT], mode: "keyPoints" })).rejects.toThrow("boom");
+  });
+});
+
+describe("runEvals：模型評分", () => {
+  it("只對有回答的回答題呼叫，判定記在該題", async () => {
+    const { ctx, transport } = context();
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode: "model" });
+    const graded = run.sets[0].results.filter((r) => r.grade !== undefined).map((r) => r.question);
+    expect(graded).toEqual(["annual-leave-staff", "bluewing-launch-staff-en", "bluewing-cost-manager"]);
+    expect(transport.bodies.filter(isGrade)).toHaveLength(3);
+    expect(transport.bodies.find(isGrade)!.messages[0].content).toContain("<answer>\n第二季 Q3 7 天 [1]\n</answer>");
+    const scores = run.sets[0].results.map((r) => r.score);
+    const grades = new Map(run.sets[0].results.flatMap((r) => (r.grade ? [[r.question, r.grade] as const] : [])));
+    expect(summarize(sample, scores, evals.thresholds, "model", grades).answer).toMatchObject({ passed: 3, total: 3, ungradable: 0 });
+  });
+
+  it("每題記下實際呼叫的次數（問答＋模型評分；本機拒答為 0），合計與送出的次數相同（#210）", async () => {
+    const { ctx, transport } = context();
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode: "model" });
+    const calls = Object.fromEntries(run.sets[0].results.map((r) => [r.question, r.calls]));
+    expect(calls).toEqual({ "annual-leave-staff": 2, "weather-staff": 0, "bluewing-launch-staff-en": 2, "bluewing-cost-manager": 2 });
+    expect(run.sets[0].results.reduce((n, r) => n + r.calls!, 0)).toBe(transport.bodies.length);
+  });
+
+  it("輸出格式錯誤時記為無法評分，不當成正確", async () => {
+    const { ctx } = context(sample, reply("Correct!"));
+    const run = await runEvals(ctx, { sets: [DEFAULT], mode: "model" });
+    const results = run.sets[0].results;
+    expect(results.find((r) => r.question === "annual-leave-staff")!.grade).toEqual({ verdict: "ungradable", reason: null });
+    const grades = new Map(results.flatMap((r) => (r.grade ? [[r.question, r.grade] as const] : [])));
+    expect(summarize(sample, results.map((r) => r.score), evals.thresholds, "model", grades).answer).toMatchObject({ passed: 0, total: 3, ungradable: 3 });
+  });
+
+  it("模型評分遇到 daily_limit 時保存這題（無法評分）再停止；其他錯誤記為無法評分", async () => {
+    const limited = context(sample, (body) => (isGrade(body) ? [{ type: "error", error: "daily_limit" }] : reply()(body)));
+    const stopped = await runEvals(limited.ctx, { sets: [DEFAULT], mode: "model" });
+    expect(stopped).toMatchObject({ status: "stopped", stopReason: "daily_limit" });
+    expect(stopped.sets[0].results).toHaveLength(1);
+    expect(stopped.sets[0].results[0]).toMatchObject({
+      question: "annual-leave-staff",
+      answer: { kind: "answer" },
+      grade: { verdict: "ungradable", reason: null },
+      gradeError: "daily_limit",
+    });
+
+    const overloaded = context(sample, (body) => (isGrade(body) ? [{ type: "error", error: "upstream_overloaded" }] : reply()(body)));
+    const run = await runEvals(overloaded.ctx, { sets: [DEFAULT], mode: "model" });
+    expect(run.status).toBe("done");
+    expect(run.sets[0].results[0]).toMatchObject({ grade: { verdict: "ungradable", reason: null }, gradeError: "upstream_overloaded" });
+  });
+});

@@ -8,7 +8,7 @@
 // check-post-body.mjs 匯入同一套規則。
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // 放行的網域：RFC 2606 保留的網域，比對本身與子網域
@@ -46,6 +46,15 @@ export function findEmails(line) {
  * GitHub Actions 的 /home/runner 不算；`/Users/<名稱>` 這種角括號佔位不算（名稱只比對英數字、`.`、`_`、`-`）。
  */
 export const PERSONAL_PATH = /\/(?:Users\/|home\/(?!runner(?![\w.-])))[\w.-]+/;
+
+// 只免個人路徑的檔案（repo 根目錄起算的路徑）；email 與禁用名稱照查。
+// 〔來源：#7（knowledge-kit 的 `docs/testing.md` 以範例說明個人路徑規則）｜可刪條件：knowledge-kit 改掉該範例並同步到本 repo 後〕
+export const PERSONAL_PATH_EXEMPT = ['docs/testing.md'];
+
+/** 該檔案是否免查個人路徑。 */
+export function isPersonalPathExempt(file) {
+  return PERSONAL_PATH_EXEMPT.includes(normalize(String(file ?? '')));
+}
 
 // 禁用名稱清單（#96）：專案名、合作者名等不寫進檔案、PR 描述與留言的名稱。清單本身不進版本控制（.gitignore）。
 export const DENIED_NAMES_PATH = 'tools/workflow/denied-names.local.txt';
@@ -92,13 +101,13 @@ export function hasDeniedName(line, names) {
 
 /**
  * 逐行檢查一段文字（含程式碼區塊）。回傳 [{ line: 行號（從 1 起算）, kind: 'email' | '個人路徑' | '禁用名稱' }]。
- * names 省略時讀取本機的禁用名稱清單。
+ * names 省略時讀取本機的禁用名稱清單；skipPersonalPath 為 true 時不查個人路徑（PERSONAL_PATH_EXEMPT）。
  */
-export function scanText(text, names = defaultDeniedNames()) {
+export function scanText(text, names = defaultDeniedNames(), { skipPersonalPath = false } = {}) {
   const findings = [];
   String(text ?? '').split(/\r?\n/).forEach((content, i) => {
     if (findEmails(content).some((address) => !isAllowedEmail(address))) findings.push({ line: i + 1, kind: 'email' });
-    if (PERSONAL_PATH.test(content)) findings.push({ line: i + 1, kind: '個人路徑' });
+    if (!skipPersonalPath && PERSONAL_PATH.test(content)) findings.push({ line: i + 1, kind: '個人路徑' });
     if (hasDeniedName(content, names)) findings.push({ line: i + 1, kind: '禁用名稱' });
   });
   return findings;
@@ -139,7 +148,7 @@ export function checkFiles(files, root = '.') {
   for (const file of files) {
     const text = readText(resolve(root, file));
     if (text === null) continue;
-    for (const f of scanText(text)) findings.push(`${file}:${f.line}：${f.kind}`);
+    for (const f of scanText(text, defaultDeniedNames(), { skipPersonalPath: isPersonalPathExempt(file) })) findings.push(`${file}:${f.line}：${f.kind}`);
   }
   return findings;
 }
