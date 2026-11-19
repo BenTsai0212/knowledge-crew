@@ -38,3 +38,4 @@
 
 | 編號 | 標題 | 狀態 |
 | --- | --- | --- |
+| 0001 | [knowledge-crew 專案章程](0001-project-charter.md) | Accepted |
