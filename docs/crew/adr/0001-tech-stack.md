@@ -1,6 +1,6 @@
 # ADR 0001：技術選型（第 0 階段）
 
-- 狀態：Accepted
+- 狀態：Superseded by ADR 0002
 - 日期：2026-11-19
 - 決定者：@BenTsai0212
 - 相關：#3、RFC 0001、[knowledge-kit](https://github.com/BenTsai0212/knowledge-kit) 的 ADR 0001、0004、0005、0008、0010

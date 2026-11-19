@@ -11,7 +11,7 @@
 
 ## 流程
 
-1. 開 `docs/<topic>-rfc` 分支，複製下方範本新增 `docs/rfcs/NNNN-<topic>.md`，狀態填 `Proposed`。
+1. 開 `docs/<topic>-rfc` 分支，複製下方範本新增 `docs/crew/rfcs/NNNN-<topic>.md`，狀態填 `Proposed`。
 2. 開 PR（標籤 `rfc`）。
 3. 單人：自己確認後改為 `Accepted` 並合併。協作：依協作模組的規則取得對方同意。
 4. RFC 內難以反悔的決定同步寫成 ADR。

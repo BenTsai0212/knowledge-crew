@@ -12,7 +12,7 @@
 - 決定者：@BenTsai0212（停止回報與 `plan-first` 時 @ 此帳號）
 
 ## 1. 必讀
-你被指派的 Issue（驗收條件就是完成標準），以及 `docs/rfcs/` 的 RFC 0001 與 `docs/adr/README.md` 的 ADR 索引（已定的方向不要「改正」）。
+你被指派的 Issue（驗收條件就是完成標準），以及 `docs/crew/rfcs/` 的 RFC 0001 與 `docs/crew/adr/README.md` 的 ADR 索引（已定的方向不要「改正」）。
 
 ## 2. 指令
 <!-- 依 ADR 0001 的技術選型填寫：安裝、開發、型別檢查、lint、測試、build。 -->
@@ -30,7 +30,7 @@
 | 路徑 | 內容 |
 | --- | --- |
 | `docs/workflow/` | 憲法與 workflow 手冊 |
-| `docs/rfcs/`、`docs/adr/` | 專案章程與決策紀錄 |
+| `docs/crew/rfcs/`、`docs/crew/adr/` | 專案章程與決策紀錄 |
 | `tools/workflow/` | workflow 工具（Node，無相依套件；說明見該資料夾的 README） |
 | `.claude/settings.json` | 在 `PreToolUse`（Bash）註冊合併與 push 到 main 的 hook（合併一律拒絕；push 到 main 本機確認、雲端拒絕）；`permissions.deny` 移除 GitHub MCP 的合併等工具 |
 | `templates/` | Claude Project 範本與預設不啟用的模組檔案 |

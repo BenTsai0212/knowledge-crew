@@ -105,3 +105,21 @@ AI 能做的工作越來越多，但人不知道該信它多少：每項都逐�
 - 中文名稱。
 - 資料庫代管廠商與平台部署位置（ADR 0001）。
 - 平台寫入 repo（開 Issue、加標籤）的權限設計，如何套用三級確認。
+
+## 修訂
+
+### 2026-11-19：建立在 knowledge-kit 之上（#5、ADR 0002）
+
+- **產品定位**：knowledge-crew 以 [knowledge-kit](https://github.com/BenTsai0212/knowledge-kit) 為上游，建立在它之上，保留它的全部功能（知識庫、問答、檢索、文件解析、圖譜、評測等），再加上 AI 員工的交辦、驗收與信任。knowledge-kit 的改進持續同步進來（ADR 0002）。
+- **AI 員工的工作範圍**：先做開發流程（「使用者」第 1 項）；基本功能完成後，再決定是否擴及知識庫中的工作。
+- **三個 repo**：
+
+  | repo | 角色 |
+  | --- | --- |
+  | `knowledge-kit`（公開） | 上游：知識庫產品 |
+  | `knowledge-crew`（公開） | 本 repo：knowledge-kit 的全部功能，加上 AI 員工的畫面、概念與 demo |
+  | `knowledge-crew-ops`（私人） | 不變：真正的資料庫、串接、規則參數與任何真實紀錄 |
+
+- **資料**：資料庫做法沿用 knowledge-kit（PGlite、RLS、migration）。
+- **第 0 階段**：demo 是 knowledge-kit 的現有功能，加上五個畫面與工作帳本；AI 員工相關的資料仍只用虛構資料。門檻不變。
+- **伺服器端功能**：knowledge-kit 的 Worker（模型呼叫、邀請碼、費用上限）隨匯入保留；是否在 knowledge-crew 的 demo 啟用，另行決定。
