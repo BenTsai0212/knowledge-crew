@@ -1,0 +1,198 @@
+// client/crew/demo.json 的驗證（#29 計畫第 2 節、`## 決定` 的補充）：回傳錯誤清單，空陣列表示通過。
+// seed 在匯入前呼叫，有錯就不寫入。check:client 不讀 client/crew/，所以形狀也在這裡檢查。
+import type { AccessFile, LanguageCode } from "../../client/types";
+import type { DemoFile } from "./types";
+
+export interface ValidateOptions {
+  /** 雙語欄位必須有的語言 */
+  languages?: readonly LanguageCode[];
+  /** 所有時間都要早於這個時間（預設是執行當下） */
+  now?: Date;
+}
+
+const STATUS = ["pass", "fail", "pending"];
+const REASON = ["wrong", "different_approach", "process"];
+const DECISION = ["relax", "revoke"];
+const ORG = "example-org/";
+
+type Obj = Record<string, unknown>;
+const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
+const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+
+export function validateDemo(raw: unknown, access: AccessFile, options: ValidateOptions = {}): string[] {
+  const errors: string[] = [];
+  const err = (path: string, message: string) => errors.push(`${path}: ${message}`);
+  const languages = options.languages ?? ["zh-TW", "en"];
+  const now = (options.now ?? new Date()).getTime();
+
+  const str = (o: Obj, k: string, path: string): string => {
+    const v = o[k];
+    if (typeof v !== "string" || v.trim() === "") err(`${path}.${k}`, "must be a non-empty string");
+    else if (v.includes("://")) err(`${path}.${k}`, "must not contain a URL");
+    return typeof v === "string" ? v : "";
+  };
+  const int = (o: Obj, k: string, path: string): number => {
+    const v = o[k];
+    if (!Number.isInteger(v) || (v as number) <= 0) err(`${path}.${k}`, "must be a positive integer");
+    return typeof v === "number" ? v : NaN;
+  };
+  const oneOf = (o: Obj, k: string, path: string, values: string[]): string => {
+    if (!values.includes(o[k] as string)) err(`${path}.${k}`, `must be one of ${values.join(", ")}`);
+    return String(o[k]);
+  };
+  const time = (o: Obj, k: string, path: string): number => {
+    const v = o[k];
+    const t = typeof v === "string" && /(Z|[+-]\d\d:\d\d)$/.test(v) ? Date.parse(v) : NaN;
+    if (Number.isNaN(t)) err(`${path}.${k}`, "must be an ISO 8601 time with a time zone");
+    else if (t >= now) err(`${path}.${k}`, "must be in the past");
+    return t;
+  };
+  const loc = (v: unknown, path: string) => {
+    if (!isObj(v)) return err(path, "must be an object of languages");
+    for (const lang of languages) str(v, lang, path);
+  };
+  // 最上層的陣列 path 為空字串
+  const objects = (o: Obj, k: string, path: string, min = 0): [Obj, string][] => {
+    const at = path ? `${path}.${k}` : k;
+    if (!Array.isArray(o[k]) || (o[k] as unknown[]).length < min) err(at, `must be an array with at least ${min} item(s)`);
+    return list(o[k]).flatMap((v, i) => (isObj(v) ? [[v, `${at}[${i}]`] as [Obj, string]] : (err(`${at}[${i}]`, "must be an object"), [])));
+  };
+  const unique = (seen: Set<string>, value: string, path: string) => {
+    if (seen.has(value)) err(path, `duplicate: ${value}`);
+    seen.add(value);
+  };
+  const ordered = (earlier: number, later: number, path: string, message: string, strict = true) => {
+    if (!Number.isNaN(earlier) && !Number.isNaN(later) && (strict ? earlier >= later : earlier > later)) err(path, message);
+  };
+
+  if (!isObj(raw)) return ["demo: must be an object"];
+  const demo = raw;
+  const projects = new Set(access.projects.map((p) => p.id));
+  const reviewers = new Set(access.roles.filter((r) => r.canReview).map((r) => r.id));
+  const reviewer = (o: Obj, k: string, path: string) => {
+    if (!reviewers.has(str(o, k, path))) err(`${path}.${k}`, "must be an identity in access.json with canReview");
+  };
+
+  const repos = new Set<string>();
+  const fullNames = new Set<string>();
+  for (const [r, p] of objects(demo, "repos", "", 1)) {
+    unique(repos, str(r, "id", p), `${p}.id`);
+    const fullName = str(r, "fullName", p);
+    unique(fullNames, fullName, `${p}.fullName`);
+    if (!fullName.startsWith(ORG)) err(`${p}.fullName`, `must start with ${ORG}`);
+    if (!projects.has(str(r, "project", p))) err(`${p}.project`, "must be a project in access.json");
+  }
+  const employees = new Set<string>();
+  for (const [e, p] of objects(demo, "employees", "", 1)) {
+    unique(employees, str(e, "id", p), `${p}.id`);
+    str(e, "displayName", p);
+    loc(e.roleNote, `${p}.roleNote`);
+  }
+  const workTypes = new Set<string>();
+  list(demo.workTypes).forEach((w, i) => {
+    if (typeof w !== "string" || w === "") err(`workTypes[${i}]`, "must be a non-empty string");
+    else unique(workTypes, w, `workTypes[${i}]`);
+  });
+  if (workTypes.size === 0) err("workTypes", "must have at least one work type");
+  const refs = (o: Obj, p: string) => {
+    if (!employees.has(str(o, "employee", p))) err(`${p}.employee`, "must be an employee in this file");
+    if (!workTypes.has(str(o, "workType", p))) err(`${p}.workType`, "must be a work type in this file");
+  };
+
+  // 驗收 id → 員工 × 工作類型與時間（levelDecisions.basisReview 用）
+  const reviews = new Map<string, { owner: string; at: number }>();
+  const assignmentIds = new Set<string>();
+  const issues = new Set<string>();
+  const prs = new Set<string>();
+  for (const [a, p] of objects(demo, "assignments", "")) {
+    unique(assignmentIds, str(a, "id", p), `${p}.id`);
+    const repo = str(a, "repo", p);
+    if (!repos.has(repo)) err(`${p}.repo`, "must be a repo in this file");
+    unique(issues, `${repo}#${int(a, "issueNumber", p)}`, `${p}.issueNumber`);
+    refs(a, p);
+    loc(a.title, `${p}.title`);
+    reviewer(a, "assignedBy", p);
+    let last = time(a, "assignedAt", p);
+    const works = objects(a, "works", p, 1);
+    works.forEach(([w, wp], i) => {
+      if (w.round !== i + 1) err(`${wp}.round`, `must be ${i + 1} (rounds start at 1 and increase by 1)`);
+      unique(prs, `${repo}#${int(w, "prNumber", wp)}`, `${wp}.prNumber`);
+      const submitted = time(w, "submittedAt", wp);
+      ordered(last, submitted, `${wp}.submittedAt`, "must be after the assignment or the previous review");
+      loc(w.summary, `${wp}.summary`);
+      loc(w.body, `${wp}.body`);
+      if (!Array.isArray(w.points)) err(`${wp}.points`, "must be an array");
+      list(w.points).forEach((pt, j) => loc(pt, `${wp}.points[${j}]`));
+      for (const [c, cp] of objects(w, "changes", wp)) {
+        str(c, "path", cp);
+        loc(c.summary, `${cp}.summary`);
+      }
+      let latestCheck = submitted;
+      for (const [c, cp] of objects(w, "checks", wp)) {
+        str(c, "name", cp);
+        oneOf(c, "status", cp, STATUS);
+        const at = time(c, "checkedAt", cp);
+        ordered(submitted, at, `${cp}.checkedAt`, "must not be before the work was submitted", false);
+        latestCheck = Math.max(latestCheck, at);
+      }
+      const isLast = i === works.length - 1;
+      if (!isObj(w.review)) {
+        if (!isLast) err(`${wp}.review`, "only the last round may be waiting for review");
+        return;
+      }
+      const r = w.review;
+      const rp = `${wp}.review`;
+      const id = str(r, "id", rp);
+      if (reviews.has(id)) err(`${rp}.id`, `duplicate: ${id}`);
+      reviewer(r, "decidedBy", rp);
+      const verdict = oneOf(r, "verdict", rp, ["accepted", "returned"]);
+      if (verdict === "returned") oneOf(r, "reason", rp, REASON);
+      if (verdict === "accepted" && r.reason !== undefined) err(`${rp}.reason`, "must be omitted when accepted");
+      if (verdict === "accepted" && !isLast) err(`${rp}.verdict`, "only the last round may be accepted");
+      if (verdict === "returned" && isLast) err(`${rp}.verdict`, "a returned work must be followed by another round");
+      if (r.note !== undefined) str(r, "note", rp);
+      last = time(r, "decidedAt", rp);
+      ordered(latestCheck, last, `${rp}.decidedAt`, "must be after the work was submitted and checked");
+      reviews.set(id, { owner: `${a.employee}/${a.workType}`, at: last });
+    });
+  }
+
+  const decisionIds = new Set<string>();
+  for (const [d, p] of objects(demo, "levelDecisions", "")) {
+    unique(decisionIds, str(d, "id", p), `${p}.id`);
+    refs(d, p);
+    oneOf(d, "decision", p, DECISION);
+    reviewer(d, "decidedBy", p);
+    const at = time(d, "decidedAt", p);
+    if (d.basisReview === undefined) continue;
+    const basis = reviews.get(String(d.basisReview));
+    if (!basis) err(`${p}.basisReview`, "must be a review in this file");
+    else if (basis.owner !== `${d.employee}/${d.workType}`) err(`${p}.basisReview`, "must belong to the same employee and work type");
+    else ordered(basis.at, at, `${p}.decidedAt`, "must be after the basis review");
+  }
+
+  for (const [s, p] of objects(demo, "simulations", "")) {
+    refs(s, p);
+    for (const [r, rp] of objects(s, "replies", p, 1)) {
+      loc(r.summary, `${rp}.summary`);
+      loc(r.body, `${rp}.body`);
+      list(r.points).forEach((pt, j) => loc(pt, `${rp}.points[${j}]`));
+      for (const [c, cp] of objects(r, "changes", rp)) {
+        str(c, "path", cp);
+        loc(c.summary, `${cp}.summary`);
+      }
+      for (const [c, cp] of objects(r, "checks", rp)) {
+        str(c, "name", cp);
+        oneOf(c, "status", cp, STATUS);
+      }
+    }
+  }
+  return errors;
+}
+
+/** validateDemo() 通過時回傳型別化的內容，否則拋出列出全部錯誤的 Error。 */
+export function assertDemo(raw: unknown, access: AccessFile, options?: ValidateOptions): DemoFile {
+  const errors = validateDemo(raw, access, options);
+  if (errors.length > 0) throw new Error(`Invalid crew demo data:\n${errors.join("\n")}`);
+  return raw as DemoFile;
+}
