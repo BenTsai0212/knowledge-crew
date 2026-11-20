@@ -1,0 +1,15 @@
+{
+  "title": "今天",
+  "fictionalData": "虛構資料",
+  "fictionalDataNote": "畫面上的 AI 員工、repo 與交辦都是虛構的示範資料。",
+  "awaitingReview": "待驗收",
+  "awaitingReviewCount": "{count} 件工作等你驗收",
+  "awaitingReviewEmpty": "目前沒有等你驗收的工作。",
+  "inProgress": "進行中",
+  "inProgressCount": "{count} 件交辦進行中",
+  "inProgressEmpty": "目前沒有進行中的交辦。",
+  "relaxSuggested": "建議少看",
+  "relaxSuggestedItem": "{employee}的「{workType}」最近 {count} 次都沒有做錯，可以考慮少看；要你同意才會生效。",
+  "relaxSuggestedEmpty": "目前沒有建議少看的工作。",
+  "allEmpty": "今天沒有需要你處理的事。"
+}

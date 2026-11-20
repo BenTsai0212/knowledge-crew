@@ -1,0 +1,15 @@
+{
+  "title": "Today",
+  "fictionalData": "Fictional data",
+  "fictionalDataNote": "The AI employees, repos and assignments on this screen are fictional demo data.",
+  "awaitingReview": "Awaiting review",
+  "awaitingReviewCount": "{count, plural, one {# work item awaits your review} other {# work items await your review}}",
+  "awaitingReviewEmpty": "Nothing is waiting for your review.",
+  "inProgress": "In progress",
+  "inProgressCount": "{count, plural, one {# assignment in progress} other {# assignments in progress}}",
+  "inProgressEmpty": "No assignments are in progress.",
+  "relaxSuggested": "Suggested for lighter review",
+  "relaxSuggestedItem": "{employee} has had no mistakes in the last {count, plural, one {# review} other {# reviews}} of “{workType}” work; you could review it more lightly. Nothing changes until you agree.",
+  "relaxSuggestedEmpty": "No work is suggested for lighter review.",
+  "allEmpty": "Nothing needs your attention today."
+}

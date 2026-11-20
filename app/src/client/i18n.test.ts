@@ -153,7 +153,7 @@ describe("介面文字的結構", () => {
 
   it("只有 i18n.ts 讀取 client/i18n/", () => {
     const reads = /["'`][^"'`]*client\/i18n\//;
-    expect(sources.filter(([, text]) => reads.test(stripComments(text))).map(([p]) => p)).toEqual(["./i18n.ts"]);
+    expect(sources.filter(([, text]) => reads.test(stripComments(text))).map(([p]) => p).sort()).toEqual(["../crew/i18n.ts", "./i18n.ts"]);
   });
 
   it("去掉註解後沒有中日韓文字（字串、JSX 文字、全形標點）", () => {
