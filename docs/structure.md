@@ -324,7 +324,7 @@ Playwright 的端對端測試（`*.spec.ts`）；設定在根目錄的 `playwrig
 - `support/app.ts`：共用操作（介面文字從選定客戶的 `i18n/` 讀取）
 - `support/citing-answer.ts`：引用每一段的假回答，找到檢索到至少 2 段的預設問題（手機與桌機的原文面板共用）
 - `support/client.ts`：讀取 `KK_CLIENT` 選定客戶的 JSON 並推算測試用的身分（不寫死角色、等級、專案）
-- `support/crew.ts`：選定的客戶有沒有 `crew/demo.json`（knowledge-crew，#34；手機分頁列的斷言以此判斷）
+- `support/crew.ts`：選定的客戶有沒有 `crew/demo.json`（knowledge-crew，#34；手機與平板導覽的斷言以此判斷）
 - `support/dataset.ts`：以 `app/src/evals/oracle.ts` 算出各身分看不到的段落；身分對照用的「只有一個身分看得到的題目」與只出現在答案段落的比對文字（`onlyOneSees()`）
 - `support/fake-ask.ts`：假的 `/api/ask`（含串流到一半的假回應）
 - `support/skip-reporter.ts`：列出略過的測試與原因（參考情境有略過時失敗）

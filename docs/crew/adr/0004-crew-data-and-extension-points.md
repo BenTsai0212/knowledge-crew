@@ -37,5 +37,5 @@
 
 ## 修訂（2026-11-20，#34）
 
-- **會改的 knowledge-kit 檔案**另加 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`，只限手機分頁列與「更多」的斷言（與測試名稱）；有沒有 crew 由 crew 自己的新檔 `e2e/support/crew.ts` 判斷（`e2e/support/client.ts` 不改）。
-- 原因：crew 頁籤讓手機的頁籤超過 5 個，`phoneTabs()`（`PHONE_PRIORITY` 不改）把一般員工的時間軸與 crew 收進「更多」，主管的「更多」多一個 crew，既有的斷言因此不成立。沒有 `crew/demo.json` 的客戶維持原本的斷言。
+- **會改的 knowledge-kit 檔案**另加 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`、`e2e/tablet.spec.ts`，只限因多了 crew 頁籤而不成立的斷言、測試名稱與點選哪個頁籤的操作，且只在有 `crew/demo.json` 的客戶生效；有沒有 crew 由 crew 自己的新檔 `e2e/support/crew.ts` 判斷（`e2e/support/client.ts` 不改）。
+- 原因：crew 頁籤讓手機的頁籤超過 5 個，`phoneTabs()`（`PHONE_PRIORITY` 不改）把一般員工的時間軸與 crew 收進「更多」，主管的「更多」多一個 crew，平板（820px）的導覽列也多一個 crew，既有的斷言與點選時間軸的操作因此不成立。沒有 `crew/demo.json` 的客戶維持原本的斷言。

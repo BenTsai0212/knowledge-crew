@@ -44,7 +44,7 @@ test("頂端列 60px：客戶名稱、身分徽章、「虛構資料」「展示
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test("一般員工：分頁列 72px 在視窗底部，首頁、問答、圖譜、時間軸、上傳，沒有「更多」（有 crew 時時間軸與 crew 收進「更多」）；按了切換頁面", async ({ page }) => {
+test("一般員工：分頁列 72px 在視窗底部，首頁、問答、圖譜、時間軸、上傳，沒有「更多」（有 crew 時時間軸與 crew 收進「更多」）；按了切換頁面（有 crew 時按上傳）", async ({ page }) => {
   test.skip(nonReviewer === undefined, NO_NON_REVIEWER);
   await openApp(page);
   await switchIdentity(page, nonReviewer!.id);
@@ -55,8 +55,10 @@ test("一般員工：分頁列 72px 在視窗底部，首頁、問答、圖譜�
   expect(await tabViews(page)).toEqual(hasCrewDemo ? ["home", "qa", "graph", "upload", "more"] : ["home", "qa", "graph", "timeline", "upload"]);
   for (const box of await tabBar(page).locator("button").evaluateAll((bs) => bs.map((b) => b.getBoundingClientRect().height))) expect(box).toBeGreaterThanOrEqual(44);
 
-  await tabBar(page).locator('[data-view="timeline"]').click();
-  await expect(tabBar(page).locator('[data-view="timeline"]')).toHaveAttribute("aria-current", "page");
+  // knowledge-crew：有 crew 時時間軸不在分頁列上，改點上傳（#34）
+  const target = hasCrewDemo ? "upload" : "timeline";
+  await tabBar(page).locator(`[data-view="${target}"]`).click();
+  await expect(tabBar(page).locator(`[data-view="${target}"]`)).toHaveAttribute("aria-current", "page");
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
