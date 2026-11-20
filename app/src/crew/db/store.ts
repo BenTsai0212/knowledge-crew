@@ -186,6 +186,19 @@ export function getTrustInputs(db: Database, identityId: string | null, employee
   });
 }
 
+/** 該 repo 目前看得到的最大 PR 編號 ＋1（沒有時是 1）。 */
+export function nextPrNumber(db: Database, identityId: string | null, repoId: string): Promise<number> {
+  return read(db, identityId, async (tx) => {
+    const [{ next }] = await rows<{ next: number }>(
+      tx,
+      `SELECT coalesce(max(w.pr_number), 0)::int + 1 AS next
+       FROM crew.works w JOIN crew.assignments a ON a.id = w.assignment_id WHERE a.repo_id = $1`,
+      [repoId],
+    );
+    return next;
+  });
+}
+
 // 寫入不使用 RETURNING：值由這裡產生，不依賴寫入後的 SELECT policy
 
 export interface NewAssignment {
