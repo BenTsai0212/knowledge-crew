@@ -4,7 +4,7 @@
 // 所以 app 的查詢在每個交易開頭以 SET LOCAL ROLE 切成 kk_app，並且不匯出 PGlite 本身。
 import { PGlite, type PGliteInterface, type Transaction } from "@electric-sql/pglite";
 import type { AccessFile } from "../client/types";
-import { applyMigrations } from "./migrate";
+import { applyMigrations, type Migration } from "./migrate";
 import { seedAccess } from "./seed";
 
 const BOOTSTRAP = `
@@ -12,6 +12,7 @@ const BOOTSTRAP = `
   CREATE ROLE kk_app LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB;
   CREATE SCHEMA kk AUTHORIZATION kk_owner;
   CREATE SCHEMA kk_meta AUTHORIZATION kk_owner;
+  CREATE SCHEMA crew AUTHORIZATION kk_owner;
 `;
 
 export interface Database {
@@ -23,6 +24,8 @@ export interface Database {
 export interface OpenOptions {
   // 初始化時以 superuser 匯入資料（例如資料集、測試資料）；app 執行期間拿不到這個連線
   seed?: (db: PGliteInterface) => Promise<void>;
+  // 在 knowledge-kit 的 migration 之後以 kk_owner 套用（knowledge-crew 傳入 crew 的 migration）；版本以 crew/ 開頭，不與 knowledge-kit 重複
+  migrations?: Migration[];
 }
 
 export async function openDatabase(config: { access: AccessFile }, options: OpenOptions = {}): Promise<Database> {
@@ -30,6 +33,7 @@ export async function openDatabase(config: { access: AccessFile }, options: Open
   await pg.exec(BOOTSTRAP);
   await pg.exec("SET ROLE kk_owner");
   await applyMigrations(pg);
+  if (options.migrations) await applyMigrations(pg, options.migrations);
   await pg.exec("RESET ROLE");
   await seedAccess(pg, config.access);
   if (options.seed) await options.seed(pg);
