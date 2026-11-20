@@ -230,7 +230,7 @@
 
 ### `app/src/crew/`
 
-knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew 的功能只放這裡。介面文字只經 `i18n.ts` 讀 `client/i18n/crew/`；knowledge-kit 檔案的接入點只限 ADR 0004 的清單（`App.tsx`、`ui/online-demo.ts`、`ui/Sidebar.tsx`、`ui/layout.ts`、`vitest.config.ts`、本文件）。
+knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew 的功能只放這裡。介面文字只經 `i18n.ts` 讀 `client/i18n/crew/`；knowledge-kit 檔案的接入點只限 ADR 0004 的清單（`App.tsx`、`ui/online-demo.ts`、`ui/Sidebar.tsx`、`ui/layout.ts`、`vitest.config.ts`、本文件，以及 ADR 0004 修訂加入的 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`、`e2e/tablet.spec.ts`）。
 
 - `db/constraints.test.ts`：crew migration 的 CHECK 與 UNIQUE
 - `db/migrate.ts`：crew 的 migration 清單（版本加 `crew/` 前綴，由 `openDatabase()` 的 `migrations` 選項套用；測試在 `migrate.test.ts`）
@@ -250,7 +250,11 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
+- `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/sections.ts`：子導覽的位置與名稱的鍵、畫面元件的 props
+- `ui/today.ts`：「今天」的資料整理（`readToday()`：待驗收、進行中、建議少看；測試在 `today.test.ts`）
+- `ui/TodayView.css`：「今天」畫面的三個區塊
+- `ui/TodayView.tsx`：「今天」畫面：只負責呈現 `today.ts` 的結果（載入中、讀取失敗、三個區塊或沒有要處理的事）
 
 ### `app/src/db/`
 
