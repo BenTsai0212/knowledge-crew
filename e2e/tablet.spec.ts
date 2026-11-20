@@ -4,6 +4,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { EVALS_PATH, identityBadge, identitySheet, openApp, openTab, presetQuestions, roleCard, s, switchIdentity } from "./support/app";
 import { access, language, NO_REVIEWER, reviewer } from "./support/client";
+import { hasCrewDemo } from "./support/crew";
 import { waitForGraphIdle } from "./support/graph";
 
 const WIDTH = 820;
@@ -41,12 +42,13 @@ test("導覽列 72px：頁籤 60×56px、有 aria-label；不顯示左側導覽�
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test("主管：所有頁籤都在導覽列（含待審，tools=evals 時加評測台），沒有「更多」", async ({ page }) => {
+test("主管：所有頁籤都在導覽列（含待審，tools=evals 時加評測台，有 crew 時最後加 crew），沒有「更多」", async ({ page }) => {
   test.skip(reviewer === undefined, NO_REVIEWER);
   await openApp(page, EVALS_PATH);
   await switchIdentity(page, reviewer!.id);
   const views = await rail(page).locator("button[data-view]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")));
-  expect(views).toEqual(["home", "qa", "graph", "timeline", "upload", "review", "evals"]);
+  // knowledge-crew：有 crew 時最後加 crew（#34）
+  expect(views).toEqual(hasCrewDemo ? ["home", "qa", "graph", "timeline", "upload", "review", "evals", "crew"] : ["home", "qa", "graph", "timeline", "upload", "review", "evals"]);
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 

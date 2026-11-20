@@ -78,6 +78,9 @@ import { Sidebar } from "./ui/Sidebar";
 import { MobileNav } from "./ui/MobileNav";
 import { NavRail } from "./ui/NavRail";
 import { useLayout } from "./ui/layout";
+import { crewMigrations } from "./crew/db/migrate";
+import { CrewPage } from "./crew/ui/CrewPage";
+import { crewSeed, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
 import { ScriptPanel } from "./ui/ScriptPanel";
@@ -99,7 +102,8 @@ let onModelProgress: ProgressListener = () => {};
 const activeProvider = () => (sharedProvider ??= createProvider(client.retrieval, PROVIDERS, (progress) => onModelProgress(progress)));
 
 // 頁籤：導覽列與切換身分時的判斷用同一份結果（線上 demo、展示模式、評測台的網址參數都在載入時決定）
-const views = (canReview: boolean) => visibleViews(canReview, onlineDemo, presentationMode, evalsMode);
+// knowledge-crew：crew 頁籤接在其後（沒有 demo.json 或展示模式時不加，ADR 0004）
+const views = (canReview: boolean) => withCrew(visibleViews(canReview, onlineDemo, presentationMode, evalsMode), hasCrewDemo, presentationMode);
 // 沒有看過的實體時傳給首頁的空清單（固定同一個陣列，首頁不會因此重新讀取）
 const NONE: readonly string[] = [];
 // 略過的說法不同的鍵：身分與兩段（順序不拘）
@@ -239,7 +243,8 @@ export function App() {
     // StrictMode 在開發時會執行兩次；先結束的那次關閉自己開的資料庫
     let cancelled = false;
     let opened: Database | undefined;
-    openDatabase(clientConfig, { seed: (pg) => seedDataset(pg, clientConfig, dataset) }).then(
+    // knowledge-crew：crew 的 migration 一律套用；seed 先資料集、後 crew 的虛構資料（demo.json 驗證失敗時走載入失敗）
+    openDatabase(clientConfig, { migrations: crewMigrations, seed: crewSeed((pg) => seedDataset(pg, clientConfig, dataset), clientConfig) }).then(
       (database) => (cancelled ? void database.close() : setDb((opened = database))),
       () => !cancelled && setLoadFailed(true),
     );
@@ -862,6 +867,8 @@ export function App() {
               canSwitchIdentity={canSwitchIdentity(signIn)}
               onViewed={onViewed}
             />
+          ) : view === "crew" ? (
+            <CrewPage db={db} identity={identity} language={language} />
           ) : view === "evals" ? (
             <EvalPage
               language={language}

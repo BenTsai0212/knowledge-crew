@@ -1,0 +1,18 @@
+{
+  "tab": "AI crew",
+  "title": "AI crew",
+  "fictionalData": "Fictional data",
+  "fictionalDataNote": "The AI employees, repos and assignments on this screen are fictional demo data.",
+  "sectionsLabel": "AI crew screens",
+  "sectionToday": "Today",
+  "sectionEmployees": "Employees",
+  "sectionAssignments": "Assignments",
+  "sectionWorks": "Work and review",
+  "sectionTrust": "Trust",
+  "sectionLedger": "Work ledger",
+  "preparingTitle": "Coming soon",
+  "preparingBody": "This screen is still being prepared and will appear here later.",
+  "workTypeUi": "UI",
+  "workTypeDocs": "Docs",
+  "workTypeTest": "Tests"
+}

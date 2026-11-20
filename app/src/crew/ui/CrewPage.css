@@ -1,0 +1,40 @@
+/* crew 頁（#34）：頁首與子導覽。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
+.crew-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.crew-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.crew-page__title {
+  margin: 0;
+}
+
+/* 子導覽：一列按鈕，手機寬度時水平捲動 */
+.crew-page__sections {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.crew-page__section {
+  flex: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-textMuted);
+  padding: 0.5rem 0.75rem;
+}
+
+.crew-page__section[aria-current="page"] {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text);
+  font-weight: 700;
+}
