@@ -1,0 +1,52 @@
+/* 「今天」畫面（#34）：三個區塊。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
+.crew-today {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.crew-today__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.crew-today__block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.crew-today__block h3,
+.crew-today__block p {
+  margin: 0;
+}
+
+.crew-today__list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crew-today__item {
+  display: grid;
+  gap: 0.15rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.crew-today__item-title {
+  font-weight: 700;
+}
+
+.crew-today__item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.crew-today__ref {
+  font-family: var(--font-mono);
+}

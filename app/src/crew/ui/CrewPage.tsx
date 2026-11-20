@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { crewStrings } from "../i18n";
 import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection } from "./sections";
+import { TodayView } from "./TodayView";
 import "./CrewPage.css";
 
-const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {};
+const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
+  today: TodayView,
+};
 
 export function CrewPage(props: CrewScreenProps) {
   const t = crewStrings("common", props.language);

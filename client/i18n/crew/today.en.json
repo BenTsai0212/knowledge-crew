@@ -1,15 +1,20 @@
 {
   "title": "Today",
-  "fictionalData": "Fictional data",
-  "fictionalDataNote": "The AI employees, repos and assignments on this screen are fictional demo data.",
+  "loading": "Loading…",
+  "loadFailed": "Today’s data could not be loaded. Reload the page and try again.",
   "awaitingReview": "Awaiting review",
   "awaitingReviewCount": "{count, plural, one {# work item awaits your review} other {# work items await your review}}",
+  "awaitingReviewCountOthers": "{count, plural, one {# work item awaiting review} other {# work items awaiting review}}",
   "awaitingReviewEmpty": "Nothing is waiting for your review.",
+  "awaitingReviewEmptyOthers": "No work is awaiting review.",
   "inProgress": "In progress",
   "inProgressCount": "{count, plural, one {# assignment in progress} other {# assignments in progress}}",
   "inProgressEmpty": "No assignments are in progress.",
   "relaxSuggested": "Suggested for lighter review",
   "relaxSuggestedItem": "{employee} has had no mistakes in the last {count, plural, one {# review} other {# reviews}} of “{workType}” work; you could review it more lightly. Nothing changes until you agree.",
   "relaxSuggestedEmpty": "No work is suggested for lighter review.",
+  "assignmentRef": "{repo}#{issue}",
+  "assignmentMeta": "{employee} ({roleNote}) · {workType}",
+  "assignmentMetaNoRole": "{employee} · {workType}",
   "allEmpty": "Nothing needs your attention today."
 }
