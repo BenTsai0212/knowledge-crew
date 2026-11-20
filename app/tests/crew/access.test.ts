@@ -97,7 +97,7 @@ describe("結構", () => {
           ORDER BY c.relname`)
       ).rows,
     );
-    expect(rows.map((r) => r.relname)).toEqual(["employees", "repos", "work_types"]);
+    expect(rows.map((r) => r.relname)).toEqual(["assignments", "employees", "level_decisions", "repos", "reviews", "work_changes", "work_checks", "work_points", "work_types", "works"]);
     for (const r of rows) expect(r, r.relname).toMatchObject({ owner: "kk_owner", rls: true, force: true });
   });
 });
