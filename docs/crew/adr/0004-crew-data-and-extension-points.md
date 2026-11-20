@@ -34,3 +34,8 @@
 - 好處：crew 的資料與 knowledge-kit 分開，同步上游不會撞號；第 1 階段可以整包搬到私人 repo；越權規則與 knowledge-kit 一致。
 - 代價：knowledge-kit 改到上述檔案時，同步要處理衝突；crew 讀翻譯檔的方式與 knowledge-kit 不同，knowledge-kit 之後若做出通用機制，要再調整。
 - 後續工作：#15 計畫第 8 節的 Issue（B～L）。
+
+## 修訂（2026-11-20，#34）
+
+- **會改的 knowledge-kit 檔案**另加 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`，只限手機分頁列與「更多」的斷言（與測試名稱）；有沒有 crew 由 crew 自己的新檔 `e2e/support/crew.ts` 判斷（`e2e/support/client.ts` 不改）。
+- 原因：crew 頁籤讓手機的頁籤超過 5 個，`phoneTabs()`（`PHONE_PRIORITY` 不改）把一般員工的時間軸與 crew 收進「更多」，主管的「更多」多一個 crew，既有的斷言因此不成立。沒有 `crew/demo.json` 的客戶維持原本的斷言。
