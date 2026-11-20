@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { clientConfig } from "../../client/load";
 import type { AccessFile } from "../../client/types";
-import { DEMO } from "./load";
+import { DEMO, DEMO_RAW } from "./load";
 import { demoText, demoTextIndex } from "./texts";
 import { demoWorkId, type DemoFile } from "./types";
 import { assertDemo, validateDemo } from "./validate";
@@ -78,6 +79,11 @@ describe("validateDemo", () => {
   it("最小的虛構資料通過（含等待驗收的最後一輪與少看的決定）", () => {
     expect(validateDemo(fixture(), access, { now: NOW })).toEqual([]);
     expect(assertDemo(fixture(), access, { now: NOW }).assignments).toHaveLength(2);
+  });
+
+  it("實際的 client/crew/demo.json 通過驗證（access.json 的身分與 client.json 的語言）", () => {
+    expect(DEMO_RAW).not.toBeNull();
+    expect(validateDemo(DEMO_RAW, clientConfig.access, { languages: clientConfig.client.languages })).toEqual([]);
   });
 
   it("不是物件、缺少陣列時回報", () => {
