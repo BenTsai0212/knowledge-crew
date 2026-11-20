@@ -22,7 +22,8 @@ export function readDemoCompare(env: Record<string, unknown>): boolean {
 
 export const demoCompare: boolean = readDemoCompare(import.meta.env);
 
-export type View = "home" | "qa" | "graph" | "timeline" | "upload" | "review" | "evals";
+// "crew"：knowledge-crew 的 AI 員工頁（ADR 0004）；不在 visibleViews() 中，由 App.tsx 以 crew/ui/entry.ts 的 withCrew() 接上
+export type View = "home" | "qa" | "graph" | "timeline" | "upload" | "review" | "evals" | "crew";
 
 // 客戶展示模式（#129，docs/qa.md「展示模式」）：網址的 mode 參數是 "presentation"（區分大小寫）時開啟，其他值或沒有參數時關閉。
 // 只在載入時讀一次，不存進任何瀏覽器儲存。只是隱藏頁籤，不是權限防線：權限仍由 RLS 執行。

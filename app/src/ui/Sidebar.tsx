@@ -7,6 +7,7 @@
 import { useState, type ReactNode } from "react";
 import { clientConfig } from "../client/load";
 import { fill, strings } from "../client/i18n";
+import { crewTabLabel } from "../crew/ui/entry";
 import { BottomSheet } from "./BottomSheet";
 import { IDENTITY_SELECT_ID } from "./empty-state";
 import { IdentitySheet, ownName } from "./IdentitySheet";
@@ -43,7 +44,11 @@ export const tabSelector = (view: View | "more") => `:is(.primary-tabs, .mobile-
 // 頁籤的名稱（左側欄、手機的分頁列與「更多」共用）
 export function tabLabels(language: string): Record<View, string> {
   const s = strings(language);
-  return { home: s.tabHome, qa: s.tabQa, graph: s.tabGraph, timeline: s.tabTimeline, upload: s.tabUpload, review: s.tabReview, evals: s.tabEvals };
+  return {
+    home: s.tabHome, qa: s.tabQa, graph: s.tabGraph, timeline: s.tabTimeline, upload: s.tabUpload, review: s.tabReview, evals: s.tabEvals,
+    // knowledge-crew 的頁籤名稱來自 client/i18n/crew/（ADR 0004）
+    crew: crewTabLabel(language),
+  };
 }
 
 // 使用者卡的縮寫頭像：帳號登入時是帳號的第一個字（大寫），以邀請碼體驗時是角色名稱的第一個字（與平板的頭像相同）

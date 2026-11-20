@@ -68,6 +68,8 @@ export const NAV_ICONS: Record<View | "more", string> = {
   upload: EMPTY_ICONS.upload,
   review: EMPTY_ICONS.review,
   evals: EMPTY_ICONS.evals,
+  // AI 員工（knowledge-crew，ADR 0004）：人形加對話框
+  crew: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6 M14 4h7v5h-4l-3 2z",
   // 更多：三個點
   more: "M5 12h.01 M12 12h.01 M19 12h.01",
 };

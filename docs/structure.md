@@ -228,6 +228,30 @@
 - `confirmations.ts`：經 `withIdentity()` 確認、撤銷確認與讀取段落的目前狀態；失效判斷的純函式 `confirmationStatus()`；引用標號的小標記 `validConfirmed()` 與品質報告的確認比例 `readConfirmationCoverage()`（ADR 0013；只用 INSERT；規則由 RLS 執行，見 `docs/data-model.md`「來源確認」，測試在 `app/tests/sources/confirmations.test.ts`）
 - `source.ts`：`readSource()` 經 `withIdentity()` 讀取段落所屬文件中看得到的段落（含說法不同的標示與目前已確認的段落）；`readCitedSources()` 讀取一題回答引用到的段落的文件標題與段落編號
 
+### `app/src/crew/`
+
+knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew 的功能只放這裡。介面文字只經 `i18n.ts` 讀 `client/i18n/crew/`；knowledge-kit 檔案的接入點只限 ADR 0004 的清單（`App.tsx`、`ui/online-demo.ts`、`ui/Sidebar.tsx`、`ui/layout.ts`、`vitest.config.ts`、本文件）。
+
+- `db/constraints.test.ts`：crew migration 的 CHECK 與 UNIQUE
+- `db/migrate.ts`：crew 的 migration 清單（版本加 `crew/` 前綴，由 `openDatabase()` 的 `migrations` 選項套用；測試在 `migrate.test.ts`）
+- `db/migrations/*.sql`：crew 的 migration（已合併的不可修改）
+- `db/store.ts`：crew 的資料存取，一律經 `withIdentity()`，可見範圍由 RLS 決定
+- `demo/load.ts`：選定客戶的 `crew/demo.json`（沒有時是 `null`）
+- `demo/seed.ts`：`demo.json` 驗證後匯入資料庫（交給 `openDatabase()` 的 seed）
+- `demo/simulate.ts`：「模擬交件」：以目前身分寫入下一輪的工作
+- `demo/texts.ts`：`demoText()`：虛構資料的文字換成目前語言
+- `demo/types.ts`：`demo.json` 的結構
+- `demo/validate.ts`：`demo.json` 的驗證
+- `i18n.ts`：crew 介面文字唯一的讀取模組（`crewStrings()`；一個畫面一份翻譯檔，`CrewScreenKeys` 一行一個畫面）
+- `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數
+- `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
+- `trust/types.ts`：信任規則用的型別
+- `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數）
+- `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」
+- `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
+- `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
+- `ui/sections.ts`：子導覽的位置與名稱的鍵、畫面元件的 props
+
 ### `app/src/db/`
 
 資料層（PGlite＋RLS）；說明見 `docs/data-model.md`。
@@ -239,6 +263,7 @@
 
 需要放在 `app/src/` 之外的測試（例如會用到被禁止 SQL 的越權測試）。
 
+- `crew/`：crew 的越權與匯入流程測試（會用到被禁止的 SQL）
 - `fixtures/large-graph.ts`：圖譜分群用的虛構大型資料（固定種子、240 個實體，不放進 `client/`，#254）
 
 ### `worker/`
@@ -257,9 +282,11 @@ Cloudflare Worker（TypeScript）：`GET /api/health`、`POST /api/ask`；其他
 客戶設定；參考情境與測試基準，`KK_CLIENT` 可改用 `clients/<名稱>/`；說明見 `docs/client-config.md`、`docs/dataset.md`。
 
 - `*.json`：客戶設定
+- `crew/demo.json`：crew 的虛構資料（沒有這個檔的客戶不顯示 crew 頁籤）
 - `data/`：虛構資料集
 - `evals/questions.json`：評測題庫（見 `docs/evals.md`）
 - `i18n/<語言>.json`：介面翻譯檔（含拒答文字與各錯誤訊息）
+- `i18n/crew/<畫面>.<語言>.json`：crew 的介面翻譯檔（一個畫面一份；`common` 是頁籤、子導覽等共用文字）
 - `schema/`：JSON Schema
 
 ### `clients/`
