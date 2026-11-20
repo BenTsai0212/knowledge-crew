@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "data/entities.schema.json",
+  "title": "data/entities.json：實體",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entities"],
+  "properties": {
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "name", "names", "sources"],
+        "properties": {
+          "id": { "$ref": "../common.schema.json#/definitions/Id" },
+          "type": { "description": "knowledge-model.json 的實體類型 id", "$ref": "../common.schema.json#/definitions/Id" },
+          "name": { "description": "主要名稱，萃取與合併時使用", "type": "string", "minLength": 1 },
+          "names": {
+            "description": "各介面語言的顯示名稱；必須涵蓋 client.json 的每種 languages（匯入時檢查）",
+            "$ref": "../common.schema.json#/definitions/LocalizedText"
+          },
+          "aliases": {
+            "description": "其他名稱，例如英文名；目前不寫入資料庫",
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "sources": { "$ref": "#/definitions/Sources" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Sources": {
+      "description": "出處段落的 id",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "../common.schema.json#/definitions/Id" }
+    }
+  }
+}

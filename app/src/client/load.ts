@@ -1,0 +1,54 @@
+// 在 build 時讀入選定客戶的 *.json（@client 別名，見 docs/client-config.md「多客戶與切換」）。驗證由 npm run check:client（ajv）在 CI 執行，不打包進前端。
+// typecheck 只對參考情境 client/ 比對形狀（tsconfig 的 paths）；其他客戶由 ajv 檢查。
+import access from "@client/access.json";
+import client from "@client/client.json";
+import knowledgeModel from "@client/knowledge-model.json";
+import scenarios from "@client/scenarios.json";
+import theme from "@client/theme.json";
+import { withRetrievalDefaults } from "../retrieval/providers";
+import type { ClientConfig, ClientFiles, ConflictsConfig, EvalThresholds, QaConfig, ReviewConfig, UploadConfig } from "./types";
+
+// JSON import 的字串型別會放寬成 string，列舉值無法在編譯時比對；
+// 這裡比對其餘的形狀（缺欄位、型別不符時 typecheck 失敗），列舉值由 ajv 檢查。
+export type Widen<T> = T extends string
+  ? string
+  : T extends (infer U)[]
+    ? Widen<U>[]
+    : T extends object
+      ? { [K in keyof T]: Widen<T[K]> }
+      : T;
+
+const files: Widen<ClientFiles> = { client, theme, knowledgeModel, access, scenarios };
+
+// 與 client.schema.json 的 default 相同（load.test.ts 比對）。retrieval 的預設值依 provider 而不同，在 retrieval/providers.ts 的 RETRIEVAL_DEFAULTS
+export const UPLOAD_DEFAULTS: UploadConfig = { passageMaxChars: 300, extractMaxBatches: 3 };
+export const CONFLICTS_DEFAULTS: ConflictsConfig = { enabled: false, candidatesPerPassage: 3, minScore: 0.15 };
+export const REVIEW_DEFAULTS: ReviewConfig = { mode: "item" };
+export const QA_DEFAULTS: QaConfig = { dialogue: false };
+export const EVAL_THRESHOLDS_DEFAULTS: EvalThresholds = { citation: 0.9, answer: 0.8, refusal: 1 };
+
+export function normalizeClient(raw: ClientFiles): ClientConfig {
+  return {
+    ...raw,
+    client: {
+      ...raw.client,
+      evals: { ...raw.client.evals, thresholds: { ...EVAL_THRESHOLDS_DEFAULTS, ...raw.client.evals?.thresholds } },
+      retrieval: withRetrievalDefaults(raw.client.retrieval),
+      upload: { ...UPLOAD_DEFAULTS, ...raw.client.upload },
+      conflicts: { ...CONFLICTS_DEFAULTS, ...raw.client.conflicts },
+      review: { ...REVIEW_DEFAULTS, ...raw.client.review },
+      qa: { ...QA_DEFAULTS, ...raw.client.qa },
+    },
+    knowledgeModel: {
+      ...raw.knowledgeModel,
+      entityTypes: raw.knowledgeModel.entityTypes.map((t) => ({
+        ...t,
+        icon: t.icon ?? "generic",
+        mergeStrategy: t.mergeStrategy ?? "review",
+        nearName: t.nearName ?? true,
+      })),
+    },
+  };
+}
+
+export const clientConfig: ClientConfig = normalizeClient(files as ClientFiles);

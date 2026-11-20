@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "knowledge-model.schema.json",
+  "title": "knowledge-model.json：實體類型、關係類型、別名規則",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entityTypes", "relationTypes"],
+  "properties": {
+    "entityTypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "color", "aliasRules"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/definitions/Id" },
+          "label": { "$ref": "common.schema.json#/definitions/LocalizedText" },
+          "color": {
+            "description": "圖譜中節點的顏色（#RRGGBB）",
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "icon": {
+            "description": "圖譜節點與圖例的圖示，從固定圖示集挑選（app/src/ui/entity-icons.ts）；省略時為 generic",
+            "enum": ["person", "team", "building", "folder", "box", "factory", "handshake", "hospital", "gavel", "document", "generic"],
+            "default": "generic"
+          },
+          "aliasRules": {
+            "description": "比對名稱與別名前的正規化",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ignoreCase", "normalizeWidth", "ignoreWhitespace"],
+            "properties": {
+              "ignoreCase": { "type": "boolean" },
+              "normalizeWidth": { "type": "boolean" },
+              "ignoreWhitespace": { "type": "boolean" }
+            }
+          },
+          "mergeStrategy": {
+            "description": "同名或別名相符時：review 送審、auto 自動合併",
+            "enum": ["review", "auto"],
+            "default": "review"
+          },
+          "container": {
+            "description": "容器類型（例如部門、專案）：可見節點數超過門檻時，圖譜以這類實體分群，其他實體歸入直接相連的容器；沒有任何容器類型時改用社群偵測（docs/graph.md「大量節點時的分群」）",
+            "type": "boolean",
+            "default": false
+          },
+          "nearName": {
+            "description": "名稱只差一個字（編輯距離 1）時當成接縫、交給人判斷（docs/extraction.md「直接收錄」的 near_name）。用來抓人名的同音錯字；部門、專案等名稱字少的類型，差一字通常是不同的單位，可設為 false 關閉",
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
+    "relationTypes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "from", "to"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/definitions/Id" },
+          "label": { "$ref": "common.schema.json#/definitions/LocalizedText" },
+          "from": { "$ref": "#/definitions/EntityTypeRefs" },
+          "to": { "$ref": "#/definitions/EntityTypeRefs" },
+          "questions": {
+            "description": "「接著問」的問句範本：outgoing 是面板中心為起點（from）時、incoming 是中心為終點（to）時。參數只有 {name}（中心實體的名稱，必填）與 {type}（另一端的實體類型）；缺方向或缺介面語言時退回翻譯檔的通用範本",
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "outgoing": { "$ref": "common.schema.json#/definitions/LocalizedText" },
+              "incoming": { "$ref": "common.schema.json#/definitions/LocalizedText" }
+            }
+          },
+          "owner": {
+            "description": "起點（from）是終點（to）的負責人時，起點的稱呼（例如「負責人」）。拒答的「可以試試」以這類關係列出問題中實體的負責人（#285）；缺介面語言時用關係的 label",
+            "$ref": "common.schema.json#/definitions/LocalizedText"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "EntityTypeRefs": {
+      "description": "實體類型的 id",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/definitions/Id" }
+    }
+  }
+}

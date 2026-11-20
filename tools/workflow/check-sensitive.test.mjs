@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  checkFiles, DENIED_NAMES_ENV, DENIED_NAMES_PATH, deniedNamesFile, findEmails, isAllowedEmail, loadDeniedNames, parseDeniedNames, PERSONAL_PATH,
+  checkFiles, DENIED_NAMES_ENV, isPersonalPathExempt, PERSONAL_PATH_EXEMPT, DENIED_NAMES_PATH, deniedNamesFile, findEmails, isAllowedEmail, loadDeniedNames, parseDeniedNames, PERSONAL_PATH,
   scanText, repoFiles, trackedFiles, untrackedFiles,
 } from './check-sensitive.mjs';
 
@@ -78,6 +78,24 @@ test('checkFiles：只輸出檔案、行號與種類，不輸出命中的內容�
   const findings = checkFiles(['a.md', 'b.bin', 'missing.md'], dir);
   assert.deepEqual(findings, ['a.md:2：email', 'a.md:3：個人路徑']);
   assert.ok(findings.every((f) => !f.includes('alice')));
+});
+
+test('PERSONAL_PATH_EXEMPT：只有 docs/testing.md 免查個人路徑，email 與禁用名稱照查（#7）', (t) => {
+  assert.deepEqual(PERSONAL_PATH_EXEMPT, ['docs/testing.md']);
+  assert.equal(isPersonalPathExempt('docs/testing.md'), true);
+  assert.equal(isPersonalPathExempt('./docs/testing.md'), true);
+  assert.equal(isPersonalPathExempt('docs/other.md'), false);
+  assert.equal(isPersonalPathExempt('x/docs/testing.md'), false);
+  const dir = mkdtempSync(join(tmpdir(), 'check-sensitive-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  mkdirSync(join(dir, 'docs'));
+  const text = `${users('alice')}/x\n${at('alice', 'mail.co')}\nAcmeSecret\n`;
+  writeFileSync(join(dir, 'docs', 'testing.md'), text);
+  writeFileSync(join(dir, 'docs', 'other.md'), text);
+  assert.deepEqual(scanText(text, ['acmesecret'], { skipPersonalPath: true }), [{ line: 2, kind: 'email' }, { line: 3, kind: '禁用名稱' }]);
+  assert.deepEqual(checkFiles(['docs/testing.md', 'docs/other.md'], dir), [
+    'docs/testing.md:2：email', 'docs/other.md:1：個人路徑', 'docs/other.md:2：email',
+  ]);
 });
 
 test('指令 --file：命中時 exit 1，輸出不含命中的內容；沒有命中時 exit 0', (t) => {

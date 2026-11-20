@@ -1,4 +1,3 @@
-# CI 佔位：新專案依 ADR 0001 的技術選型填寫步驟（安裝 → 型別檢查 → lint → 測試 → build）。
 # job 名稱固定為 checks，供分支保護或其他檢查引用。
 name: CI
 
@@ -10,15 +9,44 @@ on:
 permissions:
   contents: read
 
+# @huggingface/transformers 帶進的 onnxruntime-node 在 linux/x64 安裝時會從 NuGet 下載 CUDA；app 用不到它，略過（#163）
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
+      - name: 安裝
+        run: npm ci
+      - name: 確認沒有下載 CUDA
+        run: test ! -e node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime_providers_cuda.so
+      - name: client 設定檢查
+        run: npm run check:client
+      - name: 型別檢查
+        run: npm run typecheck
+      - name: 單元測試
+        run: npm test
+      - name: build
+        run: npm run build
       - name: workflow 工具測試
         run: npm test --prefix tools/workflow
-      - name: 尚未設定專案檢查
-        run: echo "::warning::CI 尚未設定專案檢查，請依 ADR 0001 填寫 .github/workflows/ci.yml"
+
+  # clients/ 底下每個客戶的設定檢查、target 測試與 build；沒有客戶時略過（docs/client-config.md「客戶檢查」）
+  clients:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: 安裝
+        run: npm ci
+      - name: 客戶檢查
+        run: npm run check:clients

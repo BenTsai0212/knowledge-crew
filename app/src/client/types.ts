@@ -1,0 +1,1084 @@
+// client/*.json 的型別。JSON Schema（client/schema/）是唯一正本；改 Schema 時同步修改本檔與 keys.ts。
+
+import type { ErrorType } from "../../../worker/src/errors";
+import type { PassageMarkKind } from "../conflicts/marks";
+import type { ConflictDecision } from "../conflicts/store";
+import type { Leak, ModelGrade } from "../evals/score";
+import type { EvalCategory, EvalExpect } from "../evals/types";
+import type { ReportCategory, ReportResolution } from "../reports/store";
+import type { FallbackReason } from "../retrieval/providers";
+import type { ParseFailure } from "../upload/parse";
+
+export type LanguageCode = string;
+export type LocalizedText = Record<LanguageCode, string>;
+export type Id = string;
+export type ModelCode = string;
+export type RelativePath = string;
+
+// 檔案中的原始形狀
+
+export interface PathRef {
+  path: RelativePath;
+}
+
+// app/src/retrieval/providers.ts 的 PROVIDERS 鍵
+export type ProviderId = "keyword-hash" | "multilingual-e5-small";
+
+export interface RetrievalFile {
+  provider?: ProviderId;
+  topK?: number;
+  minScore?: number;
+}
+
+export interface UploadFile {
+  passageMaxChars?: number;
+  extractMaxBatches?: number;
+}
+
+// 待審的方式（ADR 0011 決定 7）：item 是逐筆核准，seams 是只審接縫、其餘直接收錄
+export type ReviewMode = "item" | "seams";
+
+export interface ReviewFile {
+  mode?: ReviewMode;
+}
+
+// 問答的接縫提問（ADR 0012 決定 7）：true 是討論版，false 是現行的查詢版
+export interface QaFile {
+  dialogue?: boolean;
+}
+
+export interface ConflictsFile {
+  enabled?: boolean;
+  candidatesPerPassage?: number;
+  minScore?: number;
+}
+
+// 評測台的門檻（docs/evals.md「指標」）：比例的下限；權限滲漏固定是 0 題（score.ts 的 LEAKAGE_LIMIT），不能設定
+export interface EvalThresholdsFile {
+  citation?: number;
+  answer?: number;
+  refusal?: number;
+}
+
+export interface EvalsFile extends PathRef {
+  thresholds?: EvalThresholdsFile;
+}
+
+export interface ClientFile {
+  displayName: LocalizedText;
+  defaultLanguage: LanguageCode;
+  languages: LanguageCode[];
+  model: ModelCode;
+  dataset: PathRef;
+  evals: EvalsFile;
+  retrieval?: RetrievalFile;
+  upload?: UploadFile;
+  conflicts?: ConflictsFile;
+  review?: ReviewFile;
+  qa?: QaFile;
+}
+
+export interface ThemeColors {
+  primary: string;
+  onPrimary: string;
+  background: string;
+  surface: string;
+  text: string;
+  textMuted: string;
+  border: string;
+  // 狀態的文字、邊框與圖示底色
+  danger: string;
+  warning: string;
+  success: string;
+  info: string;
+  // 放在實心狀態色上的文字
+  onStatus: string;
+  // 證據色（ADR 0008，客戶不可改）：選取的引用、原文螢光
+  mark: string;
+  // 確認視窗的遮罩與陰影（#RRGGBBAA）
+  overlay: string;
+  // 圖譜與標籤找不到類型或等級時的顏色
+  graphFallback: string;
+  // 列、晶片、次要區塊
+  surfaceRaised: string;
+  // 原文閱讀紙面（深色模式也是亮色）與紙面上的文字
+  reading: string;
+  readingText: string;
+  // 鍵盤焦點框
+  focus: string;
+  // 證據色（ADR 0008，客戶不可改）：引用標號的預設底色、證據底色上的文字、紙面上的螢光
+  markSoft: string;
+  markText: string;
+  markReading: string;
+  // 說法不同：圖示與框線、底色、底色上的文字
+  conflict: string;
+  conflictSoft: string;
+  conflictText: string;
+}
+
+export interface ThemeRadius {
+  small: string;
+  medium: string;
+  large: string;
+  pill: string;
+}
+
+export interface ThemeFonts {
+  body: string;
+  heading: string;
+  // 等寬：ID、數量、關係名稱、引用標號
+  mono: string;
+  // 只用於字標與大數字
+  display: string;
+}
+
+export interface ThemeFile {
+  colors: ThemeColors;
+  // 深色模式（prefers-color-scheme: dark）的色票
+  darkColors: ThemeColors;
+  radius: ThemeRadius;
+  fonts: ThemeFonts;
+}
+
+export interface AliasRules {
+  ignoreCase: boolean;
+  normalizeWidth: boolean;
+  ignoreWhitespace: boolean;
+}
+
+export type MergeStrategy = "review" | "auto";
+
+// 圖譜節點與圖例的圖示（固定圖示集，畫法在 app/src/ui/entity-icons.ts）
+export type EntityIconName =
+  | "person"
+  | "team"
+  | "building"
+  | "folder"
+  | "box"
+  | "factory"
+  | "handshake"
+  | "hospital"
+  | "gavel"
+  | "document"
+  | "generic";
+
+export interface EntityTypeFile {
+  id: Id;
+  label: LocalizedText;
+  // 圖譜中節點的顏色（#RRGGBB）
+  color: string;
+  // 省略時為 generic
+  icon?: EntityIconName;
+  aliasRules: AliasRules;
+  mergeStrategy?: MergeStrategy;
+  // 容器類型（例如部門、專案）：大量節點時的圖譜以這類實體分群（#254）；省略時不是容器
+  container?: boolean;
+  // 名稱只差一個字時當成接縫（seams.ts 的 near_name，#411）；省略時開啟。部門、專案等名稱字少的類型，差一字通常是不同的單位
+  nearName?: boolean;
+}
+
+export interface RelationType {
+  id: Id;
+  label: LocalizedText;
+  from: Id[];
+  to: Id[];
+  // 「接著問」的問句範本（#198）；省略時用翻譯檔的通用範本
+  questions?: RelationQuestions;
+  // 起點是終點的負責人時，起點的稱呼（#285）：拒答的「可以試試」以這類關係列出負責人；省略時不是負責的關係
+  owner?: LocalizedText;
+}
+
+// 參數：{name} 中心實體的名稱（必填）、{type} 另一端的實體類型
+export interface RelationQuestions {
+  // 中心是關係的起點（from）
+  outgoing?: LocalizedText;
+  // 中心是關係的終點（to）
+  incoming?: LocalizedText;
+}
+
+export interface KnowledgeModelFile {
+  entityTypes: EntityTypeFile[];
+  relationTypes: RelationType[];
+}
+
+export interface VisibilityLevel {
+  id: Id;
+  label: LocalizedText;
+  rank: number;
+  // 畫面上可見等級標籤的顏色（#RRGGBB）
+  color: string;
+}
+
+export interface Project {
+  id: Id;
+  label: LocalizedText;
+}
+
+export interface Role {
+  id: Id;
+  label: LocalizedText;
+  // 一句「看得到什麼」的說明（身分與語言面板）；只寫看得到的範圍，不寫看不到什麼（#247）
+  scope: LocalizedText;
+  visibility: Id;
+  projects: Id[];
+  // 能否上傳文件；可上傳的等級與專案同樣限於看得到的範圍
+  canUpload: boolean;
+  // 能否核准或退回萃取結果；只能審核看得到的文件
+  canReview: boolean;
+}
+
+export interface AccessFile {
+  visibilityLevels: VisibilityLevel[];
+  projects: Project[];
+  roles: Role[];
+}
+
+export interface Question {
+  id: Id;
+  text: LocalizedText;
+  answerPassages: Id[];
+}
+
+export interface Scenario {
+  id: Id;
+  title: LocalizedText;
+  description?: LocalizedText;
+  role: Id;
+  questions: Question[];
+}
+
+export interface ScenariosFile {
+  scenarios: Scenario[];
+}
+
+export interface ClientFiles {
+  client: ClientFile;
+  theme: ThemeFile;
+  knowledgeModel: KnowledgeModelFile;
+  access: AccessFile;
+  scenarios: ScenariosFile;
+}
+
+// app 讀取端拿到的形狀：省略的欄位已補上預設值
+
+export interface EntityType extends Omit<EntityTypeFile, "mergeStrategy" | "icon" | "nearName"> {
+  icon: EntityIconName;
+  mergeStrategy: MergeStrategy;
+  nearName: boolean;
+}
+
+export type RetrievalConfig = Required<RetrievalFile>;
+export type UploadConfig = Required<UploadFile>;
+export type ConflictsConfig = Required<ConflictsFile>;
+export type ReviewConfig = Required<ReviewFile>;
+export type QaConfig = Required<QaFile>;
+export type EvalThresholds = Required<EvalThresholdsFile>;
+
+export interface ClientConfig extends Omit<ClientFiles, "client" | "knowledgeModel"> {
+  client: Omit<ClientFile, "evals" | "retrieval" | "upload" | "conflicts" | "review" | "qa"> & {
+    evals: PathRef & { thresholds: EvalThresholds };
+    retrieval: RetrievalConfig;
+    upload: UploadConfig;
+    conflicts: ConflictsConfig;
+    review: ReviewConfig;
+    qa: QaConfig;
+  };
+  knowledgeModel: {
+    entityTypes: EntityType[];
+    relationTypes: RelationType[];
+  };
+}
+
+// 介面文字的鍵：錯誤與失敗原因的類型（翻譯檔中錯誤訊息的鍵）
+
+// /api/ask 的錯誤類型（worker/README.md），加上前端自己的錯誤。少了任何一種，型別檢查就會失敗
+export type AskErrorType =
+  | ErrorType
+  // fetch 失敗（離線、連不到伺服器）
+  | "network"
+  // 不是 SSE，也不是 Worker 的 JSON 錯誤
+  | "unexpected_response"
+  // ask() 在送出前的檢查
+  | "empty_question"
+  | "question_too_long";
+
+// 上傳失敗的原因：解析（ParseFailure）、寫入（denied：被 RLS 拒絕；invalid：格式不符）、沒有選檔也沒有貼上文字
+export type UploadFailure = ParseFailure | "denied" | "invalid" | "no_input";
+
+// 萃取的失敗原因（run.ts 之外，以及畫面自己的 no_access_code）；/api/ask 的錯誤類型用 errors
+export type ExtractFailure = "format" | "truncated" | "write" | "no_access_code";
+
+// 品質報告的文字鍵（UiStrings.evalReport）
+export type EvalReportText =
+  | "download" | "previous" | "previousInvalid" | "set" | "title" | "editNote" | "headline" | "headlineMet"
+  | "headlineUnmet" | "headlineIncomplete" | "headlineBothMet" | "headlineSecondUnmet" | "unmetItem" | "metricsTitle" | "result" | "meets"
+  | "second" | "bothMeet" | "passMark" | "failMark" | "metLabel" | "unmetLabel" | "bothLabel" | "evaluatedOn" | "client"
+  | "current" | "thresholdList" | "options" | "footerTitle" | "page" | "roleCard" | "roleLeaked" | "thresholdLegend" | "undetermined" | "stabilityTitle" | "stabilityWith" | "stabilityDiffering"
+  | "noteBankDiffers" | "noteBankUnknown" | "noteIncomplete" | "noteSettingsDiffer" | "noteCurrentIncomplete" | "rolesTitle" | "leakExplain"
+  | "limitsTitle" | "limitQuestions" | "limitAccess" | "limitScope" | "appendixTitle" | "matrixTitle" | "matrixCell" | "role"
+  | "category" | "restrictedNote" | "failuresTitle" | "number" | "failed" | "reason" | "action" | "noFailures"
+  | "numberNote" | "conditionsTitle" | "bank" | "bankValue" | "unknown" | "coverage" | "coverageValue" | "coverageLevel"
+  | "settings" | "retrieval" | "notApplicable" | "mode" | "modeKeyPoints" | "modeModel" | "model" | "date"
+  | "dateValue" | "calls" | "callsValue" | "confirmed" | "confirmedValue" | "confirmedNone" | "scope";
+
+// client/i18n/<語言>.json（i18n.schema.json）。帶參數的文字以 {camelCase} 標示，由 i18n.ts 的 fill() 代入
+export interface UiStrings {
+  loading: string;
+  loadFailed: string;
+  // 語意向量 provider 準備中的提示（問答頁與評測台）：從快取載入或初始化時、下載時與進度（{loaded}、{total} 是 MB），以及兩者共用的說明
+  modelLoadingTitle: string;
+  modelDownloadingTitle: string;
+  modelDownloadProgress: string;
+  // 手機登入頁的下載進度列「{loaded}／{total} MB」（#355，畫板 K-Mobile）
+  modelDownloadBar: string;
+  modelPreparing: string;
+  // 語意向量 provider 準備失敗、改用 keyword-hash 時的提示（問答頁與評測台）
+  retrievalFallbackTitle: string;
+  retrievalFallback: Record<FallbackReason, string>;
+  // 頁首的產品字標（#226）：產品名稱，各語言相同
+  productName: string;
+  // 標示：資料是虛構的、身分切換只是展示權限
+  fictionalData: string;
+  demoPermissions: string;
+  identity: string;
+  language: string;
+  accessCodeTitle: string;
+  accessCodeLabel: string;
+  accessCodeHint: string;
+  // 線上 demo（#100）：公開試用碼的說明、問答頁與上傳頁的提醒
+  demoAccessCodeHint: string;
+  demoQaNotice: string;
+  demoUploadNotice: string;
+  accessCodeSubmit: string;
+  changeAccessCode: string;
+  // 登入頁（#287）：帳號登入（展示）的標題、欄位與按鈕；帳號欄的選項是 {account}（展示帳號）與 {role}（角色名稱）；帳號登入後的「登出」
+  signInTitle: string;
+  signInAccount: string;
+  signInAccountOption: string;
+  signInPassword: string;
+  signInNoPassword: string;
+  signInSubmit: string;
+  signInWithCode: string;
+  signInBack: string;
+  // 桌機登入面板（#334）：標題上方的 mono 小字（帳號登入、使用邀請碼體驗）、「登入」與「使用邀請碼體驗」之間的分隔字、帳號欄下方的說明
+  signInEyebrow: string;
+  accessCodeEyebrow: string;
+  signInOr: string;
+  signInAccountHint: string;
+  signOut: string;
+  // 手機頂端列的身分徽章（#255）：{role} 是目前身分的名稱；按下打開身分與語言面板
+  identityBadge: string;
+  identityAndLanguage: string;
+  // 桌機左側欄使用者卡的「看得到：…」（#330）：{scope} 是 access.json 的 roles[].scope
+  userCardScope: string;
+  // 手機底部分頁列的「更多」（#255）
+  navMore: string;
+  presetQuestions: string;
+  // 預設問題旁標示情境的角色；提問一律以目前選的身分（#26 決定 1）
+  scenarioRole: string;
+  questionLabel: string;
+  questionPlaceholder: string;
+  askButton: string;
+  answering: string;
+  emptyAnswer: string;
+  emptyAnswerReason: string;
+  emptyAnswerAction: string;
+  // 三欄的問答頁（#195）：輸入框下方的說明（每題獨立回答）、左側導覽「這次的問題」
+  qaIndependent: string;
+  // 桌機問答頁的頁首右側的說明（#335，畫板 QA）
+  qaHeaderNote: string;
+  sessionQuestions: string;
+  // 手機問答頁頂部的「這次的問題（N）」按鈕（#256）
+  sessionQuestionsCount: string;
+  // 回答下方的「回答提到」與右側的實體面板（#195 PR 2）；接著問的範本以 {name}、{relation}、{type} 組成，依關係的方向分兩種
+  answerMentions: string;
+  // 桌機回答卡片開頭的「根據 N 段原文回答」（{count} 是引用到的段落數，#335）
+  answerBasis: string;
+  // 桌機回答卡片中說法不同的提示列（#335）：{a}、{b} 是兩段的引用標號；照 system 第 5 條並列，不寫「以…為準」
+  answerConflict: string;
+  followUpTitle: string;
+  followUpOutgoing: string;
+  followUpIncoming: string;
+  viewInGraph: string;
+  openSource: string;
+  sourceTitle: string;
+  // 桌機原文欄的「原文 · 出處 N」（{n} 是回答中的引用標號，#335）
+  sourceHeading: string;
+  closeSource: string;
+  // 手機原文面板的「出處 N／M」（{n}、{total}）與上一個、下一個出處（#256）
+  sourceStep: string;
+  // 手機底部面板的標題「原文 · 出處 N／M」（#354，畫板 G-Mobile-QA）；平板的滑出面板照舊用 sourceStep
+  sourceSheetStep: string;
+  sourcePrev: string;
+  sourceNext: string;
+  // 桌機原文欄的「這次回答的出處」清單與段落編號「¶N」（#335）
+  sourceCitedList: string;
+  // 來源確認（ADR 0013 決定 8、9）：原文面板的「確認這段」「撤銷確認」、區塊的名稱、目前的狀態（有效、被取代、有不同說法）、
+  // 「〈角色〉於〈日期〉確認」（{role}、{date}）、失效時打開另一段的連結與寫入失敗。一律說「這段原文已確認」，不說「答案已確認」「已驗證」
+  sourceConfirm: string;
+  sourceConfirmRevoke: string;
+  sourceConfirmGroup: string;
+  sourceConfirmed: string;
+  sourceConfirmedSuperseded: string;
+  sourceConfirmedDisputed: string;
+  sourceConfirmedBy: string;
+  sourceConfirmOpenNewer: string;
+  sourceConfirmOpenOther: string;
+  sourceConfirmFailed: string;
+  // 引用標號的 aria-label：引用到已確認而且有效的段落時（ADR 0013 決定 8）
+  citationConfirmed: string;
+  // 已確認的引用標號滑過時的提示（title），與 citationConfirmed 的後半一致
+  citationConfirmedHint: string;
+  paragraphNumber: string;
+  views: string;
+  tabQa: string;
+  // 首頁的頁籤（#283）
+  tabHome: string;
+  tabGraph: string;
+  legend: string;
+  graphEmpty: string;
+  graphEmptyReason: string;
+  switchIdentity: string;
+  selectEntity: string;
+  // 圖譜的逐步展開（#199）：已展開的路徑、回到全部、只看它
+  graphExpanded: string;
+  graphShowAll: string;
+  graphShowOnly: string;
+  // 找起點與右側面板（#199）：搜尋、關聯最多、關聯數、文件數、出處數（{count}）、在問答中問與它填進輸入框的問句（{name}）
+  graphSearch: string;
+  graphSearchNone: string;
+  graphTopConnected: string;
+  graphRelationCount: string;
+  graphDocumentCount: string;
+  graphSourceCount: string;
+  graphAskAbout: string;
+  // 手機的圖譜（#257）：「篩選與找路徑」按鈕與它打開的底部面板的標題
+  graphFilters: string;
+  // 桌機的圖譜（#336，畫板 Graph、G-Scale）：頁首的「找路徑」、畫布右下的放大／縮小（aria-label）、
+  // 畫布左下圖例的說明、剛展開的節點下方的標示、畫布上方工具列的「清單模式」
+  graphFindPath: string;
+  graphZoomIn: string;
+  graphZoomOut: string;
+  graphLegendNote: string;
+  // 手機圖譜右下的看得到的實體與關係數（#357）
+  graphCounts: string;
+  graphJustExpanded: string;
+  graphListMode: string;
+  // 圖譜的鍵盤操作與報讀（#289，docs/design.md「圖譜的鍵盤操作與螢幕報讀器」）：外框的 aria-roledescription 與 aria-label、
+  // 報讀的句型（enter 接 current；move 的 {relations} 是以 sentenceJoin 接起來的 relation 句子，同一方向的多種關係以 relationJoin 合併）
+  graphKeyboard: {
+    roleDescription: string;
+    label: string;
+    enter: string;
+    current: string;
+    move: string;
+    go: string;
+    atStart: string;
+    noNeighbors: string;
+    shown: string;
+    relation: string;
+    relationJoin: string;
+    sentenceJoin: string;
+    // Space（只看它／回到原本的展開）的報讀；按鍵表（?）與提示列的標題與各按鍵的說明（鍵帽在 ui/graph-keyboard.ts 的 KEY_HELP）
+    onlyOn: string;
+    onlyOff: string;
+    helpTitle: string;
+    helpTab: string;
+    helpMove: string;
+    helpGo: string;
+    helpBack: string;
+    helpOnly: string;
+    helpAsk: string;
+    helpSearch: string;
+    helpZoom: string;
+    helpReset: string;
+    helpKeys: string;
+    // 「圖譜｜清單」切換與清單模式（#289）
+    modeLabel: string;
+    modeGraph: string;
+    modeList: string;
+    listLabel: string;
+    listEmpty: string;
+  };
+  // 大量節點時的圖譜（#254，docs/design.md「大量節點時的圖譜」）：麵包屑的標籤與第一層、「其他」群組的名稱、
+  // 聚合線的段數（{count}）、細節層收合的成員（{count}）、「只顯示關聯 ≥ N」的標籤
+  graphZoom: {
+    breadcrumb: string;
+    all: string;
+    other: string;
+    segments: string;
+    moreMembers: string;
+    minRelations: string;
+  };
+  askAboutEntity: string;
+  relatedEntities: string;
+  entitySources: string;
+  // 撤回此文件對這個實體的核准（ADR 0007，只撤回這個實體與連帶的關係，不是整份文件）：按鈕、確認時列出會消失的內容的說明、沒有內容會消失時的說明、確認與取消
+  graphRetract: string;
+  graphRetractWillRemove: string;
+  graphRetractNoChange: string;
+  graphRetractConfirm: string;
+  graphRetractCancel: string;
+  tabTimeline: string;
+  pathTitle: string;
+  pathFrom: string;
+  pathTo: string;
+  pathChoose: string;
+  // 找不到路徑時的固定文字：不區分沒有連通或看不到（不透露是否因權限而找不到）
+  pathNotFound: string;
+  pathNotFoundReason: string;
+  pathChangeEnd: string;
+  timelineFilter: string;
+  timelineAll: string;
+  timelineEmpty: string;
+  timelineEmptyReason: string;
+  timelineFilterEmptyReason: string;
+  timelineShowAll: string;
+  undated: string;
+  tabUpload: string;
+  uploadNotAllowed: string;
+  uploadNotAllowedReason: string;
+  // 上傳內容只存在瀏覽器記憶體
+  uploadEphemeral: string;
+  uploadFile: string;
+  // 自訂的檔案選擇鈕（FilePicker.tsx）：按鈕文字與尚未選檔時的說明
+  fileChoose: string;
+  fileNone: string;
+  uploadPaste: string;
+  uploadPastePlaceholder: string;
+  uploadDocTitle: string;
+  uploadLanguage: string;
+  uploadVisibility: string;
+  uploadProject: string;
+  uploadNoProject: string;
+  uploadDate: string;
+  uploadPreview: string;
+  uploadParsing: string;
+  uploadPassageCount: string;
+  uploadSubmit: string;
+  uploadDone: string;
+  uploadGotoQa: string;
+  uploadGotoTimeline: string;
+  uploadErrors: Record<UploadFailure, string>;
+  uploadDrop: string;
+  // 上傳頁的拖放說明、檔案卡片與頁首的五個步驟（#242）
+  uploadDropHint: string;
+  uploadPastedText: string;
+  uploadFileStats: string;
+  uploadStepsLabel: string;
+  uploadStepUpload: string;
+  uploadStepChunk: string;
+  uploadStepExtract: string;
+  uploadStepReview: string;
+  uploadStepMerge: string;
+  uploadStepPassages: string;
+  uploadStepBatch: string;
+  uploadStepSent: string;
+  // 手機進度列下方的目前步驟（#282）：步驟名稱與數字，例如「模型萃取 · 批次 2／3」
+  uploadStepCurrent: string;
+  // 手機「上傳」分頁小點的讀屏文字（#282）
+  uploadTabDone: string;
+  uploadRecentTitle: string;
+  uploadClearFile: string;
+  // 依可見等級與專案算出看得到的角色（#42）
+  uploadAudience: string;
+  listSeparator: string;
+  uploadConfirmTitle: string;
+  uploadBack: string;
+  uploadShowAll: string;
+  uploadWriting: string;
+  uploadAnother: string;
+  // 時間軸中本次工作階段上傳的文件
+  timelineUploaded: string;
+  // 時間軸卡片中文件提到的實體
+  timelineMentions: string;
+  // 桌機時間軸（#346）：卡片的「提到：…」一行（{names} 以 listSeparator 連接）
+  timelineMentionsLine: string;
+  // 桌機時間軸的卡片：展開與收合段落清單（{count} 是段落數）
+  timelineShowPassages: string;
+  timelineHidePassages: string;
+  // 桌機時間軸的頁首：文件數、月份範圍（{from}、{to}）、範圍與文件數（{range}、{documents}）
+  timelineDocuments: string;
+  timelineMonthRange: string;
+  timelineSummary: string;
+  extractTitle: string;
+  extractRunning: string;
+  extractDone: string;
+  extractEntities: string;
+  extractRelations: string;
+  extractDropped: string;
+  extractSkipped: string;
+  extractFailed: string;
+  // 萃取停止後還沒執行的批次（例如邀請碼被拒），重試時一併送出
+  extractNotRun: string;
+  extractRetry: string;
+  extractErrors: Record<ExtractFailure, string>;
+  tabReview: string;
+  reviewPendingTab: string;
+  reviewRejectedTab: string;
+  reviewEmpty: string;
+  reviewEmptyReason: string;
+  // 待審沒有需要判斷的項目、但有文件有「已直接收錄」時（#411）：文件卡在下方
+  reviewEmptyAuto: string;
+  reviewEmptyAutoReason: string;
+  reviewUploadAnother: string;
+  reviewRejectedEmpty: string;
+  reviewExtracting: string;
+  reviewRefresh: string;
+  reviewEntities: string;
+  reviewRelations: string;
+  reviewApproveDocument: string;
+  reviewApprove: string;
+  reviewReject: string;
+  reviewWorking: string;
+  reviewNeedsChoice: string;
+  // 手機的一行摘要上要做的決定（#282）：選擇合併對象、補上缺少語言的名稱
+  reviewSheetChoose: string;
+  reviewSheetNames: string;
+  // 系統已準備的實體：展開合併選擇（#243）
+  reviewChangeChoice: string;
+  reviewCreateNew: string;
+  reviewMergeInto: string;
+  reviewMergeHint: string;
+  reviewApprovedCount: string;
+  reviewRejectedWithEntity: string;
+  reviewRelationBlocked: string;
+  // 核准前修改的名稱，每種語言都必須有值（#47 審查）
+  reviewNamesRequired: string;
+  // 名稱欄位空白時的必填標示（#243）
+  reviewRequired: string;
+  reviewSkippedNames: string;
+  // 待審頁的分組（#189）：每份文件的摘要與進度、系統已準備、圖譜已有、新增、確認一組、出處的開關
+  reviewSummary: string;
+  reviewProgress: string;
+  reviewProgressDone: string;
+  // 桌機待審頁的文件標頭：上傳者的膠囊（#345）
+  reviewUploadedBy: string;
+  reviewDecideLeft: string;
+  reviewPrepared: string;
+  reviewPreparedMergeHint: string;
+  reviewSuggested: string;
+  reviewExisting: string;
+  reviewNew: string;
+  reviewAutoMerged: string;
+  reviewConfirm: string;
+  // 「確認」一組時一起核准的關係數：{count}（#189 修正要求）
+  reviewConfirmWithRelations: string;
+  reviewSources: string;
+  // 提示框的標題與動作（#48）
+  noticeParseTitle: string;
+  noticeWriteTitle: string;
+  noticeReviewTitle: string;
+  uploadChooseAgain: string;
+  // 確認視窗右上角 ✕ 的 aria-label
+  dialogClose: string;
+  // 待審頁第二層（待審／已退回）的 aria-label
+  reviewStatusTabs: string;
+  // 待審卡片（#48）：編輯名稱、出處段落的展開與收合
+  reviewEditNames: string;
+  reviewEditDone: string;
+  reviewExpand: string;
+  reviewCollapse: string;
+  // 核准或退回後的短提示：一筆時 {name} 換成項目名稱，多筆時 {count} 換成筆數
+  reviewToastApprovedOne: string;
+  reviewToastApproved: string;
+  reviewToastRejectedOne: string;
+  reviewToastRejected: string;
+  reviewGotoGraph: string;
+  // 核准或退回後短提示的「撤銷」與撤銷後的提示（ADR 0007 決定 4）
+  reviewUndo: string;
+  reviewToastUndone: string;
+  reviewErrors: Record<"denied" | "conflict", string>;
+  // 說法不同（#51）：待審頁的並列與處理、已處理分頁、處理後的短提示（{name} 換成處理方式）
+  reviewDecidedTab: string;
+  reviewDecidedEmpty: string;
+  conflictSection: string;
+  conflictNew: string;
+  conflictOld: string;
+  // 待審頁每組差異說明下方的假設（ADR 0012 決定 3）的小標
+  dialogueHypotheses: string;
+  // 同名的反問（ADR 0012 決定 1）；*Person 是同名的實體是人（類型的圖示是 person）時的寫法（「兩位」「哪一位」，#400）
+  dialogueSameNameTitle: string;
+  dialogueSameNameAsk: string;
+  dialogueSameNameBoth: string;
+  dialogueSameNameTitlePerson: string;
+  dialogueSameNameAskPerson: string;
+  dialogueSameNameBothPerson: string;
+  dialogueSameNameNote: string;
+  // 說法不同的提問（ADR 0012 決定 3、4）：提問、固定範本與它的三個選項、略過、選了之後的補充與另一種讀法。
+  // {newer}／{older}／{title} 是文件標題，{months} 是相差的月數（0 時不寫），{quote} 是證據，{choice} 是證據支持的假設
+  dialogueConflictAsk: string;
+  dialogueConflictTemplate: string;
+  dialogueChoiceChanged: string;
+  dialogueChoiceDifferent: string;
+  dialogueChoiceWrong: string;
+  dialogueSkip: string;
+  dialogueSkipped: string;
+  dialogueExplainHint: string;
+  dialogueSupplement: string;
+  dialogueEvidence: string;
+  dialogueRecorded: string;
+  dialogueRecordFailed: string;
+  dialogueAltTitle: string;
+  dialogueAltEvidence: string;
+  dialogueAltDate: string;
+  dialogueAltCompare: string;
+  dialogueAltChange: string;
+  dialogueAltKeep: string;
+  dialogueAltTurn: string;
+  // 人的理解的顯示（ADR 0012 決定 5、6）：回答卡片與原文欄的小標、同事的理解、作者（{role} 是角色，{date} 是日期），以及先作答前的說明
+  dialogueRecordTitle: string;
+  dialogueRecordPeers: string;
+  dialogueRecordMine: string;
+  dialogueRecordPeer: string;
+  dialogueRecordLocked: string;
+  // 待審的接縫（ADR 0011 決定 8，docs/design.md「待審的接縫」）：區塊標題、AI 在問你的小標、各種提問與選項。
+  // {name} 是項目的名稱（關係是「起點 —關係→ 終點」），{other} 是只差一個字的名稱，{count} 是候選數，{languages} 是缺少的語言
+  seamSection: string;
+  seamTitle: string;
+  seamAskCandidates: string;
+  seamAskNear: string;
+  seamAskNearDocument: string;
+  seamAskSameName: string;
+  seamAskTypo: string;
+  seamAskWording: string;
+  seamAskOther: string;
+  seamAskMissing: string;
+  seamOptionNew: string;
+  seamOptionSame: string;
+  seamOptionDifferent: string;
+  seamOptionKeep: string;
+  seamOptionFilled: string;
+  seamOptionExclude: string;
+  seamRelations: string;
+  seamExplainHint: string;
+  // 「已直接收錄」區（ADR 0011 決定 5）：區塊標題（{count} 是直接收錄的項目數）、說明、已撤回的數量、隨機抽查（{count} 是抽查的項目數）、
+  // 展開全部、合併對象（{name}）、撤回與理由（名稱錯了、關係用錯了、不該合併、不該收錄、其他）、「已撤回」標示與撤回後的短提示
+  seamAutoSection: string;
+  seamAutoHint: string;
+  seamAutoRetractedCount: string;
+  seamAutoSample: string;
+  seamAutoShowAll: string;
+  seamAutoMergedInto: string;
+  seamAutoRetract: string;
+  seamAutoReasonTitle: string;
+  seamAutoCancel: string;
+  seamAutoRetracted: string;
+  seamAutoToast: string;
+  seamReasonName: string;
+  seamReasonRelation: string;
+  seamReasonMerge: string;
+  seamReasonExclude: string;
+  seamReasonOther: string;
+  seamRequest: string;
+  seamHeld: string;
+  seamHeldNote: string;
+  seamReplyFrom: string;
+  seamRequestTitle: string;
+  seamRequestTurn: string;
+  seamRequestSent: string;
+  // AI 在問你的共用文字（AskCard.tsx；ADR 0011、0012 共用）：「都不是，我來說明」、說明欄、複述（{note} 是人寫的說明）、「輪到你」
+  commonExplain: string;
+  commonExplainLabel: string;
+  commonExplainSubmit: string;
+  commonRestate: string;
+  commonRestateYes: string;
+  commonRestateEdit: string;
+  commonYourTurn: string;
+  conflictDecisions: Record<ConflictDecision, string>;
+  conflictToast: string;
+  // 時間軸與原文面板的標示：{title} 換成另一段所屬文件的標題
+  conflictMarks: Record<PassageMarkKind, string>;
+  // 上傳頁的比對狀態
+  conflictTitle: string;
+  conflictWaiting: string;
+  conflictRunning: string;
+  conflictFound: string;
+  conflictFoundHint: string;
+  conflictDropped: string;
+  conflictUnchecked: string;
+  conflictUnrelated: string;
+  conflictFailed: string;
+  conflictRetry: string;
+  // 回答錯誤回報（ADR 0007 決定 7）：問答的「回報有錯」與表單（原因、選填說明、送出後的提示），
+  // 待審頁的「回報」分頁（{name} 換成回報者的角色，{date} 換成日期）、處理按鈕與處理後的標示、撤回的說明
+  reportButton: string;
+  reportCategory: string;
+  reportCategories: Record<ReportCategory, string>;
+  reportNote: string;
+  reportSubmit: string;
+  reportCancel: string;
+  reportSent: string;
+  reportFailed: string;
+  reviewReportsTab: string;
+  reportsEmpty: string;
+  reportsEmptyReason: string;
+  reportRefusal: string;
+  reportAnswer: string;
+  reportMeta: string;
+  reportMarkNotError: string;
+  reportMarkRetracted: string;
+  reportRetractHint: string;
+  reportResolutions: Record<ReportResolution, string>;
+  // 回報結果（#286，docs/design.md「日常工具」的「回報結果」）：回答下方與首頁「有更新」的狀態（pending、notError、retracted；
+  // meta 的 {role} 換成處理者的角色、{date} 換成處理日期），待審 › 回報的說明欄（noteInput、noteHint），首頁的一則（resolved、viewResult）
+  reportResult: {
+    pending: string;
+    notError: string;
+    retracted: string;
+    meta: string;
+    noteLabel: string;
+    noteInput: string;
+    noteHint: string;
+    reportAgain: string;
+    askAgain: string;
+    resolved: string;
+    viewResult: string;
+  };
+  tabEvals: string;
+  evalSettings: string;
+  evalSetName: string;
+  evalTopK: string;
+  evalMinScore: string;
+  evalUseSetB: string;
+  evalModelGrading: string;
+  evalInvalidSettings: string;
+  evalUploaded: string;
+  evalStart: string;
+  evalPreparing: string;
+  evalStop: string;
+  evalRunning: string;
+  evalProgress: string;
+  evalDone: string;
+  // 評測完成時總覽的狀態（{done}、{total}）
+  evalCompleted: string;
+  evalStopped: string;
+  evalAborted: string;
+  evalConfirmTitle: string;
+  evalConfirmCalls: string;
+  evalConfirmLimit: string;
+  evalConfirmStart: string;
+  evalCancel: string;
+  evalDownload: string;
+  evalSummary: string;
+  evalMetric: string;
+  evalThreshold: string;
+  evalSettingsValue: string;
+  // 手機收合的評測設定一列（#282）：每組的名稱與 topK，例如「A topK 5」
+  evalSettingsBrief: string;
+  evalAtLeast: string;
+  evalAtMost: string;
+  evalRate: string;
+  evalPercent: string;
+  evalLeakCount: string;
+  evalUngradable: string;
+  evalPass: string;
+  evalFail: string;
+  evalIncomplete: string;
+  evalNotApplicable: string;
+  evalResults: string;
+  evalOnlyDiff: string;
+  // 手機預設只列兩組不同的題目，沒有時的說明（#282）
+  evalNoDiff: string;
+  evalDiffers: string;
+  evalQuestion: string;
+  evalNotRun: string;
+  evalBankSummary: string;
+  evalNumber: string;
+  evalRole: string;
+  evalCategory: string;
+  evalOutcomeCorrect: string;
+  evalOutcomeIncorrect: string;
+  evalOutcomeRefused: string;
+  evalCitedPassages: string;
+  evalEmptyTitle: string;
+  evalEmptyReason: string;
+  evalEmptyAction: string;
+  // requires: "semantic" 的題目在 keyword-hash 時的結果欄
+  evalRequiresSemantic: string;
+  // 題目的 passageLanguage：{language} 是語言代碼
+  evalPassageLanguage: string;
+  evalAnswerText: string;
+  evalCitations: string;
+  evalNoCitations: string;
+  evalDropped: string;
+  evalKeyPoints: string;
+  evalGrade: string;
+  evalMetrics: Record<"citation" | "answer" | "leakage" | "refusal", string>;
+  evalCategories: Record<EvalCategory, string>;
+  evalExpect: Record<EvalExpect, string>;
+  evalVerdicts: Record<ModelGrade["verdict"], string>;
+  // 滲漏的原因：{id} 是段落或文件 id，{term} 是命中的禁止說法
+  evalLeaks: Record<Leak["kind"], string>;
+  // 品質報告（#210）：評測台的按鈕與報告的文字（docs/evals.md「品質報告」）
+  evalReport: Record<EvalReportText, string>;
+  // 標籤與內容之間的分隔（繁中用全形冒號）
+  colon: string;
+  // 進度（{done}、{total}）與括號附註（{text}、{note}）：符號依語言而定，不寫死在元件中
+  progress: string;
+  parenthetical: string;
+  // 拒答：「沒有資料」與「沒有權限」相同，不透露是否有看不到的文件
+  refusal: string;
+  // 拒答下方的「可以試試」（#192）：所有拒答共用，只依能不能上傳決定是否顯示上傳那一項；不提權限
+  refusalNextTitle: string;
+  refusalNextRephrase: string;
+  refusalNextAskPerson: string;
+  refusalNextUpload: string;
+  // 問題中有看得到的實體時（#285）：{name} 實體名稱；{owner} 負責人名稱、{role} 負責人的稱呼（knowledge-model.json 的 owner）
+  refusalNextGraph: string;
+  refusalNextOwner: string;
+  // 後面接「接著問」的第一題（按了填進輸入框）；沒有接著問時用 refusalNextRephraseName
+  refusalNextRephraseWith: string;
+  refusalNextRephraseName: string;
+  refusalGotoUpload: string;
+  // 桌機「可以試試」卡片的小標（#335，畫板 K-Answer）：在圖譜看、問負責的人、換個問法
+  refusalKindGraph: string;
+  refusalKindPerson: string;
+  refusalKindRephrase: string;
+  // 拒答時先確認要找的是哪一種（#377，docs/design.md「先確認要找的是哪一種」）：小標、提問、三個選項、略過、「輪到你」
+  refusalClarifyTitle: string;
+  refusalClarifyQuestion: string;
+  refusalClarifyPolicy: string;
+  refusalClarifyPersonal: string;
+  refusalClarifyPeople: string;
+  refusalClarifySkip: string;
+  refusalClarifyYourTurn: string;
+  // 選了之後的下一步：{owner} 是 refusalClarifyOwnerName 填好的負責人（{owner} 名稱、{name} 實體、{role} 稱呼），{name} 是可點的實體名稱；
+  // Owner／Entity 是問題中有看得到的實體時，Next 是沒有時。不提權限、等級、專案或身分
+  refusalClarifyPolicyOwner: string;
+  refusalClarifyPolicyNext: string;
+  refusalClarifyPersonalNext: string;
+  refusalClarifyPeopleOwner: string;
+  refusalClarifyPeopleEntity: string;
+  refusalClarifyPeopleNext: string;
+  refusalClarifyOwnerName: string;
+  // 不是拒答、但沒有任何有效引用的回答
+  uncited: string;
+  // 串流中斷或被截斷，保留已收到的內容
+  incomplete: string;
+  // 回答中斷或失敗時，以同一個問題再問一次（#227）
+  answerRetry: string;
+  // 問答的錯誤與額度（#280，docs/design.md「錯誤與額度」）
+  qaProblems: {
+    // 連不到伺服器時的頁面頂端提示（連線恢復後消失）
+    offline: string;
+    // prompt_too_long：這一題沒有送出，下一步是縮短問題
+    notSent: string;
+    shorten: string;
+    // 接近上限時的字數，參數 {count}、{max}
+    charCount: string;
+    // 今天用完了：只停用提問
+    limitBrowse: string;
+    // 需要管理者
+    adminTitle: string;
+    adminDetails: string;
+    reload: string;
+    // 桌機錯誤卡片：可以重新提問時的說明（#335，畫板 I-States）
+    kept: string;
+  };
+  errors: Record<AskErrorType, string>;
+  // 不認得的錯誤類型
+  unknownError: string;
+  // 首頁（#283，docs/design.md「日常工具」的「首頁」）：問候、可見範圍、常見問題、主管的「等你處理」、問過的問題
+  home: {
+    morning: string;
+    afternoon: string;
+    evening: string;
+    scope: string;
+    commonQuestions: string;
+    // 「等你處理」（#331）：每則一列，{count} 是筆數、{time} 是最早一則回報的時間；Note 是列的副標
+    waitingTitle: string;
+    waitingDocuments: string;
+    waitingConflicts: string;
+    waitingReports: string;
+    waitingEarliest: string;
+    // 手機的數字卡（#356，畫板 K-Mobile）：數字下方的名稱；earliestShort 的 {time} 是最早一則回報的相對時間
+    pendingDocuments: string;
+    pendingReports: string;
+    earliestShort: string;
+    waitingDocumentsNote: string;
+    waitingConflictsNote: string;
+    handleReports: string;
+    startReview: string;
+    waitingNone: string;
+    askedTitle: string;
+    askedNote: string;
+    askAgain: string;
+    askedEmpty: string;
+    // 最近新增的文件、最近看過的實體
+    recentDocumentsTitle: string;
+    recentDocumentsEmpty: string;
+    viewedTitle: string;
+    viewedEmpty: string;
+    // 空狀態的標題；viewedEmpty、updatesEmpty 是原因（#331）
+    viewedEmptyTitle: string;
+    // 「最近看過」下方的說明
+    viewedNote: string;
+    // 一般員工的「有更新」（#284）：自己上傳的文件的審核結果；動作是「在圖譜中查看」（viewInGraph）或「查看進度」
+    updatesTitle: string;
+    updatesEmpty: string;
+    updatesEmptyTitle: string;
+    viewProgress: string;
+    // 「以前答不出來，現在可能答得出來了」（#408）：首頁頂端的一句話（{time} 提問的相對時間、{question} 問題）與三點時間線
+    // （你問了 → 帶來變化的文件 → 今天）；問過的問題中那一題的兩行（{document} 是可點的文件標題）與「知道了」
+    recallTitle: string;
+    recallText: string;
+    recallTimeline: string;
+    recallAsked: string;
+    recallToday: string;
+    maybeThen: string;
+    maybeNow: string;
+    acknowledge: string;
+    // 問過的問題中與頂端（A2）同一題的小標示（#413）
+    maybeBadge: string;
+  };
+  // 我的上傳（#284，docs/design.md「日常工具」的「我的上傳」）：上傳頁的兩段、每份的狀態（status*）、送出後的四步進度（step*）、
+  // 每一項的結果與重新上傳修正版
+  // 展示模式的劇本（#260，docs/design.md「展示模式」的「版面」）
+  presentation: {
+    script: string;
+    scriptProgress: string;
+    scriptTotal: string;
+    scriptAsked: string;
+    // 身分對照（#261）：頂端列的按鈕、還沒有題目、已用完提問次數、還沒送出的欄、目前身分的欄
+    compare: string;
+    compareEmpty: string;
+    compareLimited: string;
+    compareWaiting: string;
+    compareCurrent: string;
+    // 圖譜的實體卡片（#349，畫板 H-Graph）：「出現在 N 份文件」
+    entityDocuments: string;
+  };
+  myUploads: {
+    tabNew: string;
+    tabMine: string;
+    sections: string;
+    empty: string;
+    statusUploaded: string;
+    statusInReview: string;
+    statusApproved: string;
+    statusPartlyRejected: string;
+    statusRejected: string;
+    stepsLabel: string;
+    stepUploaded: string;
+    stepExtracted: string;
+    stepReview: string;
+    stepPublished: string;
+    approvalNote: string;
+    itemCounts: string;
+    entities: string;
+    relations: string;
+    noItems: string;
+    reupload: string;
+    reuploadNotice: string;
+    submitted: string;
+    detail: string;
+    viewSource: string;
+    hideSource: string;
+    extractSummary: string;
+    noteInReview: string;
+    noteApproved: string;
+    notePartlyRejected: string;
+    noteRejected: string;
+  };
+}

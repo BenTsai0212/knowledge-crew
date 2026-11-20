@@ -1,0 +1,155 @@
+# 落地新客戶步驟
+
+給 coding agent 照做的步驟：依客戶的訪談與資料盤點，在 `clients/<名稱>/` 做出一套虛構的客戶資料，通過所有檢查與評測，成為可以展示的 demo。目標是 **1～2 個工作天**，而且**不修改 `client/` 以外的程式**。
+
+每一步都有「驗收」，全部通過才進下一步。標 **⏸ 檢查點** 的地方要停下來等人確認。
+
+## 開始之前
+
+| 項目 | 內容 |
+| --- | --- |
+| 輸入 | 一張用「新客戶」Issue 範本建立的 Issue，內容包括[需求確認清單](requirements-checklist.md)的摘要、[資料盤點表](data-inventory.md)、語言、品牌色是否可用、時程 |
+| 方式 | 本機以 `/new-client <Issue 編號>` 執行，或在 Issue 加上 `agent:ready` 交給 runner（`/work-on-issue`） |
+| 不能做的事 | 修改 `client/`（參考情境）、`app/`、`worker/`、`e2e/`、`scripts/`、Schema；放入任何真實的人名、聯絡方式、金額或文件內容 |
+| 發現程式不夠用時 | 停下來回報，另開 Issue；不在客戶資料中繞過 |
+
+`<名稱>` 只能用小寫英數與連字號（例如 `acme-demo`）。agent 的檢查一律以參數指定客戶：`npm run check:client -- clients/<名稱>/`、`npm run check:clients <名稱>`；`KK_CLIENT=<名稱>` 只用在由人執行的 `dev`／`build`（第 8 步）。
+
+## 1. 建立客戶資料夾
+
+1. 從 `client/` 複製，不含 `schema/`（Schema 一律用 `client/schema/`）：
+
+   ```
+   rsync -a --exclude schema client/ clients/<名稱>/
+   ```
+
+2. 刪除複製過來的參考情境資料：`data/documents/` 的所有文件、`entities.json` 與 `relations.json` 的內容、`evals/questions.json` 的題目、`scenarios.json` 的情境。保留檔案結構，下面的步驟會重新填入。
+
+**驗收**：`clients/<名稱>/` 的結構與 `client/` 相同（少了 `schema/`）。
+
+## 2. 基本設定（`client.json`）
+
+- `displayName`：使用虛構名稱；客戶書面同意後才可以用真實名稱（[資料安全說明](data-security.md)）。
+- `languages`、`defaultLanguage`：依需求確認清單 D1。已驗證的語言是 `zh-TW`、`en`、`ja`；其他語言先依[新增語言步驟](add-language.md)判斷要改什麼。
+- `model`、`retrieval`、`upload`、`evals.thresholds`：先用預設值，評測後才依結果調整。
+- `conflicts.enabled`：客戶有新舊說法的需求（B6）時設為 `true`。
+
+**驗收**：`npm run check:client -- clients/<名稱>/` 只剩下尚未填寫的檔案的錯誤。
+
+## 3. 權限與知識模型
+
+依需求確認清單 B、C 段與資料盤點表。
+
+**`access.json`**
+
+- 可見等級：依客戶的分級（C1），`rank` 越大越機密，每級選一個顏色。
+- 專案：只列需要「限定專案成員才能看」的專案（C2）。
+- 角色：依 C3、C4。至少要有：
+  - 一個 `canReview: true` 的角色（主管）：可以看到最多內容、使用待審與評測台；
+  - 一個權限較少、`canReview: false` 的角色：權限示範與越權測試需要它；
+  - 建議再有一個只看公開內容的角色（訪客）。
+
+**`knowledge-model.json`**
+
+- 實體類型：依 B2，通常 3～6 種。每種選一個顏色，淺色與深色背景的對比都要 ≥ 3:1（`check:client` 會檢查），並從固定圖示集選一個圖示（`icon`，同一個客戶內不重複，`check:client` 會檢查；[docs/client-config.md](../client-config.md)「`entityTypes[]`」）。
+- 關係類型：依 B3。每種關係寫上「接著問」的問句範本（`questions.outgoing`、`questions.incoming`，每種語言一句），寫成該語言自然的問句；參數只有 `{name}`（必填）與 `{type}`，規則見 [docs/client-config.md](../client-config.md)「問句範本」。
+- 合併策略：預設 `review`；只有名稱在客戶內部確定唯一的類型（例如部門）才用 `auto`（B5）。
+
+**示範情境設計**：依 A3、A4，設計 3～5 個情境（每個情境一個角色、2～4 個預設問題），先寫成清單，答案段落在第 5 步才填。至少一個情境要能示範「同一個問題，不同身分看到不同答案」（每個情境只有一個角色，可以設計一個高權限的情境，示範時切換身分）。預設問題在 `client.json` 的每種語言都要有問題文字；答案段落的要求依 `retrieval.provider` 而不同（`npm run check:clients` 檢查，[docs/client-config.md](../client-config.md)「客戶檢查」）：
+
+- **`keyword-hash`**：每種語言都要有同語言的答案段落，所以只有一種語言的文件不能當預設問題的答案來源（可以用在評測題庫）。
+- **語意向量**（`multilingual-e5-small`）：事實可以只寫在一種語言，以其他語言發問就是跨語言檢索；每題至少一種語言有同語言的答案段落。CI 與 Playwright 不下載模型，以 `keyword-hash` 檢查，所以 Playwright 用到的兩題（第一個情境的第一題、第一個角色不是 `access.json` 第一個角色的題目）答案段落要有預設語言的（[docs/testing.md](../testing.md)「Playwright」）。範例：`clients/kestrova-demo/`（#175）。
+
+**驗收**：`npm run check:client -- clients/<名稱>/` 對 `access.json`、`knowledge-model.json` 沒有錯誤。
+
+### ⏸ 檢查點 1：權限與情境設計
+
+停下來，在 Issue 留言（`## agent 停止`，加上 `blocked`），內容是：
+
+- 可見等級、專案、角色的表格，以及每個角色看得到什麼
+- 實體與關係類型
+- 示範情境清單（情境、角色、預設問題）
+- 計畫建立的文件清單（依資料盤點表：文件類型、語言、等級、專案）
+
+等人以 `## 決定` 確認或修改後才繼續。**權限是後面所有工作的基礎，這裡錯了要全部重做。**
+
+## 4. 虛構資料集（`data/`）
+
+格式見 [docs/dataset.md](../dataset.md)。依檢查點 1 確認的文件清單撰寫。
+
+- **份量**：每種文件類型 1～3 份，總共約 12～20 份；每種語言都要有。
+- **寫法**：模仿客戶提供的樣本或描述的寫法，內容全部虛構。人名、專案、金額、公司名稱都用虛構的；組合出來的名稱要確認不是真實存在的公司或人物。
+- **段落**：每段不超過 `passageMaxChars`；比所屬文件更機密的段落要個別標示等級。
+- **一定要有的示範素材**：
+  - 權限：同一個主題在不同等級各有內容（例如公開的介紹、內部的進度、機密的金額）
+  - 專案：至少一份只有專案成員看得到的文件
+  - 新舊說法：客戶有這個需求時，放一組說法不同、日期不同的段落
+  - 同名：客戶提到同名的人或物時（B5），放一組
+- **實體與關係**：每個實體的 `names` 要涵蓋所有語言；每個實體與關係都要有出處段落。
+- **跨語言檢索依 `retrieval.provider`**：
+  - `keyword-hash` 不支援跨語言：每個預設問題在每種語言都要有答案段落；評測題庫的題目可以只出一種語言，但答案段落要和問題同語言。
+  - 語意向量支援跨語言：同一個事實可以只寫在一種語言（例如依據點分語言），預設問題依第 3 步的規則。
+- **維護者不讀的語言**：檢查點附繁中說明（題意、答案事實），該語言的用語由能讀的人另外審查；在 `data/README.md` 註明是否經過母語者校閱（#175 的日文）。
+
+**驗收**：`npm run check:clients <名稱>` 的設定檢查與資料集檢查都通過。
+
+## 5. 示範情境與評測題庫
+
+1. **`scenarios.json`**：填入檢查點 1 確認的情境，每個預設問題列出答案段落（該情境的角色要看得到）。`npm run check:clients` 會以每種語言檢索預設問題，同語言的答案段落要在前 K 名內（`app/src/retrieval/scenarios.target.test.ts`）；檢索一律用 `keyword-hash`，語意向量的客戶只檢查有同語言答案段落的語言。
+2. **`evals/questions.json`**：依[評測題庫建立步驟](eval-question-bank.md)出題：
+   - 情境題 8 題以上、回答題（`expect: "answer"`）15 題以上；
+   - 權限題至少 4 組（同一個問題，一個角色能答、另一個拒答）；
+   - 題庫外 3 題以上、套話 2 題以上、新舊說法每種語言 1 題以上（有這個需求時）；
+   - 跨語言題只在語意向量的客戶放：依[評測題庫建立步驟](eval-question-bank.md)標記 `requires: "semantic"`，每個語言方向數題；`keyword-hash` 的客戶不放；
+   - 答案段落列出回答時合理會引用的**所有**相關段落；禁止內容只列該角色看不到的資料內容。
+
+**驗收**：`npm run check:clients <名稱>` 全部通過（含題庫與 oracle 可見範圍的檢查、build）。
+
+### ⏸ 檢查點 2：資料集與題庫
+
+停下來留言，內容是：
+
+- 文件清單（標題、語言、等級、專案、段落數）
+- 示範素材各放在哪裡（權限、專案、新舊說法、同名）
+- 題庫表格（問題、角色、語言、類別、預期結果、參考答案）
+
+請人確認內容像這個客戶、題目合理（特別是權限題是否符合客戶的實際規定），**再花費用跑真實評測**。
+
+## 6. 主題與介面文字
+
+- **`theme.json`**：客戶同意使用品牌色時才換成品牌色，否則保留中立的預設值。淺色與深色都要通過 `check:client` 的對比檢查；品牌色對比不足時調整明暗，不關閉檢查。
+- **`i18n/`**：通常不用改。客戶有慣用說法（例如稱「同仁」而非「員工」）時才修改，只寫要改的鍵：沒寫的鍵用參考情境 `client/i18n/` 的文字（[docs/client-config.md](../client-config.md)「客戶的翻譯檔」）。參數要與參考情境一致；`client/` 沒有的語言要寫全部的鍵，否則顯示預設語言的文字並有警告。
+  - `global_daily_limit` 錯誤的翻譯文字提到「線上試用」「本機執行」，依客戶的情境修改。
+  - `demoAccessCodeHint`、`demoQaNotice`、`demoUploadNotice` 三個鍵（沒寫時用 `client/` 的文字）只在線上 demo（`VITE_ONLINE_DEMO=1`）顯示（[docs/qa.md](../qa.md)「線上 demo」）。
+
+**驗收**：`npm run check:clients <名稱>` 通過。
+
+## 7. 端對端測試
+
+推送分支後執行 Playwright（`gh workflow run e2e.yml --ref <分支>`），選定客戶那一格要通過。有測試被略過（skip）時，在 Issue 列出原因並說明是否合理；通常是角色設計缺少某種身分，回到第 3 步補上。
+
+選用語意向量的客戶，Playwright 擋下模型下載，頁面降級到 `keyword-hash` 並顯示降級提示（[docs/testing.md](../testing.md)「Playwright」）。降級後失敗的測試要找出原因：#175 是評測台在降級時沿用語意向量的 `minScore`（#178）。需要改 `app/`、`e2e/` 時停下來回報、另開 Issue，不以略過測試的方式通過。
+
+**驗收**：Playwright 的客戶格通過，略過的測試都有合理原因。
+
+## 8. 真實金鑰評測（由人執行）
+
+這一步需要真實金鑰，由人在本機執行；agent 準備好指令與記錄表格後停下。
+
+1. `.dev.vars` 的 `DAILY_LIMIT` 調到兩次評測合計需要的次數。每次需要的次數以評測台確認視窗的「最多 N 次呼叫」為準（按「開始評測」時顯示，可以先看次數再取消）；加上設定 B 或模型評分時次數較多。改了 `.dev.vars` 要重新啟動 `npx wrangler dev`。
+2. `KK_CLIENT=<名稱> npm run build`，再 `npx wrangler dev`，打開 `/?tools=evals`（沒有這個參數時不顯示評測台，[docs/evals.md](../evals.md)「開啟評測台」），以 `canReview` 的角色打開評測台。選用語意向量時，等「模型下載中」的提示結束，確認沒有降級提示（[驗收指標](acceptance-metrics.md)第 6 點）。
+3. 依[驗收指標](acceptance-metrics.md)第 2、3 點跑兩次：第 1 次預設設定＋關鍵重點評分；第 2 次再跑一次，或改用模型評分跑一次，兩次都要達到門檻。要比較檢索設定時，可以在第 2 次加上設定 B 並排（驗收指標「兩組檢索設定的差異」），不是必要。
+4. 記錄四個指標、呼叫次數與費用，以及每題未通過的原因。檢查點 3 通過後，結果回填到客戶的 `evals/README.md`（例如 `clients/kestrova-demo/evals/README.md`「驗收結果」）。
+
+未達門檻時，依[評測題庫建立步驟](eval-question-bank.md)的處理表修正（補答案段落、補同義說法、改題目、改資料集的寫法），**不放寬標準**，再跑一次。
+
+### ⏸ 檢查點 3：交付判斷
+
+把兩次評測的結果、修正紀錄與畫面截圖（淺色、深色）貼在 Issue，由人判斷是否交付。**權限滲漏不是 0 就不能交付。**
+
+## 完成
+
+- 第 7 步完成後開 PR（`Refs` 客戶的 Issue，不用 `Closes`），描述附檢查點 1、2 的紀錄、`check:clients` 與 Playwright 的結果，以及第 8 步的指令與記錄表。檢查點 3 通過後才合併 PR、關閉 Issue。
+- 需要改共用的檢查、或資料量大到要拆 PR 時，在計畫中提出拆法，依決定進行。#175 拆成 4 個 PR：共用檢查、客戶資料（第 1～4 步與預設問題）、完整題庫、文件與評測結果；前三個用 `Refs`，經人決定先合併，檢查點 3 通過後最後一個才用 `Closes`。
+- 部署方式另行決定（`worker/README.md`「正式部署」）；本步驟只做到可以在本機展示。
+- 在客戶專屬的 fork 中，`SENSITIVE_NAMES` 由該 fork 自己設定；客戶同意使用的名稱不要放進清單。
