@@ -251,6 +251,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
+- `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/sections.ts`：子導覽的位置與名稱的鍵、畫面元件的 props
 - `ui/today.ts`：「今天」的資料整理（`readToday()`：待驗收、進行中、建議少看；測試在 `today.test.ts`）
 - `ui/TodayView.css`：「今天」畫面的三個區塊
