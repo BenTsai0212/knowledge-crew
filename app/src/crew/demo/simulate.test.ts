@@ -23,7 +23,7 @@ describe("pickReply", () => {
     expect(pickReply(demo, "juniper", "ui", 1)).toBe(first);
     expect(pickReply(demo, "juniper", "ui", 2)).toBe(second);
     expect(pickReply(demo, "juniper", "ui", 5)).toBe(second);
-    expect(pickReply(demo, "basil", "docs", 1)).toBeNull();
+    expect(pickReply(demo, "basil", "test", 1)).toBeNull();
   });
 });
 
@@ -57,8 +57,8 @@ describe("simulateSubmission", () => {
   });
 
   it("沒有預先回覆的員工 × 工作類型拋錯，不寫入", async () => {
-    await expect(simulateSubmission(db, "manager", "b10", demo, "zh-TW")).rejects.toThrow(/no prepared reply/);
-    expect(await getAssignmentWorks(db, "manager", "b10")).toHaveLength(1);
+    await expect(simulateSubmission(db, "manager", "t02", demo, "zh-TW")).rejects.toThrow(/no prepared reply/);
+    expect(await getAssignmentWorks(db, "manager", "t02")).toHaveLength(1);
   });
 
   it("staff 被拒；看不到的交辦（guest、沒有身分）拋錯；都沒有留下資料", async () => {
