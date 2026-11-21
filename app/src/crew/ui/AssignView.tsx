@@ -55,7 +55,6 @@ export function AssignView({ db, identity, language }: CrewScreenProps) {
   }
   return (
     <div className="crew-assign">
-      <h2 className="crew-assign__title">{t.title}</h2>
       {data.canReview ? (
         <AssignForm data={data} t={t} language={language} onSubmit={(input) => submitAssignment(db, identity, input).then(reload)} />
       ) : (

@@ -103,7 +103,7 @@ export function TrustView({ db, identity, language }: CrewScreenProps) {
                   </button>
                 )}
                 {row.level === "light" && (
-                  <button type="button" disabled={busy} onClick={() => write(row, () => revokeRelax(db, identity, row))}>
+                  <button type="button" className="secondary" disabled={busy} onClick={() => write(row, () => revokeRelax(db, identity, row))}>
                     {saving === key ? t.saving : t.revoke}
                   </button>
                 )}
