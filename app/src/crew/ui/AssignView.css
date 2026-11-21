@@ -5,11 +5,6 @@
   gap: 1rem;
 }
 
-.crew-assign__title {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
 .crew-assign > p,
 .crew-assign__block h3,
 .crew-assign__block p {

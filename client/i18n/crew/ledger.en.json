@@ -1,5 +1,4 @@
 {
-  "title": "Work ledger",
   "loading": "Loading…",
   "loadFailed": "The work ledger could not be loaded. Reload the page and try again.",
   "empty": "There are no records to show.",

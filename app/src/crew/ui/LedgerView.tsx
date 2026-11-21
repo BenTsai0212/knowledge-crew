@@ -76,7 +76,6 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
   const shown = filterLedger(events, { employeeId, workTypeId });
   return (
     <div className="crew-ledger">
-      <h2 className="crew-ledger__title">{t.title}</h2>
       <div className="crew-ledger__filters">
         <label>
           {t.filterEmployee}

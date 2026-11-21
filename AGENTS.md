@@ -4,7 +4,7 @@
 
 ## 0. 專案設定
 - Repo：`BenTsai0212/knowledge-crew`；看板：GitHub Project #13（https://github.com/users/BenTsai0212/projects/13）
-- 啟用模組：核心、高風險、雲端執行（試驗中；`agent:ready` 觸發已實測，`changes-requested` 觸發待實測；見 `docs/workflow/modules.md`）；自動化（本機 runner）不啟用：與雲端執行擇一（modules.md「雲端執行」）
+- 啟用模組：核心、高風險、雲端執行（試驗中；`agent:ready`、`changes-requested` 觸發都已實測；見 `docs/workflow/modules.md`）；自動化（本機 runner）不啟用：與雲端執行擇一（modules.md「雲端執行」）
 - 上游：`BenTsai0212/knowledge-kit`，同步依 `docs/crew/adr/0002-knowledge-kit-upstream.md`（merge commit，不可 squash）；fork 後要改的地方見 `docs/workflow/fork.md`
 - 流程語言：zh-TW（`zh-TW` 或 `en`；決定控制標題與 Issue、PR、commit 的語言，對照表見 `docs/workflow/headings.md`）
 - 憲法版本：v0.39（`docs/workflow/constitution.md`）

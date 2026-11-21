@@ -1,4 +1,5 @@
-/* 「工作與驗收」畫面（#39）：寬螢幕左側清單、右側驗收面板；窄螢幕清單在上、面板在下。
+/* 「工作與驗收」畫面（#39）：寬螢幕左側清單、右側驗收面板；窄螢幕面板在上、清單在下（#50），
+   選了一筆不必捲過整份清單。
    顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
 .crew-review {
   display: grid;
@@ -7,9 +8,28 @@
   align-items: start;
 }
 
+.crew-review__panel,
+.crew-review__hint {
+  order: -1;
+}
+
+/* 點選後捲到面板時，面板的標題不被 sticky 的頂端列蓋住（沿用 app.css 的 7rem） */
+.crew-review__panel {
+  scroll-margin-top: 7rem;
+}
+
 @media (min-width: 900px) {
   .crew-review {
     grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  }
+
+  .crew-review__panel,
+  .crew-review__hint {
+    order: 0;
+  }
+
+  .crew-review__panel {
+    scroll-margin-top: 0;
   }
 }
 

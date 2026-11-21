@@ -1,6 +1,6 @@
-// 「工作與驗收」畫面（#39）：左側（窄螢幕在上方）是工作清單，選一筆後顯示驗收面板。
+// 「工作與驗收」畫面（#39）：左側是工作清單（窄螢幕在面板之下，#50），選一筆後顯示驗收面板。
 // 資料整理在 review.ts；面板只依 reviewFocus() 的結果呈現。「通過」「退回」只給能驗收的身分，寫入後重新讀取。
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
@@ -33,6 +33,9 @@ export function ReviewView({ db, identity, language }: CrewScreenProps) {
   const [saveFailed, setSaveFailed] = useState(false);
   // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆
   const selectedRef = useRef<string | null>(null);
+  // 在清單選了一筆之後把面板捲進畫面（窄螢幕面板在清單之上；已在畫面上時不捲動）
+  const panelRef = useRef<HTMLElement>(null);
+  const scrollPending = useRef(false);
 
   const load = useCallback(
     async (want: string | null): Promise<Data> => {
@@ -72,8 +75,16 @@ export function ReviewView({ db, identity, language }: CrewScreenProps) {
 
   const select = (id: string) => {
     setSaveFailed(false);
+    scrollPending.current = true;
     void refresh(id);
   };
+
+  useEffect(() => {
+    if (state.kind !== "ready" || !scrollPending.current) return;
+    scrollPending.current = false;
+    const panel = panelRef.current;
+    if (panel && !topInView(panel)) panel.scrollIntoView?.({ block: "start" });
+  }, [state]);
 
   const decide = async (input: Parameters<typeof createReview>[2]) => {
     setSaving(true);
@@ -105,7 +116,7 @@ export function ReviewView({ db, identity, language }: CrewScreenProps) {
         <ListGroup title={t.recent} count={t.recentCount} empty={t.recentEmpty} items={list.recent} {...{ selected, select, t, language }} />
       </nav>
       {panel ? (
-        <Panel key={panel.current.id} panel={panel} t={t} language={language} saving={saving} saveFailed={saveFailed} decide={decide} />
+        <Panel key={panel.current.id} anchor={panelRef} panel={panel} t={t} language={language} saving={saving} saveFailed={saveFailed} decide={decide} />
       ) : (
         <p className="muted crew-review__hint">{t.selectHint}</p>
       )}
@@ -159,11 +170,19 @@ function ListGroup({ title, count, empty, items, selected, select, t, language }
   );
 }
 
+// 面板的頂端是否在畫面上、且不被 sticky 的頂端列蓋住（scroll-margin-top 是頂端列讓出的高度，#50）
+function topInView(element: HTMLElement): boolean {
+  const top = element.getBoundingClientRect().top;
+  const margin = Number.parseFloat(getComputedStyle(element).scrollMarginTop) || 0;
+  return top >= margin && top < window.innerHeight;
+}
+
 const itemRef = (item: WorkListItem, t: Texts) => fill(t.itemRef, { repo: item.repoFullName, issue: item.issueNumber, pr: item.prNumber });
 const itemMeta = (item: WorkListItem, t: Texts, language: LanguageCode) =>
   fill(t.itemMeta, { employee: item.employee.displayName, workType: workTypeLabel(item.workTypeId, language), round: item.round });
 
 interface PanelProps {
+  anchor: RefObject<HTMLElement | null>;
   panel: ReviewPanel;
   t: Texts;
   language: LanguageCode;
@@ -172,7 +191,7 @@ interface PanelProps {
   decide: (input: Parameters<typeof createReview>[2]) => Promise<void>;
 }
 
-function Panel({ panel, t, language, saving, saveFailed, decide }: PanelProps) {
+function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: PanelProps) {
   const { item, focus, current, earlier } = panel;
   // 退回的表單只存在元件 state；換一筆工作時（key 改變）重設
   const [returning, setReturning] = useState(false);
@@ -180,7 +199,7 @@ function Panel({ panel, t, language, saving, saveFailed, decide }: PanelProps) {
   const [note, setNote] = useState("");
   const trimmed = note.trim();
   return (
-    <article className="card crew-review__panel" aria-labelledby="crew-review-title">
+    <article ref={anchor} className="card crew-review__panel" aria-labelledby="crew-review-title">
       <header className="crew-review__head">
         <h3 id="crew-review-title">{item.title}</h3>
         <p className="muted crew-review__ref">{itemRef(item, t)}</p>
@@ -276,7 +295,7 @@ function Panel({ panel, t, language, saving, saveFailed, decide }: PanelProps) {
               <button type="button" disabled={saving} onClick={() => decide({ workId: current.id, verdict: "accepted" })}>
                 {saving ? t.saving : t.accept}
               </button>
-              <button type="button" disabled={saving} onClick={() => setReturning(true)}>
+              <button type="button" className="secondary" disabled={saving} onClick={() => setReturning(true)}>
                 {t.return}
               </button>
             </div>
@@ -304,7 +323,7 @@ function Panel({ panel, t, language, saving, saveFailed, decide }: PanelProps) {
                 >
                   {saving ? t.saving : t.confirmReturn}
                 </button>
-                <button type="button" onClick={() => setReturning(false)}>
+                <button type="button" className="secondary" onClick={() => setReturning(false)}>
                   {t.cancel}
                 </button>
               </div>
