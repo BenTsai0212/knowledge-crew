@@ -41,7 +41,6 @@ export function TodayView({ db, identity, language }: CrewScreenProps) {
   const count = (template: string, n: number) => fill(template, { count: n }, language);
   return (
     <div className="crew-today">
-      <h2 className="crew-today__title">{t.title}</h2>
       <section className="card crew-today__block" aria-labelledby="crew-today-awaiting">
         <h3 id="crew-today-awaiting">{t.awaitingReview}</h3>
         <p className="muted">

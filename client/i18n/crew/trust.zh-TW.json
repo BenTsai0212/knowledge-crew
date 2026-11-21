@@ -1,0 +1,21 @@
+{
+  "loading": "讀取中…",
+  "loadFailed": "讀不到信任的資料，請重新整理頁面再試一次。",
+  "empty": "目前沒有看得到的員工與工作。",
+  "rowTitle": "{employee} 的「{workType}」",
+  "dotsLabel": "最近 {count} 次驗收（舊到新）",
+  "dotOk": "通過",
+  "dotWrong": "做錯了",
+  "dotNeutral": "其他退回（不影響信任）",
+  "dotsSummary": "通過 {ok}・做錯了 {wrong}・其他退回 {neutral}",
+  "dotsNone": "還沒有驗收紀錄。",
+  "levelLabel": "目前層級",
+  "levelItem": "逐項看",
+  "levelLight": "少看",
+  "lastReset": "{date} 因做錯了改回逐項看",
+  "suggestion": "最近 {count} 次都沒有做錯，建議少看；要你同意才會生效。",
+  "agreeRelax": "同意少看",
+  "revoke": "收回",
+  "saving": "儲存中…",
+  "saveFailed": "沒有儲存成功，請再試一次。"
+}

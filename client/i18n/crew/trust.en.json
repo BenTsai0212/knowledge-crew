@@ -1,0 +1,21 @@
+{
+  "loading": "Loading…",
+  "loadFailed": "Trust data could not be loaded. Reload the page and try again.",
+  "empty": "No employees or work are visible.",
+  "rowTitle": "{employee} · “{workType}”",
+  "dotsLabel": "{count, plural, one {Last # review} other {Last # reviews}} (oldest to newest)",
+  "dotOk": "Passed",
+  "dotWrong": "Mistake",
+  "dotNeutral": "Other return (does not affect trust)",
+  "dotsSummary": "Passed {ok} · Mistakes {wrong} · Other returns {neutral}",
+  "dotsNone": "No reviews yet.",
+  "levelLabel": "Current level",
+  "levelItem": "Review every item",
+  "levelLight": "Lighter review",
+  "lastReset": "Moved back to reviewing every item on {date} after a mistake",
+  "suggestion": "{count, plural, one {No mistakes in the last # review} other {No mistakes in the last # reviews}}; lighter review is suggested. Nothing changes until you agree.",
+  "agreeRelax": "Agree to lighter review",
+  "revoke": "Revoke",
+  "saving": "Saving…",
+  "saveFailed": "This could not be saved. Try again."
+}

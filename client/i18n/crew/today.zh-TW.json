@@ -1,5 +1,4 @@
 {
-  "title": "今天",
   "loading": "讀取中…",
   "loadFailed": "讀不到今天的資料，請重新整理頁面再試一次。",
   "awaitingReview": "待驗收",
@@ -11,7 +10,7 @@
   "inProgressCount": "{count} 件交辦進行中",
   "inProgressEmpty": "目前沒有進行中的交辦。",
   "relaxSuggested": "建議少看",
-  "relaxSuggestedItem": "{employee}的「{workType}」最近 {count} 次都沒有做錯，可以考慮少看；要你同意才會生效。",
+  "relaxSuggestedItem": "{employee} 的「{workType}」最近 {count} 次都沒有做錯，可以考慮少看；要你同意才會生效。",
   "relaxSuggestedEmpty": "目前沒有建議少看的工作。",
   "assignmentRef": "{repo}#{issue}",
   "assignmentMeta": "{employee}（{roleNote}）・{workType}",

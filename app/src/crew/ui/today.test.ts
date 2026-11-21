@@ -100,4 +100,11 @@ describe("「今天」的文字", () => {
     expect(workTypeLabel("ui", "en")).toBe("UI");
     expect(workTypeLabel("design", "en")).toBe("design");
   });
+
+  it("建議少看：英文名字與中文之間留半形空格；不再有與子導覽重複的「今天」標題", () => {
+    expect(fill(crewStrings("today", "zh-TW").relaxSuggestedItem, { employee: "Basil", workType: workTypeLabel("docs", "zh-TW"), count: 10 })).toMatch(
+      /^Basil 的「文件」最近 10 次/,
+    );
+    for (const language of clientConfig.client.languages) expect(crewStrings("today", language)).not.toHaveProperty("title");
+  });
 });
