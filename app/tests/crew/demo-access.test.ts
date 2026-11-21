@@ -1,4 +1,4 @@
-// 虛構資料匯入後，各身分讀到的範圍符合 RLS（#29）：staff 只看到青翼專案的 repo（lantern-notes）。
+// 虛構資料匯入後，各身分讀到的範圍符合 RLS（#29）：staff 只看到青翼專案的來源（客服信箱、官方社群帳號）。
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientConfig } from "../../src/client/load";
 import { crewMigrations } from "../../src/crew/db/migrate";
@@ -36,31 +36,31 @@ const read = (identity: string | null) =>
   });
 
 describe("虛構資料的讀取範圍", () => {
-  it("manager：兩個 repo、26 筆交辦", async () => {
+  it("manager：四個來源、44 筆交辦", async () => {
     expect(await read("manager")).toEqual({
-      sources: ["example-org/harbor-docs", "example-org/lantern-notes"],
-      employees: ["basil", "juniper"],
-      assignments: { "basil/docs": 11, "basil/test": 2, "juniper/ui": 13 },
-      total: 26,
-      works: 30,
-      reviews: 28,
-      levelDecisions: ["d01"],
+      sources: ["Company KB", "Social account", "Support inbox", "example-org/company-site"],
+      employees: ["juniper", "linden", "rowan", "sorrel"],
+      assignments: { "juniper/dev": 6, "linden/knowledge": 13, "rowan/support": 14, "sorrel/content": 11 },
+      total: 44,
+      works: 52,
+      reviews: 48,
+      levelDecisions: ["d01", "d02"],
     });
   });
 
-  it("staff：只看到 lantern-notes 的 15 筆交辦（Juniper × ui 13、Basil × test 2）", async () => {
+  it("staff：只看到青翼專案的 25 筆交辦（Rowan × support 14、Sorrel × content 11）", async () => {
     expect(await read("staff")).toEqual({
-      sources: ["example-org/lantern-notes"],
-      employees: ["basil", "juniper"],
-      assignments: { "basil/test": 2, "juniper/ui": 13 },
-      total: 15,
-      works: 17,
-      reviews: 16,
+      sources: ["Social account", "Support inbox"],
+      employees: ["juniper", "linden", "rowan", "sorrel"],
+      assignments: { "rowan/support": 14, "sorrel/content": 11 },
+      total: 25,
+      works: 29,
+      reviews: 27,
       levelDecisions: ["d01"],
     });
   });
 
-  it.each([["guest"], [null]])("%s：沒有任何交辦與 repo", async (identity) => {
+  it.each([["guest"], [null]])("%s：沒有任何交辦與來源", async (identity) => {
     const result = await read(identity);
     expect(result.sources).toEqual([]);
     expect(result.total).toBe(0);

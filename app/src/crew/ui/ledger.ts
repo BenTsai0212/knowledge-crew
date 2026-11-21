@@ -5,6 +5,7 @@ import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { getTrustInputs, listAssignments, listEmployees, listReviews, type AssignmentSummary, type SourceKind } from "../db/store";
 import { demoText } from "../demo/texts";
+import { sourceLabel } from "./refs";
 import { autoResets } from "../trust/rules";
 import type { LevelDecisionKind, ReturnReason } from "../trust/types";
 
@@ -134,7 +135,7 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
     sourceKind: a.sourceKind,
-    sourceName: a.sourceName,
+    sourceName: sourceLabel(a.sourceId, a.sourceName, language),
     externalRef: a.externalRef,
   });
   const base = (a: AssignmentSummary) => ({

@@ -155,7 +155,7 @@ function AssignForm({
         <select value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
           {data.sources.map((r) => (
             <option key={r.id} value={r.id}>
-              {r.name}
+              {r.label}
             </option>
           ))}
         </select>

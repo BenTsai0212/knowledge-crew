@@ -37,10 +37,10 @@ describe("demoSeed", () => {
     expect(DEMO_RAW).not.toBeNull();
   });
 
-  it("匯入後的筆數與 demo.json 一致（交辦 26、工作 30、驗收 28、少看的決定 1）", async () => {
+  it("匯入後的筆數與 demo.json 一致（交辦 44、工作 52、驗收 48、少看的決定 2）", async () => {
     const works = demo.assignments.flatMap((a) => a.works);
     const expected = {
-      sources: 2, employees: 2, work_types: 3, assignments: 26, works: 30, reviews: 28, level_decisions: 1,
+      sources: 4, employees: 4, work_types: 4, assignments: 44, works: 52, reviews: 48, level_decisions: 2,
       work_points: works.reduce((n, w) => n + w.points.length, 0),
       work_changes: works.reduce((n, w) => n + w.changes.length, 0),
       work_checks: works.reduce((n, w) => n + w.checks.length, 0),
@@ -49,16 +49,16 @@ describe("demoSeed", () => {
   }, DB_TIMEOUT);
 
   it("過去的時間原樣寫入；文字是 client.json 的 defaultLanguage", async () => {
-    const j01 = demo.assignments.find((a) => a.id === "j01")!;
+    const s12 = demo.assignments.find((a) => a.id === "s12")!;
     const lang = clientConfig.client.defaultLanguage;
     const row = await seedAndInspect(DEMO_RAW, async (pg) => {
-      const a = await pg.query<{ title: string; assigned_at: Date }>("SELECT title, assigned_at FROM crew.assignments WHERE id = 'j01'");
-      const r = await pg.query<{ decided_at: Date; reason: string }>("SELECT decided_at, reason FROM crew.reviews WHERE id = 'j01-1'");
+      const a = await pg.query<{ title: string; assigned_at: Date }>("SELECT title, assigned_at FROM crew.assignments WHERE id = 's12'");
+      const r = await pg.query<{ decided_at: Date; reason: string }>("SELECT decided_at, reason FROM crew.reviews WHERE id = 's12-1'");
       return { ...a.rows[0], ...r.rows[0] };
     });
-    expect(row.title).toBe(j01.title[lang]);
-    expect(row.assigned_at.toISOString()).toBe(new Date(j01.assignedAt).toISOString());
-    expect(row.decided_at.toISOString()).toBe(new Date(j01.works[0].review!.decidedAt).toISOString());
+    expect(row.title).toBe(s12.title[lang]);
+    expect(row.assigned_at.toISOString()).toBe(new Date(s12.assignedAt).toISOString());
+    expect(row.decided_at.toISOString()).toBe(new Date(s12.works[0].review!.decidedAt).toISOString());
     expect(row.reason).toBe("wrong");
   }, DB_TIMEOUT);
 
@@ -70,12 +70,12 @@ describe("demoSeed", () => {
         LEFT JOIN crew.reviews r ON r.work_id = w.id
         WHERE r.id IS NULL ORDER BY a.id`)).rows.map((r) => r.id),
     );
-    expect(pending).toEqual(["b11", "j13"]);
+    expect(pending).toEqual(["c11", "j06", "k13", "s14"]);
   }, DB_TIMEOUT);
 
   it("同一檢查有多筆時依檔案順序寫入（同時間時 id 較大的是後寫的）", async () => {
     const rows = await seedAndInspect(DEMO_RAW, async (pg) =>
-      (await pg.query<{ status: string }>("SELECT status FROM crew.work_checks WHERE work_id = 'j01-w1' ORDER BY id")).rows,
+      (await pg.query<{ status: string }>("SELECT status FROM crew.work_checks WHERE work_id = 's01-w1' ORDER BY id")).rows,
     );
     expect(rows.map((r) => r.status)).toEqual(demo.assignments[0].works[0].checks.map((c) => c.status));
   }, DB_TIMEOUT);

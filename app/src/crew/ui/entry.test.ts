@@ -37,7 +37,10 @@ describe("withCrew：crew 頁籤顯示的條件", () => {
   });
 });
 
-describe("crewSeed：先 knowledge-kit、後 crew", () => {
+// 開資料庫（套用全部 migration）的測試接近 Vitest 預設的 5 秒，CI 較慢時會逾時（seed.test.ts 的 DB_TIMEOUT，PR #47）
+const DB_TIMEOUT = 20_000;
+
+describe("crewSeed：先 knowledge-kit、後 crew", { timeout: DB_TIMEOUT }, () => {
   it("沒有 demo.json 時只執行 knowledge-kit 的 seed", async () => {
     const base = vi.fn(async () => {});
     const db = await openDatabase(clientConfig, { migrations: crewMigrations, seed: crewSeed(base, clientConfig, null) });

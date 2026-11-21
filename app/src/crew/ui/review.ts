@@ -5,6 +5,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredWork } from "../db/store";
 import { demoText } from "../demo/texts";
+import { sourceLabel } from "./refs";
 import { reviewFocus, reviewLevel } from "../trust/rules";
 import type { ReturnReason, ReviewFocus, Verdict } from "../trust/types";
 
@@ -98,7 +99,7 @@ function toItem(a: AssignmentSummary, round: number, workRef: string | null, nam
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
     sourceKind: a.sourceKind,
-    sourceName: a.sourceName,
+    sourceName: sourceLabel(a.sourceId, a.sourceName, language),
     externalRef: a.externalRef,
     workRef,
     employee: { id: a.employeeId, displayName: names.get(a.employeeId) ?? a.employeeId },

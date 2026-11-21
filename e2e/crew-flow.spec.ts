@@ -8,7 +8,7 @@ test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）"
 test.use({ viewport: { width: 1440, height: 900 } });
 
 // 交辦的一句話（使用者輸入的內容，不是介面文字）；每個 test 的資料庫各自重建，不會互相影響
-const TITLE = "E2E：筆記清單加上排序";
+const TITLE = "E2E：整理退換貨的知識庫條目";
 
 test.beforeEach(async ({ page }) => {
   await openApp(page);
@@ -21,16 +21,16 @@ async function expectLevel(page: Page, employee: string, workType: string, expec
 }
 
 test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看 → 工作帳本記下四筆", async ({ page }) => {
-  // 開始前：Juniper 的「介面」是少看，有「收回」
+  // 開始前：Linden 的「知識庫整理」是少看，有「收回」
   await gotoCrewSection(page, ct.common.sectionTrust);
-  await expectLevel(page, "juniper", "ui", ct.trust.levelLight);
-  await expect(trustRow(page, "juniper", "ui").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
+  await expectLevel(page, "linden", "knowledge", ct.trust.levelLight);
+  await expect(trustRow(page, "linden", "knowledge").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
 
   // 1～4：交辦、模擬交件、選這一筆，退回並選「做錯了」；第 3 步的面板在退回之前檢查
   await assignSimulateReturn(page, {
     title: TITLE,
-    employee: "juniper",
-    workType: "ui",
+    employee: "linden",
+    workType: "knowledge",
     reason: ct.review.reasonWrong,
     beforeReturn: async (panel) => {
       const points = panel.getByRole("heading", { name: ct.review.points, exact: true });
@@ -43,15 +43,15 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
       const bodyTop = (await body.boundingBox())!.y;
       expect((await points.boundingBox())!.y).toBeLessThan(bodyTop);
       expect((await checks.boundingBox())!.y).toBeLessThan(bodyTop);
-      await expect(panel.getByText(firstReplyBody("juniper", "ui"), { exact: true })).toBeHidden();
+      await expect(panel.getByText(firstReplyBody("linden", "knowledge"), { exact: true })).toBeHidden();
     },
   });
 
   // 5：最後一個圓點是做錯了，層級改回逐項看，「收回」消失
   await gotoCrewSection(page, ct.common.sectionTrust);
-  const row = trustRow(page, "juniper", "ui");
+  const row = trustRow(page, "linden", "knowledge");
   await expect(row.getByRole("listitem").last()).toHaveAttribute("aria-label", ct.trust.dotWrong);
-  await expectLevel(page, "juniper", "ui", ct.trust.levelItem);
+  await expectLevel(page, "linden", "knowledge", ct.trust.levelItem);
   await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toHaveCount(0);
 
   // 6：最新的四筆是交辦、交件、退回（做錯了）與改回逐項看（同一時間的先後不斷言）
@@ -74,29 +74,29 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
   }
 });
 
-test("對照：退回選「我想要不一樣的做法」時，Juniper 的「介面」維持少看", async ({ page }) => {
-  await assignSimulateReturn(page, { title: TITLE, employee: "juniper", workType: "ui", reason: ct.review.reasonDifferentApproach });
+test("對照：退回選「我想要不一樣的做法」時，Linden 的「知識庫整理」維持少看", async ({ page }) => {
+  await assignSimulateReturn(page, { title: TITLE, employee: "linden", workType: "knowledge", reason: ct.review.reasonDifferentApproach });
   await gotoCrewSection(page, ct.common.sectionTrust);
-  await expect(trustRow(page, "juniper", "ui").getByRole("listitem").last()).toHaveAttribute("aria-label", ct.trust.dotNeutral);
-  await expectLevel(page, "juniper", "ui", ct.trust.levelLight);
-  await expect(trustRow(page, "juniper", "ui").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
+  await expect(trustRow(page, "linden", "knowledge").getByRole("listitem").last()).toHaveAttribute("aria-label", ct.trust.dotNeutral);
+  await expectLevel(page, "linden", "knowledge", ct.trust.levelLight);
+  await expect(trustRow(page, "linden", "knowledge").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
 });
 
-test("對照：Basil 的「文件」同意少看 → 少看、出現「收回」→ 收回 → 逐項看（建議要重新累積，不馬上再出現）", async ({ page }) => {
+test("對照：Sorrel 的「貼文與商品介紹」同意少看 → 少看、出現「收回」→ 收回 → 逐項看（建議要重新累積，不馬上再出現）", async ({ page }) => {
   await gotoCrewSection(page, ct.common.sectionTrust);
-  const row = trustRow(page, "basil", "docs");
+  const row = trustRow(page, "sorrel", "content");
   const agree = row.getByRole("button", { name: ct.trust.agreeRelax, exact: true });
   const revoke = row.getByRole("button", { name: ct.trust.revoke, exact: true });
-  await expectLevel(page, "basil", "docs", ct.trust.levelItem);
+  await expectLevel(page, "sorrel", "content", ct.trust.levelItem);
   await expect(agree).toBeVisible();
 
   await agree.click();
-  await expectLevel(page, "basil", "docs", ct.trust.levelLight);
+  await expectLevel(page, "sorrel", "content", ct.trust.levelLight);
   await expect(revoke).toBeVisible();
   await expect(agree).toHaveCount(0);
 
   await revoke.click();
-  await expectLevel(page, "basil", "docs", ct.trust.levelItem);
+  await expectLevel(page, "sorrel", "content", ct.trust.levelItem);
   await expect(revoke).toHaveCount(0);
   // 收回後從收回之後重新累積（app/src/crew/trust/rules.ts 的 relaxSuggestion，rules.test.ts「revoke 後回到 item，並從 revoke 之後重新累積」），
   // 所以建議不會馬上再出現。依 #53 的 `## 決定` 採用這條規則

@@ -4,6 +4,7 @@ import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredEmployee } from "../db/store";
 import { demoText } from "../demo/texts";
+import { sourceLabel } from "./refs";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import { relaxSuggestion } from "../trust/rules";
 import type { TrustParams } from "../trust/types";
@@ -68,7 +69,7 @@ export async function readToday(
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
     sourceKind: a.sourceKind,
-    sourceName: a.sourceName,
+    sourceName: sourceLabel(a.sourceId, a.sourceName, language),
     externalRef: a.externalRef,
     workTypeId: a.workTypeId,
     employee: employee(a.employeeId),

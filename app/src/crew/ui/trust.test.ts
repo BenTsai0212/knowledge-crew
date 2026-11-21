@@ -30,6 +30,9 @@ const row = (t: Trust, employeeId: string, workTypeId: string): TrustRow => {
 };
 const count = (dots: string[], dot: string) => dots.filter((d) => d === dot).length;
 
+// 每個測試開自己的資料庫（套用全部 migration 並匯入虛構資料），接近 Vitest 預設的 5 秒（seed.test.ts 的 DB_TIMEOUT，PR #47）
+const DB_TIMEOUT = 20_000;
+
 let db: Database;
 beforeAll(async () => {
   db = await open();
@@ -37,14 +40,14 @@ beforeAll(async () => {
 afterAll(() => db.close());
 
 describe("readTrust：匯入虛構資料後", () => {
-  it("manager：三個組合，依員工再依工作類型排序", async () => {
+  it("manager：四個組合，依員工再依工作類型排序", async () => {
     const trust = await read(db, "manager");
     expect(trust.canReview).toBe(true);
-    expect(pairs(trust)).toEqual([["basil", "docs"], ["basil", "test"], ["juniper", "ui"]]);
+    expect(pairs(trust)).toEqual([["juniper", "dev"], ["linden", "knowledge"], ["rowan", "support"], ["sorrel", "content"]]);
   });
 
-  it("manager：Juniper × 介面是少看，最近 10 次有 1 個其他退回、沒有做錯了，沒有建議", async () => {
-    const r = row(await read(db, "manager"), "juniper", "ui");
+  it("manager：Linden × 知識庫整理是少看，最近 10 次有 1 個其他退回、沒有做錯了，沒有建議", async () => {
+    const r = row(await read(db, "manager"), "linden", "knowledge");
     expect(r.level).toBe("light");
     expect(r.dots).toHaveLength(DEMO_PARAMS.dots);
     expect(count(r.dots, "neutral")).toBe(1);
@@ -53,27 +56,36 @@ describe("readTrust：匯入虛構資料後", () => {
     expect(r.suggestion).toBeNull();
   });
 
-  it("manager：Basil × 文件是逐項看且有建議，依據是最近 10 次、basisReviewId 是其中最新一筆", async () => {
-    const r = row(await read(db, "manager"), "basil", "docs");
+  it("manager：Rowan × 客戶回覆是逐項看，少看期間做錯了改回，lastReset 是 s12-1 的時間、沒有建議", async () => {
+    const r = row(await read(db, "manager"), "rowan", "support");
+    expect(r.level).toBe("item");
+    expect(count(r.dots, "wrong")).toBe(1);
+    const { reviews } = await getTrustInputs(db, "manager", "rowan", "support");
+    expect(r.lastReset).toBe(reviews.find((x) => x.id === "s12-1")!.decidedAt);
+    expect(r.suggestion).toBeNull();
+  });
+
+  it("manager：Sorrel × 貼文與商品介紹是逐項看且有建議，依據是最近 10 次、basisReviewId 是其中最新一筆", async () => {
+    const r = row(await read(db, "manager"), "sorrel", "content");
     expect(r.level).toBe("item");
     expect(r.reviewCount).toBeGreaterThanOrEqual(10);
-    const { reviews, decisions } = await getTrustInputs(db, "manager", "basil", "docs");
+    const { reviews, decisions } = await getTrustInputs(db, "manager", "sorrel", "content");
     const basis = relaxSuggestion(reviews, decisions, DEMO_PARAMS)!.basis;
     expect(r.suggestion).toEqual({ count: 10, basisReviewId: basis.at(-1)!.id });
     expect(r.suggestion!.basisReviewId).toBe(reviews.at(-1)!.id);
   });
 
-  it("manager：Basil × 測試是逐項看、沒有建議", async () => {
-    const r = row(await read(db, "manager"), "basil", "test");
+  it("manager：Juniper × 網站與工具開發是逐項看、沒有建議", async () => {
+    const r = row(await read(db, "manager"), "juniper", "dev");
     expect(r.level).toBe("item");
     expect(r.suggestion).toBeNull();
     expect(r.dots.length).toBe(r.reviewCount);
   });
 
-  it("staff：只看到青翼專案的組合（Juniper × 介面、Basil × 測試），沒有建議", async () => {
+  it("staff：只看到青翼專案的組合（Rowan × 客戶回覆、Sorrel × 貼文與商品介紹），沒有建議", async () => {
     const trust = await read(db, "staff");
     expect(trust.canReview).toBe(false);
-    expect(pairs(trust)).toEqual([["basil", "test"], ["juniper", "ui"]]);
+    expect(pairs(trust)).toEqual([["rowan", "support"], ["sorrel", "content"]]);
     expect(trust.rows.every((r) => r.suggestion === null)).toBe(true);
   });
 
@@ -83,30 +95,30 @@ describe("readTrust：匯入虛構資料後", () => {
   });
 
   it("員工說明依目前語言；找不到時顯示資料庫的原文", async () => {
-    const basil = demo.employees.find((e) => e.id === "basil")!;
+    const sorrel = demo.employees.find((e) => e.id === "sorrel")!;
     for (const language of [lang, other]) {
-      expect(row(await read(db, "manager", language), "basil", "docs").employee).toEqual({
-        id: "basil",
-        displayName: "Basil",
-        roleNote: basil.roleNote[language],
+      expect(row(await read(db, "manager", language), "sorrel", "content").employee).toEqual({
+        id: "sorrel",
+        displayName: "Sorrel",
+        roleNote: sorrel.roleNote[language],
       });
     }
-    expect(row(await read(db, "manager", "xx"), "basil", "docs").employee.roleNote).toBe(basil.roleNote[lang]);
+    expect(row(await read(db, "manager", "xx"), "sorrel", "content").employee.roleNote).toBe(sorrel.roleNote[lang]);
   });
 });
 
-describe("同意少看與收回（每個測試用自己的資料庫）", () => {
-  it("manager 同意少看：Basil × 文件變為少看、建議消失，basis_review_id 是依據中最新一筆", async () => {
+describe("同意少看與收回（每個測試用自己的資料庫）", { timeout: DB_TIMEOUT }, () => {
+  it("manager 同意少看：Sorrel × 貼文與商品介紹變為少看、建議消失，basis_review_id 是依據中最新一筆", async () => {
     const own = await open();
     try {
-      const before = row(await read(own, "manager"), "basil", "docs");
+      const before = row(await read(own, "manager"), "sorrel", "content");
       await agreeRelax(own, "manager", { ...before, suggestion: before.suggestion! });
-      const after = row(await read(own, "manager"), "basil", "docs");
+      const after = row(await read(own, "manager"), "sorrel", "content");
       expect(after.level).toBe("light");
       expect(after.suggestion).toBeNull();
       const stored = await own.withIdentity("manager", async (tx) =>
         (await tx.query<{ basis: string }>(
-          "SELECT basis_review_id AS basis FROM crew.level_decisions WHERE employee_id = 'basil' AND work_type_id = 'docs'",
+          "SELECT basis_review_id AS basis FROM crew.level_decisions WHERE employee_id = 'sorrel' AND work_type_id = 'content'",
         )).rows,
       );
       expect(stored).toEqual([{ basis: before.suggestion!.basisReviewId }]);
@@ -115,11 +127,11 @@ describe("同意少看與收回（每個測試用自己的資料庫）", () => {
     }
   });
 
-  it("manager 收回：Juniper × 介面變回逐項看", async () => {
+  it("manager 收回：Linden × 知識庫整理變回逐項看", async () => {
     const own = await open();
     try {
-      await revokeRelax(own, "manager", row(await read(own, "manager"), "juniper", "ui"));
-      const after = row(await read(own, "manager"), "juniper", "ui");
+      await revokeRelax(own, "manager", row(await read(own, "manager"), "linden", "knowledge"));
+      const after = row(await read(own, "manager"), "linden", "knowledge");
       expect(after.level).toBe("item");
       expect(after.lastReset).toBeNull();
     } finally {
@@ -131,8 +143,8 @@ describe("同意少看與收回（每個測試用自己的資料庫）", () => {
     const own = await open();
     try {
       const manager = await read(own, "manager");
-      const docs = row(manager, "basil", "docs");
-      const ui = row(manager, "juniper", "ui");
+      const docs = row(manager, "sorrel", "content");
+      const ui = row(manager, "linden", "knowledge");
       for (const identity of ["staff", "guest"]) {
         await expect(agreeRelax(own, identity, { ...docs, suggestion: docs.suggestion! })).rejects.toThrow();
         await expect(revokeRelax(own, identity, ui)).rejects.toThrow();
@@ -143,14 +155,15 @@ describe("同意少看與收回（每個測試用自己的資料庫）", () => {
     }
   });
 
-  it("少看期間做錯了：Juniper × 介面改回逐項看，lastReset 是該次驗收的時間", async () => {
+  it("少看期間做錯了：Linden × 知識庫整理改回逐項看，lastReset 是該次驗收的時間", async () => {
     const own = await open();
     try {
-      const work = (await getAssignmentWorks(own, "manager", "j13")).at(-1)!;
+      const work = (await getAssignmentWorks(own, "manager", "k13")).at(-1)!;
       expect(work.review).toBeNull();
+      expect(row(await read(own, "manager"), "linden", "knowledge").level).toBe("light");
       await createReview(own, "manager", { workId: work.id, verdict: "returned", reason: "wrong" });
-      const after = row(await read(own, "manager"), "juniper", "ui");
-      const { reviews } = await getTrustInputs(own, "manager", "juniper", "ui");
+      const after = row(await read(own, "manager"), "linden", "knowledge");
+      const { reviews } = await getTrustInputs(own, "manager", "linden", "knowledge");
       expect(after.level).toBe("item");
       expect(after.dots.at(-1)).toBe("wrong");
       expect(after.lastReset).toBe(reviews.at(-1)!.decidedAt);
@@ -162,7 +175,7 @@ describe("同意少看與收回（每個測試用自己的資料庫）", () => {
 
 describe("「信任」「員工」的文字", () => {
   it("組合的標題在英文名字與中文之間留半形空格", () => {
-    expect(fill(crewStrings("trust", "zh-TW").rowTitle, { employee: "Basil", workType: workTypeLabel("docs", "zh-TW") })).toBe("Basil 的「文件」");
+    expect(fill(crewStrings("trust", "zh-TW").rowTitle, { employee: "Sorrel", workType: workTypeLabel("content", "zh-TW") })).toBe("Sorrel 的「貼文與商品介紹」");
   });
 
   it("圓點的三種結果有不同的文字說明（不只靠顏色）", () => {

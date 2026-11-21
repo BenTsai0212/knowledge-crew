@@ -9,7 +9,8 @@ import {
   gotoCrewSection,
   hasCrewDemo,
   openCrew,
-  repoOf,
+  sourceLabel,
+  sourcesOf,
   trustRow,
   workTypeName,
 } from "./support/crew";
@@ -44,10 +45,10 @@ test.describe("冒煙（主管，桌機）", () => {
 
   test("員工：每個員工一張卡片，列出工作類型與目前層級", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionEmployees);
-    const card = page.getByRole("region", { name: employeeName("juniper") });
+    const card = page.getByRole("region", { name: employeeName("linden") });
     await expect(card.getByRole("columnheader", { name: ct.employees.columnLevel })).toBeVisible();
-    await expect(card.getByRole("rowheader", { name: workTypeName("ui") })).toBeVisible();
-    await expect(page.getByRole("region", { name: employeeName("basil") })).toBeVisible();
+    await expect(card.getByRole("rowheader", { name: workTypeName("knowledge") })).toBeVisible();
+    await expect(page.getByRole("region", { name: employeeName("sorrel") })).toBeVisible();
   });
 
   test("交辦：表單與交辦清單", async ({ page }) => {
@@ -68,7 +69,7 @@ test.describe("冒煙（主管，桌機）", () => {
 
   test("信任：每個員工 × 工作類型的圓點與目前層級", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionTrust);
-    const row = trustRow(page, "juniper", "ui");
+    const row = trustRow(page, "linden", "knowledge");
     await expect(row.getByText(ct.trust.levelLabel, { exact: true })).toBeVisible();
     await expect(row.getByRole("listitem").first()).toBeVisible();
   });
@@ -86,14 +87,18 @@ test.describe("權限（桌機）", () => {
 
   test("staff：看得到青翼專案的交辦與工作，各子頁都沒有寫入按鈕", async ({ page }) => {
     await openCrewAs(page, "staff");
-    const bluewing = repoOf("bluewing").name;
-    const longpier = repoOf("longpier").name;
+    // 交辦清單的參照以來源的顯示名稱開頭（refRepo／refOther／refSourceOnly）
+    const startsWith = (name: string) => new RegExp("^" + name.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&"));
+    const bluewing = sourcesOf("bluewing").map(sourceLabel);
+    const longpier = sourcesOf("longpier").map(sourceLabel);
+    expect(bluewing.length).toBeGreaterThan(0);
+    expect(longpier.length).toBeGreaterThan(0);
 
     await gotoCrewSection(page, ct.common.sectionAssignments);
     await expect(page.getByText(ct.assign.readOnlyNote, { exact: true })).toBeVisible();
     const list = page.getByRole("region", { name: ct.assign.listTitle });
-    await expect(list.getByText(new RegExp(`^${bluewing}#`)).first()).toBeVisible();
-    await expect(list.getByText(new RegExp(`^${longpier}#`))).toHaveCount(0);
+    for (const name of bluewing) await expect(list.getByText(startsWith(name)).first()).toBeVisible();
+    for (const name of longpier) await expect(list.getByText(startsWith(name))).toHaveCount(0);
 
     await gotoCrewSection(page, ct.common.sectionWorks);
     await expect(page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").first()).toBeVisible();

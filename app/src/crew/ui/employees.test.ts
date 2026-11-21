@@ -14,6 +14,14 @@ const shape = (list: Awaited<ReturnType<typeof readEmployees>>) =>
 const reviewCount = async (identity: string, employeeId: string, workTypeId: string) =>
   (await getTrustInputs(db, identity, employeeId, workTypeId)).reviews.length;
 
+// 員工本身沒有專案（guest 以外都看得到），工作類型只列出看得到交辦的組合（groupEmployees）
+const STAFF_EMPLOYEES = [
+  ["juniper", []],
+  ["linden", []],
+  ["rowan", ["support"]],
+  ["sorrel", ["content"]],
+];
+
 let db: Database;
 beforeAll(async () => {
   db = await openDatabase(clientConfig, { migrations: crewMigrations, seed: demoSeed(DEMO_RAW, clientConfig) });
@@ -21,26 +29,27 @@ beforeAll(async () => {
 afterAll(() => db.close());
 
 describe("readEmployees：匯入虛構資料後", () => {
-  it("manager：Basil（文件、測試 逐項看）與 Juniper（介面 少看），附名稱、說明與驗收次數", async () => {
+  it("manager：四位員工各一類工作（Linden 少看、其他逐項看），附名稱、說明與驗收次數", async () => {
     const list = await readEmployees(db, "manager", lang);
     expect(shape(list)).toEqual([
-      ["basil", [["docs", "item"], ["test", "item"]]],
-      ["juniper", [["ui", "light"]]],
+      ["juniper", [["dev", "item"]]],
+      ["linden", [["knowledge", "light"]]],
+      ["rowan", [["support", "item"]]],
+      ["sorrel", [["content", "item"]]],
     ]);
-    expect(list.map((e) => e.displayName)).toEqual(["Basil", "Juniper"]);
+    expect(list.map((e) => e.displayName)).toEqual(["Juniper", "Linden", "Rowan", "Sorrel"]);
     expect(list.every((e) => e.roleNote)).toBe(true);
-    expect(list[0].workTypes[0].reviewCount).toBe(await reviewCount("manager", "basil", "docs"));
-    expect(list[1].workTypes[0].reviewCount).toBe(await reviewCount("manager", "juniper", "ui"));
+    expect(list[0].workTypes[0].reviewCount).toBe(await reviewCount("manager", "juniper", "dev"));
+    expect(list[1].workTypes[0].reviewCount).toBe(await reviewCount("manager", "linden", "knowledge"));
     expect(list[1].workTypes[0].reviewCount).toBeGreaterThan(0);
   });
 
-  it("staff：兩位員工，但只有青翼專案的 Juniper × 介面、Basil × 測試", async () => {
+  it("staff：只有青翼專案的 Rowan × 客戶回覆、Sorrel × 貼文與商品介紹；長堤專案的 Linden、Juniper 沒有看得到的工作", async () => {
     const list = await readEmployees(db, "staff", lang);
-    expect(list.map((e) => [e.id, e.workTypes.map((w) => w.workTypeId)])).toEqual([
-      ["basil", ["test"]],
-      ["juniper", ["ui"]],
-    ]);
-    expect(list[0].workTypes[0].reviewCount).toBe(await reviewCount("staff", "basil", "test"));
+    expect(list.map((e) => [e.id, e.workTypes.map((w) => w.workTypeId)])).toEqual(STAFF_EMPLOYEES);
+    const rowan = list.find((e) => e.id === "rowan")!;
+    expect(rowan.workTypes[0].reviewCount).toBe(await reviewCount("staff", "rowan", "support"));
+    expect(list.flatMap((e) => e.workTypes.map((w) => w.workTypeId))).toEqual(["support", "content"]);
   });
 
   it("guest（看得到員工、看不到交辦）與沒有身分：空的，不拋錯", async () => {

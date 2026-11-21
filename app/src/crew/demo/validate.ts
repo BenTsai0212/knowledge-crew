@@ -90,6 +90,7 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     sources.set(id, kind);
     const name = str(r, "name", p);
     unique(names, name, `${p}.name`);
+    if (r.label !== undefined) loc(r.label, `${p}.label`);
     if (kind === "repo" && !name.startsWith(ORG)) err(`${p}.name`, `must start with ${ORG} for a repo source`);
     if (!projects.has(str(r, "project", p))) err(`${p}.project`, "must be a project in access.json");
   }
