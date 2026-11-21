@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { crewStrings } from "../i18n";
 import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection } from "./sections";
+import { LedgerView } from "./LedgerView";
 import { TodayView } from "./TodayView";
 import "./CrewPage.css";
 
 const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
   today: TodayView,
+  ledger: LedgerView,
 };
 
 export function CrewPage(props: CrewScreenProps) {
