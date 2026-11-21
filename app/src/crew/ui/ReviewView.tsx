@@ -82,7 +82,8 @@ export function ReviewView({ db, identity, language }: CrewScreenProps) {
   useEffect(() => {
     if (state.kind !== "ready" || !scrollPending.current) return;
     scrollPending.current = false;
-    panelRef.current?.scrollIntoView?.({ block: "nearest" });
+    const panel = panelRef.current;
+    if (panel && !topInView(panel)) panel.scrollIntoView?.({ block: "start" });
   }, [state]);
 
   const decide = async (input: Parameters<typeof createReview>[2]) => {
@@ -167,6 +168,13 @@ function ListGroup({ title, count, empty, items, selected, select, t, language }
       )}
     </section>
   );
+}
+
+// 面板的頂端是否在畫面上、且不被 sticky 的頂端列蓋住（scroll-margin-top 是頂端列讓出的高度，#50）
+function topInView(element: HTMLElement): boolean {
+  const top = element.getBoundingClientRect().top;
+  const margin = Number.parseFloat(getComputedStyle(element).scrollMarginTop) || 0;
+  return top >= margin && top < window.innerHeight;
 }
 
 const itemRef = (item: WorkListItem, t: Texts) => fill(t.itemRef, { repo: item.repoFullName, issue: item.issueNumber, pr: item.prNumber });

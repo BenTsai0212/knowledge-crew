@@ -13,6 +13,11 @@
   order: -1;
 }
 
+/* 點選後捲到面板時，面板的標題不被 sticky 的頂端列蓋住（沿用 app.css 的 7rem） */
+.crew-review__panel {
+  scroll-margin-top: 7rem;
+}
+
 @media (min-width: 900px) {
   .crew-review {
     grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
@@ -21,6 +26,10 @@
   .crew-review__panel,
   .crew-review__hint {
     order: 0;
+  }
+
+  .crew-review__panel {
+    scroll-margin-top: 0;
   }
 }
 
