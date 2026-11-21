@@ -11,6 +11,7 @@ export type CrewScreenKeys = {
   assign: keyof typeof import("@client/i18n/crew/assign.zh-TW.json");
   employees: keyof typeof import("@client/i18n/crew/employees.zh-TW.json");
   trust: keyof typeof import("@client/i18n/crew/trust.zh-TW.json");
+  review: keyof typeof import("@client/i18n/crew/review.zh-TW.json");
 };
 export type CrewScreen = keyof CrewScreenKeys;
 export type CrewTexts<S extends CrewScreen> = Readonly<Record<CrewScreenKeys[S], string>>;
