@@ -20,5 +20,10 @@
   "refOther": "{name} {ref}",
   "refSourceOnly": "{name}",
   "refWorkRepo": "PR #{ref}",
-  "refWorkOther": "{ref}"
+  "refWorkOther": "{ref}",
+  "aiMark": "AI employee",
+  "aiOption": "AI {name}",
+  "collapsedFields": "{count, plural, one {# other field is collapsed (lighter review)} other {# other fields are collapsed (lighter review)}}: {fields}",
+  "collapsedFieldsSeparator": ", ",
+  "collapseFields": "Collapse fields without marked points"
 }

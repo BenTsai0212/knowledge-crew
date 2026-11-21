@@ -20,5 +20,10 @@
   "refOther": "{name} {ref}",
   "refSourceOnly": "{name}",
   "refWorkRepo": "PR #{ref}",
-  "refWorkOther": "{ref}"
+  "refWorkOther": "{ref}",
+  "aiMark": "AI 員工",
+  "aiOption": "AI {name}",
+  "collapsedFields": "其他 {count} 個欄位已收起（少看）：{fields}",
+  "collapsedFieldsSeparator": "、",
+  "collapseFields": "收起沒標重點的欄位"
 }

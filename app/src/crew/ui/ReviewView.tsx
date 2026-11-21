@@ -7,6 +7,7 @@ import type { LanguageCode } from "../../client/types";
 import { createReview } from "../db/store";
 import type { CheckStatus, ReturnReason } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
+import { withEmployee } from "./components";
 import { checkLabel, isCodePosition, positionLabel } from "./glossary";
 import { workTypeLabel } from "./labels";
 import { initialSelection, readReviewPanel, readWorkList, type ReviewPanel, type WorkList, type WorkListItem } from "./review";
@@ -185,7 +186,7 @@ function itemRef(item: WorkListItem, t: Texts, language: LanguageCode): string {
   return work === null ? assignment : fill(t.itemRef, { assignment, work });
 }
 const itemMeta = (item: WorkListItem, t: Texts, language: LanguageCode) =>
-  fill(t.itemMeta, { employee: item.employee.displayName, workType: workTypeLabel(item.workTypeId, language), round: item.round });
+  withEmployee(t.itemMeta, { workType: workTypeLabel(item.workTypeId, language), round: item.round }, item.employee.displayName, language);
 
 interface PanelProps {
   anchor: RefObject<HTMLElement | null>;

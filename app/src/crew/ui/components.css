@@ -1,0 +1,96 @@
+/* AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節）。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts）；
+   不用 mark 系列，warning 不做底色（規格第 3 節第 1、2 點） */
+.crew-icon {
+  flex: none;
+}
+
+.crew-ai-mark {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 18px;
+  border: 1px solid var(--color-text);
+  border-radius: 4px;
+  padding: 0 0.25rem;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.crew-employee-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.badge.crew-level-badge {
+  border-color: var(--color-textMuted);
+  color: var(--color-text);
+}
+
+.badge.crew-level-badge[data-level="light"] {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.crew-conclusion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.15rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+
+.crew-conclusion[data-tone="fail"] {
+  color: var(--color-danger);
+}
+
+.crew-conclusion[data-tone="pending"] {
+  color: var(--color-warning);
+}
+
+.crew-conclusion p {
+  margin: 0;
+}
+
+.crew-conclusion__title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.crew-conclusion__description {
+  grid-column: 2;
+  color: var(--color-textMuted);
+  font-size: 14px;
+}
+
+.crew-collapsed {
+  border: 1px dashed var(--color-textMuted);
+  border-radius: var(--radius-medium);
+  background: transparent;
+}
+
+.crew-collapsed__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--color-textMuted);
+  text-align: start;
+}
+
+.crew-collapsed[data-expanded="true"] .crew-collapsed__chevron {
+  transform: rotate(90deg);
+}
+
+.crew-collapsed__content {
+  padding: 0 0.75rem 0.75rem;
+}

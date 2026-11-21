@@ -6,6 +6,7 @@ import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import type { Dot } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
+import { withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
 import { canReviewOf } from "./today";
@@ -80,7 +81,7 @@ export function TrustView({ db, identity, language }: CrewScreenProps) {
         return (
           <section key={key} className="card crew-trust__row" aria-labelledby={`crew-trust-${key}`}>
             <h3 id={`crew-trust-${key}`}>
-              {fill(t.rowTitle, { employee: row.employee.displayName, workType: workTypeLabel(row.workTypeId, language) })}
+              {withEmployee(t.rowTitle, { workType: workTypeLabel(row.workTypeId, language) }, row.employee.displayName, language)}
             </h3>
             <Dots dots={row.dots} t={t} language={language} />
             <p className="crew-trust__level">

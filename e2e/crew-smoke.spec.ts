@@ -5,6 +5,7 @@ import { openApp, switchIdentity } from "./support/app";
 import {
   crewContent,
   ct,
+  demo,
   employeeName,
   gotoCrewSection,
   hasCrewDemo,
@@ -25,6 +26,18 @@ const SECTIONS = [
   ct.common.sectionTrust,
   ct.common.sectionLedger,
 ];
+
+// 畫面上每個員工名字都在 AI 標記之後（#66）；至少要出現一個名字
+async function expectAiMarks(page: Page): Promise<void> {
+  let seen = 0;
+  for (const { displayName } of demo.employees) {
+    const hits = crewContent(page).getByText(displayName);
+    const n = await hits.count();
+    for (let i = 0; i < n; i++) await expect(hits.nth(i).locator(".crew-ai-mark")).toHaveCount(1);
+    seen += n;
+  }
+  expect(seen).toBeGreaterThan(0);
+}
 
 async function openCrewAs(page: Page, identity: string): Promise<void> {
   await openApp(page);
@@ -65,6 +78,7 @@ test.describe("冒煙（主管，桌機）", () => {
     const panel = crewContent(page).getByRole("article");
     await expect(panel.getByRole("heading", { name: ct.review.points, exact: true })).toBeVisible();
     await expect(panel.getByRole("heading", { name: ct.review.checks, exact: true })).toBeVisible();
+    await expectAiMarks(page);
   });
 
   test("信任：每個員工 × 工作類型的圓點與目前層級", async ({ page }) => {
@@ -72,6 +86,7 @@ test.describe("冒煙（主管，桌機）", () => {
     const row = trustRow(page, "linden", "knowledge");
     await expect(row.getByText(ct.trust.levelLabel, { exact: true })).toBeVisible();
     await expect(row.getByRole("listitem").first()).toBeVisible();
+    await expectAiMarks(page);
   });
 
   test("工作帳本：篩選與紀錄", async ({ page }) => {
