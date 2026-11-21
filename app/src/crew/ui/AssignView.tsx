@@ -88,7 +88,7 @@ function employeeLabel(e: TodayEmployee, t: CrewTexts<"assign">): string {
 }
 
 interface FormInput {
-  repoId: string;
+  sourceId: string;
   title: string;
   workTypeId: string;
   employeeId: string;
@@ -106,20 +106,20 @@ function AssignForm({
   onSubmit: (input: FormInput) => Promise<void>;
 }) {
   const [title, setTitle] = useState("");
-  const [repoId, setRepoId] = useState(data.repos[0]?.id ?? "");
+  const [sourceId, setSourceId] = useState(data.sources[0]?.id ?? "");
   const [employeeId, setEmployeeId] = useState(data.employees[0]?.id ?? "");
   const [workTypeId, setWorkTypeId] = useState(data.workTypes[0] ?? "");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const blank = title.trim() === "";
-  const ready = !blank && repoId !== "" && employeeId !== "" && workTypeId !== "";
+  const ready = !blank && sourceId !== "" && employeeId !== "" && workTypeId !== "";
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!ready || busy) return;
     setBusy(true);
     setFailed(false);
-    onSubmit({ repoId, title, workTypeId, employeeId }).then(
+    onSubmit({ sourceId, title, workTypeId, employeeId }).then(
       () => {
         setBusy(false);
         setTitle("");
@@ -151,10 +151,10 @@ function AssignForm({
       </label>
       <label className="crew-assign__field">
         <span>{t.fieldRepo}</span>
-        <select value={repoId} onChange={(e) => setRepoId(e.target.value)}>
-          {data.repos.map((r) => (
+        <select value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
+          {data.sources.map((r) => (
             <option key={r.id} value={r.id}>
-              {r.fullName}
+              {r.name}
             </option>
           ))}
         </select>
@@ -225,7 +225,7 @@ function AssignRow({
         <span className="badge">{t[STATUS_KEY[item.status]]}</span>
       </span>
       <span className="crew-assign__item-meta muted">
-        <span className="crew-assign__ref">{fill(t.assignmentRef, { repo: item.repoFullName, issue: item.issueNumber })}</span>
+        <span className="crew-assign__ref">{fill(t.assignmentRef, { repo: item.sourceName, issue: item.externalRef ?? "" })}</span>
         <span>{employeeLabel(item.employee, t)}</span>
         <span>{workTypeLabel(item.workTypeId, language)}</span>
       </span>

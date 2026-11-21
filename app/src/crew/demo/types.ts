@@ -1,12 +1,15 @@
 // crew demo 的虛構資料 client/crew/demo.json 的結構（#29 計畫第 2 節）。
 // 資料表的文字欄位是單一語言，這裡的雙語文字由 seed 寫入預設語言、畫面以 texts.ts 換成目前語言（#29 的 `## 決定` 1）。
 import type { Id, LocalizedText } from "../../client/types";
+import type { SourceKind } from "../db/store";
 import type { CheckStatus, LevelDecisionKind, ReturnReason } from "../trust/types";
 
-export interface DemoRepo {
+/** 工作來源（RFC 0001 的 2026-11-21 修訂）。 */
+export interface DemoSource {
   id: Id;
-  /** 一律是 example-org/<名稱>（虛構） */
-  fullName: string;
+  kind: SourceKind;
+  /** 畫面顯示的名稱；repo 類一律是 example-org/<名稱>（虛構） */
+  name: string;
   /** access.json 的專案：誰看得到由專案決定 */
   project: Id;
 }
@@ -36,7 +39,8 @@ export type DemoReview = { id: Id; decidedBy: Id; decidedAt: string; note?: stri
 
 export interface DemoWork {
   round: number;
-  prNumber: number;
+  /** 外部編號：repo 類是 PR 編號（正整數的十進位文字，必填）；其他類型可以省略 */
+  externalRef?: string;
   submittedAt: string;
   summary: LocalizedText;
   body: LocalizedText;
@@ -49,8 +53,9 @@ export interface DemoWork {
 
 export interface DemoAssignment {
   id: Id;
-  repo: Id;
-  issueNumber: number;
+  source: Id;
+  /** 外部編號：repo 類是 Issue 編號（正整數的十進位文字，必填）；其他類型可以省略 */
+  externalRef?: string;
   workType: Id;
   employee: Id;
   title: LocalizedText;
@@ -85,7 +90,7 @@ export interface DemoSimulation {
 }
 
 export interface DemoFile {
-  repos: DemoRepo[];
+  sources: DemoSource[];
   employees: DemoEmployee[];
   workTypes: Id[];
   assignments: DemoAssignment[];

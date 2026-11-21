@@ -11,15 +11,15 @@ async function seed(pg: PGliteInterface): Promise<void> {
   await pg.exec(`
     INSERT INTO kk.identities (id, visibility_level_id, can_review) VALUES ('lead', 'internal', true);
     INSERT INTO kk.identity_projects (identity_id, project_id) VALUES ('lead', 'bluewing');
-    INSERT INTO crew.repos (id, full_name, project_id) VALUES
-      ('lantern', 'example-org/lantern-notes', 'bluewing'),
-      ('harbor', 'example-org/harbor-docs', 'longpier');
+    INSERT INTO crew.sources (id, kind, name, project_id) VALUES
+      ('lantern', 'repo', 'example-org/lantern-notes', 'bluewing'),
+      ('harbor', 'repo', 'example-org/harbor-docs', 'longpier');
     INSERT INTO crew.employees (id, display_name) VALUES ('juniper', 'Juniper'), ('basil', 'Basil');
     INSERT INTO crew.work_types (id) VALUES ('ui'), ('docs');
-    INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id, assigned_by, assigned_at) VALUES
+    INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, assigned_by, assigned_at) VALUES
       ('a-lantern', 'lantern', 1, 'Fix header', 'ui', 'juniper', 'manager', '2026-01-01'),
       ('a-harbor', 'harbor', 1, 'Write guide', 'docs', 'basil', 'manager', '2026-01-01');
-    INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES
+    INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES
       ('w-lantern', 'a-lantern', 1, 10, 'Header'), ('w-harbor', 'a-harbor', 1, 20, 'Guide');
     INSERT INTO crew.work_points (work_id, ordinal, text) VALUES ('w-lantern', 1, 'Layout'), ('w-harbor', 1, 'Tone');
     INSERT INTO crew.work_changes (work_id, ordinal, path, summary) VALUES ('w-lantern', 1, 'a.css', ''), ('w-harbor', 1, 'b.md', '');
@@ -99,8 +99,8 @@ describe("讀取", () => {
 
 // 對某個交辦（與其工作）新增：交辦、交件（工作與其下三張表）、驗收、少看的決定
 const flow = (repo: string, n: number, type: string, employee: string) => [
-  `INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id) VALUES ('a-new', '${repo}', ${n}, 'New', '${type}', '${employee}')`,
-  "INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES ('w-new', 'a-new', 1, 99, 'New')",
+  `INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id) VALUES ('a-new', '${repo}', ${n}, 'New', '${type}', '${employee}')`,
+  "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('w-new', 'a-new', 1, 99, 'New')",
   "INSERT INTO crew.work_points (work_id, ordinal, text) VALUES ('w-new', 1, 'Point')",
   "INSERT INTO crew.work_changes (work_id, ordinal, path, summary) VALUES ('w-new', 1, 'x.ts', '')",
   "INSERT INTO crew.work_checks (work_id, name, status) VALUES ('w-new', 'test', 'pending')",
@@ -111,8 +111,8 @@ const flow = (repo: string, n: number, type: string, employee: string) => [
 
 // 對既有的資料逐表新增一筆（無權限的身分用）
 const EACH = [
-  ["assignments", "INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id, assigned_by) VALUES ('x', 'lantern', 9, 'X', 'ui', 'juniper', 'manager')"],
-  ["works", "INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES ('x', 'a-lantern', 2, 11, 'X')"],
+  ["assignments", "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, assigned_by) VALUES ('x', 'lantern', 9, 'X', 'ui', 'juniper', 'manager')"],
+  ["works", "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('x', 'a-lantern', 2, 11, 'X')"],
   ["work_points", "INSERT INTO crew.work_points (work_id, ordinal, text) VALUES ('w-lantern', 2, 'X')"],
   ["work_changes", "INSERT INTO crew.work_changes (work_id, ordinal, path, summary) VALUES ('w-lantern', 2, 'x', '')"],
   ["work_checks", "INSERT INTO crew.work_checks (work_id, name, status) VALUES ('w-lantern', 'x', 'pass')"],
@@ -146,8 +146,8 @@ describe("新增", () => {
   });
 
   it.each([
-    ["交辦", "INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id) VALUES ('x', 'harbor', 9, 'X', 'docs', 'basil')"],
-    ["交件", "INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES ('x', 'a-harbor', 2, 21, 'X')"],
+    ["交辦", "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id) VALUES ('x', 'harbor', 9, 'X', 'docs', 'basil')"],
+    ["交件", "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('x', 'a-harbor', 2, 21, 'X')"],
     ["重點", "INSERT INTO crew.work_points (work_id, ordinal, text) VALUES ('w-harbor', 2, 'X')"],
     ["變更", "INSERT INTO crew.work_changes (work_id, ordinal, path, summary) VALUES ('w-harbor', 2, 'x', '')"],
     ["檢查", "INSERT INTO crew.work_checks (work_id, name, status) VALUES ('w-harbor', 'x', 'pass')"],
@@ -158,8 +158,8 @@ describe("新增", () => {
   });
 
   it.each([
-    ["assignments.assigned_by", ["INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id, assigned_by) VALUES ('x', 'lantern', 9, 'X', 'ui', 'juniper', 'lead')"]],
-    ["reviews.decided_by", ["INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES ('w2', 'a-lantern', 2, 11, 'X')", "INSERT INTO crew.reviews (id, work_id, verdict, decided_by) VALUES ('x', 'w2', 'accepted', 'lead')"]],
+    ["assignments.assigned_by", ["INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, assigned_by) VALUES ('x', 'lantern', 9, 'X', 'ui', 'juniper', 'lead')"]],
+    ["reviews.decided_by", ["INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('w2', 'a-lantern', 2, 11, 'X')", "INSERT INTO crew.reviews (id, work_id, verdict, decided_by) VALUES ('x', 'w2', 'accepted', 'lead')"]],
     ["level_decisions.decided_by", ["INSERT INTO crew.level_decisions (id, employee_id, work_type_id, decision, decided_by) VALUES ('x', 'juniper', 'ui', 'revoke', 'lead')"]],
   ])("冒名：%s 不是自己時被拒", async (_name, sqls) => {
     await expect(attempt("manager", sqls)).rejects.toThrow("row-level security");
@@ -167,8 +167,8 @@ describe("新增", () => {
 
   // juniper × docs 的驗收（r-x），用來測少看的決定的依據必須是同一員工 × 同一類工作
   const juniperDocs = [
-    "INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id) VALUES ('a-x', 'lantern', 3, 'X', 'docs', 'juniper')",
-    "INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES ('w-x', 'a-x', 1, 12, 'X')",
+    "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id) VALUES ('a-x', 'lantern', 3, 'X', 'docs', 'juniper')",
+    "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('w-x', 'a-x', 1, 12, 'X')",
     "INSERT INTO crew.reviews (id, work_id, verdict) VALUES ('r-x', 'w-x', 'accepted')",
   ];
   it.each([
@@ -182,8 +182,8 @@ describe("新增", () => {
   });
 
   it.each([
-    ["assignments.assigned_at", "INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id, assigned_at) VALUES ('x', 'lantern', 9, 'X', 'ui', 'juniper', now() + interval '1 day')"],
-    ["works.submitted_at", "INSERT INTO crew.works (id, assignment_id, round, pr_number, summary, submitted_at) VALUES ('x', 'a-lantern', 2, 11, 'X', now())"],
+    ["assignments.assigned_at", "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, assigned_at) VALUES ('x', 'lantern', 9, 'X', 'ui', 'juniper', now() + interval '1 day')"],
+    ["works.submitted_at", "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary, submitted_at) VALUES ('x', 'a-lantern', 2, 11, 'X', now())"],
     ["work_checks.checked_at", "INSERT INTO crew.work_checks (work_id, name, status, checked_at) VALUES ('w-lantern', 'x', 'pass', '2030-01-01')"],
     ["reviews.decided_at", "INSERT INTO crew.reviews (id, work_id, verdict, decided_at) VALUES ('x', 'w-lantern', 'accepted', '2030-01-01')"],
     ["level_decisions.decided_at", "INSERT INTO crew.level_decisions (id, employee_id, work_type_id, decision, decided_at) VALUES ('x', 'juniper', 'ui', 'relax', '2030-01-01')"],

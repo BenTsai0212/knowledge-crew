@@ -2,7 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientConfig } from "../../client/load";
 import { openDatabase, type Database } from "../../db/database";
-import { createAssignment, createReview, createWork, nextPrNumber } from "../db/store";
+import { createAssignment, createReview, createWork, nextExternalRef } from "../db/store";
 import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
@@ -36,27 +36,27 @@ describe("readWorkList：匯入虛構資料後", () => {
     expect(awaiting[0]).toEqual({
       id: "j13",
       title: demo.assignments.find((a) => a.id === "j13")!.title[lang],
-      repoFullName: "example-org/lantern-notes",
-      issueNumber: 113,
-      prNumber: 215,
+      sourceName: "example-org/lantern-notes",
+      externalRef: "113",
+      workRef: "215",
       employee: { id: "juniper", displayName: "Juniper" },
       workTypeId: "ui",
       round: 1,
       verdict: null,
     });
-    expect(awaiting[1]).toMatchObject({ repoFullName: "example-org/harbor-docs", issueNumber: 51, prNumber: 73, workTypeId: "docs" });
+    expect(awaiting[1]).toMatchObject({ sourceName: "example-org/harbor-docs", externalRef: "51", workRef: "73", workTypeId: "docs" });
   });
 
   it("多輪的交辦顯示最新一輪的輪次與 PR 編號", async () => {
     const j07 = (await panel(db, "manager", "j07"))!.item;
-    expect(j07).toMatchObject({ round: 2, prNumber: 209, verdict: "accepted" });
+    expect(j07).toMatchObject({ round: 2, workRef: "209", verdict: "accepted" });
   });
 
   it("staff：只看到 example-org/lantern-notes，待驗收只有 j13", async () => {
     const { awaiting, recent } = await list(db, "staff");
     expect(ids(awaiting)).toEqual(["j13"]);
     expect(recent.length).toBeGreaterThan(0);
-    expect(recent.every((i) => i.repoFullName === "example-org/lantern-notes")).toBe(true);
+    expect(recent.every((i) => i.sourceName === "example-org/lantern-notes")).toBe(true);
   });
 
   it("guest 與沒有身分：兩組都是空的，不拋錯", async () => {
@@ -81,7 +81,7 @@ describe("readReviewPanel：匯入虛構資料後", () => {
     expect(p.focus.body.collapsed).toBe(true);
     // 同名檢查只取最新一筆
     expect(p.focus.checks).toEqual([{ name: "ci", status: "pass" }]);
-    expect(p.current).toMatchObject({ id: "j13-w1", round: 1, prNumber: 215 });
+    expect(p.current).toMatchObject({ id: "j13-w1", round: 1, externalRef: "215" });
     expect(p.earlier).toEqual([]);
     expect(p.canDecide).toBe(true);
   });
@@ -97,7 +97,7 @@ describe("readReviewPanel：匯入虛構資料後", () => {
   it("前幾輪與其驗收結果：j01 的第 1 輪退回「做錯了」；已驗收的工作不能再驗收", async () => {
     const p = (await panel(db, "manager", "j01"))!;
     expect(p.earlier).toHaveLength(1);
-    expect(p.earlier[0]).toMatchObject({ round: 1, prNumber: 201, review: { verdict: "returned", reason: "wrong", note: null } });
+    expect(p.earlier[0]).toMatchObject({ round: 1, externalRef: "201", review: { verdict: "returned", reason: "wrong", note: null } });
     expect(p.current.round).toBe(2);
     expect(p.canDecide).toBe(false);
   });
@@ -134,10 +134,10 @@ describe("寫入後讀回", () => {
   it("人新增的工作：找不到翻譯時顯示原文；沒有重點時即使少看也逐項列出", async () => {
     const own = await open();
     try {
-      const { id } = await createAssignment(own, "manager", { repoId: "lantern-notes", title: "Own task", workTypeId: "ui", employeeId: "juniper" });
-      const prNumber = await nextPrNumber(own, "manager", "lantern-notes");
+      const { id } = await createAssignment(own, "manager", { sourceId: "lantern-notes", title: "Own task", workTypeId: "ui", employeeId: "juniper" });
+      const externalRef = await nextExternalRef(own, "manager", "lantern-notes");
       const changes = [{ path: "a.ts", summary: "Change A" }];
-      await createWork(own, "manager", { assignmentId: id, prNumber, summary: "Sum", body: "Body", points: [], changes, checks: [] });
+      await createWork(own, "manager", { assignmentId: id, externalRef, summary: "Sum", body: "Body", points: [], changes, checks: [] });
       const p = (await panel(own, "manager", id, other))!;
       expect(p.item.title).toBe("Own task");
       expect(p.focus.body.text).toBe("Body");

@@ -22,7 +22,7 @@ const NOW = new Date("2026-11-01T00:00:00Z");
 function fixture(): DemoFile {
   const work = (round: number, day: number) => ({
     round,
-    prNumber: 200 + round,
+    externalRef: String(200 + round),
     submittedAt: `2026-09-0${day}T10:00:00+08:00`,
     summary: t("摘要", "Summary"),
     body: t("本文", "Body"),
@@ -31,14 +31,14 @@ function fixture(): DemoFile {
     checks: [{ name: "ci", status: "pass" as const, checkedAt: `2026-09-0${day}T10:20:00+08:00` }],
   });
   return {
-    repos: [{ id: "lantern-notes", fullName: "example-org/lantern-notes", project: "bluewing" }],
+    sources: [{ id: "lantern-notes", kind: "repo", name: "example-org/lantern-notes", project: "bluewing" }],
     employees: [{ id: "juniper", displayName: "Juniper", roleNote: t("前端與畫面", "Frontend and UI") }],
     workTypes: ["ui"],
     assignments: [
       {
         id: "j01",
-        repo: "lantern-notes",
-        issueNumber: 101,
+        source: "lantern-notes",
+        externalRef: "101",
         workType: "ui",
         employee: "juniper",
         title: t("空狀態", "Empty state"),
@@ -51,14 +51,14 @@ function fixture(): DemoFile {
       },
       {
         id: "j02",
-        repo: "lantern-notes",
-        issueNumber: 102,
+        source: "lantern-notes",
+        externalRef: "102",
         workType: "ui",
         employee: "juniper",
         title: t("排序", "Sorting"),
         assignedBy: "manager",
         assignedAt: "2026-09-04T09:00:00+08:00",
-        works: [{ ...work(1, 5), prNumber: 301 }],
+        works: [{ ...work(1, 5), externalRef: "301" }],
       },
     ],
     levelDecisions: [
@@ -88,14 +88,14 @@ describe("validateDemo", () => {
 
   it("不是物件、缺少陣列時回報", () => {
     expect(validateDemo(null, access)).toEqual(["demo: must be an object"]);
-    expect(errorsAfter((d: any) => delete d.repos)).toContain("repos: must be an array with at least 1 item(s)");
+    expect(errorsAfter((d: any) => delete d.sources)).toContain("sources: must be an array with at least 1 item(s)");
   });
 
   it.each([
     ["不存在的員工", (d: any) => (d.assignments[0].employee = "nobody"), "assignments[0].employee: must be an employee"],
     ["不存在的工作類型", (d: any) => (d.levelDecisions[0].workType = "docs"), "levelDecisions[0].workType: must be a work type"],
-    ["不存在的 repo", (d: any) => (d.assignments[0].repo = "nowhere"), "assignments[0].repo: must be a repo"],
-    ["access.json 沒有的專案", (d: any) => (d.repos[0].project = "nowhere"), "repos[0].project: must be a project"],
+    ["不存在的工作來源", (d: any) => (d.assignments[0].source = "nowhere"), "assignments[0].source: must be a source"],
+    ["access.json 沒有的專案", (d: any) => (d.sources[0].project = "nowhere"), "sources[0].project: must be a project"],
     ["不存在的身分", (d: any) => (d.assignments[0].assignedBy = "nobody"), "assignments[0].assignedBy: must be an identity"],
     ["canReview 為 false 的身分", (d: any) => (d.assignments[0].works[0].review.decidedBy = "staff"), "works[0].review.decidedBy: must be an identity"],
     ["模擬交件的員工不存在", (d: any) => (d.simulations[0].employee = "nobody"), "simulations[0].employee: must be an employee"],
@@ -134,7 +134,9 @@ describe("validateDemo", () => {
     }, "levelDecisions[0].basisReview: must belong to the same employee"],
     ["依據的驗收不存在", (d: any) => (d.levelDecisions[0].basisReview = "nope"), "levelDecisions[0].basisReview: must be a review"],
     ["重複的驗收 id", (d: any) => (d.assignments[0].works[1].review.id = "j01-1"), "works[1].review.id: duplicate: j01-1"],
-    ["重複的 Issue 編號", (d: any) => (d.assignments[1].issueNumber = 101), "assignments[1].issueNumber: duplicate"],
+    ["重複的 Issue 編號", (d: any) => (d.assignments[1].externalRef = "101"), "assignments[1].externalRef: duplicate"],
+    ["重複的 PR 編號", (d: any) => (d.assignments[1].works[0].externalRef = "201"), "works[0].externalRef: duplicate"],
+    ["重複的來源 id", (d: any) => d.sources.push({ ...d.sources[0], name: "example-org/other" }), "sources[1].id: duplicate: lantern-notes"],
     ["重複的交辦 id", (d: any) => (d.assignments[1].id = "j01"), "assignments[1].id: duplicate: j01"],
   ])("參照與唯一：%s", (_name, change, expected) => {
     expect(errorsAfter(change).join("\n")).toContain(expected);
@@ -144,9 +146,40 @@ describe("validateDemo", () => {
     ["缺少 en", (d: any) => delete d.assignments[0].title.en, "assignments[0].title.en: must be a non-empty string"],
     ["空白的 zh-TW", (d: any) => (d.employees[0].roleNote["zh-TW"] = " "), "employees[0].roleNote.zh-TW: must be a non-empty string"],
     ["字串含網址", (d: any) => (d.assignments[0].works[0].body.en = "see https://example.com"), "works[0].body.en: must not contain a URL"],
-    ["fullName 不是 example-org/", (d: any) => (d.repos[0].fullName = "other-org/lantern-notes"), "repos[0].fullName: must start with example-org/"],
+    ["repo 類的名稱不是 example-org/", (d: any) => (d.sources[0].name = "other-org/lantern-notes"), "sources[0].name: must start with example-org/"],
   ])("雙語與虛構資料：%s", (_name, change, expected) => {
     expect(errorsAfter(change).join("\n")).toContain(expected);
+  });
+
+  it.each([
+    ["類型不在列舉中", (d: any) => (d.sources[0].kind = "chat"), "sources[0].kind: must be one of repo, mailbox, social, knowledge_base"],
+    ["repo 類的交辦沒有外部編號", (d: any) => delete d.assignments[0].externalRef, "assignments[0].externalRef: is required for a repo source"],
+    ["repo 類的工作沒有外部編號", (d: any) => delete d.assignments[0].works[0].externalRef, "works[0].externalRef: is required for a repo source"],
+    ["repo 類的外部編號不是正整數", (d: any) => (d.assignments[0].externalRef = "A-1"), "assignments[0].externalRef: must be a positive integer string"],
+    ["外部編號是數字而不是文字", (d: any) => (d.assignments[0].works[0].externalRef = 201), "works[0].externalRef: must be a non-empty string"],
+    ["外部編號是空字串", (d: any) => {
+      d.sources[0].kind = "mailbox";
+      d.assignments[0].externalRef = " ";
+    }, "assignments[0].externalRef: must be a non-empty string"],
+  ])("工作來源與外部編號：%s", (_name, change, expected) => {
+    expect(errorsAfter(change).join("\n")).toContain(expected);
+  });
+
+  it("repo 以外的類型：外部編號可以省略，名稱不限 example-org/；有值時同一來源內不重複", () => {
+    const mailbox = (d: any) => {
+      d.sources[0] = { id: "lantern-notes", kind: "mailbox", name: "Support inbox", project: "bluewing" };
+      for (const a of d.assignments) {
+        delete a.externalRef;
+        for (const w of a.works) delete w.externalRef;
+      }
+    };
+    expect(errorsAfter(mailbox)).toEqual([]);
+    const duplicated = errorsAfter((d: any) => {
+      mailbox(d);
+      d.assignments[0].externalRef = "MSG-1";
+      d.assignments[1].externalRef = "MSG-1";
+    });
+    expect(duplicated.join("\n")).toContain("assignments[1].externalRef: duplicate");
   });
 
   it("languages 選項決定雙語欄位必須有的語言", () => {
@@ -156,8 +189,8 @@ describe("validateDemo", () => {
 
   it("assertDemo 不通過時拋出列出錯誤的 Error", () => {
     const demo = fixture();
-    demo.assignments[0].repo = "nowhere";
-    expect(() => assertDemo(demo, access, { now: NOW })).toThrow(/assignments\[0\]\.repo/);
+    demo.assignments[0].source = "nowhere";
+    expect(() => assertDemo(demo, access, { now: NOW })).toThrow(/assignments\[0\]\.source/);
   });
 });
 

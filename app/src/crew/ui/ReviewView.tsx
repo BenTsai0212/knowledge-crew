@@ -177,7 +177,7 @@ function topInView(element: HTMLElement): boolean {
   return top >= margin && top < window.innerHeight;
 }
 
-const itemRef = (item: WorkListItem, t: Texts) => fill(t.itemRef, { repo: item.repoFullName, issue: item.issueNumber, pr: item.prNumber });
+const itemRef = (item: WorkListItem, t: Texts) => fill(t.itemRef, { repo: item.sourceName, issue: item.externalRef ?? "", pr: item.workRef ?? "" });
 const itemMeta = (item: WorkListItem, t: Texts, language: LanguageCode) =>
   fill(t.itemMeta, { employee: item.employee.displayName, workType: workTypeLabel(item.workTypeId, language), round: item.round });
 
@@ -269,7 +269,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
           <h4>{t.earlier}</h4>
           {earlier.map((w) => (
             <details key={w.round} className="crew-review__details">
-              <summary>{fill(t.earlierRound, { round: w.round, pr: w.prNumber })}</summary>
+              <summary>{fill(t.earlierRound, { round: w.round, pr: w.externalRef ?? "" })}</summary>
               <p>{w.summary}</p>
               <p className="muted">{fill(t.submittedAt, { date: formatDate(w.submittedAt, language) })}</p>
               {w.review === null ? (

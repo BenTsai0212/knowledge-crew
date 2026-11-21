@@ -44,7 +44,7 @@ describe("mergeLedger：排序", () => {
   const sources = {
     assignments: [
       {
-        id: "a1", repoId: "r", repoFullName: "example-org/r", issueNumber: 1, title: "A1", workTypeId: "docs",
+        id: "a1", sourceId: "r", sourceKind: "repo" as const, sourceName: "example-org/r", externalRef: "1", title: "A1", workTypeId: "docs",
         employeeId: "basil", assignedBy: "manager", assignedAt: T1, latestRound: 1, latestVerdict: "returned" as const,
       },
     ],
@@ -110,7 +110,7 @@ describe("readLedger：匯入虛構資料後", () => {
     const events = await readLedger(db, "manager", lang);
     expect(countKinds(events)).toEqual({ assigned: 26, submitted: 30, accepted: 24, returned: 4, relax: 1 });
     expect(events).toHaveLength(85);
-    expect(new Set(events.map((e) => e.assignment?.repoFullName))).toEqual(new Set(["example-org/lantern-notes", "example-org/harbor-docs"]));
+    expect(new Set(events.map((e) => e.assignment?.sourceName))).toEqual(new Set(["example-org/lantern-notes", "example-org/harbor-docs"]));
     const relax = events.filter((e) => e.kind === "relax");
     expect(relax).toHaveLength(1);
     expect(relax[0]).toMatchObject({ employee: { id: "juniper", displayName: "Juniper" }, workTypeId: "ui", actor: "manager" });
@@ -121,7 +121,7 @@ describe("readLedger：匯入虛構資料後", () => {
     const events = await readLedger(db, "staff", lang);
     expect(events).toHaveLength(49);
     expect(countKinds(events).relax).toBe(1);
-    for (const e of events) expect(e.assignment?.repoFullName ?? "example-org/lantern-notes").toBe("example-org/lantern-notes");
+    for (const e of events) expect(e.assignment?.sourceName ?? "example-org/lantern-notes").toBe("example-org/lantern-notes");
   });
 
   it("guest 與沒有身分：空陣列，不拋錯", async () => {
@@ -141,7 +141,7 @@ describe("readLedger：匯入虛構資料後", () => {
 
   it("完整流程（交辦 → 交件 → 退回「做錯了」）後多四筆：改回逐項看、退回、交件、交辦", async () => {
     const before = await readLedger(db, "manager", lang);
-    const a = await createAssignment(db, "manager", { repoId: "lantern-notes", title: "Ledger flow", workTypeId: "ui", employeeId: "juniper" });
+    const a = await createAssignment(db, "manager", { sourceId: "lantern-notes", title: "Ledger flow", workTypeId: "ui", employeeId: "juniper" });
     const s = await simulateSubmission(db, "manager", a.id, demo, lang);
     const r = await createReview(db, "manager", { workId: s.workId, verdict: "returned", reason: "wrong" });
     const after = await readLedger(db, "manager", lang);
@@ -150,7 +150,7 @@ describe("readLedger：匯入虛構資料後", () => {
     expect(after[0]).toMatchObject({ actor: null, employee: { id: "juniper" }, workTypeId: "ui", assignment: { id: a.id, title: "Ledger flow" } });
     expect(after[1]).toMatchObject({ kind: "returned", reason: "wrong", actor: "manager" });
     expect(after[2]).toMatchObject({ kind: "submitted", round: 1, actor: "juniper" });
-    expect(after[3]).toMatchObject({ kind: "assigned", actor: "manager", assignment: { repoFullName: "example-org/lantern-notes" } });
+    expect(after[3]).toMatchObject({ kind: "assigned", actor: "manager", assignment: { sourceName: "example-org/lantern-notes" } });
     // staff 同樣看得到青翼專案的這四筆
     expect((await readLedger(db, "staff", lang)).slice(0, 4).map((e) => e.id)).toEqual(after.slice(0, 4).map((e) => e.id));
   });

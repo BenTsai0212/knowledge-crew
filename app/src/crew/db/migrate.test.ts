@@ -52,7 +52,7 @@ describe("crew 的 migration", { timeout: 30_000 }, () => {
     expect(migrations.filter((m) => crewSql.has(m.sql))).toEqual([]);
   });
 
-  it("約束：executor_type 只允許 platform；repo 必須屬於存在的專案", async () => {
+  it("約束：executor_type 只允許 platform；來源必須屬於存在的專案", async () => {
     const pg = await bare();
     await applyMigrations(pg);
     await applyMigrations(pg, crewMigrations);
@@ -61,11 +61,11 @@ describe("crew 的 migration", { timeout: 30_000 }, () => {
       pg.exec("INSERT INTO crew.employees (id, display_name, executor_type) VALUES ('x', 'X', 'external')"),
     ).rejects.toThrow(/check constraint/);
     await expect(
-      pg.exec("INSERT INTO crew.repos (id, full_name, project_id) VALUES ('x', 'example-org/x', 'nowhere')"),
+      pg.exec("INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('x', 'repo', 'example-org/x', 'nowhere')"),
     ).rejects.toThrow(/foreign key/);
-    await pg.exec("INSERT INTO crew.repos (id, full_name, project_id) VALUES ('a', 'example-org/a', 'bluewing')");
+    await pg.exec("INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('a', 'repo', 'example-org/a', 'bluewing')");
     await expect(
-      pg.exec("INSERT INTO crew.repos (id, full_name, project_id) VALUES ('b', 'example-org/a', 'bluewing')"),
+      pg.exec("INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('b', 'repo', 'example-org/a', 'bluewing')"),
     ).rejects.toThrow(/unique/);
     await pg.close();
   });

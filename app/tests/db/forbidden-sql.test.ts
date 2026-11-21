@@ -54,7 +54,7 @@ describe("migration 不使用 SECURITY DEFINER", () => {
 
   it("所有 migration 都沒有", () => {
     const migrations = Object.entries(sources).filter(([path]) => path.endsWith(".sql"));
-    expect(migrations.map(([path]) => path)).toEqual(expect.arrayContaining(["../../src/db/migrations/0005_upload_write.sql"]));
+    expect(migrations.map(([path]) => path)).toEqual(expect.arrayContaining(["../../src/db/migrations/0005_upload_write.sql", "../../src/crew/db/migrations/0004_work_sources_external_refs.sql"]));
     expect(migrations.filter(([, sql]) => definer(sql)).map(([path]) => path)).toEqual([]);
   });
 });

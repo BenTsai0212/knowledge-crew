@@ -38,16 +38,16 @@ export function crewFill(template: string, values: Record<string, string | numbe
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key]));
 }
 
-// 虛構資料（client/crew/demo.json）：員工、工作類型與 repo 以 id 指定，名稱從資料讀
+// 虛構資料（client/crew/demo.json）：員工、工作類型與工作來源以 id 指定，名稱從資料讀
 interface Demo {
-  repos: { id: string; fullName: string; project: string }[];
+  sources: { id: string; kind: string; name: string; project: string }[];
   employees: { id: string; displayName: string }[];
   simulations: { employee: string; workType: string; replies: { body: Record<string, string> }[] }[];
 }
-export const demo: Demo = hasCrewDemo ? readClientJson<Demo>("crew/demo.json") : { repos: [], employees: [], simulations: [] };
+export const demo: Demo = hasCrewDemo ? readClientJson<Demo>("crew/demo.json") : { sources: [], employees: [], simulations: [] };
 export const employeeName = (id: string) => demo.employees.find((e) => e.id === id)!.displayName;
 export const workTypeName = (id: string) => (ct.common as Record<string, string>)[`workType${id.charAt(0).toUpperCase()}${id.slice(1)}`];
-export const repoOf = (project: string) => demo.repos.find((r) => r.project === project)!;
+export const repoOf = (project: string) => demo.sources.find((s) => s.kind === "repo" && s.project === project)!;
 // 模擬交件第一輪的全文
 export const firstReplyBody = (employee: string, workType: string) =>
   demo.simulations.find((x) => x.employee === employee && x.workType === workType)!.replies[0].body[language];

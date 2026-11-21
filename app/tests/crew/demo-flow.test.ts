@@ -24,7 +24,7 @@ const juniperUi = async () => {
 };
 
 const assignSubmitReturn = async (reason: ReturnReason) => {
-  const a = await createAssignment(db, "manager", { repoId: "lantern-notes", title: "Pin notes", workTypeId: "ui", employeeId: "juniper" });
+  const a = await createAssignment(db, "manager", { sourceId: "lantern-notes", title: "Pin notes", workTypeId: "ui", employeeId: "juniper" });
   const { workId } = await simulateSubmission(db, "manager", a.id, DEMO as DemoFile, "zh-TW");
   return createReview(db, "manager", { workId, verdict: "returned", reason });
 };

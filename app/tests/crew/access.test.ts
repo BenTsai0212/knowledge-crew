@@ -8,9 +8,9 @@ import { openDatabase, type Database } from "../../src/db/database";
 // 虛構資料，以 superuser 匯入
 async function seedCrew(pg: PGliteInterface): Promise<void> {
   await pg.exec(`
-    INSERT INTO crew.repos (id, full_name, project_id) VALUES
-      ('lantern', 'example-org/lantern-notes', 'bluewing'),
-      ('harbor', 'example-org/harbor-docs', 'longpier');
+    INSERT INTO crew.sources (id, kind, name, project_id) VALUES
+      ('lantern', 'repo', 'example-org/lantern-notes', 'bluewing'),
+      ('harbor', 'repo', 'example-org/harbor-docs', 'longpier');
     INSERT INTO crew.employees (id, display_name, role_note) VALUES
       ('juniper', 'Juniper', 'UI'),
       ('basil', 'Basil', NULL);
@@ -18,9 +18,9 @@ async function seedCrew(pg: PGliteInterface): Promise<void> {
   `);
 }
 
-const TABLES = ["repos", "employees", "work_types"] as const;
+const TABLES = ["sources", "employees", "work_types"] as const;
 const ALL = { employees: ["basil", "juniper"], work_types: ["docs", "ui"] };
-const NONE = { repos: [], employees: [], work_types: [] };
+const NONE = { sources: [], employees: [], work_types: [] };
 
 let db: Database;
 
@@ -42,9 +42,9 @@ const readAll = async (identity: string | null) =>
 const MATRIX: [string, string | null, Record<string, string[]>][] = [
   ["沒有身分", null, NONE],
   ["不存在的身分", "nobody", NONE],
-  ["guest", "guest", { repos: [], ...ALL }],
-  ["staff", "staff", { repos: ["lantern"], ...ALL }],
-  ["manager", "manager", { repos: ["harbor", "lantern"], ...ALL }],
+  ["guest", "guest", { sources: [], ...ALL }],
+  ["staff", "staff", { sources: ["lantern"], ...ALL }],
+  ["manager", "manager", { sources: ["harbor", "lantern"], ...ALL }],
 ];
 
 describe("讀取", () => {
@@ -53,16 +53,16 @@ describe("讀取", () => {
   });
 
   it("以條件查詢也讀不到其他專案的 repo", async () => {
-    const n = await db.withIdentity("staff", async (tx) => (await tx.query("SELECT * FROM crew.repos WHERE project_id = 'longpier'")).rows.length);
+    const n = await db.withIdentity("staff", async (tx) => (await tx.query("SELECT * FROM crew.sources WHERE project_id = 'longpier'")).rows.length);
     expect(n).toBe(0);
   });
 });
 
 describe("kk_app 不能寫入", () => {
   it.each([
-    ["repos INSERT", "INSERT INTO crew.repos (id, full_name, project_id) VALUES ('x', 'example-org/x', 'bluewing')"],
-    ["repos UPDATE", "UPDATE crew.repos SET full_name = 'example-org/y'"],
-    ["repos DELETE", "DELETE FROM crew.repos"],
+    ["sources INSERT", "INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('x', 'repo', 'example-org/x', 'bluewing')"],
+    ["sources UPDATE", "UPDATE crew.sources SET name = 'example-org/y'"],
+    ["sources DELETE", "DELETE FROM crew.sources"],
     ["employees INSERT", "INSERT INTO crew.employees (id, display_name) VALUES ('x', 'X')"],
     ["employees UPDATE", "UPDATE crew.employees SET display_name = 'Y'"],
     ["employees DELETE", "DELETE FROM crew.employees"],
@@ -74,9 +74,9 @@ describe("kk_app 不能寫入", () => {
   });
 
   it.each([
-    ["DISABLE ROW LEVEL SECURITY", "ALTER TABLE crew.repos DISABLE ROW LEVEL SECURITY"],
-    ["NO FORCE ROW LEVEL SECURITY", "ALTER TABLE crew.repos NO FORCE ROW LEVEL SECURITY"],
-    ["DROP POLICY", "DROP POLICY can_see ON crew.repos"],
+    ["DISABLE ROW LEVEL SECURITY", "ALTER TABLE crew.sources DISABLE ROW LEVEL SECURITY"],
+    ["NO FORCE ROW LEVEL SECURITY", "ALTER TABLE crew.sources NO FORCE ROW LEVEL SECURITY"],
+    ["DROP POLICY", "DROP POLICY can_see ON crew.sources"],
   ])("%s 失敗", async (_name, sql) => {
     await expect(db.withIdentity("staff", (tx) => tx.exec(sql))).rejects.toThrow("must be owner");
   });
@@ -97,7 +97,7 @@ describe("結構", () => {
           ORDER BY c.relname`)
       ).rows,
     );
-    expect(rows.map((r) => r.relname)).toEqual(["assignments", "employees", "level_decisions", "repos", "reviews", "work_changes", "work_checks", "work_points", "work_types", "works"]);
+    expect(rows.map((r) => r.relname)).toEqual(["assignments", "employees", "level_decisions", "reviews", "sources", "work_changes", "work_checks", "work_points", "work_types", "works"]);
     for (const r of rows) expect(r, r.relname).toMatchObject({ owner: "kk_owner", rls: true, force: true });
   });
 });

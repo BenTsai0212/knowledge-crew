@@ -16,8 +16,9 @@ import {
   getTrustInputs,
   listAssignments,
   listEmployees,
-  listRepos,
+  listSources,
   listReviews,
+  nextExternalRef,
   type NewWork,
 } from "./store";
 
@@ -42,9 +43,9 @@ describe("讀取（匯入 demo.json 後）", () => {
   afterAll(() => db.close());
 
   it("repo 與員工依 RLS：staff 只看到 lantern-notes，guest 看不到", async () => {
-    expect((await listRepos(db, "manager")).map((r) => r.fullName)).toEqual(["example-org/harbor-docs", "example-org/lantern-notes"]);
-    expect(await listRepos(db, "staff")).toEqual([{ id: "lantern-notes", fullName: "example-org/lantern-notes", projectId: "bluewing" }]);
-    expect(await listRepos(db, "guest")).toEqual([]);
+    expect((await listSources(db, "manager")).map((r) => r.name)).toEqual(["example-org/harbor-docs", "example-org/lantern-notes"]);
+    expect(await listSources(db, "staff")).toEqual([{ id: "lantern-notes", kind: "repo", name: "example-org/lantern-notes", projectId: "bluewing" }]);
+    expect(await listSources(db, "guest")).toEqual([]);
     expect((await listEmployees(db, "staff")).map((e) => e.id)).toEqual(["basil", "juniper"]);
     expect(await listEmployees(db, null)).toEqual([]);
   });
@@ -55,7 +56,7 @@ describe("讀取（匯入 demo.json 後）", () => {
     const times = list.map((a) => Date.parse(a.assignedAt));
     expect(times).toEqual([...times].sort((x, y) => y - x));
     const byId = Object.fromEntries(list.map((a) => [a.id, a]));
-    expect(byId.j01).toMatchObject({ repoFullName: "example-org/lantern-notes", issueNumber: 101, latestRound: 2, latestVerdict: "accepted", assignedBy: "manager" });
+    expect(byId.j01).toMatchObject({ sourceName: "example-org/lantern-notes", externalRef: "101", latestRound: 2, latestVerdict: "accepted", assignedBy: "manager" });
     expect(byId.j01.assignedAt).toBe(new Date("2026-09-01T09:00:00+08:00").toISOString());
     for (const id of ["j13", "b11"]) expect(byId[id]).toMatchObject({ latestRound: 1, latestVerdict: null });
     expect((await listAssignments(db, "staff")).length).toBe(15);
@@ -66,7 +67,7 @@ describe("讀取（匯入 demo.json 後）", () => {
     const works = await getAssignmentWorks(db, "manager", "j01");
     expect(works.map((w) => w.round)).toEqual([1, 2]);
     const [first, second] = works;
-    expect(first).toMatchObject({ id: "j01-w1", prNumber: 201, checks: [{ name: "ci", status: "pass" }] });
+    expect(first).toMatchObject({ id: "j01-w1", externalRef: "201", checks: [{ name: "ci", status: "pass" }] });
     expect(first.points.length).toBeGreaterThan(0);
     expect(first.changes.length).toBeGreaterThan(0);
     expect(first.review).toMatchObject({ id: "j01-1", workId: "j01-w1", verdict: "returned", reason: "wrong", decidedBy: "manager" });
@@ -124,7 +125,7 @@ describe("讀取（匯入 demo.json 後）", () => {
 });
 
 const WORK: Omit<NewWork, "assignmentId"> = {
-  prNumber: 999,
+  externalRef: "999",
   summary: "Draft",
   body: "Body",
   points: ["Layout", "Colors"],
@@ -141,8 +142,8 @@ describe("寫入", () => {
 
   it("manager：交辦、交件、驗收、少看的決定，寫入後讀回一致；身分與時間由資料庫填入", async () => {
     const before = Date.now();
-    const a = await createAssignment(db, "manager", { repoId: "lantern-notes", title: "New card", workTypeId: "ui", employeeId: "juniper" });
-    expect(a.issueNumber).toBe(116);
+    const a = await createAssignment(db, "manager", { sourceId: "lantern-notes", title: "New card", workTypeId: "ui", employeeId: "juniper" });
+    expect(a.externalRef).toBe("116");
     const summary = (await listAssignments(db, "manager")).find((x) => x.id === a.id)!;
     expect(summary).toMatchObject({ title: "New card", assignedBy: "manager", latestRound: null, latestVerdict: null });
     expect(Date.parse(summary.assignedAt)).toBeGreaterThanOrEqual(before - 1000);
@@ -151,13 +152,13 @@ describe("寫入", () => {
     const w1 = await createWork(db, "manager", { ...WORK, assignmentId: a.id });
     expect(w1.round).toBe(1);
     const r1 = await createReview(db, "manager", { workId: w1.id, verdict: "returned", reason: "process", note: "Split it" });
-    const w2 = await createWork(db, "manager", { ...WORK, prNumber: 1000, assignmentId: a.id });
+    const w2 = await createWork(db, "manager", { ...WORK, externalRef: "1000", assignmentId: a.id });
     expect(w2.round).toBe(2);
 
     const works = await getAssignmentWorks(db, "manager", a.id);
     expect(works).toHaveLength(2);
     expect(works[0]).toMatchObject({
-      id: w1.id, prNumber: 999, summary: "Draft", body: "Body", points: ["Layout", "Colors"], changes: WORK.changes,
+      id: w1.id, externalRef: "999", summary: "Draft", body: "Body", points: ["Layout", "Colors"], changes: WORK.changes,
       checks: [{ name: "ci", status: "pass" }, { name: "lint", status: "fail" }],
       review: { id: r1.id, verdict: "returned", reason: "process", note: "Split it", decidedBy: "manager" },
     });
@@ -175,7 +176,7 @@ describe("寫入", () => {
     const before = await listAssignments(db, "manager");
     const reviews = await listReviews(db, "manager");
     const decisions = (await getTrustInputs(db, "manager", "juniper", "ui")).decisions;
-    await expect(createAssignment(db, identity, { repoId: "lantern-notes", title: "X", workTypeId: "ui", employeeId: "juniper" })).rejects.toThrow();
+    await expect(createAssignment(db, identity, { sourceId: "lantern-notes", title: "X", workTypeId: "ui", employeeId: "juniper" })).rejects.toThrow();
     await expect(createWork(db, identity, { ...WORK, assignmentId: "j13" })).rejects.toThrow();
     await expect(createReview(db, identity, { workId: "j13-w1", verdict: "accepted" })).rejects.toThrow();
     await expect(createLevelDecision(db, identity, { employeeId: "juniper", workTypeId: "ui", decision: "revoke" })).rejects.toThrow();
@@ -183,5 +184,50 @@ describe("寫入", () => {
     expect(await listReviews(db, "manager")).toEqual(reviews);
     expect((await getTrustInputs(db, "manager", "juniper", "ui")).decisions).toEqual(decisions);
     expect(await getAssignmentWorks(db, "manager", "j13")).toHaveLength(1);
+  });
+});
+
+describe("外部編號（#57）", () => {
+  let db: Database;
+  beforeAll(async () => {
+    // demo.json 只有 repo 類；另加一個青翼專案的信箱（虛構）
+    const seed = demoSeed(DEMO_RAW, clientConfig);
+    db = await openDatabase(clientConfig, {
+      migrations: crewMigrations,
+      seed: async (pg) => {
+        await seed(pg);
+        await pg.exec("INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('inbox', 'mailbox', 'Support inbox', 'bluewing')");
+      },
+    });
+  });
+  afterAll(() => db.close());
+
+  it("來源有類型、依名稱排序；看得到的範圍照舊由專案決定", async () => {
+    expect((await listSources(db, "manager")).map((s) => [s.id, s.kind])).toEqual([
+      ["inbox", "mailbox"], ["harbor-docs", "repo"], ["lantern-notes", "repo"],
+    ]);
+    expect((await listSources(db, "staff")).map((s) => s.id)).toEqual(["inbox", "lantern-notes"]);
+    expect(await listSources(db, "guest")).toEqual([]);
+  });
+
+  it("repo 類：交辦產生下一個 Issue 編號、交件產生下一個 PR 編號", async () => {
+    expect(await nextExternalRef(db, "manager", "lantern-notes")).toBe("218");
+    expect(await nextExternalRef(db, "manager", "harbor-docs")).toBe("74");
+    // 看不到的來源沒有編號
+    expect(await nextExternalRef(db, "staff", "harbor-docs")).toBeNull();
+  });
+
+  it("repo 以外的類型：交辦與交件的外部編號是 null，讀回也是 null", async () => {
+    const a = await createAssignment(db, "manager", { sourceId: "inbox", title: "Reply", workTypeId: "docs", employeeId: "basil" });
+    expect(a.externalRef).toBeNull();
+    const externalRef = await nextExternalRef(db, "manager", "inbox");
+    expect(externalRef).toBeNull();
+    await createWork(db, "manager", { ...WORK, externalRef, assignmentId: a.id });
+    expect((await listAssignments(db, "manager")).find((x) => x.id === a.id)).toMatchObject({
+      sourceKind: "mailbox", sourceName: "Support inbox", externalRef: null, latestRound: 1,
+    });
+    expect((await getAssignmentWorks(db, "manager", a.id))[0].externalRef).toBeNull();
+    // 第二筆同樣沒有編號（NULL 不互相衝突）
+    expect((await createAssignment(db, "manager", { sourceId: "inbox", title: "Reply 2", workTypeId: "docs", employeeId: "basil" })).externalRef).toBeNull();
   });
 });

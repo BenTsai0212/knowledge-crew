@@ -8,7 +8,7 @@ import { demoSeed } from "./seed";
 import type { DemoFile } from "./types";
 
 const demo = DEMO_RAW as DemoFile;
-const TABLES = ["repos", "employees", "work_types", "assignments", "works", "work_points", "work_changes", "work_checks", "reviews", "level_decisions"];
+const TABLES = ["sources", "employees", "work_types", "assignments", "works", "work_points", "work_changes", "work_checks", "reviews", "level_decisions"];
 
 const counts = async (pg: PGliteInterface) =>
   Object.fromEntries(
@@ -40,7 +40,7 @@ describe("demoSeed", () => {
   it("匯入後的筆數與 demo.json 一致（交辦 26、工作 30、驗收 28、少看的決定 1）", async () => {
     const works = demo.assignments.flatMap((a) => a.works);
     const expected = {
-      repos: 2, employees: 2, work_types: 3, assignments: 26, works: 30, reviews: 28, level_decisions: 1,
+      sources: 2, employees: 2, work_types: 3, assignments: 26, works: 30, reviews: 28, level_decisions: 1,
       work_points: works.reduce((n, w) => n + w.points.length, 0),
       work_changes: works.reduce((n, w) => n + w.changes.length, 0),
       work_checks: works.reduce((n, w) => n + w.checks.length, 0),

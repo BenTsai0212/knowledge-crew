@@ -120,7 +120,7 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
                 <span className="crew-ledger__meta muted">
                   {e.assignment && (
                     <span className="crew-ledger__ref">
-                      {fill(t.assignmentRef, { repo: e.assignment.repoFullName, issue: e.assignment.issueNumber })}
+                      {fill(t.assignmentRef, { repo: e.assignment.sourceName, issue: e.assignment.externalRef ?? "" })}
                     </span>
                   )}
                   <span>{fill(t.eventMeta, { employee: e.employee.displayName, workType: workTypeLabel(e.workTypeId, language) })}</span>
