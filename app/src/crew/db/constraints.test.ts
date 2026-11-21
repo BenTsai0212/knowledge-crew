@@ -1,4 +1,4 @@
-// crew 0002 的 CHECK 與 UNIQUE（#26）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
+// crew 0002 的 CHECK 與 UNIQUE（#26），與 0004 的工作來源與外部編號（#57）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyMigrations } from "../../db/migrate";
@@ -18,12 +18,12 @@ beforeAll(async () => {
     INSERT INTO kk.visibility_levels (id, rank) VALUES ('internal', 0);
     INSERT INTO kk.projects (id) VALUES ('bluewing');
     INSERT INTO kk.identities (id, visibility_level_id) VALUES ('manager', 'internal');
-    INSERT INTO crew.repos (id, full_name, project_id) VALUES ('lantern', 'example-org/lantern-notes', 'bluewing');
+    INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('lantern', 'repo', 'example-org/lantern-notes', 'bluewing');
     INSERT INTO crew.employees (id, display_name) VALUES ('juniper', 'Juniper');
     INSERT INTO crew.work_types (id) VALUES ('ui');
-    INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id, assigned_by)
+    INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, assigned_by)
       VALUES ('a1', 'lantern', 1, 'Fix header', 'ui', 'juniper', 'manager');
-    INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES
+    INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES
       ('w1', 'a1', 1, 10, 'Header'), ('w2', 'a1', 2, 11, 'Header'), ('w3', 'a1', 3, 12, 'Header');
   `);
 }, 30_000);
@@ -36,8 +36,8 @@ const review = (id: string, work: string, verdict: string, reason: string | null
 
 describe("crew 0002 的約束", () => {
   it.each([
-    ["assignments 的 (repo_id, issue_number) 重複", "INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id, assigned_by) VALUES ('a2', 'lantern', 1, 'X', 'ui', 'juniper', 'manager')", /unique/],
-    ["works 的 (assignment_id, round) 重複", "INSERT INTO crew.works (id, assignment_id, round, pr_number, summary) VALUES ('wx', 'a1', 1, 13, 'X')", /unique/],
+    ["assignments 的 (source_id, external_ref) 重複", "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, assigned_by) VALUES ('a2', 'lantern', 1, 'X', 'ui', 'juniper', 'manager')", /unique/],
+    ["works 的 (assignment_id, round) 重複", "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('wx', 'a1', 1, 13, 'X')", /unique/],
     ["work_checks.status = running", "INSERT INTO crew.work_checks (work_id, name, status) VALUES ('w1', 'test', 'running')", /check constraint/],
     ["reviews.verdict = maybe", review("rx", "w1", "maybe", null), /check constraint/],
     ["reviews.reason = other", review("rx", "w1", "returned", "other"), /check constraint/],
@@ -63,5 +63,39 @@ describe("crew 0002 的約束", () => {
       "SELECT status FROM crew.work_checks WHERE work_id = 'w3' AND name = 'test' ORDER BY checked_at, id",
     );
     expect(rows.rows.map((r) => r.status)).toEqual(["pending", "pass"]);
+  });
+});
+
+describe("crew 0004 的工作來源與外部編號", () => {
+  const assignment = (id: string, source: string, ref: string | null) =>
+    `INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, assigned_by) VALUES ('${id}', '${source}', ${ref === null ? "NULL" : `'${ref}'`}, 'X', 'ui', 'juniper', 'manager')`;
+
+  it("既有的來源是 repo 類；類型只允許四種、一定要指定", async () => {
+    expect((await pg.query<{ kind: string }>("SELECT kind FROM crew.sources")).rows).toEqual([{ kind: "repo" }]);
+    for (const kind of ["mailbox", "social", "knowledge_base"]) {
+      await pg.exec(`INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('s-${kind}', '${kind}', 'Source ${kind}', 'bluewing')`);
+    }
+    await expect(pg.exec("INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('s-x', 'chat', 'X', 'bluewing')")).rejects.toThrow(/check constraint/);
+    await expect(pg.exec("INSERT INTO crew.sources (id, name, project_id) VALUES ('s-y', 'Y', 'bluewing')")).rejects.toThrow(/null value/);
+    await expect(pg.exec("INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('s-z', 'mailbox', '', 'bluewing')")).rejects.toThrow(/check constraint/);
+    await expect(pg.exec("INSERT INTO crew.sources (id, kind, name, project_id) VALUES ('s-w', 'mailbox', 'Source mailbox', 'bluewing')")).rejects.toThrow(/unique/);
+  });
+
+  it("外部編號可以為空，同一來源可有多筆；有值時同一來源內不重複，不同來源可以重複；空字串被拒", async () => {
+    await pg.exec(assignment("n1", "s-mailbox", null));
+    await pg.exec(assignment("n2", "s-mailbox", null));
+    await pg.exec(assignment("m1", "s-mailbox", "MSG-1"));
+    await expect(pg.exec(assignment("m2", "s-mailbox", "MSG-1"))).rejects.toThrow(/unique/);
+    await pg.exec(assignment("m3", "s-social", "MSG-1"));
+    await expect(pg.exec(assignment("m4", "s-mailbox", ""))).rejects.toThrow(/check constraint/);
+    await pg.exec("INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('wn', 'n1', 1, NULL, 'X')");
+    await expect(pg.exec("INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('we', 'n2', 1, '', 'X')")).rejects.toThrow(/check constraint/);
+  });
+
+  it("限制名稱與表、欄位一致", async () => {
+    const names = (await pg.query<{ conname: string }>(
+      "SELECT conname FROM pg_constraint WHERE conname IN ('sources_name_key', 'assignments_source_id_external_ref_key') ORDER BY 1",
+    )).rows.map((r) => r.conname);
+    expect(names).toEqual(["assignments_source_id_external_ref_key", "sources_name_key"]);
   });
 });

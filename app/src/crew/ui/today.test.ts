@@ -46,7 +46,7 @@ describe("readToday：匯入虛構資料後", () => {
     const today = await read("staff");
     expect(today.canReview).toBe(false);
     expect(today.awaitingReview.map((a) => a.id)).toEqual(["j13"]);
-    expect(today.awaitingReview[0].repoFullName).toBe("example-org/lantern-notes");
+    expect(today.awaitingReview[0].sourceName).toBe("example-org/lantern-notes");
     expect(today.inProgress).toEqual([]);
     expect(today.suggestions).toEqual([]);
   });

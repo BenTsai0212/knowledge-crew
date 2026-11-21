@@ -29,7 +29,7 @@ describe("pickReply", () => {
 
 describe("simulateSubmission", () => {
   it("manager：交件後最新一輪為 1；退回後再交件為 2；文字依語言、檢查取最新一筆", async () => {
-    const a = await createAssignment(db, "manager", { repoId: "lantern-notes", title: "New card", workTypeId: "ui", employeeId: "juniper" });
+    const a = await createAssignment(db, "manager", { sourceId: "lantern-notes", title: "New card", workTypeId: "ui", employeeId: "juniper" });
 
     const s1 = await simulateSubmission(db, "manager", a.id, demo, "zh-TW");
     expect(s1.round).toBe(1);
@@ -38,7 +38,7 @@ describe("simulateSubmission", () => {
     expect(works[0]).toMatchObject({
       id: s1.workId,
       round: 1,
-      prNumber: 218,
+      externalRef: "218",
       summary: first.summary["zh-TW"],
       body: first.body["zh-TW"],
       points: first.points.map((p) => p["zh-TW"]),
@@ -52,7 +52,7 @@ describe("simulateSubmission", () => {
     const s2 = await simulateSubmission(db, "manager", a.id, demo, "en");
     expect(s2.round).toBe(2);
     works = await getAssignmentWorks(db, "manager", a.id);
-    expect(works[1]).toMatchObject({ id: s2.workId, prNumber: 219, summary: second.summary.en, checks: [{ name: "ci", status: "pass" }] });
+    expect(works[1]).toMatchObject({ id: s2.workId, externalRef: "219", summary: second.summary.en, checks: [{ name: "ci", status: "pass" }] });
     expect((await listAssignments(db, "manager")).find((x) => x.id === a.id)).toMatchObject({ latestRound: 2, latestVerdict: null });
   });
 

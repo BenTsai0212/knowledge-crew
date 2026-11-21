@@ -24,7 +24,7 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
     const insert = (table: string, columns: string[], values: unknown[]) =>
       tx.query(`INSERT INTO crew.${table} (${columns.join(", ")}) VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})`, values);
 
-    for (const r of demo.repos) await insert("repos", ["id", "full_name", "project_id"], [r.id, r.fullName, r.project]);
+    for (const s of demo.sources) await insert("sources", ["id", "kind", "name", "project_id"], [s.id, s.kind, s.name, s.project]);
     for (const e of demo.employees) {
       await insert("employees", ["id", "display_name", "role_note"], [e.id, e.displayName, e.roleNote[language]]);
     }
@@ -33,15 +33,15 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
     for (const a of demo.assignments) {
       await insert(
         "assignments",
-        ["id", "repo_id", "issue_number", "title", "work_type_id", "employee_id", "assigned_by", "assigned_at"],
-        [a.id, a.repo, a.issueNumber, a.title[language], a.workType, a.employee, a.assignedBy, a.assignedAt],
+        ["id", "source_id", "external_ref", "title", "work_type_id", "employee_id", "assigned_by", "assigned_at"],
+        [a.id, a.source, a.externalRef ?? null, a.title[language], a.workType, a.employee, a.assignedBy, a.assignedAt],
       );
       for (const w of a.works) {
         const workId = demoWorkId(a.id, w.round);
         await insert(
           "works",
-          ["id", "assignment_id", "round", "pr_number", "summary", "body", "submitted_at"],
-          [workId, a.id, w.round, w.prNumber, w.summary[language], w.body[language], w.submittedAt],
+          ["id", "assignment_id", "round", "external_ref", "summary", "body", "submitted_at"],
+          [workId, a.id, w.round, w.externalRef ?? null, w.summary[language], w.body[language], w.submittedAt],
         );
         for (const [i, p] of w.points.entries()) await insert("work_points", ["work_id", "ordinal", "text"], [workId, i + 1, p[language]]);
         for (const [i, c] of w.changes.entries()) {

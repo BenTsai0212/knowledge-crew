@@ -86,8 +86,8 @@ test.describe("權限（桌機）", () => {
 
   test("staff：看得到青翼專案的交辦與工作，各子頁都沒有寫入按鈕", async ({ page }) => {
     await openCrewAs(page, "staff");
-    const bluewing = repoOf("bluewing").fullName;
-    const longpier = repoOf("longpier").fullName;
+    const bluewing = repoOf("bluewing").name;
+    const longpier = repoOf("longpier").name;
 
     await gotoCrewSection(page, ct.common.sectionAssignments);
     await expect(page.getByText(ct.assign.readOnlyNote, { exact: true })).toBeVisible();

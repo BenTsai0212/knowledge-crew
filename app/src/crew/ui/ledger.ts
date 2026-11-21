@@ -14,8 +14,8 @@ export interface LedgerAssignment {
   id: string;
   /** 目前語言的標題；找不到時是資料庫的原文 */
   title: string;
-  repoFullName: string;
-  issueNumber: number;
+  sourceName: string;
+  externalRef: string | null;
 }
 
 export interface LedgerEvent {
@@ -132,8 +132,8 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
   const toAssignment = (a: AssignmentSummary): LedgerAssignment => ({
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
-    repoFullName: a.repoFullName,
-    issueNumber: a.issueNumber,
+    sourceName: a.sourceName,
+    externalRef: a.externalRef,
   });
   const base = (a: AssignmentSummary) => ({
     employee: employee(a.employeeId),

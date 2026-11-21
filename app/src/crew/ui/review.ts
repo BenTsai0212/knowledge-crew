@@ -14,10 +14,10 @@ export const RECENT_LIMIT = 10;
 export interface WorkListItem {
   id: string;
   title: string;
-  repoFullName: string;
-  issueNumber: number;
+  sourceName: string;
+  externalRef: string | null;
   /** 最新一輪的 PR 編號 */
-  prNumber: number;
+  workRef: string | null;
   employee: { id: string; displayName: string };
   workTypeId: string;
   /** 最新一輪 */
@@ -35,7 +35,7 @@ export interface WorkList {
 
 export interface EarlierRound {
   round: number;
-  prNumber: number;
+  externalRef: string | null;
   summary: string;
   submittedAt: string;
   review: { verdict: Verdict; reason: ReturnReason | null; note: string | null; decidedAt: string } | null;
@@ -44,7 +44,7 @@ export interface EarlierRound {
 export interface ReviewPanel {
   item: WorkListItem;
   focus: ReviewFocus;
-  current: { id: string; round: number; prNumber: number; summary: string; submittedAt: string };
+  current: { id: string; round: number; externalRef: string | null; summary: string; submittedAt: string };
   /** 同一交辦的前幾輪，依輪次舊到新 */
   earlier: EarlierRound[];
   /** 能驗收的身分，且最新一輪還沒驗收 */
@@ -56,7 +56,7 @@ const EMPTY: WorkList = { awaiting: [], recent: [] };
 /** 每個交辦最新一輪的 PR 編號與驗收時間（AssignmentSummary 沒有這兩項） */
 interface LatestRow {
   assignmentId: string;
-  prNumber: number;
+  workRef: string | null;
   decidedAt: Date | null;
 }
 
@@ -64,7 +64,7 @@ function readLatest(db: Database, identity: string): Promise<LatestRow[]> {
   return db.withIdentity(identity, async (tx) =>
     (
       await tx.query<LatestRow>(
-        `SELECT DISTINCT ON (w.assignment_id) w.assignment_id AS "assignmentId", w.pr_number AS "prNumber", rv.decided_at AS "decidedAt"
+        `SELECT DISTINCT ON (w.assignment_id) w.assignment_id AS "assignmentId", w.external_ref AS "workRef", rv.decided_at AS "decidedAt"
          FROM crew.works w LEFT JOIN crew.reviews rv ON rv.work_id = w.id
          ORDER BY w.assignment_id, w.round DESC`,
       )
@@ -87,18 +87,18 @@ async function readItems(db: Database, identity: string, language: LanguageCode)
   for (const a of [...assignments].reverse()) {
     const l = byAssignment.get(a.id);
     if (a.latestRound === null || !l) continue;
-    items.push({ ...toItem(a, a.latestRound, l.prNumber, names, language), decidedAt: l.decidedAt ? new Date(l.decidedAt).getTime() : 0 });
+    items.push({ ...toItem(a, a.latestRound, l.workRef, names, language), decidedAt: l.decidedAt ? new Date(l.decidedAt).getTime() : 0 });
   }
   return items;
 }
 
-function toItem(a: AssignmentSummary, round: number, prNumber: number, names: Map<string, string>, language: LanguageCode): WorkListItem {
+function toItem(a: AssignmentSummary, round: number, workRef: string | null, names: Map<string, string>, language: LanguageCode): WorkListItem {
   return {
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
-    repoFullName: a.repoFullName,
-    issueNumber: a.issueNumber,
-    prNumber,
+    sourceName: a.sourceName,
+    externalRef: a.externalRef,
+    workRef,
     employee: { id: a.employeeId, displayName: names.get(a.employeeId) ?? a.employeeId },
     workTypeId: a.workTypeId,
     round,
@@ -142,10 +142,10 @@ export async function readReviewPanel(
   return {
     item,
     focus: reviewFocus(current, reviewLevel(reviews, decisions)),
-    current: { id: current.id, round: current.round, prNumber: current.prNumber, summary: current.summary, submittedAt: current.submittedAt },
+    current: { id: current.id, round: current.round, externalRef: current.externalRef, summary: current.summary, submittedAt: current.submittedAt },
     earlier: works.slice(0, -1).map((w) => ({
       round: w.round,
-      prNumber: w.prNumber,
+      externalRef: w.externalRef,
       summary: w.summary,
       submittedAt: w.submittedAt,
       review: w.review && { verdict: w.review.verdict, reason: w.review.reason, note: w.review.note, decidedAt: w.review.decidedAt },

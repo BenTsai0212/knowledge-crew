@@ -18,8 +18,8 @@ export interface TodayEmployee {
 export interface TodayAssignment {
   id: string;
   title: string;
-  repoFullName: string;
-  issueNumber: number;
+  sourceName: string;
+  externalRef: string | null;
   workTypeId: string;
   employee: TodayEmployee;
 }
@@ -66,8 +66,8 @@ export async function readToday(
   const toItem = (a: AssignmentSummary): TodayAssignment => ({
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
-    repoFullName: a.repoFullName,
-    issueNumber: a.issueNumber,
+    sourceName: a.sourceName,
+    externalRef: a.externalRef,
     workTypeId: a.workTypeId,
     employee: employee(a.employeeId),
   });

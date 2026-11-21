@@ -1,7 +1,7 @@
 {
-  "repos": [
-    { "id": "lantern-notes", "fullName": "example-org/lantern-notes", "project": "bluewing" },
-    { "id": "harbor-docs", "fullName": "example-org/harbor-docs", "project": "longpier" }
+  "sources": [
+    { "id": "lantern-notes", "kind": "repo", "name": "example-org/lantern-notes", "project": "bluewing" },
+    { "id": "harbor-docs", "kind": "repo", "name": "example-org/harbor-docs", "project": "longpier" }
   ],
   "employees": [
     { "id": "juniper", "displayName": "Juniper", "roleNote": { "zh-TW": "前端與畫面", "en": "Frontend and UI" } },
@@ -10,11 +10,11 @@
   "workTypes": ["ui", "docs", "test"],
   "assignments": [
     {
-      "id": "j01", "repo": "lantern-notes", "issueNumber": 101, "workType": "ui", "employee": "juniper",
+      "id": "j01", "source": "lantern-notes", "externalRef": "101", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "筆記清單的空狀態", "en": "Empty state for the note list" }, "assignedBy": "manager", "assignedAt": "2026-09-01T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 201, "submittedAt": "2026-09-01T11:00:00+08:00",
+          "round": 1, "externalRef": "201", "submittedAt": "2026-09-01T11:00:00+08:00",
           "summary": { "zh-TW": "清單沒有筆記時顯示說明與新增按鈕", "en": "Show a hint and a create button when the list is empty" },
           "body": { "zh-TW": "清單沒有筆記時顯示說明與新增按鈕。請看「要看的重點」。", "en": "Show a hint and a create button when the list is empty. See the points to review." },
           "points": [{ "zh-TW": "空狀態的文字與按鈕位置", "en": "Copy and button placement of the empty state" }],
@@ -26,7 +26,7 @@
           "review": { "id": "j01-1", "verdict": "returned", "reason": "wrong", "decidedBy": "manager", "decidedAt": "2026-09-01T15:00:00+08:00" }
         },
         {
-          "round": 2, "prNumber": 202, "submittedAt": "2026-09-02T10:00:00+08:00",
+          "round": 2, "externalRef": "202", "submittedAt": "2026-09-02T10:00:00+08:00",
           "summary": { "zh-TW": "改為依設計稿放置按鈕", "en": "Place the button as in the design" },
           "body": { "zh-TW": "改為依設計稿放置按鈕。請看「要看的重點」。", "en": "Place the button as in the design. See the points to review." },
           "points": [{ "zh-TW": "空狀態的文字與按鈕位置", "en": "Copy and button placement of the empty state" }],
@@ -40,11 +40,11 @@
       ]
     },
     {
-      "id": "j02", "repo": "lantern-notes", "issueNumber": 102, "workType": "ui", "employee": "juniper",
+      "id": "j02", "source": "lantern-notes", "externalRef": "102", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "筆記標題過長時截斷", "en": "Truncate long note titles" }, "assignedBy": "manager", "assignedAt": "2026-09-06T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 203, "submittedAt": "2026-09-06T11:00:00+08:00",
+          "round": 1, "externalRef": "203", "submittedAt": "2026-09-06T11:00:00+08:00",
           "summary": { "zh-TW": "標題超過一行時以省略號截斷，滑過顯示全文", "en": "Truncate titles beyond one line and show the full text on hover" },
           "body": { "zh-TW": "標題超過一行時以省略號截斷，滑過顯示全文。請看「要看的重點」。", "en": "Truncate titles beyond one line and show the full text on hover. See the points to review." },
           "points": [{ "zh-TW": "截斷的寬度在窄螢幕是否正確", "en": "Whether truncation works on narrow screens" }],
@@ -55,11 +55,11 @@
       ]
     },
     {
-      "id": "j03", "repo": "lantern-notes", "issueNumber": 103, "workType": "ui", "employee": "juniper",
+      "id": "j03", "source": "lantern-notes", "externalRef": "103", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "深色模式的對比", "en": "Contrast in dark mode" }, "assignedBy": "manager", "assignedAt": "2026-09-11T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 204, "submittedAt": "2026-09-11T11:00:00+08:00",
+          "round": 1, "externalRef": "204", "submittedAt": "2026-09-11T11:00:00+08:00",
           "summary": { "zh-TW": "調整深色模式的文字與邊框顏色", "en": "Adjust text and border colors in dark mode" },
           "body": { "zh-TW": "調整深色模式的文字與邊框顏色。請看「要看的重點」。", "en": "Adjust text and border colors in dark mode. See the points to review." },
           "points": [{ "zh-TW": "次要文字的對比是否足夠", "en": "Whether secondary text has enough contrast" }],
@@ -70,11 +70,11 @@
       ]
     },
     {
-      "id": "j04", "repo": "lantern-notes", "issueNumber": 104, "workType": "ui", "employee": "juniper", "title": { "zh-TW": "標籤篩選", "en": "Filter by tag" },
+      "id": "j04", "source": "lantern-notes", "externalRef": "104", "workType": "ui", "employee": "juniper", "title": { "zh-TW": "標籤篩選", "en": "Filter by tag" },
       "assignedBy": "manager", "assignedAt": "2026-09-16T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 205, "submittedAt": "2026-09-16T11:00:00+08:00", "summary": { "zh-TW": "清單上方加入標籤篩選", "en": "Add a tag filter above the list" },
+          "round": 1, "externalRef": "205", "submittedAt": "2026-09-16T11:00:00+08:00", "summary": { "zh-TW": "清單上方加入標籤篩選", "en": "Add a tag filter above the list" },
           "body": { "zh-TW": "清單上方加入標籤篩選。請看「要看的重點」。", "en": "Add a tag filter above the list. See the points to review." },
           "points": [{ "zh-TW": "多選標籤時的結果", "en": "Results when several tags are selected" }, { "zh-TW": "清除篩選的位置", "en": "Where to clear the filter" }],
           "changes": [
@@ -87,11 +87,11 @@
       ]
     },
     {
-      "id": "j05", "repo": "lantern-notes", "issueNumber": 105, "workType": "ui", "employee": "juniper",
+      "id": "j05", "source": "lantern-notes", "externalRef": "105", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "編輯器的鍵盤捷徑", "en": "Keyboard shortcuts in the editor" }, "assignedBy": "manager", "assignedAt": "2026-09-21T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 206, "submittedAt": "2026-09-21T11:00:00+08:00", "summary": { "zh-TW": "加入儲存與粗體的捷徑", "en": "Add shortcuts for save and bold" },
+          "round": 1, "externalRef": "206", "submittedAt": "2026-09-21T11:00:00+08:00", "summary": { "zh-TW": "加入儲存與粗體的捷徑", "en": "Add shortcuts for save and bold" },
           "body": { "zh-TW": "加入儲存與粗體的捷徑。請看「要看的重點」。", "en": "Add shortcuts for save and bold. See the points to review." },
           "points": [{ "zh-TW": "捷徑與瀏覽器預設是否衝突", "en": "Whether shortcuts clash with browser defaults" }],
           "changes": [{ "path": "src/editor/shortcuts.ts", "summary": { "zh-TW": "新增捷徑對照表", "en": "Add the shortcut map" } }],
@@ -101,11 +101,11 @@
       ]
     },
     {
-      "id": "j06", "repo": "lantern-notes", "issueNumber": 106, "workType": "ui", "employee": "juniper",
+      "id": "j06", "source": "lantern-notes", "externalRef": "106", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "載入中的骨架畫面", "en": "Loading skeleton" }, "assignedBy": "manager", "assignedAt": "2026-09-26T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 207, "submittedAt": "2026-09-26T11:00:00+08:00",
+          "round": 1, "externalRef": "207", "submittedAt": "2026-09-26T11:00:00+08:00",
           "summary": { "zh-TW": "清單載入時顯示骨架畫面", "en": "Show a skeleton while the list loads" },
           "body": { "zh-TW": "清單載入時顯示骨架畫面。請看「要看的重點」。", "en": "Show a skeleton while the list loads. See the points to review." },
           "points": [{ "zh-TW": "骨架的高度與實際清單一致", "en": "Skeleton height matches the real list" }],
@@ -116,11 +116,11 @@
       ]
     },
     {
-      "id": "j07", "repo": "lantern-notes", "issueNumber": 107, "workType": "ui", "employee": "juniper",
+      "id": "j07", "source": "lantern-notes", "externalRef": "107", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "刪除筆記的確認", "en": "Confirm before deleting a note" }, "assignedBy": "manager", "assignedAt": "2026-10-01T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 208, "submittedAt": "2026-10-01T11:00:00+08:00",
+          "round": 1, "externalRef": "208", "submittedAt": "2026-10-01T11:00:00+08:00",
           "summary": { "zh-TW": "刪除前顯示確認視窗", "en": "Show a confirmation dialog before deleting" },
           "body": { "zh-TW": "刪除前顯示確認視窗。請看「要看的重點」。", "en": "Show a confirmation dialog before deleting. See the points to review." },
           "points": [{ "zh-TW": "確認視窗的預設焦點", "en": "Default focus in the dialog" }],
@@ -129,7 +129,7 @@
           "review": { "id": "j07-1", "verdict": "returned", "reason": "different_approach", "decidedBy": "manager", "decidedAt": "2026-10-01T15:00:00+08:00" }
         },
         {
-          "round": 2, "prNumber": 209, "submittedAt": "2026-10-02T10:00:00+08:00",
+          "round": 2, "externalRef": "209", "submittedAt": "2026-10-02T10:00:00+08:00",
           "summary": { "zh-TW": "改為可以復原的刪除，不跳確認視窗", "en": "Use undoable delete instead of a dialog" },
           "body": { "zh-TW": "改為可以復原的刪除，不跳確認視窗。請看「要看的重點」。", "en": "Use undoable delete instead of a dialog. See the points to review." },
           "points": [{ "zh-TW": "確認視窗的預設焦點", "en": "Default focus in the dialog" }],
@@ -140,11 +140,11 @@
       ]
     },
     {
-      "id": "j08", "repo": "lantern-notes", "issueNumber": 108, "workType": "ui", "employee": "juniper",
+      "id": "j08", "source": "lantern-notes", "externalRef": "108", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "側欄可以收合", "en": "Collapsible sidebar" }, "assignedBy": "manager", "assignedAt": "2026-10-06T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 210, "submittedAt": "2026-10-06T11:00:00+08:00",
+          "round": 1, "externalRef": "210", "submittedAt": "2026-10-06T11:00:00+08:00",
           "summary": { "zh-TW": "側欄加上收合按鈕並記住狀態", "en": "Add a collapse button to the sidebar and remember its state" },
           "body": { "zh-TW": "側欄加上收合按鈕並記住狀態。請看「要看的重點」。", "en": "Add a collapse button to the sidebar and remember its state. See the points to review." },
           "points": [{ "zh-TW": "收合後主內容的寬度", "en": "Main content width when collapsed" }],
@@ -155,11 +155,11 @@
       ]
     },
     {
-      "id": "j09", "repo": "lantern-notes", "issueNumber": 109, "workType": "ui", "employee": "juniper",
+      "id": "j09", "source": "lantern-notes", "externalRef": "109", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "搜尋結果的醒目標示", "en": "Highlight search matches" }, "assignedBy": "manager", "assignedAt": "2026-10-11T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 211, "submittedAt": "2026-10-11T11:00:00+08:00",
+          "round": 1, "externalRef": "211", "submittedAt": "2026-10-11T11:00:00+08:00",
           "summary": { "zh-TW": "搜尋結果中標示符合的文字", "en": "Highlight matching text in search results" },
           "body": { "zh-TW": "搜尋結果中標示符合的文字。請看「要看的重點」。", "en": "Highlight matching text in search results. See the points to review." },
           "points": [{ "zh-TW": "中英文混合時的標示位置", "en": "Highlight positions in mixed-language text" }],
@@ -170,11 +170,11 @@
       ]
     },
     {
-      "id": "j10", "repo": "lantern-notes", "issueNumber": 110, "workType": "ui", "employee": "juniper",
+      "id": "j10", "source": "lantern-notes", "externalRef": "110", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "筆記的最後修改時間", "en": "Last edited time on notes" }, "assignedBy": "manager", "assignedAt": "2026-10-16T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 212, "submittedAt": "2026-10-16T11:00:00+08:00", "summary": { "zh-TW": "清單每列顯示相對時間", "en": "Show relative time on each row" },
+          "round": 1, "externalRef": "212", "submittedAt": "2026-10-16T11:00:00+08:00", "summary": { "zh-TW": "清單每列顯示相對時間", "en": "Show relative time on each row" },
           "body": { "zh-TW": "清單每列顯示相對時間。請看「要看的重點」。", "en": "Show relative time on each row. See the points to review." },
           "points": [{ "zh-TW": "跨日時的顯示", "en": "Display across day boundaries" }],
           "changes": [{ "path": "src/notes/NoteRow.tsx", "summary": { "zh-TW": "加入相對時間", "en": "Add relative time" } }],
@@ -184,11 +184,11 @@
       ]
     },
     {
-      "id": "j11", "repo": "lantern-notes", "issueNumber": 111, "workType": "ui", "employee": "juniper",
+      "id": "j11", "source": "lantern-notes", "externalRef": "111", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "拖曳排序釘選的筆記", "en": "Reorder pinned notes by dragging" }, "assignedBy": "manager", "assignedAt": "2026-10-21T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 213, "submittedAt": "2026-10-21T11:00:00+08:00",
+          "round": 1, "externalRef": "213", "submittedAt": "2026-10-21T11:00:00+08:00",
           "summary": { "zh-TW": "釘選區可以拖曳調整順序", "en": "Pinned notes can be reordered by dragging" },
           "body": { "zh-TW": "釘選區可以拖曳調整順序。請看「要看的重點」。", "en": "Pinned notes can be reordered by dragging. See the points to review." },
           "points": [{ "zh-TW": "鍵盤也能調整順序", "en": "Order can also be changed with the keyboard" }],
@@ -199,11 +199,11 @@
       ]
     },
     {
-      "id": "j12", "repo": "lantern-notes", "issueNumber": 112, "workType": "ui", "employee": "juniper",
+      "id": "j12", "source": "lantern-notes", "externalRef": "112", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "錯誤訊息的樣式", "en": "Error message styles" }, "assignedBy": "manager", "assignedAt": "2026-10-26T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 214, "submittedAt": "2026-10-26T11:00:00+08:00",
+          "round": 1, "externalRef": "214", "submittedAt": "2026-10-26T11:00:00+08:00",
           "summary": { "zh-TW": "統一表單錯誤訊息的樣式", "en": "Unify form error message styles" },
           "body": { "zh-TW": "統一表單錯誤訊息的樣式。請看「要看的重點」。", "en": "Unify form error message styles. See the points to review." },
           "points": [{ "zh-TW": "錯誤訊息與欄位的關聯", "en": "Error messages are linked to their fields" }],
@@ -214,11 +214,11 @@
       ]
     },
     {
-      "id": "j13", "repo": "lantern-notes", "issueNumber": 113, "workType": "ui", "employee": "juniper",
+      "id": "j13", "source": "lantern-notes", "externalRef": "113", "workType": "ui", "employee": "juniper",
       "title": { "zh-TW": "匯出筆記的按鈕", "en": "Export button for notes" }, "assignedBy": "manager", "assignedAt": "2026-11-17T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 215, "submittedAt": "2026-11-17T11:00:00+08:00",
+          "round": 1, "externalRef": "215", "submittedAt": "2026-11-17T11:00:00+08:00",
           "summary": { "zh-TW": "筆記頁加入匯出為 Markdown 的按鈕", "en": "Add an export-to-Markdown button on the note page" },
           "body": { "zh-TW": "筆記頁加入匯出為 Markdown 的按鈕。請看「要看的重點」。", "en": "Add an export-to-Markdown button on the note page. See the points to review." },
           "points": [{ "zh-TW": "檔名的格式", "en": "File name format" }, { "zh-TW": "沒有標題時的檔名", "en": "File name when the note has no title" }],
@@ -231,11 +231,11 @@
       ]
     },
     {
-      "id": "b01", "repo": "harbor-docs", "issueNumber": 41, "workType": "docs", "employee": "basil", "title": { "zh-TW": "安裝指南", "en": "Installation guide" },
+      "id": "b01", "source": "harbor-docs", "externalRef": "41", "workType": "docs", "employee": "basil", "title": { "zh-TW": "安裝指南", "en": "Installation guide" },
       "assignedBy": "manager", "assignedAt": "2026-09-02T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 61, "submittedAt": "2026-09-02T11:00:00+08:00",
+          "round": 1, "externalRef": "61", "submittedAt": "2026-09-02T11:00:00+08:00",
           "summary": { "zh-TW": "撰寫從零開始的安裝步驟", "en": "Write installation steps from scratch" },
           "body": { "zh-TW": "撰寫從零開始的安裝步驟。請看「要看的重點」。", "en": "Write installation steps from scratch. See the points to review." },
           "points": [{ "zh-TW": "步驟的順序", "en": "Order of the steps" }],
@@ -244,7 +244,7 @@
           "review": { "id": "b01-1", "verdict": "returned", "reason": "wrong", "decidedBy": "manager", "decidedAt": "2026-09-02T15:00:00+08:00" }
         },
         {
-          "round": 2, "prNumber": 62, "submittedAt": "2026-09-03T10:00:00+08:00",
+          "round": 2, "externalRef": "62", "submittedAt": "2026-09-03T10:00:00+08:00",
           "summary": { "zh-TW": "修正遺漏的步驟與錯誤的指令", "en": "Fix a missing step and a wrong command" },
           "body": { "zh-TW": "修正遺漏的步驟與錯誤的指令。請看「要看的重點」。", "en": "Fix a missing step and a wrong command. See the points to review." },
           "points": [{ "zh-TW": "步驟的順序", "en": "Order of the steps" }],
@@ -255,11 +255,11 @@
       ]
     },
     {
-      "id": "b02", "repo": "harbor-docs", "issueNumber": 42, "workType": "docs", "employee": "basil",
+      "id": "b02", "source": "harbor-docs", "externalRef": "42", "workType": "docs", "employee": "basil",
       "title": { "zh-TW": "設定檔說明", "en": "Configuration reference" }, "assignedBy": "manager", "assignedAt": "2026-09-08T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 63, "submittedAt": "2026-09-08T11:00:00+08:00",
+          "round": 1, "externalRef": "63", "submittedAt": "2026-09-08T11:00:00+08:00",
           "summary": { "zh-TW": "列出所有設定項與預設值", "en": "List every setting and its default" },
           "body": { "zh-TW": "列出所有設定項與預設值。請看「要看的重點」。", "en": "List every setting and its default. See the points to review." },
           "points": [{ "zh-TW": "預設值是否與程式一致", "en": "Whether defaults match the code" }],
@@ -270,11 +270,11 @@
       ]
     },
     {
-      "id": "b03", "repo": "harbor-docs", "issueNumber": 43, "workType": "docs", "employee": "basil", "title": { "zh-TW": "常見問題", "en": "FAQ" },
+      "id": "b03", "source": "harbor-docs", "externalRef": "43", "workType": "docs", "employee": "basil", "title": { "zh-TW": "常見問題", "en": "FAQ" },
       "assignedBy": "manager", "assignedAt": "2026-09-14T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 64, "submittedAt": "2026-09-14T11:00:00+08:00",
+          "round": 1, "externalRef": "64", "submittedAt": "2026-09-14T11:00:00+08:00",
           "summary": { "zh-TW": "整理常見問題與解法", "en": "Collect common questions and answers" },
           "body": { "zh-TW": "整理常見問題與解法。請看「要看的重點」。", "en": "Collect common questions and answers. See the points to review." },
           "points": [{ "zh-TW": "問題的分類", "en": "How questions are grouped" }],
@@ -285,11 +285,11 @@
       ]
     },
     {
-      "id": "b04", "repo": "harbor-docs", "issueNumber": 44, "workType": "docs", "employee": "basil", "title": { "zh-TW": "術語表", "en": "Glossary" },
+      "id": "b04", "source": "harbor-docs", "externalRef": "44", "workType": "docs", "employee": "basil", "title": { "zh-TW": "術語表", "en": "Glossary" },
       "assignedBy": "manager", "assignedAt": "2026-09-20T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 65, "submittedAt": "2026-09-20T11:00:00+08:00", "summary": { "zh-TW": "整理文件中的術語", "en": "Collect terms used in the docs" },
+          "round": 1, "externalRef": "65", "submittedAt": "2026-09-20T11:00:00+08:00", "summary": { "zh-TW": "整理文件中的術語", "en": "Collect terms used in the docs" },
           "body": { "zh-TW": "整理文件中的術語。請看「要看的重點」。", "en": "Collect terms used in the docs. See the points to review." },
           "points": [{ "zh-TW": "中英文術語的對照", "en": "Chinese and English term pairs" }],
           "changes": [{ "path": "docs/glossary.md", "summary": { "zh-TW": "新增術語表", "en": "Add the glossary" } }],
@@ -299,11 +299,11 @@
       ]
     },
     {
-      "id": "b05", "repo": "harbor-docs", "issueNumber": 45, "workType": "docs", "employee": "basil", "title": { "zh-TW": "發布流程", "en": "Release process" },
+      "id": "b05", "source": "harbor-docs", "externalRef": "45", "workType": "docs", "employee": "basil", "title": { "zh-TW": "發布流程", "en": "Release process" },
       "assignedBy": "manager", "assignedAt": "2026-09-26T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 66, "submittedAt": "2026-09-26T11:00:00+08:00", "summary": { "zh-TW": "記錄版本發布的步驟", "en": "Document the release steps" },
+          "round": 1, "externalRef": "66", "submittedAt": "2026-09-26T11:00:00+08:00", "summary": { "zh-TW": "記錄版本發布的步驟", "en": "Document the release steps" },
           "body": { "zh-TW": "記錄版本發布的步驟。請看「要看的重點」。", "en": "Document the release steps. See the points to review." },
           "points": [{ "zh-TW": "誰可以發布", "en": "Who may release" }],
           "changes": [{ "path": "docs/release.md", "summary": { "zh-TW": "新增發布流程", "en": "Add the release process" } }],
@@ -311,7 +311,7 @@
           "review": { "id": "b05-1", "verdict": "returned", "reason": "process", "decidedBy": "manager", "decidedAt": "2026-09-26T15:00:00+08:00" }
         },
         {
-          "round": 2, "prNumber": 67, "submittedAt": "2026-09-27T10:00:00+08:00",
+          "round": 2, "externalRef": "67", "submittedAt": "2026-09-27T10:00:00+08:00",
           "summary": { "zh-TW": "依審查要求補上變更紀錄", "en": "Add the changelog entry requested by review" },
           "body": { "zh-TW": "依審查要求補上變更紀錄。請看「要看的重點」。", "en": "Add the changelog entry requested by review. See the points to review." },
           "points": [{ "zh-TW": "誰可以發布", "en": "Who may release" }],
@@ -322,11 +322,11 @@
       ]
     },
     {
-      "id": "b06", "repo": "harbor-docs", "issueNumber": 46, "workType": "docs", "employee": "basil", "title": { "zh-TW": "貢獻指南", "en": "Contributing guide" },
+      "id": "b06", "source": "harbor-docs", "externalRef": "46", "workType": "docs", "employee": "basil", "title": { "zh-TW": "貢獻指南", "en": "Contributing guide" },
       "assignedBy": "manager", "assignedAt": "2026-10-02T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 68, "submittedAt": "2026-10-02T11:00:00+08:00", "summary": { "zh-TW": "說明如何提出修改", "en": "Explain how to propose changes" },
+          "round": 1, "externalRef": "68", "submittedAt": "2026-10-02T11:00:00+08:00", "summary": { "zh-TW": "說明如何提出修改", "en": "Explain how to propose changes" },
           "body": { "zh-TW": "說明如何提出修改。請看「要看的重點」。", "en": "Explain how to propose changes. See the points to review." },
           "points": [{ "zh-TW": "審查的期待", "en": "What reviewers expect" }],
           "changes": [{ "path": "docs/contributing.md", "summary": { "zh-TW": "新增貢獻指南", "en": "Add the contributing guide" } }],
@@ -336,11 +336,11 @@
       ]
     },
     {
-      "id": "b07", "repo": "harbor-docs", "issueNumber": 47, "workType": "docs", "employee": "basil", "title": { "zh-TW": "升級說明", "en": "Upgrade notes" },
+      "id": "b07", "source": "harbor-docs", "externalRef": "47", "workType": "docs", "employee": "basil", "title": { "zh-TW": "升級說明", "en": "Upgrade notes" },
       "assignedBy": "manager", "assignedAt": "2026-10-08T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 69, "submittedAt": "2026-10-08T11:00:00+08:00",
+          "round": 1, "externalRef": "69", "submittedAt": "2026-10-08T11:00:00+08:00",
           "summary": { "zh-TW": "整理升級到新版的注意事項", "en": "Notes for upgrading to the new version" },
           "body": { "zh-TW": "整理升級到新版的注意事項。請看「要看的重點」。", "en": "Notes for upgrading to the new version. See the points to review." },
           "points": [{ "zh-TW": "不相容的變更", "en": "Breaking changes" }],
@@ -351,11 +351,11 @@
       ]
     },
     {
-      "id": "b08", "repo": "harbor-docs", "issueNumber": 48, "workType": "docs", "employee": "basil",
+      "id": "b08", "source": "harbor-docs", "externalRef": "48", "workType": "docs", "employee": "basil",
       "title": { "zh-TW": "文件的目錄", "en": "Docs table of contents" }, "assignedBy": "manager", "assignedAt": "2026-10-14T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 70, "submittedAt": "2026-10-14T11:00:00+08:00",
+          "round": 1, "externalRef": "70", "submittedAt": "2026-10-14T11:00:00+08:00",
           "summary": { "zh-TW": "重排文件目錄", "en": "Reorganize the docs table of contents" },
           "body": { "zh-TW": "重排文件目錄。請看「要看的重點」。", "en": "Reorganize the docs table of contents. See the points to review." },
           "points": [{ "zh-TW": "新的分類是否好找", "en": "Whether the new grouping is easy to browse" }],
@@ -366,11 +366,11 @@
       ]
     },
     {
-      "id": "b09", "repo": "harbor-docs", "issueNumber": 49, "workType": "docs", "employee": "basil",
+      "id": "b09", "source": "harbor-docs", "externalRef": "49", "workType": "docs", "employee": "basil",
       "title": { "zh-TW": "範例設定", "en": "Example configurations" }, "assignedBy": "manager", "assignedAt": "2026-10-20T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 71, "submittedAt": "2026-10-20T11:00:00+08:00",
+          "round": 1, "externalRef": "71", "submittedAt": "2026-10-20T11:00:00+08:00",
           "summary": { "zh-TW": "加入三種常見的範例設定", "en": "Add three common example configurations" },
           "body": { "zh-TW": "加入三種常見的範例設定。請看「要看的重點」。", "en": "Add three common example configurations. See the points to review." },
           "points": [{ "zh-TW": "範例是否能直接使用", "en": "Whether the examples work as is" }],
@@ -381,11 +381,11 @@
       ]
     },
     {
-      "id": "b10", "repo": "harbor-docs", "issueNumber": 50, "workType": "docs", "employee": "basil",
+      "id": "b10", "source": "harbor-docs", "externalRef": "50", "workType": "docs", "employee": "basil",
       "title": { "zh-TW": "錯誤代碼表", "en": "Error code reference" }, "assignedBy": "manager", "assignedAt": "2026-10-26T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 72, "submittedAt": "2026-10-26T11:00:00+08:00", "summary": { "zh-TW": "列出錯誤代碼與處理方式", "en": "List error codes and what to do" },
+          "round": 1, "externalRef": "72", "submittedAt": "2026-10-26T11:00:00+08:00", "summary": { "zh-TW": "列出錯誤代碼與處理方式", "en": "List error codes and what to do" },
           "body": { "zh-TW": "列出錯誤代碼與處理方式。請看「要看的重點」。", "en": "List error codes and what to do. See the points to review." },
           "points": [{ "zh-TW": "代碼是否齊全", "en": "Whether every code is listed" }],
           "changes": [{ "path": "docs/errors.md", "summary": { "zh-TW": "新增錯誤代碼表", "en": "Add the error code reference" } }],
@@ -395,11 +395,11 @@
       ]
     },
     {
-      "id": "b11", "repo": "harbor-docs", "issueNumber": 51, "workType": "docs", "employee": "basil", "title": { "zh-TW": "備份與還原", "en": "Backup and restore" },
+      "id": "b11", "source": "harbor-docs", "externalRef": "51", "workType": "docs", "employee": "basil", "title": { "zh-TW": "備份與還原", "en": "Backup and restore" },
       "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 73, "submittedAt": "2026-11-18T11:00:00+08:00",
+          "round": 1, "externalRef": "73", "submittedAt": "2026-11-18T11:00:00+08:00",
           "summary": { "zh-TW": "說明備份與還原的步驟", "en": "Document backup and restore steps" },
           "body": { "zh-TW": "說明備份與還原的步驟。請看「要看的重點」。", "en": "Document backup and restore steps. See the points to review." },
           "points": [{ "zh-TW": "還原前的檢查", "en": "Checks before restoring" }, { "zh-TW": "備份的保存期限", "en": "How long backups are kept" }],
@@ -409,11 +409,11 @@
       ]
     },
     {
-      "id": "t01", "repo": "lantern-notes", "issueNumber": 114, "workType": "test", "employee": "basil",
+      "id": "t01", "source": "lantern-notes", "externalRef": "114", "workType": "test", "employee": "basil",
       "title": { "zh-TW": "筆記清單的單元測試", "en": "Unit tests for the note list" }, "assignedBy": "manager", "assignedAt": "2026-10-01T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 216, "submittedAt": "2026-10-01T11:00:00+08:00",
+          "round": 1, "externalRef": "216", "submittedAt": "2026-10-01T11:00:00+08:00",
           "summary": { "zh-TW": "補上清單排序與篩選的測試", "en": "Add tests for list sorting and filtering" },
           "body": { "zh-TW": "補上清單排序與篩選的測試。請看「要看的重點」。", "en": "Add tests for list sorting and filtering. See the points to review." },
           "points": [{ "zh-TW": "測試涵蓋的情況", "en": "Cases covered by the tests" }],
@@ -424,11 +424,11 @@
       ]
     },
     {
-      "id": "t02", "repo": "lantern-notes", "issueNumber": 115, "workType": "test", "employee": "basil",
+      "id": "t02", "source": "lantern-notes", "externalRef": "115", "workType": "test", "employee": "basil",
       "title": { "zh-TW": "編輯器的捷徑測試", "en": "Tests for editor shortcuts" }, "assignedBy": "manager", "assignedAt": "2026-10-15T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "prNumber": 217, "submittedAt": "2026-10-15T11:00:00+08:00", "summary": { "zh-TW": "補上鍵盤捷徑的測試", "en": "Add tests for keyboard shortcuts" },
+          "round": 1, "externalRef": "217", "submittedAt": "2026-10-15T11:00:00+08:00", "summary": { "zh-TW": "補上鍵盤捷徑的測試", "en": "Add tests for keyboard shortcuts" },
           "body": { "zh-TW": "補上鍵盤捷徑的測試。請看「要看的重點」。", "en": "Add tests for keyboard shortcuts. See the points to review." },
           "points": [{ "zh-TW": "各作業系統的按鍵", "en": "Keys on each operating system" }],
           "changes": [{ "path": "src/editor/shortcuts.test.ts", "summary": { "zh-TW": "新增捷徑的測試", "en": "Add shortcut tests" } }],

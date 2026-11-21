@@ -1,6 +1,7 @@
 // client/crew/demo.json 的驗證（#29 計畫第 2 節、`## 決定` 的補充）：回傳錯誤清單，空陣列表示通過。
 // seed 在匯入前呼叫，有錯就不寫入。check:client 不讀 client/crew/，所以形狀也在這裡檢查。
 import type { AccessFile, LanguageCode } from "../../client/types";
+import { SOURCE_KINDS } from "../db/store";
 import type { DemoFile } from "./types";
 
 export interface ValidateOptions {
@@ -31,10 +32,16 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     else if (v.includes("://")) err(`${path}.${k}`, "must not contain a URL");
     return typeof v === "string" ? v : "";
   };
-  const int = (o: Obj, k: string, path: string): number => {
+  // 外部編號：可以省略；有值時是非空字串。repo 類必填且是正整數的十進位文字（#57）
+  const ref = (o: Obj, k: string, path: string, kind: string | undefined): string | undefined => {
     const v = o[k];
-    if (!Number.isInteger(v) || (v as number) <= 0) err(`${path}.${k}`, "must be a positive integer");
-    return typeof v === "number" ? v : NaN;
+    if (v === undefined) {
+      if (kind === "repo") err(`${path}.${k}`, "is required for a repo source");
+      return undefined;
+    }
+    if (typeof v !== "string" || v.trim() === "") err(`${path}.${k}`, "must be a non-empty string");
+    else if (kind === "repo" && !/^[1-9][0-9]*$/.test(v)) err(`${path}.${k}`, "must be a positive integer string for a repo source");
+    return typeof v === "string" ? v : undefined;
   };
   const oneOf = (o: Obj, k: string, path: string, values: string[]): string => {
     if (!values.includes(o[k] as string)) err(`${path}.${k}`, `must be one of ${values.join(", ")}`);
@@ -73,13 +80,17 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     if (!reviewers.has(str(o, k, path))) err(`${path}.${k}`, "must be an identity in access.json with canReview");
   };
 
-  const repos = new Set<string>();
-  const fullNames = new Set<string>();
-  for (const [r, p] of objects(demo, "repos", "", 1)) {
-    unique(repos, str(r, "id", p), `${p}.id`);
-    const fullName = str(r, "fullName", p);
-    unique(fullNames, fullName, `${p}.fullName`);
-    if (!fullName.startsWith(ORG)) err(`${p}.fullName`, `must start with ${ORG}`);
+  // 來源 id → 類型
+  const sources = new Map<string, string>();
+  const names = new Set<string>();
+  for (const [r, p] of objects(demo, "sources", "", 1)) {
+    const id = str(r, "id", p);
+    if (sources.has(id)) err(`${p}.id`, `duplicate: ${id}`);
+    const kind = oneOf(r, "kind", p, [...SOURCE_KINDS]);
+    sources.set(id, kind);
+    const name = str(r, "name", p);
+    unique(names, name, `${p}.name`);
+    if (kind === "repo" && !name.startsWith(ORG)) err(`${p}.name`, `must start with ${ORG} for a repo source`);
     if (!projects.has(str(r, "project", p))) err(`${p}.project`, "must be a project in access.json");
   }
   const employees = new Set<string>();
@@ -106,9 +117,12 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
   const prs = new Set<string>();
   for (const [a, p] of objects(demo, "assignments", "")) {
     unique(assignmentIds, str(a, "id", p), `${p}.id`);
-    const repo = str(a, "repo", p);
-    if (!repos.has(repo)) err(`${p}.repo`, "must be a repo in this file");
-    unique(issues, `${repo}#${int(a, "issueNumber", p)}`, `${p}.issueNumber`);
+    const source = str(a, "source", p);
+    const kind = sources.get(source);
+    if (kind === undefined) err(`${p}.source`, "must be a source in this file");
+    // 同一來源內不重複（有值時）
+    const issue = ref(a, "externalRef", p, kind);
+    if (issue !== undefined) unique(issues, `${source}#${issue}`, `${p}.externalRef`);
     refs(a, p);
     loc(a.title, `${p}.title`);
     reviewer(a, "assignedBy", p);
@@ -116,7 +130,8 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     const works = objects(a, "works", p, 1);
     works.forEach(([w, wp], i) => {
       if (w.round !== i + 1) err(`${wp}.round`, `must be ${i + 1} (rounds start at 1 and increase by 1)`);
-      unique(prs, `${repo}#${int(w, "prNumber", wp)}`, `${wp}.prNumber`);
+      const pr = ref(w, "externalRef", wp, kind);
+      if (pr !== undefined) unique(prs, `${source}#${pr}`, `${wp}.externalRef`);
       const submitted = time(w, "submittedAt", wp);
       ordered(last, submitted, `${wp}.submittedAt`, "must be after the assignment or the previous review");
       loc(w.summary, `${wp}.summary`);

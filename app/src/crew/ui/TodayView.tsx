@@ -95,7 +95,7 @@ function AssignmentList({ items, t, language }: { items: TodayAssignment[]; t: C
           <li key={a.id} className="crew-today__item">
             <span className="crew-today__item-title">{a.title}</span>
             <span className="crew-today__item-meta muted">
-              <span className="crew-today__ref">{fill(t.assignmentRef, { repo: a.repoFullName, issue: a.issueNumber })}</span>
+              <span className="crew-today__ref">{fill(t.assignmentRef, { repo: a.sourceName, issue: a.externalRef ?? "" })}</span>
               <span>{meta}</span>
             </span>
           </li>

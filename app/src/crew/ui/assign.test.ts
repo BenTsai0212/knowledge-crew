@@ -38,7 +38,7 @@ describe("readAssign：匯入虛構資料後（寫入之前）", () => {
   it("manager：repo 2、員工 2、工作類型 3；交辦 26 件新到舊，b11、j13 待驗收，其餘已通過，沒有可模擬的", async () => {
     const data = await read("manager");
     expect(data.canReview).toBe(true);
-    expect(data.repos.map((r) => r.id).sort()).toEqual(["harbor-docs", "lantern-notes"]);
+    expect(data.sources.map((r) => r.id).sort()).toEqual(["harbor-docs", "lantern-notes"]);
     expect(data.employees.map((e) => e.id)).toEqual(["basil", "juniper"]);
     expect(data.workTypes).toEqual(["docs", "test", "ui"]);
     expect(data.assignments).toHaveLength(26);
@@ -52,9 +52,9 @@ describe("readAssign：匯入虛構資料後（寫入之前）", () => {
   it("staff：只有青翼專案（lantern-notes）的 15 件，不能驗收、沒有可模擬的", async () => {
     const data = await read("staff");
     expect(data.canReview).toBe(false);
-    expect(data.repos.map((r) => r.id)).toEqual(["lantern-notes"]);
+    expect(data.sources.map((r) => r.id)).toEqual(["lantern-notes"]);
     expect(data.assignments).toHaveLength(15);
-    expect(data.assignments.every((a) => a.repoFullName === "example-org/lantern-notes")).toBe(true);
+    expect(data.assignments.every((a) => a.sourceName === "example-org/lantern-notes")).toBe(true);
     expect(data.assignments.map((a) => a.id).sort()).toEqual(
       ["j01", "j02", "j03", "j04", "j05", "j06", "j07", "j08", "j09", "j10", "j11", "j12", "j13", "t01", "t02"],
     );
@@ -65,7 +65,7 @@ describe("readAssign：匯入虛構資料後（寫入之前）", () => {
     for (const identity of ["guest", null]) {
       const data = await read(identity);
       expect(data.canReview).toBe(false);
-      expect(data.repos).toEqual([]);
+      expect(data.sources).toEqual([]);
       expect(data.assignments).toEqual([]);
     }
     expect((await read(null)).employees).toEqual([]);
@@ -105,12 +105,12 @@ describe("Basil × 文件的預先回覆", () => {
 describe("交辦與模擬交件的寫入（manager）", () => {
   it("交辦給 Juniper（介面）→ 模擬交件 → 待驗收、「今天」多一筆 → 退回 → 再模擬用第 2 則回覆", async () => {
     const awaitingBefore = (await readToday(db, "manager", lang, true)).awaitingReview.length;
-    const a = await submitAssignment(db, "manager", { repoId: "lantern-notes", title: "新增標籤篩選", workTypeId: "ui", employeeId: "juniper" });
-    expect(a.issueNumber).toBe(116);
+    const a = await submitAssignment(db, "manager", { sourceId: "lantern-notes", title: "新增標籤篩選", workTypeId: "ui", employeeId: "juniper" });
+    expect(a.externalRef).toBe("116");
 
     const data = await read("manager");
     expect(data.assignments[0]).toMatchObject({
-      id: a.id, title: "新增標籤篩選", repoFullName: "example-org/lantern-notes", issueNumber: 116,
+      id: a.id, title: "新增標籤篩選", sourceName: "example-org/lantern-notes", externalRef: "116",
       status: "notSubmitted", latestRound: null, simulate: "available",
     });
 
@@ -129,8 +129,8 @@ describe("交辦與模擬交件的寫入（manager）", () => {
   });
 
   it("交辦給 Basil（文件、harbor-docs）→ 模擬交件 → 待驗收，摘要是第 1 輪的預先回覆", async () => {
-    const a = await submitAssignment(db, "manager", { repoId: "harbor-docs", title: "Backup guide", workTypeId: "docs", employeeId: "basil" });
-    expect(a.issueNumber).toBe(52);
+    const a = await submitAssignment(db, "manager", { sourceId: "harbor-docs", title: "Backup guide", workTypeId: "docs", employeeId: "basil" });
+    expect(a.externalRef).toBe("52");
     expect((await item(a.id)).simulate).toBe("available");
     await simulateAssignment(db, "manager", a.id, demo, lang);
     expect(await item(a.id)).toMatchObject({ status: "awaitingReview", latestRound: 1 });
@@ -139,26 +139,26 @@ describe("交辦與模擬交件的寫入（manager）", () => {
   });
 
   it("沒有預先回覆的組合（Basil × 測試）：simulate 為 noReply，讀取不拋錯", async () => {
-    const a = await submitAssignment(db, "manager", { repoId: "lantern-notes", title: "Add tests", workTypeId: "test", employeeId: "basil" });
+    const a = await submitAssignment(db, "manager", { sourceId: "lantern-notes", title: "Add tests", workTypeId: "test", employeeId: "basil" });
     expect(await item(a.id)).toMatchObject({ status: "notSubmitted", simulate: "noReply" });
     expect((await readAssign(db, "manager", lang, true, null)).assignments.find((x) => x.id === a.id)!.simulate).toBe("noReply");
   });
 
   it("空白標題拋錯且不寫入；標題前後的空白會去掉", async () => {
     const before = await count();
-    await expect(submitAssignment(db, "manager", { repoId: "lantern-notes", title: "  \n ", workTypeId: "ui", employeeId: "juniper" })).rejects.toThrow(/title/);
+    await expect(submitAssignment(db, "manager", { sourceId: "lantern-notes", title: "  \n ", workTypeId: "ui", employeeId: "juniper" })).rejects.toThrow(/title/);
     expect(await count()).toBe(before);
-    const a = await submitAssignment(db, "manager", { repoId: "lantern-notes", title: "  Trim me  ", workTypeId: "ui", employeeId: "juniper" });
+    const a = await submitAssignment(db, "manager", { sourceId: "lantern-notes", title: "  Trim me  ", workTypeId: "ui", employeeId: "juniper" });
     expect((await item(a.id)).title).toBe("Trim me");
   });
 });
 
 describe("staff、guest 不能寫入", () => {
   it("交辦與模擬交件都被拒，manager 讀回的件數與輪次不變", async () => {
-    const target = await submitAssignment(db, "manager", { repoId: "lantern-notes", title: "Pending", workTypeId: "ui", employeeId: "juniper" });
+    const target = await submitAssignment(db, "manager", { sourceId: "lantern-notes", title: "Pending", workTypeId: "ui", employeeId: "juniper" });
     const before = await count();
     for (const identity of ["staff", "guest"]) {
-      await expect(submitAssignment(db, identity, { repoId: "lantern-notes", title: "x", workTypeId: "ui", employeeId: "juniper" })).rejects.toThrow();
+      await expect(submitAssignment(db, identity, { sourceId: "lantern-notes", title: "x", workTypeId: "ui", employeeId: "juniper" })).rejects.toThrow();
       await expect(simulateAssignment(db, identity, target.id, demo, lang)).rejects.toThrow();
     }
     expect(await count()).toBe(before);

@@ -5,9 +5,15 @@ import type { Transaction } from "@electric-sql/pglite";
 import type { Database } from "../../db/database";
 import type { LevelDecision, LevelDecisionKind, ReturnReason, Review, Verdict, WorkChange, WorkCheck, WorkForReview } from "../trust/types";
 
-export interface StoredRepo {
+/** 工作來源的類型（RFC 0001 的 2026-11-21 修訂）；repo 類的外部編號是 Issue／PR 編號。 */
+export type SourceKind = "repo" | "mailbox" | "social" | "knowledge_base";
+
+export const SOURCE_KINDS: readonly SourceKind[] = ["repo", "mailbox", "social", "knowledge_base"];
+
+export interface StoredSource {
   id: string;
-  fullName: string;
+  kind: SourceKind;
+  name: string;
   projectId: string;
 }
 
@@ -19,9 +25,11 @@ export interface StoredEmployee {
 
 export interface AssignmentSummary {
   id: string;
-  repoId: string;
-  repoFullName: string;
-  issueNumber: number;
+  sourceId: string;
+  sourceKind: SourceKind;
+  sourceName: string;
+  /** repo 類是 Issue 編號（十進位文字）；其他類型可以沒有（null） */
+  externalRef: string | null;
   title: string;
   workTypeId: string;
   employeeId: string;
@@ -40,7 +48,8 @@ export type StoredReview = Review & { workId: string; note: string | null; decid
 export interface StoredWork extends WorkForReview {
   id: string;
   round: number;
-  prNumber: number;
+  /** repo 類是 PR 編號（十進位文字）；其他類型可以沒有（null） */
+  externalRef: string | null;
   summary: string;
   submittedAt: string;
   review: StoredReview | null;
@@ -59,9 +68,9 @@ async function rows<T>(tx: Transaction, sql: string, params: unknown[] = []): Pr
   return (await tx.query<T>(sql, params)).rows;
 }
 
-export function listRepos(db: Database, identityId: string | null): Promise<StoredRepo[]> {
+export function listSources(db: Database, identityId: string | null): Promise<StoredSource[]> {
   return read(db, identityId, (tx) =>
-    rows<StoredRepo>(tx, `SELECT id, full_name AS "fullName", project_id AS "projectId" FROM crew.repos ORDER BY full_name`),
+    rows<StoredSource>(tx, `SELECT id, kind, name, project_id AS "projectId" FROM crew.sources ORDER BY name`),
   );
 }
 
@@ -76,11 +85,11 @@ export function listAssignments(db: Database, identityId: string | null): Promis
   return read(db, identityId, async (tx) => {
     const result = await rows<Omit<AssignmentSummary, "assignedAt"> & { assignedAt: Date }>(
       tx,
-      `SELECT a.id, a.repo_id AS "repoId", r.full_name AS "repoFullName", a.issue_number AS "issueNumber", a.title,
+      `SELECT a.id, a.source_id AS "sourceId", s.kind AS "sourceKind", s.name AS "sourceName", a.external_ref AS "externalRef", a.title,
               a.work_type_id AS "workTypeId", a.employee_id AS "employeeId", a.assigned_by AS "assignedBy",
               a.assigned_at AS "assignedAt", lw.round AS "latestRound", rv.verdict AS "latestVerdict"
        FROM crew.assignments a
-       JOIN crew.repos r ON r.id = a.repo_id
+       JOIN crew.sources s ON s.id = a.source_id
        LEFT JOIN LATERAL (
          SELECT w.id, w.round FROM crew.works w WHERE w.assignment_id = a.id ORDER BY w.round DESC LIMIT 1
        ) lw ON true
@@ -115,9 +124,9 @@ const toReview = ({ id, verdict, reason, decidedAt }: StoredReview): Review =>
 /** 某交辦的各輪工作（依 round 排序），含要看的重點、變更、各檢查最新一筆的狀態與驗收。 */
 export function getAssignmentWorks(db: Database, identityId: string | null, assignmentId: string): Promise<StoredWork[]> {
   return read(db, identityId, async (tx) => {
-    const works = await rows<{ id: string; round: number; prNumber: number; summary: string; body: string; submittedAt: Date }>(
+    const works = await rows<{ id: string; round: number; externalRef: string | null; summary: string; body: string; submittedAt: Date }>(
       tx,
-      `SELECT id, round, pr_number AS "prNumber", summary, body, submitted_at AS "submittedAt"
+      `SELECT id, round, external_ref AS "externalRef", summary, body, submitted_at AS "submittedAt"
        FROM crew.works WHERE assignment_id = $1 ORDER BY round`,
       [assignmentId],
     );
@@ -186,48 +195,68 @@ export function getTrustInputs(db: Database, identityId: string | null, employee
   });
 }
 
-/** 該 repo 目前看得到的最大 PR 編號 ＋1（沒有時是 1）。 */
-export function nextPrNumber(db: Database, identityId: string | null, repoId: string): Promise<number> {
+// repo 類的外部編號：數字文字的最大值 ＋1（沒有時是 1）；不是數字的值不轉型、不計入
+const NEXT_NUMBER = (column: string) => `coalesce(max(CASE WHEN ${column} ~ '^[0-9]+$' THEN ${column}::int END), 0) + 1`;
+
+async function sourceKind(tx: Transaction, sourceId: string): Promise<SourceKind | null> {
+  const found = await rows<{ kind: SourceKind }>(tx, "SELECT kind FROM crew.sources WHERE id = $1", [sourceId]);
+  return found[0]?.kind ?? null;
+}
+
+/**
+ * 該來源下一份工作的外部編號：repo 類是目前看得到的最大 PR 編號 ＋1（沒有時是 "1"），其他類型（或看不到的來源）是 null。
+ */
+export function nextExternalRef(db: Database, identityId: string | null, sourceId: string): Promise<string | null> {
   return read(db, identityId, async (tx) => {
+    if ((await sourceKind(tx, sourceId)) !== "repo") return null;
     const [{ next }] = await rows<{ next: number }>(
       tx,
-      `SELECT coalesce(max(w.pr_number), 0)::int + 1 AS next
-       FROM crew.works w JOIN crew.assignments a ON a.id = w.assignment_id WHERE a.repo_id = $1`,
-      [repoId],
+      `SELECT ${NEXT_NUMBER("w.external_ref")} AS next
+       FROM crew.works w JOIN crew.assignments a ON a.id = w.assignment_id WHERE a.source_id = $1`,
+      [sourceId],
     );
-    return next;
+    return String(next);
   });
 }
 
 // 寫入不使用 RETURNING：值由這裡產生，不依賴寫入後的 SELECT policy
 
 export interface NewAssignment {
-  repoId: string;
+  sourceId: string;
   title: string;
   workTypeId: string;
   employeeId: string;
 }
 
-/** 新增交辦；issue_number 取該 repo 目前最大值 ＋1。 */
-export function createAssignment(db: Database, identityId: string | null, input: NewAssignment): Promise<{ id: string; issueNumber: number }> {
+/** 新增交辦；repo 類的外部編號（Issue 編號）取該來源目前最大值 ＋1，其他類型是 null。 */
+export function createAssignment(
+  db: Database,
+  identityId: string | null,
+  input: NewAssignment,
+): Promise<{ id: string; externalRef: string | null }> {
   return db.withIdentity(identityId, async (tx) => {
     const id = crypto.randomUUID();
-    const [{ next }] = await rows<{ next: number }>(
-      tx,
-      "SELECT coalesce(max(issue_number), 0)::int + 1 AS next FROM crew.assignments WHERE repo_id = $1",
-      [input.repoId],
-    );
+    let externalRef: string | null = null;
+    if ((await sourceKind(tx, input.sourceId)) === "repo") {
+      const [{ next }] = await rows<{ next: number }>(
+        tx,
+        `SELECT ${NEXT_NUMBER("external_ref")} AS next FROM crew.assignments WHERE source_id = $1`,
+        [input.sourceId],
+      );
+      externalRef = String(next);
+    }
     await tx.query(
-      "INSERT INTO crew.assignments (id, repo_id, issue_number, title, work_type_id, employee_id) VALUES ($1, $2, $3, $4, $5, $6)",
-      [id, input.repoId, next, input.title, input.workTypeId, input.employeeId],
+      "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id) VALUES ($1, $2, $3, $4, $5, $6)",
+      [id, input.sourceId, externalRef, input.title, input.workTypeId, input.employeeId],
     );
-    return { id, issueNumber: next };
+    return { id, externalRef };
   });
 }
 
 export interface NewWork {
   assignmentId: string;
-  prNumber: number;
+  /** nextExternalRef() 的值；沒有外部編號時是 null */
+  externalRef: string | null;
   summary: string;
   body: string;
   points: string[];
@@ -246,8 +275,8 @@ export function createWork(db: Database, identityId: string | null, input: NewWo
       [input.assignmentId],
     );
     await tx.query(
-      "INSERT INTO crew.works (id, assignment_id, round, pr_number, summary, body) VALUES ($1, $2, $3, $4, $5, $6)",
-      [id, input.assignmentId, next, input.prNumber, input.summary, input.body],
+      "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary, body) VALUES ($1, $2, $3, $4, $5, $6)",
+      [id, input.assignmentId, next, input.externalRef, input.summary, input.body],
     );
     for (const [i, text] of input.points.entries()) {
       await tx.query("INSERT INTO crew.work_points (work_id, ordinal, text) VALUES ($1, $2, $3)", [id, i + 1, text]);

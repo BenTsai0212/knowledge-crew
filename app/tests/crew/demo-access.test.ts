@@ -20,7 +20,7 @@ const read = (identity: string | null) =>
     const ids = async (sql: string) => (await tx.query<{ k: string }>(sql)).rows.map((r) => r.k);
     const count = async (table: string) => (await tx.query<{ n: number }>(`SELECT count(*)::int AS n FROM crew.${table}`)).rows[0].n;
     return {
-      repos: await ids("SELECT full_name AS k FROM crew.repos ORDER BY 1"),
+      sources: await ids("SELECT name AS k FROM crew.sources ORDER BY 1"),
       employees: await ids("SELECT id AS k FROM crew.employees ORDER BY 1"),
       // 員工 × 工作類型的交辦筆數
       assignments: Object.fromEntries(
@@ -38,7 +38,7 @@ const read = (identity: string | null) =>
 describe("虛構資料的讀取範圍", () => {
   it("manager：兩個 repo、26 筆交辦", async () => {
     expect(await read("manager")).toEqual({
-      repos: ["example-org/harbor-docs", "example-org/lantern-notes"],
+      sources: ["example-org/harbor-docs", "example-org/lantern-notes"],
       employees: ["basil", "juniper"],
       assignments: { "basil/docs": 11, "basil/test": 2, "juniper/ui": 13 },
       total: 26,
@@ -50,7 +50,7 @@ describe("虛構資料的讀取範圍", () => {
 
   it("staff：只看到 lantern-notes 的 15 筆交辦（Juniper × ui 13、Basil × test 2）", async () => {
     expect(await read("staff")).toEqual({
-      repos: ["example-org/lantern-notes"],
+      sources: ["example-org/lantern-notes"],
       employees: ["basil", "juniper"],
       assignments: { "basil/test": 2, "juniper/ui": 13 },
       total: 15,
@@ -62,7 +62,7 @@ describe("虛構資料的讀取範圍", () => {
 
   it.each([["guest"], [null]])("%s：沒有任何交辦與 repo", async (identity) => {
     const result = await read(identity);
-    expect(result.repos).toEqual([]);
+    expect(result.sources).toEqual([]);
     expect(result.total).toBe(0);
     expect(result.works).toBe(0);
     expect(result.reviews).toBe(0);

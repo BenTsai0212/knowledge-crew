@@ -6,11 +6,11 @@ import {
   createAssignment,
   listAssignments,
   listEmployees,
-  listRepos,
+  listSources,
   type AssignmentSummary,
   type NewAssignment,
   type StoredEmployee,
-  type StoredRepo,
+  type StoredSource,
 } from "../db/store";
 import { DEMO } from "../demo/load";
 import { pickReply, simulateSubmission } from "../demo/simulate";
@@ -27,8 +27,8 @@ export type SimulateState = "available" | "noReply" | "none";
 export interface AssignItem {
   id: string;
   title: string;
-  repoFullName: string;
-  issueNumber: number;
+  sourceName: string;
+  externalRef: string | null;
   workTypeId: string;
   employee: TodayEmployee;
   status: AssignStatus;
@@ -38,7 +38,7 @@ export interface AssignItem {
 
 export interface AssignData {
   canReview: boolean;
-  repos: StoredRepo[];
+  sources: StoredSource[];
   employees: TodayEmployee[];
   workTypes: string[];
   /** 新到舊 */
@@ -70,7 +70,7 @@ export function listWorkTypes(db: Database, identity: string | null): Promise<st
   );
 }
 
-const EMPTY = (canReview: boolean): AssignData => ({ canReview, repos: [], employees: [], workTypes: [], assignments: [] });
+const EMPTY = (canReview: boolean): AssignData => ({ canReview, sources: [], employees: [], workTypes: [], assignments: [] });
 
 export async function readAssign(
   db: Database,
@@ -81,8 +81,8 @@ export async function readAssign(
 ): Promise<AssignData> {
   // 沒有身分時比照 readToday：不讀取
   if (identity === null) return EMPTY(false);
-  const [repos, stored, workTypes, assignments] = await Promise.all([
-    listRepos(db, identity),
+  const [sources, stored, workTypes, assignments] = await Promise.all([
+    listSources(db, identity),
     listEmployees(db, identity),
     listWorkTypes(db, identity),
     listAssignments(db, identity),
@@ -91,14 +91,14 @@ export async function readAssign(
   const byId = new Map(employees.map((e) => [e.id, e]));
   return {
     canReview,
-    repos,
+    sources,
     employees,
     workTypes,
     assignments: assignments.map((a) => ({
       id: a.id,
       title: demoText("title", a.id, language) ?? a.title,
-      repoFullName: a.repoFullName,
-      issueNumber: a.issueNumber,
+      sourceName: a.sourceName,
+      externalRef: a.externalRef,
       workTypeId: a.workTypeId,
       employee: byId.get(a.employeeId) ?? { id: a.employeeId, displayName: a.employeeId, roleNote: null },
       status: assignStatus(a),
@@ -108,12 +108,12 @@ export async function readAssign(
   };
 }
 
-/** 交辦；標題去掉前後空白，空白時拋錯且不寫入。Issue 編號由 createAssignment() 決定。 */
+/** 交辦；標題去掉前後空白，空白時拋錯且不寫入。外部編號由 createAssignment() 決定。 */
 export function submitAssignment(
   db: Database,
   identity: string | null,
   input: NewAssignment,
-): Promise<{ id: string; issueNumber: number }> {
+): Promise<{ id: string; externalRef: string | null }> {
   const title = input.title.trim();
   if (title === "") return Promise.reject(new Error("submitAssignment: title is required"));
   return createAssignment(db, identity, { ...input, title });

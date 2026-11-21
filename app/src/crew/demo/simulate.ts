@@ -2,7 +2,7 @@
 // 寫入權限完全交給 RLS：看不到的交辦拋錯，staff、guest 寫入時資料庫拒絕。
 import type { LanguageCode, LocalizedText } from "../../client/types";
 import type { Database } from "../../db/database";
-import { createWork, getAssignmentWorks, listAssignments, nextPrNumber } from "../db/store";
+import { createWork, getAssignmentWorks, listAssignments, nextExternalRef } from "../db/store";
 import type { DemoFile, DemoReply } from "./types";
 
 /** 第 n 次交件（從 1 開始）用的回覆；回覆不夠時沿用最後一則。沒有對應的預先回覆時為 null。 */
@@ -30,7 +30,7 @@ export async function simulateSubmission(
   const text = (t: LocalizedText) => t[language];
   const created = await createWork(db, identityId, {
     assignmentId,
-    prNumber: await nextPrNumber(db, identityId, assignment.repoId),
+    externalRef: await nextExternalRef(db, identityId, assignment.sourceId),
     summary: text(reply.summary),
     body: text(reply.body),
     points: reply.points.map(text),
