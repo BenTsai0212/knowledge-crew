@@ -6,6 +6,7 @@ import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { crewStrings, type CrewTexts } from "../i18n";
 import type { ReturnReason } from "../trust/types";
+import { employeeOptionText, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import { actorName, filterLedger, ledgerOptions, readLedger, type LedgerEvent } from "./ledger";
 import { assignmentRef } from "./refs";
@@ -84,7 +85,7 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
             <option value="">{t.filterAll}</option>
             {options.employees.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.displayName}
+                {employeeOptionText(e.displayName, language)}
               </option>
             ))}
           </select>
@@ -109,6 +110,7 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
         <ol className="card crew-ledger__list" aria-label={t.listLabel}>
           {shown.map((e) => {
             const actor = actorName(clientConfig.access, options.employees, e.actor, language);
+            const actorIsEmployee = options.employees.some((x) => x.id === e.actor);
             return (
               <li key={e.id} className="crew-ledger__item" data-kind={e.kind}>
                 <span className="crew-ledger__head">
@@ -124,8 +126,10 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
                       {assignmentRef(e.assignment, language)}
                     </span>
                   )}
-                  <span>{fill(t.eventMeta, { employee: e.employee.displayName, workType: workTypeLabel(e.workTypeId, language) })}</span>
-                  <span>{actor === null ? t.actorRule : fill(t.byActor, { name: actor })}</span>
+                  <span>{withEmployee(t.eventMeta, { workType: workTypeLabel(e.workTypeId, language) }, e.employee.displayName, language)}</span>
+                  <span>
+                    {actor === null ? t.actorRule : actorIsEmployee ? withEmployee(t.byActor, {}, actor, language, "name") : fill(t.byActor, { name: actor })}
+                  </span>
                 </span>
               </li>
             );

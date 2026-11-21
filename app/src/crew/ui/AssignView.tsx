@@ -7,6 +7,7 @@ import type { LanguageCode } from "../../client/types";
 import { DEMO } from "../demo/load";
 import { crewStrings, type CrewTexts } from "../i18n";
 import { readAssign, simulateAssignment, submitAssignment, type AssignData, type AssignItem, type AssignStatus } from "./assign";
+import { employeeOptionText, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import { assignmentRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
@@ -84,9 +85,13 @@ export function AssignView({ db, identity, language }: CrewScreenProps) {
   );
 }
 
-function employeeLabel(e: TodayEmployee, t: CrewTexts<"assign">): string {
-  return e.roleNote === null ? e.displayName : fill(t.employeeOption, { employee: e.displayName, roleNote: e.roleNote });
+// 表單選項只能放文字：名字前加「AI」的文字；清單中用 AI 標記
+function employeeOption(e: TodayEmployee, t: CrewTexts<"assign">, language: LanguageCode): string {
+  const name = employeeOptionText(e.displayName, language);
+  return e.roleNote === null ? name : fill(t.employeeOption, { employee: name, roleNote: e.roleNote });
 }
+const employeeLabel = (e: TodayEmployee, t: CrewTexts<"assign">, language: LanguageCode) =>
+  withEmployee(e.roleNote === null ? "{employee}" : t.employeeOption, e.roleNote === null ? {} : { roleNote: e.roleNote }, e.displayName, language);
 
 interface FormInput {
   sourceId: string;
@@ -165,7 +170,7 @@ function AssignForm({
         <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
           {data.employees.map((e) => (
             <option key={e.id} value={e.id}>
-              {employeeLabel(e, t)}
+              {employeeOption(e, t, language)}
             </option>
           ))}
         </select>
@@ -227,7 +232,7 @@ function AssignRow({
       </span>
       <span className="crew-assign__item-meta muted">
         <span className="crew-assign__ref">{assignmentRef(item, language)}</span>
-        <span>{employeeLabel(item.employee, t)}</span>
+        <span>{employeeLabel(item.employee, t, language)}</span>
         <span>{workTypeLabel(item.workTypeId, language)}</span>
       </span>
       {item.simulate === "available" && (

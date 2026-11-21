@@ -5,6 +5,7 @@ import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { crewStrings, type CrewTexts } from "../i18n";
+import { withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import { assignmentRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
@@ -67,9 +68,10 @@ export function TodayView({ db, identity, language }: CrewScreenProps) {
             <ul className="crew-today__list">
               {today.suggestions.map((s) => (
                 <li key={`${s.employee.id}/${s.workTypeId}`} className="crew-today__item">
-                  {fill(
+                  {withEmployee(
                     t.relaxSuggestedItem,
-                    { employee: s.employee.displayName, workType: workTypeLabel(s.workTypeId, language), count: s.count },
+                    { workType: workTypeLabel(s.workTypeId, language), count: s.count },
+                    s.employee.displayName,
                     language,
                   )}
                 </li>
@@ -90,8 +92,8 @@ function AssignmentList({ items, t, language }: { items: TodayAssignment[]; t: C
         const workType = workTypeLabel(a.workTypeId, language);
         const meta =
           a.employee.roleNote === null
-            ? fill(t.assignmentMetaNoRole, { employee: a.employee.displayName, workType })
-            : fill(t.assignmentMeta, { employee: a.employee.displayName, roleNote: a.employee.roleNote, workType });
+            ? withEmployee(t.assignmentMetaNoRole, { workType }, a.employee.displayName, language)
+            : withEmployee(t.assignmentMeta, { roleNote: a.employee.roleNote, workType }, a.employee.displayName, language);
         return (
           <li key={a.id} className="crew-today__item">
             <span className="crew-today__item-title">{a.title}</span>

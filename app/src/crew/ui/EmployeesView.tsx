@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fill } from "../../client/i18n";
 import { crewStrings } from "../i18n";
+import { EmployeeName } from "./components";
 import { readEmployees, type EmployeeSummary } from "./employees";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
@@ -39,7 +40,9 @@ export function EmployeesView({ db, identity, language }: CrewScreenProps) {
     <div className="crew-employees">
       {state.employees.map((e) => (
         <section key={e.id} className="card crew-employees__card" aria-labelledby={`crew-employee-${e.id}`}>
-          <h3 id={`crew-employee-${e.id}`}>{e.displayName}</h3>
+          <h3 id={`crew-employee-${e.id}`}>
+            <EmployeeName name={e.displayName} language={language} />
+          </h3>
           {e.roleNote !== null && <p className="muted">{e.roleNote}</p>}
           {e.workTypes.length === 0 ? (
             <p className="muted">{t.noWorkTypes}</p>
