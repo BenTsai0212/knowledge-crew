@@ -249,12 +249,14 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數）
 - `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
+- `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數；測試在 `employees.test.ts`）
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/sections.ts`：子導覽的位置與名稱的鍵、畫面元件的 props
 - `ui/today.ts`：「今天」的資料整理（`readToday()`：待驗收、進行中、建議少看；測試在 `today.test.ts`）
 - `ui/TodayView.css`：「今天」畫面的三個區塊
 - `ui/TodayView.tsx`：「今天」畫面：只負責呈現 `today.ts` 的結果（載入中、讀取失敗、三個區塊或沒有要處理的事）
+- `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
 
 ### `app/src/db/`
 
