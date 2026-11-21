@@ -1,0 +1,12 @@
+{
+  "loading": "讀取中…",
+  "loadFailed": "讀不到員工的資料，請重新整理頁面再試一次。",
+  "empty": "目前沒有看得到的員工。",
+  "columnWorkType": "工作類型",
+  "columnLevel": "目前層級",
+  "columnReviews": "驗收次數",
+  "reviewCount": "{count} 次",
+  "noWorkTypes": "目前沒有看得到的工作。",
+  "levelItem": "逐項看",
+  "levelLight": "少看"
+}

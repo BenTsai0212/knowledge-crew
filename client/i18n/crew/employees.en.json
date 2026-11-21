@@ -1,0 +1,12 @@
+{
+  "loading": "Loading…",
+  "loadFailed": "Employee data could not be loaded. Reload the page and try again.",
+  "empty": "No employees are visible.",
+  "columnWorkType": "Type of work",
+  "columnLevel": "Current level",
+  "columnReviews": "Reviews",
+  "reviewCount": "{count, plural, one {# review} other {# reviews}}",
+  "noWorkTypes": "No visible work yet.",
+  "levelItem": "Review every item",
+  "levelLight": "Lighter review"
+}
