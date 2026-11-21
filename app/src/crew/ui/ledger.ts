@@ -163,6 +163,7 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
     events.push({ ...base(a), id: `${r.verdict}:${r.id}`, kind: r.verdict, at: r.decidedAt, actor: r.decidedBy, reason: r.reason });
   }
   for (const d of sources.decisions) {
+    // RLS 已於 crew/0003 收緊到同一員工 × 同一工作類型（#49）；這裡的過濾保留，作為雙重保護
     if (!visiblePairs.has(pairKey(d.employeeId, d.workTypeId))) continue;
     const a = d.basisReviewId === null ? undefined : assignmentOfReview(d.basisReviewId);
     events.push({
