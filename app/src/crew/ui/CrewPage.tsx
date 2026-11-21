@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { crewStrings } from "../i18n";
 import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection } from "./sections";
+import { AssignView } from "./AssignView";
 import { EmployeesView } from "./EmployeesView";
 import { TodayView } from "./TodayView";
 import { TrustView } from "./TrustView";
@@ -11,6 +12,7 @@ import "./CrewPage.css";
 const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
   today: TodayView,
   employees: EmployeesView,
+  assignments: AssignView,
   trust: TrustView,
 };
 
