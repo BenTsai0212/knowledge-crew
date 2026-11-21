@@ -246,6 +246,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數
 - `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
 - `trust/types.ts`：信任規則用的型別
+- `ui/assign.ts`：「交辦」的資料整理（`readAssign()`：交辦清單與表單的選項；`submitAssignment()`、`simulateAssignment()`：交辦與模擬交件；測試在 `assign.test.ts`）
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數）
 - `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
