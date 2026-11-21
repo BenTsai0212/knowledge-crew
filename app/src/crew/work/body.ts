@@ -71,7 +71,12 @@ export interface ParsedBody {
 const HEADER = /^@@(?:\s|$)/;
 const HEADER_PARTS = /^@@ +(\S+)((?: +\[[^\]]*\])*) *(?:\| *(.*))?$/;
 const ATTR = /\[([^\]]*)\]/g;
-const MARK = /〔(\/?)(\d+)〕/g;
+// 重點標記 〔N〕〔/N〕 的括號（U+3014、U+3015）。這是格式的分隔符號，不是語言規則或介面文字；
+// 介面文字（client/i18n.test.ts）與語言模組（language/structure.test.ts）的結構測試不允許程式碼中有全形字元
+// 或 CJK 範圍的 \u 跳脫，所以以碼位產生。
+const MARK_OPEN = String.fromCodePoint(0x3014);
+const MARK_CLOSE = String.fromCodePoint(0x3015);
+const MARK = new RegExp(`${MARK_OPEN}(\\/?)(\\d+)${MARK_CLOSE}`, "g");
 
 interface Line {
   text: string;
