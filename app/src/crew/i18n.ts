@@ -7,6 +7,7 @@ import type { LanguageCode } from "../client/types";
 // 畫面 → 鍵（以 zh-TW 的翻譯檔為準；各語言的鍵相同由測試保證）
 export type CrewScreenKeys = {
   common: keyof typeof import("@client/i18n/crew/common.zh-TW.json");
+  ledger: keyof typeof import("@client/i18n/crew/ledger.zh-TW.json");
   today: keyof typeof import("@client/i18n/crew/today.zh-TW.json");
   assign: keyof typeof import("@client/i18n/crew/assign.zh-TW.json");
   employees: keyof typeof import("@client/i18n/crew/employees.zh-TW.json");

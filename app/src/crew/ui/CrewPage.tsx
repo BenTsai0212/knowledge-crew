@@ -5,6 +5,7 @@ import { crewStrings } from "../i18n";
 import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection } from "./sections";
 import { AssignView } from "./AssignView";
 import { EmployeesView } from "./EmployeesView";
+import { LedgerView } from "./LedgerView";
 import { ReviewView } from "./ReviewView";
 import { TodayView } from "./TodayView";
 import { TrustView } from "./TrustView";
@@ -16,6 +17,7 @@ const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
   assignments: AssignView,
   works: ReviewView,
   trust: TrustView,
+  ledger: LedgerView,
 };
 
 export function CrewPage(props: CrewScreenProps) {

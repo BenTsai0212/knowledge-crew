@@ -258,6 +258,8 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看，依時間新到舊；`filterLedger()`；測試在 `ledger.test.ts`）
+- `ui/LedgerView.css`：「工作帳本」畫面的篩選與紀錄
+- `ui/LedgerView.tsx`：「工作帳本」畫面：只負責呈現 `ledger.ts` 的結果（載入中、讀取失敗、空狀態、依員工與工作類型篩選的紀錄；只讀）
 - `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單與面板；進入時選取待驗收的第一筆；「通過」「退回」只給能驗收的身分，寫入後重新讀取
