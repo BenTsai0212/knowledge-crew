@@ -14,6 +14,13 @@ const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
 const other = clientConfig.client.languages.find((l) => l !== lang)!;
 
+// 來源的顯示名稱（#60 的 `## 決定` 2）：有 label 時是目前語言的 label，否則是 name
+const label = (id: string, language = lang) => {
+  const s = demo.sources.find((x) => x.id === id)!;
+  return s.label?.[language] ?? s.name;
+};
+const SOURCE_NAMES = demo.sources.map((s) => label(s.id));
+
 let db: Database;
 beforeAll(async () => {
   db = await openDatabase(clientConfig, { migrations: crewMigrations, seed: demoSeed(DEMO_RAW, clientConfig) });
@@ -106,22 +113,28 @@ describe("actorName", () => {
 });
 
 describe("readLedger：匯入虛構資料後", () => {
-  it("manager：兩個 repo 的全部事件，含 Juniper × 介面的同意少看", async () => {
+  it("manager：四個來源的全部事件，含 Rowan、Linden 的同意少看與 Rowan 的改回逐項看", async () => {
     const events = await readLedger(db, "manager", lang);
-    expect(countKinds(events)).toEqual({ assigned: 26, submitted: 30, accepted: 24, returned: 4, relax: 1 });
-    expect(events).toHaveLength(85);
-    expect(new Set(events.map((e) => e.assignment?.sourceName))).toEqual(new Set(["example-org/lantern-notes", "example-org/harbor-docs"]));
+    expect(countKinds(events)).toEqual({ assigned: 44, submitted: 52, accepted: 40, returned: 8, relax: 2, autoReset: 1 });
+    expect(events).toHaveLength(147);
+    expect(new Set(events.map((e) => e.assignment?.sourceName).filter((n) => n !== undefined))).toEqual(new Set(SOURCE_NAMES));
     const relax = events.filter((e) => e.kind === "relax");
-    expect(relax).toHaveLength(1);
-    expect(relax[0]).toMatchObject({ employee: { id: "juniper", displayName: "Juniper" }, workTypeId: "ui", actor: "manager" });
+    expect(relax.map((e) => [e.employee.id, e.workTypeId, e.actor])).toEqual([
+      ["linden", "knowledge", "manager"],
+      ["rowan", "support", "manager"],
+    ]);
+    expect(relax[1]).toMatchObject({ employee: { id: "rowan", displayName: "Rowan" } });
+    expect(events.filter((e) => e.kind === "autoReset")).toMatchObject([{ id: "autoReset:s12-1", employee: { id: "rowan" }, workTypeId: "support", actor: null }]);
     for (let i = 1; i < events.length; i++) expect(events[i - 1].at >= events[i].at).toBe(true);
   });
 
-  it("staff：只看到青翼專案（lantern-notes）的事件", async () => {
+  it("staff：只看到青翼專案（客服信箱、官方社群帳號）的事件", async () => {
     const events = await readLedger(db, "staff", lang);
-    expect(events).toHaveLength(49);
-    expect(countKinds(events).relax).toBe(1);
-    for (const e of events) expect(e.assignment?.sourceName ?? "example-org/lantern-notes").toBe("example-org/lantern-notes");
+    expect(events).toHaveLength(83);
+    expect(countKinds(events)).toEqual({ assigned: 25, submitted: 29, accepted: 23, returned: 4, relax: 1, autoReset: 1 });
+    expect(events.filter((e) => e.kind === "relax").map((e) => e.employee.id)).toEqual(["rowan"]);
+    const bluewing = [label("support-inbox"), label("social-account")];
+    for (const e of events) expect(bluewing).toContain(e.assignment?.sourceName ?? bluewing[0]);
   });
 
   it("guest 與沒有身分：空陣列，不拋錯", async () => {
@@ -130,36 +143,40 @@ describe("readLedger：匯入虛構資料後", () => {
   });
 
   it("交辦標題依目前語言顯示，找不到時是原文", async () => {
-    const j13 = demo.assignments.find((a) => a.id === "j13")!;
+    const c11 = demo.assignments.find((a) => a.id === "c11")!;
     for (const language of [lang, other]) {
-      const e = (await readLedger(db, "staff", language)).find((x) => x.id === "assigned:j13")!;
-      expect(e.assignment!.title).toBe(j13.title[language]);
+      const e = (await readLedger(db, "staff", language)).find((x) => x.id === "assigned:c11")!;
+      expect(e.assignment!.title).toBe(c11.title[language]);
+      expect(e.assignment!.sourceName).toBe(label("social-account", language));
     }
-    const e = (await readLedger(db, "staff", "xx")).find((x) => x.id === "assigned:j13")!;
-    expect(e.assignment!.title).toBe(j13.title[lang]);
+    const e = (await readLedger(db, "staff", "xx")).find((x) => x.id === "assigned:c11")!;
+    expect(e.assignment!.title).toBe(c11.title[lang]);
+    expect(e.assignment!.sourceName).toBe("Social account");
   });
 
   it("完整流程（交辦 → 交件 → 退回「做錯了」）後多四筆：改回逐項看、退回、交件、交辦", async () => {
+    // 青翼專案（staff 看得到）的組合先少看：Sorrel × 貼文與商品介紹
+    await createLevelDecision(db, "manager", { employeeId: "sorrel", workTypeId: "content", decision: "relax" });
     const before = await readLedger(db, "manager", lang);
-    const a = await createAssignment(db, "manager", { sourceId: "lantern-notes", title: "Ledger flow", workTypeId: "ui", employeeId: "juniper" });
+    const a = await createAssignment(db, "manager", { sourceId: "social-account", title: "Ledger flow", workTypeId: "content", employeeId: "sorrel" });
     const s = await simulateSubmission(db, "manager", a.id, demo, lang);
     const r = await createReview(db, "manager", { workId: s.workId, verdict: "returned", reason: "wrong" });
     const after = await readLedger(db, "manager", lang);
     expect(after).toHaveLength(before.length + 4);
     expect(after.slice(0, 4).map((e) => e.id)).toEqual([`autoReset:${r.id}`, `returned:${r.id}`, `submitted:${s.workId}`, `assigned:${a.id}`]);
-    expect(after[0]).toMatchObject({ actor: null, employee: { id: "juniper" }, workTypeId: "ui", assignment: { id: a.id, title: "Ledger flow" } });
+    expect(after[0]).toMatchObject({ actor: null, employee: { id: "sorrel" }, workTypeId: "content", assignment: { id: a.id, title: "Ledger flow" } });
     expect(after[1]).toMatchObject({ kind: "returned", reason: "wrong", actor: "manager" });
-    expect(after[2]).toMatchObject({ kind: "submitted", round: 1, actor: "juniper" });
-    expect(after[3]).toMatchObject({ kind: "assigned", actor: "manager", assignment: { sourceName: "example-org/lantern-notes" } });
+    expect(after[2]).toMatchObject({ kind: "submitted", round: 1, actor: "sorrel" });
+    expect(after[3]).toMatchObject({ kind: "assigned", actor: "manager", assignment: { sourceName: label("social-account") } });
     // staff 同樣看得到青翼專案的這四筆
     expect((await readLedger(db, "staff", lang)).slice(0, 4).map((e) => e.id)).toEqual(after.slice(0, 4).map((e) => e.id));
   });
 
-  it("manager 對 Basil × 文件同意少看：manager 看得到，staff 看不到（#40 的 `## 決定` 1）", async () => {
+  it("manager 對 Juniper × 網站與工具開發同意少看：manager 看得到，staff 看不到（#40 的 `## 決定` 1）", async () => {
     const staffBefore = await readLedger(db, "staff", lang);
-    const d = await createLevelDecision(db, "manager", { employeeId: "basil", workTypeId: "docs", decision: "relax" });
+    const d = await createLevelDecision(db, "manager", { employeeId: "juniper", workTypeId: "dev", decision: "relax" });
     const manager = await readLedger(db, "manager", lang);
-    expect(manager.find((e) => e.id === `relax:${d.id}`)).toMatchObject({ employee: { id: "basil" }, workTypeId: "docs", actor: "manager", assignment: null });
+    expect(manager.find((e) => e.id === `relax:${d.id}`)).toMatchObject({ employee: { id: "juniper" }, workTypeId: "dev", actor: "manager", assignment: null });
     const staff = await readLedger(db, "staff", lang);
     expect(staff.some((e) => e.id === `relax:${d.id}`)).toBe(false);
     expect(staff).toHaveLength(staffBefore.length);

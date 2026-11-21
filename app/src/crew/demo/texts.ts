@@ -6,11 +6,11 @@ import { demoWorkId, type DemoFile } from "./types";
 
 /**
  * 文字的種類與 id：
- * - `roleNote`：員工 id；`title`：交辦 id
+ * - `roleNote`：員工 id；`title`：交辦 id；`sourceName`：來源 id（來源的 `label`，#60）
  * - `summary`、`body`：工作 id（`<交辦 id>-w<round>`）
  * - `point`、`change`：`<工作 id>/<ordinal>`（ordinal 從 1 開始，與資料表相同）
  */
-export type DemoTextKind = "roleNote" | "title" | "summary" | "body" | "point" | "change";
+export type DemoTextKind = "sourceName" | "roleNote" | "title" | "summary" | "body" | "point" | "change";
 
 export type DemoTextIndex = ReadonlyMap<string, LocalizedText>;
 
@@ -18,6 +18,7 @@ const key = (kind: DemoTextKind, id: string) => `${kind}:${id}`;
 
 export function demoTextIndex(demo: DemoFile): DemoTextIndex {
   const index = new Map<string, LocalizedText>();
+  for (const s of demo.sources) if (s.label) index.set(key("sourceName", s.id), s.label);
   for (const e of demo.employees) index.set(key("roleNote", e.id), e.roleNote);
   for (const a of demo.assignments) {
     index.set(key("title", a.id), a.title);

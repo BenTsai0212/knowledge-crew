@@ -10,6 +10,8 @@ export interface DemoSource {
   kind: SourceKind;
   /** 畫面顯示的名稱；repo 類一律是 example-org/<名稱>（虛構） */
   name: string;
+  /** 依語言顯示的名稱（#60 的 `## 決定` 2）：資料庫只存 `name`，畫面以 demoText("sourceName") 換成目前語言；省略時顯示 `name` */
+  label?: LocalizedText;
   /** access.json 的專案：誰看得到由專案決定 */
   project: Id;
 }

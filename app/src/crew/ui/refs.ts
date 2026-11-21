@@ -3,12 +3,21 @@
 import { fill } from "../../client/i18n";
 import type { LanguageCode } from "../../client/types";
 import type { SourceKind } from "../db/store";
+import { demoText, type DemoTextIndex } from "../demo/texts";
 import { crewStrings } from "../i18n";
 
 export interface SourceRef {
   sourceKind: SourceKind;
   sourceName: string;
   externalRef: string | null;
+}
+
+/**
+ * 來源的顯示名稱（#60 的 `## 決定` 2）：demo.json 的來源有目前語言的 `label` 時用它，否則用資料庫的 `name`。
+ * 人在 demo 中新增的來源、或 repo 類省略 `label` 時照舊顯示 `name`。
+ */
+export function sourceLabel(sourceId: string, name: string, language: LanguageCode, index?: DemoTextIndex): string {
+  return demoText("sourceName", sourceId, language, index) ?? name;
 }
 
 /** 交辦的參照：repo 類 `name#ref`；其他類型 `name ref`；沒有編號時只有來源名稱。 */

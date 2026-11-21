@@ -33,20 +33,22 @@ describe("canReviewOf：依 client/access.json 的角色", () => {
 });
 
 describe("readToday：匯入虛構資料後", () => {
-  it("manager：待驗收 2（j13、b11）、進行中 0、建議少看 1（Basil × 文件）", async () => {
+  it("manager：待驗收 4（s14、c11、k13、j06）、進行中 0、建議少看 1（Sorrel × 貼文與商品介紹）", async () => {
     const today = await read("manager");
     expect(today.canReview).toBe(true);
-    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["b11", "j13"]);
+    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "j06", "k13", "s14"]);
     expect(today.inProgress).toEqual([]);
-    expect(today.suggestions.map((s) => [s.employee.id, s.workTypeId])).toEqual([["basil", "docs"]]);
+    expect(today.suggestions.map((s) => [s.employee.id, s.workTypeId])).toEqual([["sorrel", "content"]]);
     expect(today.suggestions[0].count).toBe(10);
   });
 
-  it("staff：只看到青翼專案，待驗收 1（j13）、進行中 0、不計算建議少看", async () => {
+  it("staff：只看到青翼專案，待驗收 2（c11、s14）、進行中 0、不計算建議少看", async () => {
     const today = await read("staff");
     expect(today.canReview).toBe(false);
-    expect(today.awaitingReview.map((a) => a.id)).toEqual(["j13"]);
-    expect(today.awaitingReview[0].sourceName).toBe("example-org/lantern-notes");
+    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "s14"]);
+    // 來源名稱是目前語言的顯示名稱（#60 的 `## 決定` 2）
+    const inbox = demo.sources.find((x) => x.id === "support-inbox")!;
+    expect(today.awaitingReview.find((a) => a.id === "s14")!.sourceName).toBe(inbox.label![lang]);
     expect(today.inProgress).toEqual([]);
     expect(today.suggestions).toEqual([]);
   });
@@ -61,20 +63,23 @@ describe("readToday：匯入虛構資料後", () => {
     expect(today).toEqual({ canReview: false, awaitingReview: [], inProgress: [], suggestions: [] });
   });
 
-  it("交辦標題與員工說明依目前語言顯示", async () => {
-    const j13 = demo.assignments.find((a) => a.id === "j13")!;
-    const juniper = demo.employees.find((e) => e.id === "juniper")!;
+  it("交辦標題、員工說明與來源名稱依目前語言顯示", async () => {
+    const s14 = demo.assignments.find((a) => a.id === "s14")!;
+    const rowan = demo.employees.find((e) => e.id === "rowan")!;
+    const inbox = demo.sources.find((x) => x.id === "support-inbox")!;
     for (const language of [lang, other]) {
-      const [item] = (await read("staff", language)).awaitingReview;
-      expect(item.title).toBe(j13.title[language]);
-      expect(item.employee).toEqual({ id: "juniper", displayName: "Juniper", roleNote: juniper.roleNote[language] });
+      const item = (await read("staff", language)).awaitingReview.find((a) => a.id === "s14")!;
+      expect(item.title).toBe(s14.title[language]);
+      expect(item.employee).toEqual({ id: "rowan", displayName: "Rowan", roleNote: rowan.roleNote[language] });
+      expect(item.sourceName).toBe(inbox.label![language]);
     }
   });
 
   it("找不到目前語言的文字時顯示資料庫的原文", async () => {
-    const [item] = (await read("staff", "xx")).awaitingReview;
-    expect(item.title).toBe(demo.assignments.find((a) => a.id === "j13")!.title[lang]);
-    expect(item.employee.roleNote).toBe(demo.employees.find((e) => e.id === "juniper")!.roleNote[lang]);
+    const item = (await read("staff", "xx")).awaitingReview.find((a) => a.id === "s14")!;
+    expect(item.title).toBe(demo.assignments.find((a) => a.id === "s14")!.title[lang]);
+    expect(item.employee.roleNote).toBe(demo.employees.find((e) => e.id === "rowan")!.roleNote[lang]);
+    expect(item.sourceName).toBe("Support inbox");
   });
 });
 
@@ -96,14 +101,14 @@ describe("「今天」的文字", () => {
   });
 
   it("工作類型名稱來自 common；沒有的鍵顯示 id 本身", () => {
-    expect(workTypeLabel("docs", "zh-TW")).toBe("文件");
-    expect(workTypeLabel("ui", "en")).toBe("UI");
+    expect(workTypeLabel("knowledge", "zh-TW")).toBe("知識庫整理");
+    expect(workTypeLabel("dev", "en")).toBe("Site and tool changes");
     expect(workTypeLabel("design", "en")).toBe("design");
   });
 
   it("建議少看：英文名字與中文之間留半形空格；不再有與子導覽重複的「今天」標題", () => {
-    expect(fill(crewStrings("today", "zh-TW").relaxSuggestedItem, { employee: "Basil", workType: workTypeLabel("docs", "zh-TW"), count: 10 })).toMatch(
-      /^Basil 的「文件」最近 10 次/,
+    expect(fill(crewStrings("today", "zh-TW").relaxSuggestedItem, { employee: "Sorrel", workType: workTypeLabel("content", "zh-TW"), count: 10 })).toMatch(
+      /^Sorrel 的「貼文與商品介紹」最近 10 次/,
     );
     for (const language of clientConfig.client.languages) expect(crewStrings("today", language)).not.toHaveProperty("title");
   });

@@ -39,15 +39,32 @@ export function crewFill(template: string, values: Record<string, string | numbe
 }
 
 // 虛構資料（client/crew/demo.json）：員工、工作類型與工作來源以 id 指定，名稱從資料讀
+interface DemoSource {
+  id: string;
+  kind: string;
+  name: string;
+  label?: Record<string, string>;
+  project: string;
+}
 interface Demo {
-  sources: { id: string; kind: string; name: string; project: string }[];
+  sources: DemoSource[];
   employees: { id: string; displayName: string }[];
+  assignments: { employee: string; workType: string; source: string }[];
   simulations: { employee: string; workType: string; replies: { body: Record<string, string> }[] }[];
 }
-export const demo: Demo = hasCrewDemo ? readClientJson<Demo>("crew/demo.json") : { sources: [], employees: [], simulations: [] };
+export const demo: Demo = hasCrewDemo
+  ? readClientJson<Demo>("crew/demo.json")
+  : { sources: [], employees: [], assignments: [], simulations: [] };
 export const employeeName = (id: string) => demo.employees.find((e) => e.id === id)!.displayName;
 export const workTypeName = (id: string) => (ct.common as Record<string, string>)[`workType${id.charAt(0).toUpperCase()}${id.slice(1)}`];
-export const repoOf = (project: string) => demo.sources.find((s) => s.kind === "repo" && s.project === project)!;
+// 專案的工作來源；畫面上的名稱是目前語言的 label，沒有時是 name（#60 的 `## 決定` 2）
+export const sourcesOf = (project: string) => demo.sources.filter((s) => s.project === project);
+export const sourceLabel = (s: DemoSource) => s.label?.[language] ?? s.name;
+// 員工 × 工作類型在虛構資料中交辦時用的來源
+export const sourceOf = (employee: string, workType: string) => {
+  const id = demo.assignments.find((a) => a.employee === employee && a.workType === workType)!.source;
+  return demo.sources.find((s) => s.id === id)!;
+};
 // 模擬交件第一輪的全文
 export const firstReplyBody = (employee: string, workType: string) =>
   demo.simulations.find((x) => x.employee === employee && x.workType === workType)!.replies[0].body[language];
@@ -83,7 +100,7 @@ export async function assignSimulateReturn(
   await gotoCrewSection(page, ct.common.sectionAssignments);
   const form = page.getByRole("form", { name: ct.assign.formTitle });
   await form.getByRole("textbox").fill(title);
-  await form.getByLabel(new RegExp(`^${ct.assign.fieldSource}`)).selectOption(repoOf("bluewing").id);
+  await form.getByLabel(new RegExp(`^${ct.assign.fieldSource}`)).selectOption(sourceOf(employee, workType).id);
   await form.getByLabel(new RegExp(`^${ct.assign.fieldEmployee}`)).selectOption(employee);
   await form.getByLabel(new RegExp(`^${ct.assign.fieldWorkType}`)).selectOption(workType);
   await form.getByRole("button", { name: ct.assign.submit, exact: true }).click();

@@ -1,4 +1,4 @@
-// 一次完整流程，只用資料層（#29）：交辦 → 模擬交件 → 退回「做錯了」→ Juniper × ui 從 light 變回 item，autoResets 多一筆。
+// 一次完整流程，只用資料層（#29）：交辦 → 模擬交件 → 退回「做錯了」→ Linden × knowledge 從 light 變回 item，autoResets 多一筆。
 // 對照組：退回「我想要不一樣的做法」時層級維持 light。
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { clientConfig } from "../../src/client/load";
@@ -18,23 +18,23 @@ beforeEach(async () => {
 });
 afterEach(() => db.close());
 
-const juniperUi = async () => {
-  const { reviews, decisions } = await getTrustInputs(db, "manager", "juniper", "ui");
+const lindenKnowledge = async () => {
+  const { reviews, decisions } = await getTrustInputs(db, "manager", "linden", "knowledge");
   return { level: reviewLevel(reviews, decisions), resets: autoResets(reviews, decisions) };
 };
 
 const assignSubmitReturn = async (reason: ReturnReason) => {
-  const a = await createAssignment(db, "manager", { sourceId: "lantern-notes", title: "Pin notes", workTypeId: "ui", employeeId: "juniper" });
+  const a = await createAssignment(db, "manager", { sourceId: "company-kb", title: "Merge FAQ entries", workTypeId: "knowledge", employeeId: "linden" });
   const { workId } = await simulateSubmission(db, "manager", a.id, DEMO as DemoFile, "zh-TW");
   return createReview(db, "manager", { workId, verdict: "returned", reason });
 };
 
 describe("交辦 → 模擬交件 → 退回", () => {
-  it("退回「做錯了」：Juniper × ui 變回 item，autoResets 多一筆", async () => {
-    const before = await juniperUi();
+  it("退回「做錯了」：Linden × knowledge 變回 item，autoResets 多一筆", async () => {
+    const before = await lindenKnowledge();
     expect(before).toEqual({ level: "light", resets: [] });
     const { id } = await assignSubmitReturn("wrong");
-    const after = await juniperUi();
+    const after = await lindenKnowledge();
     expect(after.level).toBe("item");
     expect(after.resets).toHaveLength(before.resets.length + 1);
     expect(after.resets.at(-1)!.review).toMatchObject({ id, verdict: "returned", reason: "wrong" });
@@ -42,6 +42,6 @@ describe("交辦 → 模擬交件 → 退回", () => {
 
   it("對照組：退回「我想要不一樣的做法」時維持 light", async () => {
     await assignSubmitReturn("different_approach");
-    expect(await juniperUi()).toEqual({ level: "light", resets: [] });
+    expect(await lindenKnowledge()).toEqual({ level: "light", resets: [] });
   });
 });

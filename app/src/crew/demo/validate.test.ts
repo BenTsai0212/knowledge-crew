@@ -147,6 +147,8 @@ describe("validateDemo", () => {
     ["空白的 zh-TW", (d: any) => (d.employees[0].roleNote["zh-TW"] = " "), "employees[0].roleNote.zh-TW: must be a non-empty string"],
     ["字串含網址", (d: any) => (d.assignments[0].works[0].body.en = "see https://example.com"), "works[0].body.en: must not contain a URL"],
     ["repo 類的名稱不是 example-org/", (d: any) => (d.sources[0].name = "other-org/lantern-notes"), "sources[0].name: must start with example-org/"],
+    ["來源的顯示名稱缺少 en（#60）", (d: any) => (d.sources[0].label = { "zh-TW": "筆記" }), "sources[0].label.en: must be a non-empty string"],
+    ["來源的顯示名稱不是物件（#60）", (d: any) => (d.sources[0].label = "Notes"), "sources[0].label: must be an object of languages"],
   ])("雙語與虛構資料：%s", (_name, change, expected) => {
     expect(errorsAfter(change).join("\n")).toContain(expected);
   });
@@ -182,6 +184,11 @@ describe("validateDemo", () => {
     expect(duplicated.join("\n")).toContain("assignments[1].externalRef: duplicate");
   });
 
+  it("來源的顯示名稱（label）可以省略；有的話雙語齊全即通過（#60）", () => {
+    expect(errorsAfter((d: any) => (d.sources[0].label = t("筆記", "Notes")))).toEqual([]);
+    expect(errorsAfter((d: any) => delete d.sources[0].label)).toEqual([]);
+  });
+
   it("languages 選項決定雙語欄位必須有的語言", () => {
     const errors = validateDemo(fixture(), access, { now: NOW, languages: ["zh-TW", "en", "ja"] });
     expect(errors).toContain("employees[0].roleNote.ja: must be a non-empty string");
@@ -206,6 +213,14 @@ describe("demoText", () => {
     expect(demoText("body", "j02-w1", "zh-TW", index)).toBe("本文");
     expect(demoText("point", `${w1}/1`, "en", index)).toBe("Point");
     expect(demoText("change", `${w1}/1`, "zh-TW", index)).toBe("變更");
+  });
+
+  it("sourceName：來源有 label 時以來源 id 查得到，沒有 label 時是 null（#60）", () => {
+    const withLabel = fixture();
+    withLabel.sources[0].label = t("筆記", "Notes");
+    expect(demoText("sourceName", "lantern-notes", "zh-TW", demoTextIndex(withLabel))).toBe("筆記");
+    expect(demoText("sourceName", "lantern-notes", "en", demoTextIndex(withLabel))).toBe("Notes");
+    expect(demoText("sourceName", "lantern-notes", "en", index)).toBeNull();
   });
 
   it("找不到（人新增的資料、沒有的語言或 ordinal）時回傳 null", () => {

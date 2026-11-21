@@ -1,455 +1,928 @@
 {
   "sources": [
-    { "id": "lantern-notes", "kind": "repo", "name": "example-org/lantern-notes", "project": "bluewing" },
-    { "id": "harbor-docs", "kind": "repo", "name": "example-org/harbor-docs", "project": "longpier" }
+    { "id": "support-inbox", "kind": "mailbox", "name": "Support inbox", "label": { "zh-TW": "客服信箱", "en": "Support inbox" }, "project": "bluewing" },
+    { "id": "social-account", "kind": "social", "name": "Social account", "label": { "zh-TW": "官方社群帳號", "en": "Social account" }, "project": "bluewing" },
+    { "id": "company-kb", "kind": "knowledge_base", "name": "Company KB", "label": { "zh-TW": "公司知識庫", "en": "Company KB" }, "project": "longpier" },
+    { "id": "company-site", "kind": "repo", "name": "example-org/company-site", "project": "longpier" }
   ],
   "employees": [
-    { "id": "juniper", "displayName": "Juniper", "roleNote": { "zh-TW": "前端與畫面", "en": "Frontend and UI" } },
-    { "id": "basil", "displayName": "Basil", "roleNote": { "zh-TW": "文件與測試", "en": "Docs and tests" } }
+    { "id": "rowan", "displayName": "Rowan", "roleNote": { "zh-TW": "客服", "en": "Customer support" } },
+    { "id": "sorrel", "displayName": "Sorrel", "roleNote": { "zh-TW": "內容", "en": "Content" } },
+    { "id": "linden", "displayName": "Linden", "roleNote": { "zh-TW": "文件", "en": "Documentation" } },
+    { "id": "juniper", "displayName": "Juniper", "roleNote": { "zh-TW": "開發", "en": "Development" } }
   ],
-  "workTypes": ["ui", "docs", "test"],
+  "workTypes": ["support", "content", "knowledge", "dev"],
   "assignments": [
     {
-      "id": "j01", "source": "lantern-notes", "externalRef": "101", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "筆記清單的空狀態", "en": "Empty state for the note list" }, "assignedBy": "manager", "assignedAt": "2026-09-01T09:00:00+08:00",
+      "id": "s01", "source": "support-inbox", "externalRef": "1041", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問保溫瓶的保固期限", "en": "Question about the bottle warranty" }, "assignedBy": "manager", "assignedAt": "2026-09-01T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "201", "submittedAt": "2026-09-01T11:00:00+08:00",
-          "summary": { "zh-TW": "清單沒有筆記時顯示說明與新增按鈕", "en": "Show a hint and a create button when the list is empty" },
-          "body": { "zh-TW": "清單沒有筆記時顯示說明與新增按鈕。請看「要看的重點」。", "en": "Show a hint and a create button when the list is empty. See the points to review." },
-          "points": [{ "zh-TW": "空狀態的文字與按鈕位置", "en": "Copy and button placement of the empty state" }],
-          "changes": [
-            { "path": "src/notes/EmptyState.tsx", "summary": { "zh-TW": "新增空狀態元件", "en": "Add the empty state component" } },
-            { "path": "src/notes/NoteList.tsx", "summary": { "zh-TW": "沒有筆記時改顯示空狀態", "en": "Render the empty state when there are no notes" } }
+          "round": 1, "submittedAt": "2026-09-01T11:00:00+08:00",
+          "summary": { "zh-TW": "回覆保固期限為一年，附上申請方式", "en": "Reply that the warranty is one year and how to claim it" },
+          "body": { "zh-TW": "回覆保固期限為一年，附上申請方式。請看「要看的重點」。", "en": "Reply that the warranty is one year and how to claim it. See the points to review." },
+          "points": [{ "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明保固期限與範圍", "en": "Explain the warranty period and coverage" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-09-01T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-01T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-09-01T11:20:00+08:00" }],
+          "review": { "id": "s01-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-01T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s02", "source": "support-inbox", "externalRef": "1042", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "訂單延遲出貨的詢問", "en": "Question about a delayed order" }, "assignedBy": "manager", "assignedAt": "2026-09-05T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-05T11:00:00+08:00",
+          "summary": { "zh-TW": "致歉並告知新的出貨日", "en": "Apologize and give the new shipping date" },
+          "body": { "zh-TW": "致歉並告知新的出貨日。請看「要看的重點」。", "en": "Apologize and give the new shipping date. See the points to review." },
+          "points": [
+            { "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" },
+            { "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }
           ],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-01T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-01T11:20:00+08:00" }],
-          "review": { "id": "j01-1", "verdict": "returned", "reason": "wrong", "decidedBy": "manager", "decidedAt": "2026-09-01T15:00:00+08:00" }
+          "changes": [
+            { "path": "reply/greeting", "summary": { "zh-TW": "加上致歉", "en": "Add an apology" } },
+            { "path": "reply/p2", "summary": { "zh-TW": "告知新的出貨日", "en": "Give the new shipping date" } }
+          ],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-09-05T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-05T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-09-05T11:20:00+08:00" }],
+          "review": { "id": "s02-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-05T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s03", "source": "support-inbox", "externalRef": "1043", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問大量訂購的報價", "en": "Request for a bulk order quote" }, "assignedBy": "manager", "assignedAt": "2026-09-09T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-09T11:00:00+08:00",
+          "summary": { "zh-TW": "依報價單回覆 50 個以上的單價", "en": "Reply with the unit price for 50 or more from the quote" },
+          "body": { "zh-TW": "依報價單回覆 50 個以上的單價。請看「要看的重點」。", "en": "Reply with the unit price for 50 or more from the quote. See the points to review." },
+          "points": [{ "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }],
+          "changes": [
+            { "path": "reply/p2", "summary": { "zh-TW": "列出數量級距與單價", "en": "List quantity tiers and unit prices" } },
+            { "path": "reply/attachment", "summary": { "zh-TW": "附上報價單", "en": "Attach the quote" } }
+          ],
+          "checks": [{ "name": "quote-match", "status": "pending", "checkedAt": "2026-09-09T11:01:00+08:00" }, { "name": "quote-match", "status": "pass", "checkedAt": "2026-09-09T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-09T11:20:00+08:00" }],
+          "review": { "id": "s03-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-09T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s04", "source": "support-inbox", "externalRef": "1044", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "退貨流程的詢問", "en": "Question about returns" }, "assignedBy": "manager", "assignedAt": "2026-09-13T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-13T11:00:00+08:00",
+          "summary": { "zh-TW": "說明退貨的步驟與期限", "en": "Explain the steps and deadline for returns" },
+          "body": { "zh-TW": "說明退貨的步驟與期限。請看「要看的重點」。", "en": "Explain the steps and deadline for returns. See the points to review." },
+          "points": [{ "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "列出退貨步驟", "en": "List the return steps" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-09-13T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-13T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-09-13T11:20:00+08:00" }],
+          "review": { "id": "s04-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-13T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s05", "source": "support-inbox", "externalRef": "1045", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問會員折扣能否與活動併用", "en": "Whether member discounts stack with promotions" }, "assignedBy": "manager", "assignedAt": "2026-09-17T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-17T11:00:00+08:00",
+          "summary": { "zh-TW": "逐條說明各種折扣的併用規則", "en": "Explain stacking rules for each discount" },
+          "body": { "zh-TW": "逐條說明各種折扣的併用規則。請看「要看的重點」。", "en": "Explain stacking rules for each discount. See the points to review." },
+          "points": [{ "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "列出併用規則", "en": "List the stacking rules" } }],
+          "checks": [{ "name": "quote-match", "status": "pending", "checkedAt": "2026-09-17T11:01:00+08:00" }, { "name": "quote-match", "status": "pass", "checkedAt": "2026-09-17T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-17T11:20:00+08:00" }],
+          "review": { "id": "s05-1", "verdict": "returned", "reason": "different_approach", "decidedBy": "manager", "decidedAt": "2026-09-17T15:00:00+08:00" }
         },
         {
-          "round": 2, "externalRef": "202", "submittedAt": "2026-09-02T10:00:00+08:00",
-          "summary": { "zh-TW": "改為依設計稿放置按鈕", "en": "Place the button as in the design" },
-          "body": { "zh-TW": "改為依設計稿放置按鈕。請看「要看的重點」。", "en": "Place the button as in the design. See the points to review." },
-          "points": [{ "zh-TW": "空狀態的文字與按鈕位置", "en": "Copy and button placement of the empty state" }],
+          "round": 2, "submittedAt": "2026-09-18T10:00:00+08:00",
+          "summary": { "zh-TW": "改為直接回答這筆訂單能用的折扣", "en": "Answer only which discounts apply to this order" },
+          "body": { "zh-TW": "改為直接回答這筆訂單能用的折扣。請看「要看的重點」。", "en": "Answer only which discounts apply to this order. See the points to review." },
+          "points": [{ "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "改為只回答這筆訂單", "en": "Answer for this order only" } }],
+          "checks": [{ "name": "quote-match", "status": "pass", "checkedAt": "2026-09-18T10:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-18T10:20:00+08:00" }],
+          "review": { "id": "s05-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-18T14:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s06", "source": "support-inbox", "externalRef": "1046", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "更改收件地址", "en": "Change of delivery address" }, "assignedBy": "manager", "assignedAt": "2026-09-21T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-21T11:00:00+08:00",
+          "summary": { "zh-TW": "確認已更改地址與預計到貨日", "en": "Confirm the new address and expected delivery" },
+          "body": { "zh-TW": "確認已更改地址與預計到貨日。請看「要看的重點」。", "en": "Confirm the new address and expected delivery. See the points to review." },
+          "points": [{ "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "確認新地址", "en": "Confirm the new address" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-09-21T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-21T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-09-21T11:20:00+08:00" }],
+          "review": { "id": "s06-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-21T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s07", "source": "support-inbox", "externalRef": "1047", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "收到的商品有瑕疵", "en": "Received a defective item" }, "assignedBy": "manager", "assignedAt": "2026-09-25T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-25T11:00:00+08:00",
+          "summary": { "zh-TW": "致歉並說明換貨方式", "en": "Apologize and explain how to get a replacement" },
+          "body": { "zh-TW": "致歉並說明換貨方式。請看「要看的重點」。", "en": "Apologize and explain how to get a replacement. See the points to review." },
+          "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
           "changes": [
-            { "path": "src/notes/EmptyState.tsx", "summary": { "zh-TW": "新增空狀態元件", "en": "Add the empty state component" } },
-            { "path": "src/notes/NoteList.tsx", "summary": { "zh-TW": "沒有筆記時改顯示空狀態", "en": "Render the empty state when there are no notes" } }
+            { "path": "reply/greeting", "summary": { "zh-TW": "加上致歉", "en": "Add an apology" } },
+            { "path": "reply/p2", "summary": { "zh-TW": "說明換貨方式", "en": "Explain the replacement process" } }
           ],
-          "checks": [{ "name": "ci", "status": "pass", "checkedAt": "2026-09-02T10:20:00+08:00" }],
-          "review": { "id": "j01-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-02T14:00:00+08:00" }
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-09-25T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-25T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-09-25T11:20:00+08:00" }],
+          "review": { "id": "s07-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-25T15:00:00+08:00" }
         }
       ]
     },
     {
-      "id": "j02", "source": "lantern-notes", "externalRef": "102", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "筆記標題過長時截斷", "en": "Truncate long note titles" }, "assignedBy": "manager", "assignedAt": "2026-09-06T09:00:00+08:00",
+      "id": "s08", "source": "support-inbox", "externalRef": "1048", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問發票開立", "en": "Question about invoices" }, "assignedBy": "manager", "assignedAt": "2026-09-29T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "203", "submittedAt": "2026-09-06T11:00:00+08:00",
-          "summary": { "zh-TW": "標題超過一行時以省略號截斷，滑過顯示全文", "en": "Truncate titles beyond one line and show the full text on hover" },
-          "body": { "zh-TW": "標題超過一行時以省略號截斷，滑過顯示全文。請看「要看的重點」。", "en": "Truncate titles beyond one line and show the full text on hover. See the points to review." },
-          "points": [{ "zh-TW": "截斷的寬度在窄螢幕是否正確", "en": "Whether truncation works on narrow screens" }],
-          "changes": [{ "path": "src/notes/NoteRow.tsx", "summary": { "zh-TW": "標題加上截斷樣式與 title 屬性", "en": "Add truncation styles and a title attribute" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-06T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-06T11:20:00+08:00" }],
-          "review": { "id": "j02-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-06T15:00:00+08:00" }
+          "round": 1, "submittedAt": "2026-09-29T11:00:00+08:00",
+          "summary": { "zh-TW": "說明發票的開立方式與寄送時間", "en": "Explain how invoices are issued and when they arrive" },
+          "body": { "zh-TW": "說明發票的開立方式與寄送時間。請看「要看的重點」。", "en": "Explain how invoices are issued and when they arrive. See the points to review." },
+          "points": [{ "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明開立方式", "en": "Explain how invoices are issued" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-09-29T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-29T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-09-29T11:20:00+08:00" }],
+          "review": { "id": "s08-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-29T15:00:00+08:00" }
         }
       ]
     },
     {
-      "id": "j03", "source": "lantern-notes", "externalRef": "103", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "深色模式的對比", "en": "Contrast in dark mode" }, "assignedBy": "manager", "assignedAt": "2026-09-11T09:00:00+08:00",
+      "id": "s09", "source": "support-inbox", "externalRef": "1049", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問門市取貨", "en": "Question about store pickup" }, "assignedBy": "manager", "assignedAt": "2026-10-03T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "204", "submittedAt": "2026-09-11T11:00:00+08:00",
-          "summary": { "zh-TW": "調整深色模式的文字與邊框顏色", "en": "Adjust text and border colors in dark mode" },
-          "body": { "zh-TW": "調整深色模式的文字與邊框顏色。請看「要看的重點」。", "en": "Adjust text and border colors in dark mode. See the points to review." },
-          "points": [{ "zh-TW": "次要文字的對比是否足夠", "en": "Whether secondary text has enough contrast" }],
-          "changes": [{ "path": "src/theme/dark.css", "summary": { "zh-TW": "更新深色模式的色票", "en": "Update the dark mode palette" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-11T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-11T11:20:00+08:00" }],
-          "review": { "id": "j03-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-11T15:00:00+08:00" }
+          "round": 1, "submittedAt": "2026-10-03T11:00:00+08:00",
+          "summary": { "zh-TW": "說明取貨的門市與保留天數", "en": "Explain pickup stores and how long items are held" },
+          "body": { "zh-TW": "說明取貨的門市與保留天數。請看「要看的重點」。", "en": "Explain pickup stores and how long items are held. See the points to review." },
+          "points": [{ "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "列出取貨門市", "en": "List pickup stores" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-03T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-03T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-03T11:20:00+08:00" }],
+          "review": { "id": "s09-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-03T15:00:00+08:00" }
         }
       ]
     },
     {
-      "id": "j04", "source": "lantern-notes", "externalRef": "104", "workType": "ui", "employee": "juniper", "title": { "zh-TW": "標籤篩選", "en": "Filter by tag" },
-      "assignedBy": "manager", "assignedAt": "2026-09-16T09:00:00+08:00",
+      "id": "s10", "source": "support-inbox", "externalRef": "1050", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問贈品活動", "en": "Question about a free gift offer" }, "assignedBy": "manager", "assignedAt": "2026-10-06T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "205", "submittedAt": "2026-09-16T11:00:00+08:00", "summary": { "zh-TW": "清單上方加入標籤篩選", "en": "Add a tag filter above the list" },
-          "body": { "zh-TW": "清單上方加入標籤篩選。請看「要看的重點」。", "en": "Add a tag filter above the list. See the points to review." },
-          "points": [{ "zh-TW": "多選標籤時的結果", "en": "Results when several tags are selected" }, { "zh-TW": "清除篩選的位置", "en": "Where to clear the filter" }],
+          "round": 1, "submittedAt": "2026-10-06T11:00:00+08:00",
+          "summary": { "zh-TW": "說明贈品的條件與數量", "en": "Explain the conditions and quantity of the gift" },
+          "body": { "zh-TW": "說明贈品的條件與數量。請看「要看的重點」。", "en": "Explain the conditions and quantity of the gift. See the points to review." },
+          "points": [
+            { "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" },
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" }
+          ],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明贈品條件", "en": "Explain the gift conditions" } }],
+          "checks": [{ "name": "quote-match", "status": "pending", "checkedAt": "2026-10-06T11:01:00+08:00" }, { "name": "quote-match", "status": "pass", "checkedAt": "2026-10-06T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-06T11:20:00+08:00" }],
+          "review": { "id": "s10-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-06T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s11", "source": "support-inbox", "externalRef": "1051", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問配件是否另售", "en": "Whether spare parts are sold separately" }, "assignedBy": "manager", "assignedAt": "2026-10-08T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-08T11:00:00+08:00",
+          "summary": { "zh-TW": "回覆杯蓋與濾網的單價", "en": "Reply with prices for lids and filters" },
+          "body": { "zh-TW": "回覆杯蓋與濾網的單價。請看「要看的重點」。", "en": "Reply with prices for lids and filters. See the points to review." },
+          "points": [{ "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "列出配件單價", "en": "List spare part prices" } }],
+          "checks": [{ "name": "quote-match", "status": "pending", "checkedAt": "2026-10-08T11:01:00+08:00" }, { "name": "quote-match", "status": "pass", "checkedAt": "2026-10-08T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-08T11:20:00+08:00" }],
+          "review": { "id": "s11-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-08T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s12", "source": "support-inbox", "externalRef": "1052", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問重複扣款", "en": "Question about a double charge" }, "assignedBy": "manager", "assignedAt": "2026-10-15T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-15T11:00:00+08:00",
+          "summary": { "zh-TW": "致歉並承諾當天退款", "en": "Apologize and promise a same-day refund" },
+          "body": { "zh-TW": "致歉並承諾當天退款。請看「要看的重點」。", "en": "Apologize and promise a same-day refund. See the points to review." },
+          "points": [
+            { "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" },
+            { "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" }
+          ],
           "changes": [
-            { "path": "src/notes/TagFilter.tsx", "summary": { "zh-TW": "新增標籤篩選元件", "en": "Add the tag filter component" } },
-            { "path": "src/notes/useNotes.ts", "summary": { "zh-TW": "依標籤篩選筆記", "en": "Filter notes by tag" } }
+            { "path": "reply/p2", "summary": { "zh-TW": "說明退款", "en": "Explain the refund" } },
+            { "path": "reply/closing", "summary": { "zh-TW": "承諾當天退款", "en": "Promise a same-day refund" } }
           ],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-15T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-15T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-15T11:20:00+08:00" }],
+          "review": { "id": "s12-1", "verdict": "returned", "reason": "wrong", "decidedBy": "manager", "decidedAt": "2026-10-15T15:00:00+08:00" }
+        },
+        {
+          "round": 2, "submittedAt": "2026-10-16T10:00:00+08:00",
+          "summary": { "zh-TW": "改為說明會轉給財務確認，不承諾退款日", "en": "Say finance will check it, without promising a refund date" },
+          "body": { "zh-TW": "改為說明會轉給財務確認，不承諾退款日。請看「要看的重點」。", "en": "Say finance will check it, without promising a refund date. See the points to review." },
+          "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
+          "changes": [{ "path": "reply/closing", "summary": { "zh-TW": "改為轉給財務確認", "en": "Hand over to finance instead" } }],
+          "checks": [{ "name": "banned-words", "status": "pass", "checkedAt": "2026-10-16T10:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-16T10:20:00+08:00" }],
+          "review": { "id": "s12-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-16T14:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s13", "source": "support-inbox", "externalRef": "1053", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問海外寄送", "en": "Question about overseas shipping" }, "assignedBy": "manager", "assignedAt": "2026-10-24T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-24T11:00:00+08:00",
+          "summary": { "zh-TW": "說明目前只寄送國內，附上代購的說明", "en": "Explain we ship domestically only and point to forwarding" },
+          "body": { "zh-TW": "說明目前只寄送國內，附上代購的說明。請看「要看的重點」。", "en": "Explain we ship domestically only and point to forwarding. See the points to review." },
+          "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明寄送範圍", "en": "Explain where we ship" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-24T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-24T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-24T11:20:00+08:00" }],
+          "review": { "id": "s13-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-24T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s14", "source": "support-inbox", "externalRef": "1054", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問預購商品的到貨日", "en": "Arrival date of a pre-order" }, "assignedBy": "manager", "assignedAt": "2026-11-17T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-11-17T11:00:00+08:00",
+          "summary": { "zh-TW": "回覆預購的到貨週與運費", "en": "Reply with the pre-order arrival week and shipping fee" },
+          "body": { "zh-TW": "回覆預購的到貨週與運費。請看「要看的重點」。", "en": "Reply with the pre-order arrival week and shipping fee. See the points to review." },
+          "points": [
+            { "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" },
+            { "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }
+          ],
+          "changes": [
+            { "path": "reply/p2", "summary": { "zh-TW": "說明到貨週", "en": "Give the arrival week" } },
+            { "path": "reply/closing", "summary": { "zh-TW": "說明運費", "en": "Explain the shipping fee" } }
+          ],
+          "checks": [{ "name": "quote-match", "status": "pending", "checkedAt": "2026-11-17T11:01:00+08:00" }, { "name": "quote-match", "status": "fail", "checkedAt": "2026-11-17T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-11-17T11:20:00+08:00" }]
+        }
+      ]
+    },
+    {
+      "id": "c01", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "秋季新品保溫瓶的上市貼文", "en": "Launch post for the autumn bottle" }, "assignedBy": "manager", "assignedAt": "2026-09-03T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-03T11:00:00+08:00",
+          "summary": { "zh-TW": "介紹新品的容量與售價", "en": "Introduce the new bottle's capacity and price" },
+          "body": { "zh-TW": "介紹新品的容量與售價。請看「要看的重點」。", "en": "Introduce the new bottle's capacity and price. See the points to review." },
+          "points": [
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" },
+            { "zh-TW": "商品名稱與規格", "en": "Product names and specifications" }
+          ],
+          "changes": [
+            { "path": "post/title", "summary": { "zh-TW": "新品標題", "en": "Launch title" } },
+            { "path": "post/body", "summary": { "zh-TW": "容量與售價", "en": "Capacity and price" } }
+          ],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-09-03T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-09-03T11:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-09-03T11:20:00+08:00" }],
+          "review": { "id": "c01-1", "verdict": "returned", "reason": "wrong", "decidedBy": "manager", "decidedAt": "2026-09-03T15:00:00+08:00" }
+        },
+        {
+          "round": 2, "submittedAt": "2026-09-04T10:00:00+08:00",
+          "summary": { "zh-TW": "改正售價並補上上市日期", "en": "Fix the price and add the launch date" },
+          "body": { "zh-TW": "改正售價並補上上市日期。請看「要看的重點」。", "en": "Fix the price and add the launch date. See the points to review." },
+          "points": [{ "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" }],
+          "changes": [{ "path": "post/body", "summary": { "zh-TW": "改正售價", "en": "Fix the price" } }],
+          "checks": [{ "name": "length", "status": "pass", "checkedAt": "2026-09-04T10:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-09-04T10:20:00+08:00" }],
+          "review": { "id": "c01-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-04T14:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c02", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "隨行杯的商品介紹", "en": "Product copy for the travel mug" }, "assignedBy": "manager", "assignedAt": "2026-09-09T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-09T11:00:00+08:00",
+          "summary": { "zh-TW": "寫出隨行杯的三個特色", "en": "Write three highlights of the travel mug" },
+          "body": { "zh-TW": "寫出隨行杯的三個特色。請看「要看的重點」。", "en": "Write three highlights of the travel mug. See the points to review." },
+          "points": [{ "zh-TW": "商品名稱與規格", "en": "Product names and specifications" }],
+          "changes": [{ "path": "post/body", "summary": { "zh-TW": "三個特色", "en": "Three highlights" } }],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-09-09T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-09-09T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-09T11:20:00+08:00" }],
+          "review": { "id": "c02-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-09T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c03", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "中秋禮盒的活動貼文", "en": "Campaign post for the mid-autumn gift box" }, "assignedBy": "manager", "assignedAt": "2026-09-15T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-15T11:00:00+08:00",
+          "summary": { "zh-TW": "公告禮盒的優惠與活動期間", "en": "Announce the gift box offer and campaign period" },
+          "body": { "zh-TW": "公告禮盒的優惠與活動期間。請看「要看的重點」。", "en": "Announce the gift box offer and campaign period. See the points to review." },
+          "points": [
+            { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" },
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" }
+          ],
+          "changes": [
+            { "path": "post/title", "summary": { "zh-TW": "活動標題", "en": "Campaign title" } },
+            { "path": "post/body", "summary": { "zh-TW": "優惠與期間", "en": "Offer and period" } }
+          ],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-09-15T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-09-15T11:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-09-15T11:20:00+08:00" }],
+          "review": { "id": "c03-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-15T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c04", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "粉絲問答的整理貼文", "en": "Round-up post of follower questions" }, "assignedBy": "manager", "assignedAt": "2026-09-21T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-21T11:00:00+08:00",
+          "summary": { "zh-TW": "整理五則常見問題與回答", "en": "Collect five common questions with answers" },
+          "body": { "zh-TW": "整理五則常見問題與回答。請看「要看的重點」。", "en": "Collect five common questions with answers. See the points to review." },
+          "points": [{ "zh-TW": "商品名稱與規格", "en": "Product names and specifications" }],
+          "changes": [{ "path": "post/body", "summary": { "zh-TW": "五則問答", "en": "Five Q&As" } }],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-09-21T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-09-21T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-09-21T11:20:00+08:00" }],
+          "review": { "id": "c04-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-21T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c05", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "門市週年慶的預告", "en": "Teaser for the store anniversary" }, "assignedBy": "manager", "assignedAt": "2026-09-27T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-27T11:00:00+08:00",
+          "summary": { "zh-TW": "預告週年慶的日期與折扣", "en": "Tease the anniversary dates and discounts" },
+          "body": { "zh-TW": "預告週年慶的日期與折扣。請看「要看的重點」。", "en": "Tease the anniversary dates and discounts. See the points to review." },
+          "points": [
+            { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" },
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" }
+          ],
+          "changes": [{ "path": "post/body", "summary": { "zh-TW": "日期與折扣", "en": "Dates and discounts" } }],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-09-27T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-09-27T11:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-09-27T11:20:00+08:00" }],
+          "review": { "id": "c05-1", "verdict": "returned", "reason": "process", "decidedBy": "manager", "decidedAt": "2026-09-27T15:00:00+08:00" }
+        },
+        {
+          "round": 2, "submittedAt": "2026-09-28T10:00:00+08:00",
+          "summary": { "zh-TW": "檔期經門市確認後再貼出", "en": "Post after the stores confirmed the dates" },
+          "body": { "zh-TW": "檔期經門市確認後再貼出。請看「要看的重點」。", "en": "Post after the stores confirmed the dates. See the points to review." },
+          "points": [{ "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }],
+          "changes": [{ "path": "post/body", "summary": { "zh-TW": "更新為確認的檔期", "en": "Use the confirmed dates" } }],
+          "checks": [{ "name": "length", "status": "pass", "checkedAt": "2026-09-28T10:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-09-28T10:20:00+08:00" }],
+          "review": { "id": "c05-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-28T14:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c06", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "濾茶器的使用教學", "en": "How-to post for the tea strainer" }, "assignedBy": "manager", "assignedAt": "2026-10-03T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-03T11:00:00+08:00",
+          "summary": { "zh-TW": "以三個步驟說明使用與清洗", "en": "Explain use and cleaning in three steps" },
+          "body": { "zh-TW": "以三個步驟說明使用與清洗。請看「要看的重點」。", "en": "Explain use and cleaning in three steps. See the points to review." },
+          "points": [{ "zh-TW": "商品名稱與規格", "en": "Product names and specifications" }],
+          "changes": [
+            { "path": "post/body", "summary": { "zh-TW": "三個步驟", "en": "Three steps" } },
+            { "path": "post/image-alt", "summary": { "zh-TW": "圖片說明", "en": "Image description" } }
+          ],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-10-03T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-10-03T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-03T11:20:00+08:00" }],
+          "review": { "id": "c06-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-03T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c07", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "會員日的優惠貼文", "en": "Member day offer post" }, "assignedBy": "manager", "assignedAt": "2026-10-09T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-09T11:00:00+08:00",
+          "summary": { "zh-TW": "公告會員日的折扣與期限", "en": "Announce the member day discount and deadline" },
+          "body": { "zh-TW": "公告會員日的折扣與期限。請看「要看的重點」。", "en": "Announce the member day discount and deadline. See the points to review." },
+          "points": [
+            { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" },
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" }
+          ],
+          "changes": [{ "path": "post/body", "summary": { "zh-TW": "折扣與期限", "en": "Discount and deadline" } }],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-10-09T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-10-09T11:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-10-09T11:20:00+08:00" }],
+          "review": { "id": "c07-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-09T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c08", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "新色上市的商品介紹", "en": "Product copy for the new colors" }, "assignedBy": "manager", "assignedAt": "2026-10-15T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-15T11:00:00+08:00",
+          "summary": { "zh-TW": "介紹三個新色與適合的場合", "en": "Introduce three new colors and when to use them" },
+          "body": { "zh-TW": "介紹三個新色與適合的場合。請看「要看的重點」。", "en": "Introduce three new colors and when to use them. See the points to review." },
+          "points": [{ "zh-TW": "商品名稱與規格", "en": "Product names and specifications" }],
+          "changes": [
+            { "path": "post/body", "summary": { "zh-TW": "三個新色", "en": "Three new colors" } },
+            { "path": "post/hashtags", "summary": { "zh-TW": "加上標籤", "en": "Add hashtags" } }
+          ],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-10-15T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-10-15T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-15T11:20:00+08:00" }],
+          "review": { "id": "c08-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-15T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c09", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "顧客評價精選", "en": "Selected customer reviews" }, "assignedBy": "manager", "assignedAt": "2026-10-21T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-21T11:00:00+08:00",
+          "summary": { "zh-TW": "挑出三則評價並附上平均評分", "en": "Pick three reviews and add the average rating" },
+          "body": { "zh-TW": "挑出三則評價並附上平均評分。請看「要看的重點」。", "en": "Pick three reviews and add the average rating. See the points to review." },
+          "points": [{ "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" }],
+          "changes": [{ "path": "post/body", "summary": { "zh-TW": "三則評價", "en": "Three reviews" } }],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-10-21T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-10-21T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-21T11:20:00+08:00" }],
+          "review": { "id": "c09-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-21T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c10", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "年終盤點的公告", "en": "Year-end stocktake notice" }, "assignedBy": "manager", "assignedAt": "2026-10-27T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-27T11:00:00+08:00",
+          "summary": { "zh-TW": "公告盤點期間暫停出貨的日期", "en": "Announce the dates shipping pauses for stocktake" },
+          "body": { "zh-TW": "公告盤點期間暫停出貨的日期。請看「要看的重點」。", "en": "Announce the dates shipping pauses for stocktake. See the points to review." },
+          "points": [{ "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }],
+          "changes": [
+            { "path": "post/title", "summary": { "zh-TW": "公告標題", "en": "Notice title" } },
+            { "path": "post/body", "summary": { "zh-TW": "暫停出貨的日期", "en": "Dates shipping pauses" } }
+          ],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-10-27T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-10-27T11:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-10-27T11:20:00+08:00" }],
+          "review": { "id": "c10-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-27T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c11", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "title": { "zh-TW": "冬季限定組合的介紹", "en": "Post for the winter bundle" }, "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-11-18T11:00:00+08:00",
+          "summary": { "zh-TW": "介紹組合內容、售價與販售期間", "en": "Introduce the bundle contents, price and sale period" },
+          "body": { "zh-TW": "介紹組合內容、售價與販售期間。請看「要看的重點」。", "en": "Introduce the bundle contents, price and sale period. See the points to review." },
+          "points": [
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" },
+            { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }
+          ],
+          "changes": [
+            { "path": "post/title", "summary": { "zh-TW": "組合標題", "en": "Bundle title" } },
+            { "path": "post/body", "summary": { "zh-TW": "內容與售價", "en": "Contents and price" } },
+            { "path": "post/hashtags", "summary": { "zh-TW": "加上標籤", "en": "Add hashtags" } }
+          ],
+          "checks": [{ "name": "length", "status": "pending", "checkedAt": "2026-11-18T11:01:00+08:00" }, { "name": "length", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "links", "status": "pending", "checkedAt": "2026-11-18T11:20:00+08:00" }]
+        }
+      ]
+    },
+    {
+      "id": "k01", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理退換貨政策", "en": "Write up the returns policy" }, "assignedBy": "manager", "assignedAt": "2026-09-02T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-02T11:00:00+08:00",
+          "summary": { "zh-TW": "新增退換貨政策的條目", "en": "Add an entry for the returns policy" },
+          "body": { "zh-TW": "新增退換貨政策的條目。請看「要看的重點」。", "en": "Add an entry for the returns policy. See the points to review." },
+          "points": [{ "zh-TW": "過期的資訊", "en": "Outdated information" }],
+          "changes": [{ "path": "kb/returns-policy#steps", "summary": { "zh-TW": "退換貨步驟", "en": "Return steps" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-09-02T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-09-02T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-09-02T11:20:00+08:00" }],
+          "review": { "id": "k01-1", "verdict": "returned", "reason": "wrong", "decidedBy": "manager", "decidedAt": "2026-09-02T15:00:00+08:00" }
+        },
+        {
+          "round": 2, "submittedAt": "2026-09-03T10:00:00+08:00",
+          "summary": { "zh-TW": "改正退貨天數並註明更新日期", "en": "Fix the return window and note the update date" },
+          "body": { "zh-TW": "改正退貨天數並註明更新日期。請看「要看的重點」。", "en": "Fix the return window and note the update date. See the points to review." },
+          "points": [{ "zh-TW": "過期的資訊", "en": "Outdated information" }],
+          "changes": [{ "path": "kb/returns-policy#steps", "summary": { "zh-TW": "改正退貨天數", "en": "Fix the return window" } }],
+          "checks": [{ "name": "format", "status": "pass", "checkedAt": "2026-09-03T10:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-09-03T10:20:00+08:00" }],
+          "review": { "id": "k01-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-03T14:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k02", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理保固申請步驟", "en": "Write up warranty claims" }, "assignedBy": "manager", "assignedAt": "2026-09-07T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-07T11:00:00+08:00",
+          "summary": { "zh-TW": "新增保固申請的步驟", "en": "Add the steps for warranty claims" },
+          "body": { "zh-TW": "新增保固申請的步驟。請看「要看的重點」。", "en": "Add the steps for warranty claims. See the points to review." },
+          "points": [{ "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" }],
+          "changes": [{ "path": "kb/warranty#steps", "summary": { "zh-TW": "申請步驟", "en": "Claim steps" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-09-07T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-09-07T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-09-07T11:20:00+08:00" }],
+          "review": { "id": "k02-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-07T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k03", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理門市營業時間", "en": "Write up store opening hours" }, "assignedBy": "manager", "assignedAt": "2026-09-12T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-12T11:00:00+08:00",
+          "summary": { "zh-TW": "整理各門市的營業時間與公休日", "en": "List opening hours and closing days for each store" },
+          "body": { "zh-TW": "整理各門市的營業時間與公休日。請看「要看的重點」。", "en": "List opening hours and closing days for each store. See the points to review." },
+          "points": [{ "zh-TW": "過期的資訊", "en": "Outdated information" }],
+          "changes": [{ "path": "kb/store-hours", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-09-12T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-09-12T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-09-12T11:20:00+08:00" }],
+          "review": { "id": "k03-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-12T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k04", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理付款方式", "en": "Write up payment methods" }, "assignedBy": "manager", "assignedAt": "2026-09-17T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-17T11:00:00+08:00",
+          "summary": { "zh-TW": "列出可用的付款方式與限制", "en": "List payment methods and their limits" },
+          "body": { "zh-TW": "列出可用的付款方式與限制。請看「要看的重點」。", "en": "List payment methods and their limits. See the points to review." },
+          "points": [{ "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }],
+          "changes": [{ "path": "kb/payments", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-09-17T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-09-17T11:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-09-17T11:20:00+08:00" }],
+          "review": { "id": "k04-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-17T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k05", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理運送方式與運費", "en": "Write up shipping options and fees" }, "assignedBy": "manager", "assignedAt": "2026-09-22T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-22T11:00:00+08:00",
+          "summary": { "zh-TW": "列出運送方式、運費與免運門檻", "en": "List shipping options, fees and the free-shipping threshold" },
+          "body": { "zh-TW": "列出運送方式、運費與免運門檻。請看「要看的重點」。", "en": "List shipping options, fees and the free-shipping threshold. See the points to review." },
+          "points": [{ "zh-TW": "過期的資訊", "en": "Outdated information" }],
+          "changes": [{ "path": "kb/shipping#fees", "summary": { "zh-TW": "運費表", "en": "Fee table" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-09-22T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-09-22T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-09-22T11:20:00+08:00" }],
+          "review": { "id": "k05-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-22T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k06", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理會員等級說明", "en": "Write up membership tiers" }, "assignedBy": "manager", "assignedAt": "2026-09-27T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-09-27T11:00:00+08:00",
+          "summary": { "zh-TW": "說明各會員等級的條件與優惠", "en": "Explain the conditions and perks of each tier" },
+          "body": { "zh-TW": "說明各會員等級的條件與優惠。請看「要看的重點」。", "en": "Explain the conditions and perks of each tier. See the points to review." },
+          "points": [{ "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" }],
+          "changes": [{ "path": "kb/membership", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-09-27T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-09-27T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-09-27T11:20:00+08:00" }],
+          "review": { "id": "k06-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-27T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k07", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理商品保養方式", "en": "Write up product care" }, "assignedBy": "manager", "assignedAt": "2026-10-02T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-02T11:00:00+08:00",
+          "summary": { "zh-TW": "新增一則保溫瓶的保養條目", "en": "Add a new entry on bottle care" },
+          "body": { "zh-TW": "新增一則保溫瓶的保養條目。請看「要看的重點」。", "en": "Add a new entry on bottle care. See the points to review." },
+          "points": [{ "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }],
+          "changes": [{ "path": "kb/bottle-care", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-02T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-02T11:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-10-02T11:20:00+08:00" }],
+          "review": { "id": "k07-1", "verdict": "returned", "reason": "different_approach", "decidedBy": "manager", "decidedAt": "2026-10-02T15:00:00+08:00" }
+        },
+        {
+          "round": 2, "submittedAt": "2026-10-03T10:00:00+08:00",
+          "summary": { "zh-TW": "改為併入既有的商品保養條目", "en": "Merge into the existing product care entry" },
+          "body": { "zh-TW": "改為併入既有的商品保養條目。請看「要看的重點」。", "en": "Merge into the existing product care entry. See the points to review." },
+          "points": [{ "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }],
+          "changes": [{ "path": "kb/product-care#bottles", "summary": { "zh-TW": "併入既有條目", "en": "Merge into the existing entry" } }],
+          "checks": [{ "name": "format", "status": "pass", "checkedAt": "2026-10-03T10:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-10-03T10:20:00+08:00" }],
+          "review": { "id": "k07-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-03T14:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k08", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理大量訂購流程", "en": "Write up the bulk order process" }, "assignedBy": "manager", "assignedAt": "2026-10-07T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-07T11:00:00+08:00",
+          "summary": { "zh-TW": "說明大量訂購的詢價到出貨", "en": "Describe bulk orders from quote to shipping" },
+          "body": { "zh-TW": "說明大量訂購的詢價到出貨。請看「要看的重點」。", "en": "Describe bulk orders from quote to shipping. See the points to review." },
+          "points": [{ "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" }],
+          "changes": [
+            { "path": "kb/bulk-orders#steps", "summary": { "zh-TW": "流程", "en": "Process" } },
+            { "path": "kb/bulk-orders#owner", "summary": { "zh-TW": "負責的部門", "en": "Owning team" } }
+          ],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-07T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-07T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-10-07T11:20:00+08:00" }],
+          "review": { "id": "k08-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-07T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k09", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理發票開立方式", "en": "Write up invoice issuing" }, "assignedBy": "manager", "assignedAt": "2026-10-11T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-11T11:00:00+08:00",
+          "summary": { "zh-TW": "說明發票的開立、作廢與補寄", "en": "Explain issuing, voiding and resending invoices" },
+          "body": { "zh-TW": "說明發票的開立、作廢與補寄。請看「要看的重點」。", "en": "Explain issuing, voiding and resending invoices. See the points to review." },
+          "points": [{ "zh-TW": "過期的資訊", "en": "Outdated information" }],
+          "changes": [{ "path": "kb/invoices", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-11T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-11T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-10-11T11:20:00+08:00" }],
+          "review": { "id": "k09-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-11T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k10", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理客服常見問題", "en": "Write up support FAQs" }, "assignedBy": "manager", "assignedAt": "2026-10-16T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-16T11:00:00+08:00",
+          "summary": { "zh-TW": "把客服信箱最常見的十個問題整理成條目", "en": "Turn the ten most common support questions into an entry" },
+          "body": { "zh-TW": "把客服信箱最常見的十個問題整理成條目。請看「要看的重點」。", "en": "Turn the ten most common support questions into an entry. See the points to review." },
+          "points": [{ "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }],
+          "changes": [{ "path": "kb/support-faq", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-16T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-16T11:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-10-16T11:20:00+08:00" }],
+          "review": { "id": "k10-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-16T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k11", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理新進同仁的帳號申請", "en": "Write up account requests for new staff" }, "assignedBy": "manager", "assignedAt": "2026-10-21T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-21T11:00:00+08:00",
+          "summary": { "zh-TW": "列出各系統的申請方式與負責的部門", "en": "List how to request each system and the owning team" },
+          "body": { "zh-TW": "列出各系統的申請方式與負責的部門。請看「要看的重點」。", "en": "List how to request each system and the owning team. See the points to review." },
+          "points": [{ "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" }],
+          "changes": [{ "path": "kb/onboarding#accounts", "summary": { "zh-TW": "帳號申請", "en": "Account requests" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-21T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-21T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-10-21T11:20:00+08:00" }],
+          "review": { "id": "k11-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-21T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k12", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理供應商的下單流程", "en": "Write up supplier ordering" }, "assignedBy": "manager", "assignedAt": "2026-10-27T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-27T11:00:00+08:00",
+          "summary": { "zh-TW": "說明向供應商下單的步驟與審核", "en": "Describe the steps and approvals for supplier orders" },
+          "body": { "zh-TW": "說明向供應商下單的步驟與審核。請看「要看的重點」。", "en": "Describe the steps and approvals for supplier orders. See the points to review." },
+          "points": [
+            { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
+            { "zh-TW": "過期的資訊", "en": "Outdated information" }
+          ],
+          "changes": [{ "path": "kb/supplier-orders#steps", "summary": { "zh-TW": "下單步驟", "en": "Ordering steps" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-27T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-27T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-10-27T11:20:00+08:00" }],
+          "review": { "id": "k12-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-27T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k13", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理預購商品的說明", "en": "Write up pre-orders" }, "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-11-18T11:00:00+08:00",
+          "summary": { "zh-TW": "新增預購的付款、到貨與取消規則", "en": "Add payment, delivery and cancellation rules for pre-orders" },
+          "body": { "zh-TW": "新增預購的付款、到貨與取消規則。請看「要看的重點」。", "en": "Add payment, delivery and cancellation rules for pre-orders. See the points to review." },
+          "points": [
+            { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
+            { "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }
+          ],
+          "changes": [
+            { "path": "kb/pre-orders", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } },
+            { "path": "kb/pre-orders#owner", "summary": { "zh-TW": "負責的部門", "en": "Owning team" } }
+          ],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-11-18T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "required-fields", "status": "fail", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }]
+        }
+      ]
+    },
+    {
+      "id": "j01", "source": "company-site", "externalRef": "21", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "官網首頁的新品區塊", "en": "New arrivals section on the home page" }, "assignedBy": "manager", "assignedAt": "2026-09-04T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "31", "submittedAt": "2026-09-04T11:00:00+08:00",
+          "summary": { "zh-TW": "首頁加入新品區塊，最多顯示四項", "en": "Add a new arrivals section with up to four items" },
+          "body": { "zh-TW": "首頁加入新品區塊，最多顯示四項。請看「要看的重點」。", "en": "Add a new arrivals section with up to four items. See the points to review." },
+          "points": [{ "zh-TW": "窄螢幕的排版", "en": "Layout on narrow screens" }],
+          "changes": [
+            { "path": "src/landing/NewArrivals.tsx", "summary": { "zh-TW": "新增區塊", "en": "Add the section" } },
+            { "path": "src/landing/LandingPage.tsx", "summary": { "zh-TW": "接上新區塊", "en": "Wire up the section" } }
+          ],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-04T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-04T11:20:00+08:00" }],
+          "review": { "id": "j01-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-04T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j02", "source": "company-site", "externalRef": "22", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "商品頁的規格表", "en": "Specification table on product pages" }, "assignedBy": "manager", "assignedAt": "2026-09-16T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "32", "submittedAt": "2026-09-16T11:00:00+08:00",
+          "summary": { "zh-TW": "規格改用分頁顯示", "en": "Show specifications in tabs" },
+          "body": { "zh-TW": "規格改用分頁顯示。請看「要看的重點」。", "en": "Show specifications in tabs. See the points to review." },
+          "points": [{ "zh-TW": "規格欄位的順序", "en": "Order of the specification fields" }],
+          "changes": [{ "path": "src/product/SpecTabs.tsx", "summary": { "zh-TW": "新增分頁", "en": "Add tabs" } }],
           "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-16T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-16T11:20:00+08:00" }],
-          "review": { "id": "j04-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-16T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "j05", "source": "lantern-notes", "externalRef": "105", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "編輯器的鍵盤捷徑", "en": "Keyboard shortcuts in the editor" }, "assignedBy": "manager", "assignedAt": "2026-09-21T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "206", "submittedAt": "2026-09-21T11:00:00+08:00", "summary": { "zh-TW": "加入儲存與粗體的捷徑", "en": "Add shortcuts for save and bold" },
-          "body": { "zh-TW": "加入儲存與粗體的捷徑。請看「要看的重點」。", "en": "Add shortcuts for save and bold. See the points to review." },
-          "points": [{ "zh-TW": "捷徑與瀏覽器預設是否衝突", "en": "Whether shortcuts clash with browser defaults" }],
-          "changes": [{ "path": "src/editor/shortcuts.ts", "summary": { "zh-TW": "新增捷徑對照表", "en": "Add the shortcut map" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-21T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-21T11:20:00+08:00" }],
-          "review": { "id": "j05-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-21T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "j06", "source": "lantern-notes", "externalRef": "106", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "載入中的骨架畫面", "en": "Loading skeleton" }, "assignedBy": "manager", "assignedAt": "2026-09-26T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "207", "submittedAt": "2026-09-26T11:00:00+08:00",
-          "summary": { "zh-TW": "清單載入時顯示骨架畫面", "en": "Show a skeleton while the list loads" },
-          "body": { "zh-TW": "清單載入時顯示骨架畫面。請看「要看的重點」。", "en": "Show a skeleton while the list loads. See the points to review." },
-          "points": [{ "zh-TW": "骨架的高度與實際清單一致", "en": "Skeleton height matches the real list" }],
-          "changes": [{ "path": "src/notes/NoteListSkeleton.tsx", "summary": { "zh-TW": "新增骨架元件", "en": "Add the skeleton component" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-26T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-26T11:20:00+08:00" }],
-          "review": { "id": "j06-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-26T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "j07", "source": "lantern-notes", "externalRef": "107", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "刪除筆記的確認", "en": "Confirm before deleting a note" }, "assignedBy": "manager", "assignedAt": "2026-10-01T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "208", "submittedAt": "2026-10-01T11:00:00+08:00",
-          "summary": { "zh-TW": "刪除前顯示確認視窗", "en": "Show a confirmation dialog before deleting" },
-          "body": { "zh-TW": "刪除前顯示確認視窗。請看「要看的重點」。", "en": "Show a confirmation dialog before deleting. See the points to review." },
-          "points": [{ "zh-TW": "確認視窗的預設焦點", "en": "Default focus in the dialog" }],
-          "changes": [{ "path": "src/notes/DeleteDialog.tsx", "summary": { "zh-TW": "新增確認視窗", "en": "Add the confirmation dialog" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-01T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-01T11:20:00+08:00" }],
-          "review": { "id": "j07-1", "verdict": "returned", "reason": "different_approach", "decidedBy": "manager", "decidedAt": "2026-10-01T15:00:00+08:00" }
+          "review": { "id": "j02-1", "verdict": "returned", "reason": "different_approach", "decidedBy": "manager", "decidedAt": "2026-09-16T15:00:00+08:00" }
         },
         {
-          "round": 2, "externalRef": "209", "submittedAt": "2026-10-02T10:00:00+08:00",
-          "summary": { "zh-TW": "改為可以復原的刪除，不跳確認視窗", "en": "Use undoable delete instead of a dialog" },
-          "body": { "zh-TW": "改為可以復原的刪除，不跳確認視窗。請看「要看的重點」。", "en": "Use undoable delete instead of a dialog. See the points to review." },
-          "points": [{ "zh-TW": "確認視窗的預設焦點", "en": "Default focus in the dialog" }],
-          "changes": [{ "path": "src/notes/DeleteDialog.tsx", "summary": { "zh-TW": "新增確認視窗", "en": "Add the confirmation dialog" } }],
-          "checks": [{ "name": "ci", "status": "pass", "checkedAt": "2026-10-02T10:20:00+08:00" }],
-          "review": { "id": "j07-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-02T14:00:00+08:00" }
+          "round": 2, "externalRef": "33", "submittedAt": "2026-09-17T10:00:00+08:00",
+          "summary": { "zh-TW": "改為一張表格，不用分頁", "en": "Use one table instead of tabs" },
+          "body": { "zh-TW": "改為一張表格，不用分頁。請看「要看的重點」。", "en": "Use one table instead of tabs. See the points to review." },
+          "points": [{ "zh-TW": "規格欄位的順序", "en": "Order of the specification fields" }],
+          "changes": [{ "path": "src/product/SpecTable.tsx", "summary": { "zh-TW": "改為表格", "en": "Use a table" } }],
+          "checks": [{ "name": "ci", "status": "pass", "checkedAt": "2026-09-17T10:20:00+08:00" }],
+          "review": { "id": "j02-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-17T14:00:00+08:00" }
         }
       ]
     },
     {
-      "id": "j08", "source": "lantern-notes", "externalRef": "108", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "側欄可以收合", "en": "Collapsible sidebar" }, "assignedBy": "manager", "assignedAt": "2026-10-06T09:00:00+08:00",
+      "id": "j03", "source": "company-site", "externalRef": "23", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "門市地圖頁的載入速度", "en": "Load time of the store map page" }, "assignedBy": "manager", "assignedAt": "2026-09-28T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "210", "submittedAt": "2026-10-06T11:00:00+08:00",
-          "summary": { "zh-TW": "側欄加上收合按鈕並記住狀態", "en": "Add a collapse button to the sidebar and remember its state" },
-          "body": { "zh-TW": "側欄加上收合按鈕並記住狀態。請看「要看的重點」。", "en": "Add a collapse button to the sidebar and remember its state. See the points to review." },
-          "points": [{ "zh-TW": "收合後主內容的寬度", "en": "Main content width when collapsed" }],
-          "changes": [{ "path": "src/layout/Sidebar.tsx", "summary": { "zh-TW": "加入收合狀態", "en": "Add the collapsed state" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-06T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-06T11:20:00+08:00" }],
-          "review": { "id": "j08-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-06T15:00:00+08:00" }
+          "round": 1, "externalRef": "34", "submittedAt": "2026-09-28T11:00:00+08:00",
+          "summary": { "zh-TW": "地圖改為捲動到時才載入", "en": "Load the map only when scrolled into view" },
+          "body": { "zh-TW": "地圖改為捲動到時才載入。請看「要看的重點」。", "en": "Load the map only when scrolled into view. See the points to review." },
+          "points": [{ "zh-TW": "沒有地圖時的替代內容", "en": "Fallback content without the map" }],
+          "changes": [{ "path": "src/stores/StoreMap.tsx", "summary": { "zh-TW": "延後載入地圖", "en": "Lazy-load the map" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-28T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-28T11:20:00+08:00" }],
+          "review": { "id": "j03-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-28T15:00:00+08:00" }
         }
       ]
     },
     {
-      "id": "j09", "source": "lantern-notes", "externalRef": "109", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "搜尋結果的醒目標示", "en": "Highlight search matches" }, "assignedBy": "manager", "assignedAt": "2026-10-11T09:00:00+08:00",
+      "id": "j04", "source": "company-site", "externalRef": "24", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "後台的訂單匯出", "en": "Order export in the admin tool" }, "assignedBy": "manager", "assignedAt": "2026-10-10T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "211", "submittedAt": "2026-10-11T11:00:00+08:00",
-          "summary": { "zh-TW": "搜尋結果中標示符合的文字", "en": "Highlight matching text in search results" },
-          "body": { "zh-TW": "搜尋結果中標示符合的文字。請看「要看的重點」。", "en": "Highlight matching text in search results. See the points to review." },
-          "points": [{ "zh-TW": "中英文混合時的標示位置", "en": "Highlight positions in mixed-language text" }],
-          "changes": [{ "path": "src/search/Highlight.tsx", "summary": { "zh-TW": "新增醒目標示元件", "en": "Add the highlight component" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-11T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-11T11:20:00+08:00" }],
-          "review": { "id": "j09-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-11T15:00:00+08:00" }
+          "round": 1, "externalRef": "35", "submittedAt": "2026-10-10T11:00:00+08:00",
+          "summary": { "zh-TW": "後台加入匯出 CSV 的按鈕", "en": "Add a CSV export button to the admin tool" },
+          "body": { "zh-TW": "後台加入匯出 CSV 的按鈕。請看「要看的重點」。", "en": "Add a CSV export button to the admin tool. See the points to review." },
+          "points": [{ "zh-TW": "匯出的欄位", "en": "Exported columns" }],
+          "changes": [{ "path": "src/admin/OrderExport.tsx", "summary": { "zh-TW": "新增匯出", "en": "Add the export" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-10T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-10T11:20:00+08:00" }],
+          "review": { "id": "j04-1", "verdict": "returned", "reason": "process", "decidedBy": "manager", "decidedAt": "2026-10-10T15:00:00+08:00" }
+        },
+        {
+          "round": 2, "externalRef": "36", "submittedAt": "2026-10-11T10:00:00+08:00",
+          "summary": { "zh-TW": "匯出欄位經營運確認後再送", "en": "Resubmit after operations confirmed the columns" },
+          "body": { "zh-TW": "匯出欄位經營運確認後再送。請看「要看的重點」。", "en": "Resubmit after operations confirmed the columns. See the points to review." },
+          "points": [{ "zh-TW": "匯出的欄位", "en": "Exported columns" }],
+          "changes": [{ "path": "src/admin/OrderExport.tsx", "summary": { "zh-TW": "依確認的欄位修改", "en": "Use the confirmed columns" } }],
+          "checks": [{ "name": "ci", "status": "pass", "checkedAt": "2026-10-11T10:20:00+08:00" }],
+          "review": { "id": "j04-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-11T14:00:00+08:00" }
         }
       ]
     },
     {
-      "id": "j10", "source": "lantern-notes", "externalRef": "110", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "筆記的最後修改時間", "en": "Last edited time on notes" }, "assignedBy": "manager", "assignedAt": "2026-10-16T09:00:00+08:00",
+      "id": "j05", "source": "company-site", "externalRef": "25", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "官網頁尾的客服時間", "en": "Support hours in the site footer" }, "assignedBy": "manager", "assignedAt": "2026-10-22T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "212", "submittedAt": "2026-10-16T11:00:00+08:00", "summary": { "zh-TW": "清單每列顯示相對時間", "en": "Show relative time on each row" },
-          "body": { "zh-TW": "清單每列顯示相對時間。請看「要看的重點」。", "en": "Show relative time on each row. See the points to review." },
-          "points": [{ "zh-TW": "跨日時的顯示", "en": "Display across day boundaries" }],
-          "changes": [{ "path": "src/notes/NoteRow.tsx", "summary": { "zh-TW": "加入相對時間", "en": "Add relative time" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-16T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-16T11:20:00+08:00" }],
-          "review": { "id": "j10-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-16T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "j11", "source": "lantern-notes", "externalRef": "111", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "拖曳排序釘選的筆記", "en": "Reorder pinned notes by dragging" }, "assignedBy": "manager", "assignedAt": "2026-10-21T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "213", "submittedAt": "2026-10-21T11:00:00+08:00",
-          "summary": { "zh-TW": "釘選區可以拖曳調整順序", "en": "Pinned notes can be reordered by dragging" },
-          "body": { "zh-TW": "釘選區可以拖曳調整順序。請看「要看的重點」。", "en": "Pinned notes can be reordered by dragging. See the points to review." },
-          "points": [{ "zh-TW": "鍵盤也能調整順序", "en": "Order can also be changed with the keyboard" }],
-          "changes": [{ "path": "src/notes/PinnedList.tsx", "summary": { "zh-TW": "加入拖曳與鍵盤排序", "en": "Add drag and keyboard reordering" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-21T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-21T11:20:00+08:00" }],
-          "review": { "id": "j11-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-21T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "j12", "source": "lantern-notes", "externalRef": "112", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "錯誤訊息的樣式", "en": "Error message styles" }, "assignedBy": "manager", "assignedAt": "2026-10-26T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "214", "submittedAt": "2026-10-26T11:00:00+08:00",
-          "summary": { "zh-TW": "統一表單錯誤訊息的樣式", "en": "Unify form error message styles" },
-          "body": { "zh-TW": "統一表單錯誤訊息的樣式。請看「要看的重點」。", "en": "Unify form error message styles. See the points to review." },
-          "points": [{ "zh-TW": "錯誤訊息與欄位的關聯", "en": "Error messages are linked to their fields" }],
-          "changes": [{ "path": "src/ui/FieldError.tsx", "summary": { "zh-TW": "新增欄位錯誤元件", "en": "Add the field error component" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-26T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-26T11:20:00+08:00" }],
-          "review": { "id": "j12-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-26T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "j13", "source": "lantern-notes", "externalRef": "113", "workType": "ui", "employee": "juniper",
-      "title": { "zh-TW": "匯出筆記的按鈕", "en": "Export button for notes" }, "assignedBy": "manager", "assignedAt": "2026-11-17T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "215", "submittedAt": "2026-11-17T11:00:00+08:00",
-          "summary": { "zh-TW": "筆記頁加入匯出為 Markdown 的按鈕", "en": "Add an export-to-Markdown button on the note page" },
-          "body": { "zh-TW": "筆記頁加入匯出為 Markdown 的按鈕。請看「要看的重點」。", "en": "Add an export-to-Markdown button on the note page. See the points to review." },
-          "points": [{ "zh-TW": "檔名的格式", "en": "File name format" }, { "zh-TW": "沒有標題時的檔名", "en": "File name when the note has no title" }],
+          "round": 1, "externalRef": "37", "submittedAt": "2026-10-22T11:00:00+08:00",
+          "summary": { "zh-TW": "頁尾加入客服時間，從設定檔讀取", "en": "Show support hours in the footer from config" },
+          "body": { "zh-TW": "頁尾加入客服時間，從設定檔讀取。請看「要看的重點」。", "en": "Show support hours in the footer from config. See the points to review." },
+          "points": [{ "zh-TW": "假日的顯示", "en": "Display on holidays" }],
           "changes": [
-            { "path": "src/notes/ExportButton.tsx", "summary": { "zh-TW": "新增匯出按鈕", "en": "Add the export button" } },
-            { "path": "src/notes/toMarkdown.ts", "summary": { "zh-TW": "把筆記轉成 Markdown", "en": "Convert a note to Markdown" } }
+            { "path": "src/layout/Footer.tsx", "summary": { "zh-TW": "加入客服時間", "en": "Add support hours" } },
+            { "path": "src/config/support.ts", "summary": { "zh-TW": "新增設定", "en": "Add the config" } }
           ],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-17T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-11-17T11:20:00+08:00" }]
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-22T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-22T11:20:00+08:00" }],
+          "review": { "id": "j05-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-22T15:00:00+08:00" }
         }
       ]
     },
     {
-      "id": "b01", "source": "harbor-docs", "externalRef": "41", "workType": "docs", "employee": "basil", "title": { "zh-TW": "安裝指南", "en": "Installation guide" },
-      "assignedBy": "manager", "assignedAt": "2026-09-02T09:00:00+08:00",
+      "id": "j06", "source": "company-site", "externalRef": "26", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "常見問題頁的搜尋", "en": "Search on the FAQ page" }, "assignedBy": "manager", "assignedAt": "2026-11-19T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "externalRef": "61", "submittedAt": "2026-09-02T11:00:00+08:00",
-          "summary": { "zh-TW": "撰寫從零開始的安裝步驟", "en": "Write installation steps from scratch" },
-          "body": { "zh-TW": "撰寫從零開始的安裝步驟。請看「要看的重點」。", "en": "Write installation steps from scratch. See the points to review." },
-          "points": [{ "zh-TW": "步驟的順序", "en": "Order of the steps" }],
-          "changes": [{ "path": "docs/install.md", "summary": { "zh-TW": "新增安裝指南", "en": "Add the installation guide" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-02T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-02T11:20:00+08:00" }],
-          "review": { "id": "b01-1", "verdict": "returned", "reason": "wrong", "decidedBy": "manager", "decidedAt": "2026-09-02T15:00:00+08:00" }
-        },
-        {
-          "round": 2, "externalRef": "62", "submittedAt": "2026-09-03T10:00:00+08:00",
-          "summary": { "zh-TW": "修正遺漏的步驟與錯誤的指令", "en": "Fix a missing step and a wrong command" },
-          "body": { "zh-TW": "修正遺漏的步驟與錯誤的指令。請看「要看的重點」。", "en": "Fix a missing step and a wrong command. See the points to review." },
-          "points": [{ "zh-TW": "步驟的順序", "en": "Order of the steps" }],
-          "changes": [{ "path": "docs/install.md", "summary": { "zh-TW": "新增安裝指南", "en": "Add the installation guide" } }],
-          "checks": [{ "name": "ci", "status": "pass", "checkedAt": "2026-09-03T10:20:00+08:00" }],
-          "review": { "id": "b01-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-03T14:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b02", "source": "harbor-docs", "externalRef": "42", "workType": "docs", "employee": "basil",
-      "title": { "zh-TW": "設定檔說明", "en": "Configuration reference" }, "assignedBy": "manager", "assignedAt": "2026-09-08T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "63", "submittedAt": "2026-09-08T11:00:00+08:00",
-          "summary": { "zh-TW": "列出所有設定項與預設值", "en": "List every setting and its default" },
-          "body": { "zh-TW": "列出所有設定項與預設值。請看「要看的重點」。", "en": "List every setting and its default. See the points to review." },
-          "points": [{ "zh-TW": "預設值是否與程式一致", "en": "Whether defaults match the code" }],
-          "changes": [{ "path": "docs/config.md", "summary": { "zh-TW": "新增設定檔說明", "en": "Add the configuration reference" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-08T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-08T11:20:00+08:00" }],
-          "review": { "id": "b02-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-08T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b03", "source": "harbor-docs", "externalRef": "43", "workType": "docs", "employee": "basil", "title": { "zh-TW": "常見問題", "en": "FAQ" },
-      "assignedBy": "manager", "assignedAt": "2026-09-14T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "64", "submittedAt": "2026-09-14T11:00:00+08:00",
-          "summary": { "zh-TW": "整理常見問題與解法", "en": "Collect common questions and answers" },
-          "body": { "zh-TW": "整理常見問題與解法。請看「要看的重點」。", "en": "Collect common questions and answers. See the points to review." },
-          "points": [{ "zh-TW": "問題的分類", "en": "How questions are grouped" }],
-          "changes": [{ "path": "docs/faq.md", "summary": { "zh-TW": "新增常見問題", "en": "Add the FAQ" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-14T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-14T11:20:00+08:00" }],
-          "review": { "id": "b03-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-14T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b04", "source": "harbor-docs", "externalRef": "44", "workType": "docs", "employee": "basil", "title": { "zh-TW": "術語表", "en": "Glossary" },
-      "assignedBy": "manager", "assignedAt": "2026-09-20T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "65", "submittedAt": "2026-09-20T11:00:00+08:00", "summary": { "zh-TW": "整理文件中的術語", "en": "Collect terms used in the docs" },
-          "body": { "zh-TW": "整理文件中的術語。請看「要看的重點」。", "en": "Collect terms used in the docs. See the points to review." },
-          "points": [{ "zh-TW": "中英文術語的對照", "en": "Chinese and English term pairs" }],
-          "changes": [{ "path": "docs/glossary.md", "summary": { "zh-TW": "新增術語表", "en": "Add the glossary" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-20T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-20T11:20:00+08:00" }],
-          "review": { "id": "b04-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-20T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b05", "source": "harbor-docs", "externalRef": "45", "workType": "docs", "employee": "basil", "title": { "zh-TW": "發布流程", "en": "Release process" },
-      "assignedBy": "manager", "assignedAt": "2026-09-26T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "66", "submittedAt": "2026-09-26T11:00:00+08:00", "summary": { "zh-TW": "記錄版本發布的步驟", "en": "Document the release steps" },
-          "body": { "zh-TW": "記錄版本發布的步驟。請看「要看的重點」。", "en": "Document the release steps. See the points to review." },
-          "points": [{ "zh-TW": "誰可以發布", "en": "Who may release" }],
-          "changes": [{ "path": "docs/release.md", "summary": { "zh-TW": "新增發布流程", "en": "Add the release process" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-26T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-26T11:20:00+08:00" }],
-          "review": { "id": "b05-1", "verdict": "returned", "reason": "process", "decidedBy": "manager", "decidedAt": "2026-09-26T15:00:00+08:00" }
-        },
-        {
-          "round": 2, "externalRef": "67", "submittedAt": "2026-09-27T10:00:00+08:00",
-          "summary": { "zh-TW": "依審查要求補上變更紀錄", "en": "Add the changelog entry requested by review" },
-          "body": { "zh-TW": "依審查要求補上變更紀錄。請看「要看的重點」。", "en": "Add the changelog entry requested by review. See the points to review." },
-          "points": [{ "zh-TW": "誰可以發布", "en": "Who may release" }],
-          "changes": [{ "path": "docs/release.md", "summary": { "zh-TW": "新增發布流程", "en": "Add the release process" } }],
-          "checks": [{ "name": "ci", "status": "pass", "checkedAt": "2026-09-27T10:20:00+08:00" }],
-          "review": { "id": "b05-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-27T14:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b06", "source": "harbor-docs", "externalRef": "46", "workType": "docs", "employee": "basil", "title": { "zh-TW": "貢獻指南", "en": "Contributing guide" },
-      "assignedBy": "manager", "assignedAt": "2026-10-02T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "68", "submittedAt": "2026-10-02T11:00:00+08:00", "summary": { "zh-TW": "說明如何提出修改", "en": "Explain how to propose changes" },
-          "body": { "zh-TW": "說明如何提出修改。請看「要看的重點」。", "en": "Explain how to propose changes. See the points to review." },
-          "points": [{ "zh-TW": "審查的期待", "en": "What reviewers expect" }],
-          "changes": [{ "path": "docs/contributing.md", "summary": { "zh-TW": "新增貢獻指南", "en": "Add the contributing guide" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-02T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-02T11:20:00+08:00" }],
-          "review": { "id": "b06-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-02T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b07", "source": "harbor-docs", "externalRef": "47", "workType": "docs", "employee": "basil", "title": { "zh-TW": "升級說明", "en": "Upgrade notes" },
-      "assignedBy": "manager", "assignedAt": "2026-10-08T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "69", "submittedAt": "2026-10-08T11:00:00+08:00",
-          "summary": { "zh-TW": "整理升級到新版的注意事項", "en": "Notes for upgrading to the new version" },
-          "body": { "zh-TW": "整理升級到新版的注意事項。請看「要看的重點」。", "en": "Notes for upgrading to the new version. See the points to review." },
-          "points": [{ "zh-TW": "不相容的變更", "en": "Breaking changes" }],
-          "changes": [{ "path": "docs/upgrade.md", "summary": { "zh-TW": "新增升級說明", "en": "Add the upgrade notes" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-08T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-08T11:20:00+08:00" }],
-          "review": { "id": "b07-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-08T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b08", "source": "harbor-docs", "externalRef": "48", "workType": "docs", "employee": "basil",
-      "title": { "zh-TW": "文件的目錄", "en": "Docs table of contents" }, "assignedBy": "manager", "assignedAt": "2026-10-14T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "70", "submittedAt": "2026-10-14T11:00:00+08:00",
-          "summary": { "zh-TW": "重排文件目錄", "en": "Reorganize the docs table of contents" },
-          "body": { "zh-TW": "重排文件目錄。請看「要看的重點」。", "en": "Reorganize the docs table of contents. See the points to review." },
-          "points": [{ "zh-TW": "新的分類是否好找", "en": "Whether the new grouping is easy to browse" }],
-          "changes": [{ "path": "docs/index.md", "summary": { "zh-TW": "重排目錄", "en": "Reorganize the table of contents" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-14T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-14T11:20:00+08:00" }],
-          "review": { "id": "b08-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-14T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b09", "source": "harbor-docs", "externalRef": "49", "workType": "docs", "employee": "basil",
-      "title": { "zh-TW": "範例設定", "en": "Example configurations" }, "assignedBy": "manager", "assignedAt": "2026-10-20T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "71", "submittedAt": "2026-10-20T11:00:00+08:00",
-          "summary": { "zh-TW": "加入三種常見的範例設定", "en": "Add three common example configurations" },
-          "body": { "zh-TW": "加入三種常見的範例設定。請看「要看的重點」。", "en": "Add three common example configurations. See the points to review." },
-          "points": [{ "zh-TW": "範例是否能直接使用", "en": "Whether the examples work as is" }],
-          "changes": [{ "path": "docs/examples.md", "summary": { "zh-TW": "新增範例設定", "en": "Add example configurations" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-20T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-20T11:20:00+08:00" }],
-          "review": { "id": "b09-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-20T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b10", "source": "harbor-docs", "externalRef": "50", "workType": "docs", "employee": "basil",
-      "title": { "zh-TW": "錯誤代碼表", "en": "Error code reference" }, "assignedBy": "manager", "assignedAt": "2026-10-26T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "72", "submittedAt": "2026-10-26T11:00:00+08:00", "summary": { "zh-TW": "列出錯誤代碼與處理方式", "en": "List error codes and what to do" },
-          "body": { "zh-TW": "列出錯誤代碼與處理方式。請看「要看的重點」。", "en": "List error codes and what to do. See the points to review." },
-          "points": [{ "zh-TW": "代碼是否齊全", "en": "Whether every code is listed" }],
-          "changes": [{ "path": "docs/errors.md", "summary": { "zh-TW": "新增錯誤代碼表", "en": "Add the error code reference" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-26T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-26T11:20:00+08:00" }],
-          "review": { "id": "b10-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-26T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "b11", "source": "harbor-docs", "externalRef": "51", "workType": "docs", "employee": "basil", "title": { "zh-TW": "備份與還原", "en": "Backup and restore" },
-      "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "73", "submittedAt": "2026-11-18T11:00:00+08:00",
-          "summary": { "zh-TW": "說明備份與還原的步驟", "en": "Document backup and restore steps" },
-          "body": { "zh-TW": "說明備份與還原的步驟。請看「要看的重點」。", "en": "Document backup and restore steps. See the points to review." },
-          "points": [{ "zh-TW": "還原前的檢查", "en": "Checks before restoring" }, { "zh-TW": "備份的保存期限", "en": "How long backups are kept" }],
-          "changes": [{ "path": "docs/backup.md", "summary": { "zh-TW": "新增備份與還原", "en": "Add backup and restore" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-18T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }]
-        }
-      ]
-    },
-    {
-      "id": "t01", "source": "lantern-notes", "externalRef": "114", "workType": "test", "employee": "basil",
-      "title": { "zh-TW": "筆記清單的單元測試", "en": "Unit tests for the note list" }, "assignedBy": "manager", "assignedAt": "2026-10-01T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "216", "submittedAt": "2026-10-01T11:00:00+08:00",
-          "summary": { "zh-TW": "補上清單排序與篩選的測試", "en": "Add tests for list sorting and filtering" },
-          "body": { "zh-TW": "補上清單排序與篩選的測試。請看「要看的重點」。", "en": "Add tests for list sorting and filtering. See the points to review." },
-          "points": [{ "zh-TW": "測試涵蓋的情況", "en": "Cases covered by the tests" }],
-          "changes": [{ "path": "src/notes/useNotes.test.ts", "summary": { "zh-TW": "新增排序與篩選的測試", "en": "Add sorting and filtering tests" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-01T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-01T11:20:00+08:00" }],
-          "review": { "id": "t01-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-01T15:00:00+08:00" }
-        }
-      ]
-    },
-    {
-      "id": "t02", "source": "lantern-notes", "externalRef": "115", "workType": "test", "employee": "basil",
-      "title": { "zh-TW": "編輯器的捷徑測試", "en": "Tests for editor shortcuts" }, "assignedBy": "manager", "assignedAt": "2026-10-15T09:00:00+08:00",
-      "works": [
-        {
-          "round": 1, "externalRef": "217", "submittedAt": "2026-10-15T11:00:00+08:00", "summary": { "zh-TW": "補上鍵盤捷徑的測試", "en": "Add tests for keyboard shortcuts" },
-          "body": { "zh-TW": "補上鍵盤捷徑的測試。請看「要看的重點」。", "en": "Add tests for keyboard shortcuts. See the points to review." },
-          "points": [{ "zh-TW": "各作業系統的按鍵", "en": "Keys on each operating system" }],
-          "changes": [{ "path": "src/editor/shortcuts.test.ts", "summary": { "zh-TW": "新增捷徑的測試", "en": "Add shortcut tests" } }],
-          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-15T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-15T11:20:00+08:00" }],
-          "review": { "id": "t02-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-15T15:00:00+08:00" }
+          "round": 1, "externalRef": "38", "submittedAt": "2026-11-19T11:00:00+08:00",
+          "summary": { "zh-TW": "常見問題頁加入關鍵字搜尋", "en": "Add keyword search to the FAQ page" },
+          "body": { "zh-TW": "常見問題頁加入關鍵字搜尋。請看「要看的重點」。", "en": "Add keyword search to the FAQ page. See the points to review." },
+          "points": [
+            { "zh-TW": "沒有結果時的畫面", "en": "Screen when nothing matches" },
+            { "zh-TW": "中英文混合的搜尋", "en": "Searching mixed-language text" }
+          ],
+          "changes": [
+            { "path": "src/faq/FaqSearch.tsx", "summary": { "zh-TW": "新增搜尋", "en": "Add search" } },
+            { "path": "src/faq/FaqPage.tsx", "summary": { "zh-TW": "接上搜尋", "en": "Wire up search" } }
+          ],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-19T11:01:00+08:00" }]
         }
       ]
     }
   ],
-  "levelDecisions": [{ "id": "d01", "employee": "juniper", "workType": "ui", "decision": "relax", "basisReview": "j09-1", "decidedBy": "manager", "decidedAt": "2026-10-13T10:00:00+08:00" }],
+  "levelDecisions": [
+    { "id": "d01", "employee": "rowan", "workType": "support", "decision": "relax", "basisReview": "s10-1", "decidedBy": "manager", "decidedAt": "2026-10-09T10:00:00+08:00" },
+    { "id": "d02", "employee": "linden", "workType": "knowledge", "decision": "relax", "basisReview": "k09-1", "decidedBy": "manager", "decidedAt": "2026-10-13T10:00:00+08:00" }
+  ],
   "simulations": [
     {
-      "employee": "juniper", "workType": "ui",
+      "employee": "rowan", "workType": "support",
+      "replies": [
+        {
+          "summary": { "zh-TW": "已擬好回信，請驗收", "en": "Reply drafted, ready for review" },
+          "body": { "zh-TW": "回覆詢問配送時間的信，說明到貨日期與運費。", "en": "Reply to a question about delivery time, with the arrival date and shipping fee." },
+          "points": [
+            { "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" },
+            { "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }
+          ],
+          "changes": [
+            { "path": "reply/p2", "summary": { "zh-TW": "說明到貨日期", "en": "Give the arrival date" } },
+            { "path": "reply/closing", "summary": { "zh-TW": "說明運費", "en": "Explain the shipping fee" } }
+          ],
+          "checks": [{ "name": "quote-match", "status": "pending" }, { "name": "quote-match", "status": "pass" }, { "name": "banned-words", "status": "pass" }]
+        },
+        {
+          "summary": { "zh-TW": "依退回的意見修改回信", "en": "Revised the reply after the review" },
+          "body": { "zh-TW": "依退回的意見改寫第 2 段與結尾，請再驗收。", "en": "Rewrote the second paragraph and closing per the review, ready again." },
+          "points": [{ "zh-TW": "修改的段落", "en": "The revised paragraphs" }],
+          "changes": [
+            { "path": "reply/p2", "summary": { "zh-TW": "依意見改寫", "en": "Rewrite per the review" } },
+            { "path": "reply/closing", "summary": { "zh-TW": "依意見改寫", "en": "Rewrite per the review" } }
+          ],
+          "checks": [{ "name": "quote-match", "status": "pass" }, { "name": "banned-words", "status": "pass" }]
+        }
+      ]
+    },
+    {
+      "employee": "sorrel", "workType": "content",
+      "replies": [
+        {
+          "summary": { "zh-TW": "已擬好貼文，請驗收", "en": "Post drafted, ready for review" },
+          "body": { "zh-TW": "新品介紹貼文，包含售價與活動期限。", "en": "A new product post with the price and campaign deadline." },
+          "points": [
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" },
+            { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }
+          ],
+          "changes": [
+            { "path": "post/title", "summary": { "zh-TW": "標題", "en": "Title" } },
+            { "path": "post/body", "summary": { "zh-TW": "售價與期限", "en": "Price and deadline" } }
+          ],
+          "checks": [{ "name": "length", "status": "pending" }, { "name": "length", "status": "pass" }, { "name": "links", "status": "pass" }]
+        },
+        {
+          "summary": { "zh-TW": "依退回的意見修改貼文", "en": "Revised the post after the review" },
+          "body": { "zh-TW": "依退回的意見修改標題與內文，請再驗收。", "en": "Revised the title and body per the review, ready again." },
+          "points": [{ "zh-TW": "修改的部分", "en": "What changed since the last round" }],
+          "changes": [
+            { "path": "post/title", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } },
+            { "path": "post/body", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }
+          ],
+          "checks": [{ "name": "length", "status": "pass" }, { "name": "links", "status": "pass" }]
+        }
+      ]
+    },
+    {
+      "employee": "linden", "workType": "knowledge",
+      "replies": [
+        {
+          "summary": { "zh-TW": "已整理成知識庫條目，請驗收", "en": "Knowledge base entry ready for review" },
+          "body": { "zh-TW": "新增「保固申請」條目，標出不確定的型號與可能重複的條目。", "en": "Added a warranty claim entry, flagging uncertain model numbers and possible duplicates." },
+          "points": [
+            { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
+            { "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }
+          ],
+          "changes": [
+            { "path": "kb/warranty-claims", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } },
+            { "path": "kb/warranty-claims#owner", "summary": { "zh-TW": "負責的部門", "en": "Owning team" } }
+          ],
+          "checks": [{ "name": "format", "status": "pending" }, { "name": "format", "status": "pass" }, { "name": "required-fields", "status": "pass" }]
+        },
+        {
+          "summary": { "zh-TW": "依退回的意見修改條目", "en": "Revised the entry after the review" },
+          "body": { "zh-TW": "依退回的意見補上欄位並合併重複的條目，請再驗收。", "en": "Filled in the fields and merged the duplicate entry per the review, ready again." },
+          "points": [{ "zh-TW": "補上的欄位與合併的條目", "en": "Added fields and the merged entry" }],
+          "changes": [{ "path": "kb/warranty-claims", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }],
+          "checks": [{ "name": "format", "status": "pass" }, { "name": "required-fields", "status": "pass" }]
+        }
+      ]
+    },
+    {
+      "employee": "juniper", "workType": "dev",
       "replies": [
         {
           "summary": { "zh-TW": "依交辦完成，請驗收", "en": "Done as assigned, ready for review" },
-          "body": { "zh-TW": "已完成交辦的內容，並附上畫面的變更。", "en": "Completed the assignment and included the UI changes." },
-          "points": [{ "zh-TW": "新元件在窄螢幕的排版", "en": "Layout of the new component on narrow screens" }],
+          "body": { "zh-TW": "官網聯絡表單加上欄位驗證，並附上畫面的變更。", "en": "Added field validation to the site contact form, with the UI changes." },
+          "points": [{ "zh-TW": "錯誤訊息與欄位的關聯", "en": "Error messages are linked to their fields" }],
           "changes": [
-            { "path": "src/notes/NewFeature.tsx", "summary": { "zh-TW": "新增元件", "en": "Add the component" } },
-            { "path": "src/notes/NoteList.tsx", "summary": { "zh-TW": "接上新元件", "en": "Wire up the new component" } }
+            { "path": "src/contact/ContactForm.tsx", "summary": { "zh-TW": "加上驗證", "en": "Add validation" } },
+            { "path": "src/contact/validate.ts", "summary": { "zh-TW": "新增驗證規則", "en": "Add validation rules" } }
           ],
           "checks": [{ "name": "ci", "status": "pending" }, { "name": "ci", "status": "pass" }]
         },
@@ -457,33 +930,8 @@
           "summary": { "zh-TW": "依退回的意見修改", "en": "Revised after the review" },
           "body": { "zh-TW": "依退回的意見修改，請再驗收。", "en": "Revised according to the review, ready again." },
           "points": [{ "zh-TW": "修改的部分", "en": "What changed since the last round" }],
-          "changes": [{ "path": "src/notes/NewFeature.tsx", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }],
+          "changes": [{ "path": "src/contact/ContactForm.tsx", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }],
           "checks": [{ "name": "ci", "status": "pending" }, { "name": "ci", "status": "pass" }]
-        }
-      ]
-    },
-    {
-      "employee": "basil", "workType": "docs",
-      "replies": [
-        {
-          "summary": { "zh-TW": "依交辦補上文件，請驗收", "en": "Docs added as assigned, ready for review" },
-          "body": { "zh-TW": "已依交辦補上文件，並在目錄加上連結。", "en": "Added the docs as assigned and linked them from the index." },
-          "points": [
-            { "zh-TW": "步驟的順序與實際操作是否一致", "en": "Whether the order of the steps matches the actual flow" },
-            { "zh-TW": "範例指令能否照著執行", "en": "Whether the example commands run as written" }
-          ],
-          "changes": [
-            { "path": "docs/guide/getting-started.md", "summary": { "zh-TW": "新增章節", "en": "Add a section" } },
-            { "path": "docs/README.md", "summary": { "zh-TW": "加上連結", "en": "Add a link" } }
-          ],
-          "checks": [{ "name": "links", "status": "pending" }, { "name": "links", "status": "pass" }, { "name": "ci", "status": "pass" }]
-        },
-        {
-          "summary": { "zh-TW": "依退回的意見修改文件", "en": "Revised the docs after the review" },
-          "body": { "zh-TW": "依退回的意見修改文件，請再驗收。", "en": "Revised the docs according to the review, ready again." },
-          "points": [{ "zh-TW": "修改的段落", "en": "The revised paragraphs" }],
-          "changes": [{ "path": "docs/guide/getting-started.md", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }],
-          "checks": [{ "name": "links", "status": "pending" }, { "name": "links", "status": "pass" }, { "name": "ci", "status": "pass" }]
         }
       ]
     }

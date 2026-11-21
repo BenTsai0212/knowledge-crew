@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { assignmentRef, workRef } from "./refs";
+import { demoTextIndex } from "../demo/texts";
+import type { DemoFile } from "../demo/types";
+import { assignmentRef, sourceLabel, workRef } from "./refs";
 
 describe("assignmentRef（#57）", () => {
   it("repo 類照舊是 <repo>#<Issue>", () => {
@@ -31,5 +33,33 @@ describe("workRef（#57）", () => {
   it("沒有編號時是 null", () => {
     expect(workRef("repo", null, "zh-TW")).toBeNull();
     expect(workRef("social", null, "en")).toBeNull();
+  });
+});
+
+describe("sourceLabel（#60 的 `## 決定` 2）", () => {
+  const demo = {
+    sources: [
+      { id: "inbox", kind: "mailbox", name: "Support inbox", label: { "zh-TW": "客服信箱", en: "Support inbox" }, project: "bluewing" },
+      { id: "site", kind: "repo", name: "example-org/site", project: "longpier" },
+    ],
+    employees: [],
+    assignments: [],
+  } as unknown as DemoFile;
+  const index = demoTextIndex(demo);
+
+  it("有顯示名稱時用目前語言的顯示名稱", () => {
+    expect(sourceLabel("inbox", "Support inbox", "zh-TW", index)).toBe("客服信箱");
+    expect(sourceLabel("inbox", "Support inbox", "en", index)).toBe("Support inbox");
+  });
+
+  it("沒有顯示名稱（repo 類省略、人新增的來源、沒有的語言）時用資料庫的名稱", () => {
+    expect(sourceLabel("site", "example-org/site", "zh-TW", index)).toBe("example-org/site");
+    expect(sourceLabel("new-source", "Returns inbox", "zh-TW", index)).toBe("Returns inbox");
+    expect(sourceLabel("inbox", "Support inbox", "ja", index)).toBe("Support inbox");
+  });
+
+  it("交辦的參照用顯示名稱組出", () => {
+    const sourceName = sourceLabel("inbox", "Support inbox", "zh-TW", index);
+    expect(assignmentRef({ sourceKind: "mailbox", sourceName, externalRef: "1041" }, "zh-TW")).toBe("客服信箱 1041");
   });
 });

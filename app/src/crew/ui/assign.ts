@@ -16,6 +16,7 @@ import {
 import { DEMO } from "../demo/load";
 import { pickReply, simulateSubmission } from "../demo/simulate";
 import { demoText } from "../demo/texts";
+import { sourceLabel } from "./refs";
 import type { DemoFile } from "../demo/types";
 import type { TodayEmployee } from "./today";
 
@@ -40,7 +41,8 @@ export interface AssignItem {
 
 export interface AssignData {
   canReview: boolean;
-  sources: StoredSource[];
+  /** `label` 是目前語言的顯示名稱（sourceLabel()） */
+  sources: (StoredSource & { label: string })[];
   employees: TodayEmployee[];
   workTypes: string[];
   /** 新到舊 */
@@ -93,14 +95,14 @@ export async function readAssign(
   const byId = new Map(employees.map((e) => [e.id, e]));
   return {
     canReview,
-    sources,
+    sources: sources.map((s) => ({ ...s, label: sourceLabel(s.id, s.name, language) })),
     employees,
     workTypes,
     assignments: assignments.map((a) => ({
       id: a.id,
       title: demoText("title", a.id, language) ?? a.title,
       sourceKind: a.sourceKind,
-      sourceName: a.sourceName,
+      sourceName: sourceLabel(a.sourceId, a.sourceName, language),
       externalRef: a.externalRef,
       workTypeId: a.workTypeId,
       employee: byId.get(a.employeeId) ?? { id: a.employeeId, displayName: a.employeeId, roleNote: null },
