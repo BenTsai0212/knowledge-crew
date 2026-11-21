@@ -12,7 +12,6 @@
   "relaxSuggested": "Suggested for lighter review",
   "relaxSuggestedItem": "{employee} has had no mistakes in the last {count, plural, one {# review} other {# reviews}} of “{workType}” work; you could review it more lightly. Nothing changes until you agree.",
   "relaxSuggestedEmpty": "No work is suggested for lighter review.",
-  "assignmentRef": "{repo}#{issue}",
   "assignmentMeta": "{employee} ({roleNote}) · {workType}",
   "assignmentMetaNoRole": "{employee} · {workType}",
   "allEmpty": "Nothing needs your attention today."

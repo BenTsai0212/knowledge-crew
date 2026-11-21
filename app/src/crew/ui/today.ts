@@ -2,7 +2,7 @@
 // 可見範圍由 RLS 決定。資料庫的文字以 demoText() 換成目前語言，找不到時用資料庫的原文。
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type StoredEmployee } from "../db/store";
+import { getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredEmployee } from "../db/store";
 import { demoText } from "../demo/texts";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import { relaxSuggestion } from "../trust/rules";
@@ -18,6 +18,7 @@ export interface TodayEmployee {
 export interface TodayAssignment {
   id: string;
   title: string;
+  sourceKind: SourceKind;
   sourceName: string;
   externalRef: string | null;
   workTypeId: string;
@@ -66,6 +67,7 @@ export async function readToday(
   const toItem = (a: AssignmentSummary): TodayAssignment => ({
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
+    sourceKind: a.sourceKind,
     sourceName: a.sourceName,
     externalRef: a.externalRef,
     workTypeId: a.workTypeId,

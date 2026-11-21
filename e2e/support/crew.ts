@@ -83,7 +83,7 @@ export async function assignSimulateReturn(
   await gotoCrewSection(page, ct.common.sectionAssignments);
   const form = page.getByRole("form", { name: ct.assign.formTitle });
   await form.getByRole("textbox").fill(title);
-  await form.getByLabel(new RegExp(`^${ct.assign.fieldRepo}`)).selectOption(repoOf("bluewing").id);
+  await form.getByLabel(new RegExp(`^${ct.assign.fieldSource}`)).selectOption(repoOf("bluewing").id);
   await form.getByLabel(new RegExp(`^${ct.assign.fieldEmployee}`)).selectOption(employee);
   await form.getByLabel(new RegExp(`^${ct.assign.fieldWorkType}`)).selectOption(workType);
   await form.getByRole("button", { name: ct.assign.submit, exact: true }).click();

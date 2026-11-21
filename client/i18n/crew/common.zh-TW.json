@@ -2,7 +2,7 @@
   "tab": "AI 員工",
   "title": "AI 員工",
   "fictionalData": "虛構資料",
-  "fictionalDataNote": "畫面上的 AI 員工、repo 與交辦都是虛構的示範資料。",
+  "fictionalDataNote": "畫面上的 AI 員工、工作來源與交辦都是虛構的示範資料。",
   "sectionsLabel": "AI 員工的畫面",
   "sectionToday": "今天",
   "sectionEmployees": "員工",
@@ -14,5 +14,10 @@
   "preparingBody": "這個畫面還在準備，之後會在這裡顯示。",
   "workTypeUi": "介面",
   "workTypeDocs": "文件",
-  "workTypeTest": "測試"
+  "workTypeTest": "測試",
+  "refRepo": "{name}#{ref}",
+  "refOther": "{name} {ref}",
+  "refSourceOnly": "{name}",
+  "refWorkRepo": "PR #{ref}",
+  "refWorkOther": "{ref}"
 }

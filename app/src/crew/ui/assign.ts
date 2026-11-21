@@ -9,6 +9,7 @@ import {
   listSources,
   type AssignmentSummary,
   type NewAssignment,
+  type SourceKind,
   type StoredEmployee,
   type StoredSource,
 } from "../db/store";
@@ -27,6 +28,7 @@ export type SimulateState = "available" | "noReply" | "none";
 export interface AssignItem {
   id: string;
   title: string;
+  sourceKind: SourceKind;
   sourceName: string;
   externalRef: string | null;
   workTypeId: string;
@@ -97,6 +99,7 @@ export async function readAssign(
     assignments: assignments.map((a) => ({
       id: a.id,
       title: demoText("title", a.id, language) ?? a.title,
+      sourceKind: a.sourceKind,
       sourceName: a.sourceName,
       externalRef: a.externalRef,
       workTypeId: a.workTypeId,

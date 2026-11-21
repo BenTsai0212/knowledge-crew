@@ -3,7 +3,7 @@
 import type { Transaction } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getTrustInputs, listAssignments, listEmployees, listReviews, type AssignmentSummary } from "../db/store";
+import { getTrustInputs, listAssignments, listEmployees, listReviews, type AssignmentSummary, type SourceKind } from "../db/store";
 import { demoText } from "../demo/texts";
 import { autoResets } from "../trust/rules";
 import type { LevelDecisionKind, ReturnReason } from "../trust/types";
@@ -14,6 +14,7 @@ export interface LedgerAssignment {
   id: string;
   /** 目前語言的標題；找不到時是資料庫的原文 */
   title: string;
+  sourceKind: SourceKind;
   sourceName: string;
   externalRef: string | null;
 }
@@ -132,6 +133,7 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
   const toAssignment = (a: AssignmentSummary): LedgerAssignment => ({
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
+    sourceKind: a.sourceKind,
     sourceName: a.sourceName,
     externalRef: a.externalRef,
   });
