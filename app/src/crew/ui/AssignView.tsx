@@ -8,6 +8,7 @@ import { DEMO } from "../demo/load";
 import { crewStrings, type CrewTexts } from "../i18n";
 import { readAssign, simulateAssignment, submitAssignment, type AssignData, type AssignItem, type AssignStatus } from "./assign";
 import { workTypeLabel } from "./labels";
+import { assignmentRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
 import { canReviewOf, type TodayEmployee } from "./today";
 import "./AssignView.css";
@@ -150,7 +151,7 @@ function AssignForm({
         )}
       </label>
       <label className="crew-assign__field">
-        <span>{t.fieldRepo}</span>
+        <span>{t.fieldSource}</span>
         <select value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
           {data.sources.map((r) => (
             <option key={r.id} value={r.id}>
@@ -225,7 +226,7 @@ function AssignRow({
         <span className="badge">{t[STATUS_KEY[item.status]]}</span>
       </span>
       <span className="crew-assign__item-meta muted">
-        <span className="crew-assign__ref">{fill(t.assignmentRef, { repo: item.sourceName, issue: item.externalRef ?? "" })}</span>
+        <span className="crew-assign__ref">{assignmentRef(item, language)}</span>
         <span>{employeeLabel(item.employee, t)}</span>
         <span>{workTypeLabel(item.workTypeId, language)}</span>
       </span>

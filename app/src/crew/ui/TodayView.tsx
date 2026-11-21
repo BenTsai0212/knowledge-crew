@@ -6,6 +6,7 @@ import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { crewStrings, type CrewTexts } from "../i18n";
 import { workTypeLabel } from "./labels";
+import { assignmentRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
 import { canReviewOf, isAllEmpty, readToday, type Today, type TodayAssignment } from "./today";
 import "./TodayView.css";
@@ -95,7 +96,7 @@ function AssignmentList({ items, t, language }: { items: TodayAssignment[]; t: C
           <li key={a.id} className="crew-today__item">
             <span className="crew-today__item-title">{a.title}</span>
             <span className="crew-today__item-meta muted">
-              <span className="crew-today__ref">{fill(t.assignmentRef, { repo: a.sourceName, issue: a.externalRef ?? "" })}</span>
+              <span className="crew-today__ref">{assignmentRef(a, language)}</span>
               <span>{meta}</span>
             </span>
           </li>

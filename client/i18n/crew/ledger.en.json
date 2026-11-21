@@ -19,6 +19,5 @@
   "kindAutoReset": "Back to item-by-item review after a mistake",
   "actorRule": "Automatic, by rule",
   "byActor": "By {name}",
-  "eventMeta": "{employee} · {workType}",
-  "assignmentRef": "{repo}#{issue}"
+  "eventMeta": "{employee} · {workType}"
 }

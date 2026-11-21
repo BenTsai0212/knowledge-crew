@@ -9,6 +9,7 @@ import type { CheckStatus, ReturnReason } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
 import { workTypeLabel } from "./labels";
 import { initialSelection, readReviewPanel, readWorkList, type ReviewPanel, type WorkList, type WorkListItem } from "./review";
+import { assignmentRef, workRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
 import { canReviewOf } from "./today";
 import "./ReviewView.css";
@@ -154,7 +155,7 @@ function ListGroup({ title, count, empty, items, selected, select, t, language }
                 onClick={() => select(item.id)}
               >
                 <span className="crew-review__item-title">{item.title}</span>
-                <span className="muted crew-review__ref">{itemRef(item, t)}</span>
+                <span className="muted crew-review__ref">{itemRef(item, t, language)}</span>
                 <span className="muted">{itemMeta(item, t, language)}</span>
                 {item.verdict && (
                   <span className="badge" data-verdict={item.verdict}>
@@ -177,7 +178,11 @@ function topInView(element: HTMLElement): boolean {
   return top >= margin && top < window.innerHeight;
 }
 
-const itemRef = (item: WorkListItem, t: Texts) => fill(t.itemRef, { repo: item.sourceName, issue: item.externalRef ?? "", pr: item.workRef ?? "" });
+function itemRef(item: WorkListItem, t: Texts, language: LanguageCode): string {
+  const assignment = assignmentRef(item, language);
+  const work = workRef(item.sourceKind, item.workRef, language);
+  return work === null ? assignment : fill(t.itemRef, { assignment, work });
+}
 const itemMeta = (item: WorkListItem, t: Texts, language: LanguageCode) =>
   fill(t.itemMeta, { employee: item.employee.displayName, workType: workTypeLabel(item.workTypeId, language), round: item.round });
 
@@ -202,7 +207,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
     <article ref={anchor} className="card crew-review__panel" aria-labelledby="crew-review-title">
       <header className="crew-review__head">
         <h3 id="crew-review-title">{item.title}</h3>
-        <p className="muted crew-review__ref">{itemRef(item, t)}</p>
+        <p className="muted crew-review__ref">{itemRef(item, t, language)}</p>
         <p className="muted">{itemMeta(item, t, language)}</p>
         <p className="crew-review__level">
           <span className="muted">{t.levelLabel}</span>
@@ -269,7 +274,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
           <h4>{t.earlier}</h4>
           {earlier.map((w) => (
             <details key={w.round} className="crew-review__details">
-              <summary>{fill(t.earlierRound, { round: w.round, pr: w.externalRef ?? "" })}</summary>
+              <summary>{earlierRound(w.round, workRef(item.sourceKind, w.externalRef, language), t)}</summary>
               <p>{w.summary}</p>
               <p className="muted">{fill(t.submittedAt, { date: formatDate(w.submittedAt, language) })}</p>
               {w.review === null ? (
@@ -345,3 +350,6 @@ function formatDate(iso: string, language: LanguageCode): string {
   if (Number.isNaN(date.getTime())) return iso;
   return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeZone: "UTC" }).format(date);
 }
+
+const earlierRound = (round: number, work: string | null, t: Texts) =>
+  work === null ? fill(t.earlierRoundNoRef, { round }) : fill(t.earlierRound, { round, work });

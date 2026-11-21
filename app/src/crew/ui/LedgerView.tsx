@@ -8,6 +8,7 @@ import { crewStrings, type CrewTexts } from "../i18n";
 import type { ReturnReason } from "../trust/types";
 import { workTypeLabel } from "./labels";
 import { actorName, filterLedger, ledgerOptions, readLedger, type LedgerEvent } from "./ledger";
+import { assignmentRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
 import "./LedgerView.css";
 
@@ -120,7 +121,7 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
                 <span className="crew-ledger__meta muted">
                   {e.assignment && (
                     <span className="crew-ledger__ref">
-                      {fill(t.assignmentRef, { repo: e.assignment.sourceName, issue: e.assignment.externalRef ?? "" })}
+                      {assignmentRef(e.assignment, language)}
                     </span>
                   )}
                   <span>{fill(t.eventMeta, { employee: e.employee.displayName, workType: workTypeLabel(e.workTypeId, language) })}</span>

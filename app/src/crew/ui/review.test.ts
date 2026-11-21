@@ -36,6 +36,7 @@ describe("readWorkList：匯入虛構資料後", () => {
     expect(awaiting[0]).toEqual({
       id: "j13",
       title: demo.assignments.find((a) => a.id === "j13")!.title[lang],
+      sourceKind: "repo",
       sourceName: "example-org/lantern-notes",
       externalRef: "113",
       workRef: "215",

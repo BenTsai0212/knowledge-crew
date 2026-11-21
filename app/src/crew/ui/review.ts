@@ -3,7 +3,7 @@
 // 層級只由 reviewLevel() 決定，面板只依 reviewFocus() 的結果呈現。
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type StoredWork } from "../db/store";
+import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredWork } from "../db/store";
 import { demoText } from "../demo/texts";
 import { reviewFocus, reviewLevel } from "../trust/rules";
 import type { ReturnReason, ReviewFocus, Verdict } from "../trust/types";
@@ -14,6 +14,7 @@ export const RECENT_LIMIT = 10;
 export interface WorkListItem {
   id: string;
   title: string;
+  sourceKind: SourceKind;
   sourceName: string;
   externalRef: string | null;
   /** 最新一輪的 PR 編號 */
@@ -96,6 +97,7 @@ function toItem(a: AssignmentSummary, round: number, workRef: string | null, nam
   return {
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
+    sourceKind: a.sourceKind,
     sourceName: a.sourceName,
     externalRef: a.externalRef,
     workRef,
