@@ -7,6 +7,7 @@ import type { LanguageCode } from "../../client/types";
 import { createReview } from "../db/store";
 import type { CheckStatus, ReturnReason } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
+import { checkLabel, isCodePosition, positionLabel } from "./glossary";
 import { workTypeLabel } from "./labels";
 import { initialSelection, readReviewPanel, readWorkList, type ReviewPanel, type WorkList, type WorkListItem } from "./review";
 import { assignmentRef, workRef } from "./refs";
@@ -238,7 +239,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
           <ul className="crew-review__checks">
             {focus.checks.map((c) => (
               <li key={c.name}>
-                <span className="crew-review__ref">{c.name}</span>
+                <span>{checkLabel(c.name, language)}</span>
                 <span className="badge" data-check={c.status}>
                   {t[CHECK_TEXT[c.status]]}
                 </span>
@@ -254,7 +255,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
           <ul className="crew-review__changes">
             {focus.changes.items.map((c, i) => (
               <li key={i}>
-                <span className="crew-review__ref">{c.path}</span>
+                <span className={isCodePosition(c.path) ? "crew-review__ref" : undefined}>{positionLabel(c.path, language)}</span>
                 <span>{c.summary}</span>
               </li>
             ))}
