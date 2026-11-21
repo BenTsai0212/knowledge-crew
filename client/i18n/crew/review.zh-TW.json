@@ -23,7 +23,7 @@
   "checksEmpty": "沒有自動檢查。",
   "checkPass": "通過",
   "checkFail": "未通過",
-  "checkPending": "執行中",
+  "checkPending": "檢查中",
   "changes": "變更",
   "changesSummary": "其他 {count} 項變更已收起（少看）",
   "body": "全文",

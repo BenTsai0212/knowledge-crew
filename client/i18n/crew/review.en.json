@@ -23,7 +23,7 @@
   "checksEmpty": "No automated checks.",
   "checkPass": "Passed",
   "checkFail": "Failed",
-  "checkPending": "Running",
+  "checkPending": "Checking",
   "changes": "Changes",
   "changesSummary": "{count, plural, one {# other change is collapsed (lighter review)} other {# other changes are collapsed (lighter review)}}",
   "body": "Full text",

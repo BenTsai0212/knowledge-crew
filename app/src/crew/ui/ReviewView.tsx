@@ -5,10 +5,10 @@ import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { createReview } from "../db/store";
-import type { CheckStatus, ReturnReason } from "../trust/types";
+import type { ReturnReason } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { withEmployee } from "./components";
-import { checkLabel, isCodePosition, positionLabel } from "./glossary";
+import { CheckRow, LevelBadge, withEmployee } from "./components";
+import { isCodePosition, positionLabel } from "./glossary";
 import { workTypeLabel } from "./labels";
 import { initialSelection, readReviewPanel, readWorkList, type ReviewPanel, type WorkList, type WorkListItem } from "./review";
 import { assignmentRef, workRef } from "./refs";
@@ -20,7 +20,6 @@ type Texts = CrewTexts<"review">;
 type Data = { list: WorkList; selected: string | null; panel: ReviewPanel | null };
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: Data };
 
-const CHECK_TEXT = { pass: "checkPass", fail: "checkFail", pending: "checkPending" } as const satisfies Record<CheckStatus, keyof Texts>;
 const REASON_TEXT = {
   wrong: "reasonWrong",
   different_approach: "reasonDifferentApproach",
@@ -213,9 +212,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
         <p className="muted">{itemMeta(item, t, language)}</p>
         <p className="crew-review__level">
           <span className="muted">{t.levelLabel}</span>
-          <span className="badge" data-level={focus.level}>
-            {focus.level === "light" ? t.levelLight : t.levelItem}
-          </span>
+          <LevelBadge level={focus.level}>{focus.level === "light" ? t.levelLight : t.levelItem}</LevelBadge>
         </p>
       </header>
 
@@ -240,10 +237,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
           <ul className="crew-review__checks">
             {focus.checks.map((c) => (
               <li key={c.name}>
-                <span>{checkLabel(c.name, language)}</span>
-                <span className="badge" data-check={c.status}>
-                  {t[CHECK_TEXT[c.status]]}
-                </span>
+                <CheckRow name={c.name} status={c.status} language={language} />
               </li>
             ))}
           </ul>

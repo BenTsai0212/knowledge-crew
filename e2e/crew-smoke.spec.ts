@@ -78,6 +78,9 @@ test.describe("冒煙（主管，桌機）", () => {
     const panel = crewContent(page).getByRole("article");
     await expect(panel.getByRole("heading", { name: ct.review.points, exact: true })).toBeVisible();
     await expect(panel.getByRole("heading", { name: ct.review.checks, exact: true })).toBeVisible();
+    // 自動檢查列（#66）：每一項檢查是 .crew-check；「執行中」改為「檢查中」
+    await expect(panel.locator(".crew-check").first()).toBeVisible();
+    await expect(crewContent(page)).not.toContainText("執行中");
     await expectAiMarks(page);
   });
 
