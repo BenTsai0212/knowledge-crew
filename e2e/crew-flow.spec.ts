@@ -99,6 +99,6 @@ test("對照：Basil 的「文件」同意少看 → 少看、出現「收回」
   await expectLevel(page, "basil", "docs", ct.trust.levelItem);
   await expect(revoke).toHaveCount(0);
   // 收回後從收回之後重新累積（app/src/crew/trust/rules.ts 的 relaxSuggestion，rules.test.ts「revoke 後回到 item，並從 revoke 之後重新累積」），
-  // 所以建議不會馬上再出現。Issue #53 的驗收條件寫「建議再出現」，與這條規則不一致，待決定者決定（見 PR 描述）
+  // 所以建議不會馬上再出現。依 #53 的 `## 決定` 採用這條規則
   await expect(agree).toHaveCount(0);
 });
