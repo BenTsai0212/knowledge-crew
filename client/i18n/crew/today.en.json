@@ -1,5 +1,4 @@
 {
-  "title": "Today",
   "loading": "Loading…",
   "loadFailed": "Today’s data could not be loaded. Reload the page and try again.",
   "awaitingReview": "Awaiting review",

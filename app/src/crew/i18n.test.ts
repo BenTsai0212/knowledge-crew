@@ -57,8 +57,8 @@ describe("crewStrings", () => {
     for (const screen of screens) {
       for (const language of languages) expect(crewStrings(screen, language)).toBe(CREW_TRANSLATIONS[screen][language]);
     }
-    expect(crewStrings("today", "zh-TW").title).toBe("今天");
-    expect(crewStrings("today", "en").title).toBe("Today");
+    expect(crewStrings("today", "zh-TW").inProgress).toBe("進行中");
+    expect(crewStrings("today", "en").inProgress).toBe("In progress");
   });
 
   it("沒有的畫面或語言拋錯（與 knowledge-kit 的 strings() 相同）", () => {

@@ -1,5 +1,6 @@
 // 「員工」「信任」的資料整理（#37）：以匯入虛構資料後的資料庫，檢查三種身分的結果、同意少看與收回的寫入。
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import { openDatabase, type Database } from "../../db/database";
 import { crewMigrations } from "../db/migrate";
@@ -7,8 +8,10 @@ import { createReview, getAssignmentWorks, getTrustInputs } from "../db/store";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import type { DemoFile } from "../demo/types";
+import { crewStrings } from "../i18n";
 import { relaxSuggestion } from "../trust/rules";
 import { DEMO_PARAMS } from "../trust/demo-params";
+import { workTypeLabel } from "./labels";
 import { canReviewOf } from "./today";
 import { agreeRelax, readTrust, revokeRelax, type Trust, type TrustRow } from "./trust";
 
@@ -153,6 +156,29 @@ describe("同意少看與收回（每個測試用自己的資料庫）", () => {
       expect(after.lastReset).toBe(reviews.at(-1)!.decidedAt);
     } finally {
       await own.close();
+    }
+  });
+});
+
+describe("「信任」「員工」的文字", () => {
+  it("組合的標題在英文名字與中文之間留半形空格", () => {
+    expect(fill(crewStrings("trust", "zh-TW").rowTitle, { employee: "Basil", workType: workTypeLabel("docs", "zh-TW") })).toBe("Basil 的「文件」");
+  });
+
+  it("圓點的三種結果有不同的文字說明（不只靠顏色）", () => {
+    for (const language of clientConfig.client.languages) {
+      const t = crewStrings("trust", language);
+      expect(new Set([t.dotOk, t.dotWrong, t.dotNeutral]).size).toBe(3);
+    }
+    expect(crewStrings("trust", "zh-TW").dotNeutral).toContain("不影響信任");
+  });
+
+  it("兩個畫面的「逐項看／少看」文字一致", () => {
+    for (const language of clientConfig.client.languages) {
+      const e = crewStrings("employees", language);
+      const t = crewStrings("trust", language);
+      expect([e.levelItem, e.levelLight]).toEqual([t.levelItem, t.levelLight]);
+      expect(e.levelItem).not.toBe(e.levelLight);
     }
   });
 });
