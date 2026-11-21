@@ -461,6 +461,31 @@
           "checks": [{ "name": "ci", "status": "pending" }, { "name": "ci", "status": "pass" }]
         }
       ]
+    },
+    {
+      "employee": "basil", "workType": "docs",
+      "replies": [
+        {
+          "summary": { "zh-TW": "依交辦補上文件，請驗收", "en": "Docs added as assigned, ready for review" },
+          "body": { "zh-TW": "已依交辦補上文件，並在目錄加上連結。", "en": "Added the docs as assigned and linked them from the index." },
+          "points": [
+            { "zh-TW": "步驟的順序與實際操作是否一致", "en": "Whether the order of the steps matches the actual flow" },
+            { "zh-TW": "範例指令能否照著執行", "en": "Whether the example commands run as written" }
+          ],
+          "changes": [
+            { "path": "docs/guide/getting-started.md", "summary": { "zh-TW": "新增章節", "en": "Add a section" } },
+            { "path": "docs/README.md", "summary": { "zh-TW": "加上連結", "en": "Add a link" } }
+          ],
+          "checks": [{ "name": "links", "status": "pending" }, { "name": "links", "status": "pass" }, { "name": "ci", "status": "pass" }]
+        },
+        {
+          "summary": { "zh-TW": "依退回的意見修改文件", "en": "Revised the docs after the review" },
+          "body": { "zh-TW": "依退回的意見修改文件，請再驗收。", "en": "Revised the docs according to the review, ready again." },
+          "points": [{ "zh-TW": "修改的段落", "en": "The revised paragraphs" }],
+          "changes": [{ "path": "docs/guide/getting-started.md", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }],
+          "checks": [{ "name": "links", "status": "pending" }, { "name": "links", "status": "pass" }, { "name": "ci", "status": "pass" }]
+        }
+      ]
     }
   ]
 }
