@@ -29,6 +29,9 @@ async function seedAndInspect<T>(raw: unknown, inspect: (pg: PGliteInterface) =>
   return result;
 }
 
+// 開資料庫（套用全部 migration）的測試接近 Vitest 預設的 5 秒，CI 的 runner 較慢時會逾時（PR #47）
+const DB_TIMEOUT = 20_000;
+
 describe("demoSeed", () => {
   it("參考情境的 demo.json 存在", () => {
     expect(DEMO_RAW).not.toBeNull();
@@ -43,7 +46,7 @@ describe("demoSeed", () => {
       work_checks: works.reduce((n, w) => n + w.checks.length, 0),
     };
     expect(await seedAndInspect(DEMO_RAW, counts)).toEqual(expected);
-  });
+  }, DB_TIMEOUT);
 
   it("過去的時間原樣寫入；文字是 client.json 的 defaultLanguage", async () => {
     const j01 = demo.assignments.find((a) => a.id === "j01")!;
@@ -57,7 +60,7 @@ describe("demoSeed", () => {
     expect(row.assigned_at.toISOString()).toBe(new Date(j01.assignedAt).toISOString());
     expect(row.decided_at.toISOString()).toBe(new Date(j01.works[0].review!.decidedAt).toISOString());
     expect(row.reason).toBe("wrong");
-  });
+  }, DB_TIMEOUT);
 
   it("等待驗收的交辦：最後一輪已交件、沒有驗收", async () => {
     const pending = await seedAndInspect(DEMO_RAW, async (pg) =>
@@ -68,14 +71,14 @@ describe("demoSeed", () => {
         WHERE r.id IS NULL ORDER BY a.id`)).rows.map((r) => r.id),
     );
     expect(pending).toEqual(["b11", "j13"]);
-  });
+  }, DB_TIMEOUT);
 
   it("同一檢查有多筆時依檔案順序寫入（同時間時 id 較大的是後寫的）", async () => {
     const rows = await seedAndInspect(DEMO_RAW, async (pg) =>
       (await pg.query<{ status: string }>("SELECT status FROM crew.work_checks WHERE work_id = 'j01-w1' ORDER BY id")).rows,
     );
     expect(rows.map((r) => r.status)).toEqual(demo.assignments[0].works[0].checks.map((c) => c.status));
-  });
+  }, DB_TIMEOUT);
 
   it("驗證不通過時拋錯，一筆也不寫入", async () => {
     const bad = structuredClone(demo);
@@ -86,5 +89,5 @@ describe("demoSeed", () => {
     });
     expect(result.error).toMatch(/assignments\[3\]\.employee/);
     expect(result.counts).toEqual(Object.fromEntries(TABLES.map((t) => [t, 0])));
-  });
+  }, DB_TIMEOUT);
 });

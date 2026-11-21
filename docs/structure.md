@@ -247,20 +247,29 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
 - `trust/types.ts`：信任規則用的型別
 - `ui/assign.ts`：「交辦」的資料整理（`readAssign()`：交辦清單與表單的選項；`submitAssignment()`、`simulateAssignment()`：交辦與模擬交件；測試在 `assign.test.ts`）
+- `ui/AssignView.css`：「交辦」畫面的表單與交辦清單
+- `ui/AssignView.tsx`：「交辦」畫面：交辦表單、交辦清單與「模擬交件」（只呈現 `assign.ts` 的結果；表單與按鈕只給能驗收的身分）
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數）
 - `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
 - `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數；測試在 `employees.test.ts`）
+- `ui/EmployeesView.css`：「員工」畫面的員工卡片與層級的小表
+- `ui/EmployeesView.tsx`：「員工」畫面：只負責呈現 `employees.ts` 的結果（載入中、讀取失敗、員工卡片或空狀態）；只讀
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看，依時間新到舊；`filterLedger()`；測試在 `ledger.test.ts`）
 - `ui/LedgerView.css`：「工作帳本」畫面的篩選與紀錄
 - `ui/LedgerView.tsx`：「工作帳本」畫面：只負責呈現 `ledger.ts` 的結果（載入中、讀取失敗、空狀態、依員工與工作類型篩選的紀錄；只讀）
+- `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪；`initialSelection()`；測試在 `review.test.ts`）
+- `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上）
+- `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單與面板；進入時選取待驗收的第一筆；「通過」「退回」只給能驗收的身分，寫入後重新讀取
 - `ui/sections.ts`：子導覽的位置與名稱的鍵、畫面元件的 props
 - `ui/today.ts`：「今天」的資料整理（`readToday()`：待驗收、進行中、建議少看；測試在 `today.test.ts`）
 - `ui/TodayView.css`：「今天」畫面的三個區塊
 - `ui/TodayView.tsx`：「今天」畫面：只負責呈現 `today.ts` 的結果（載入中、讀取失敗、三個區塊或沒有要處理的事）
 - `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
+- `ui/TrustView.css`：「信任」畫面的卡片與圓點（三種結果以符號與文字區分）
+- `ui/TrustView.tsx`：「信任」畫面：呈現 `trust.ts` 的結果；「同意少看」「收回」只給能驗收的身分，寫入後重新讀取
 
 ### `app/src/db/`
 

@@ -1,0 +1,147 @@
+/* 「工作與驗收」畫面（#39）：寬螢幕左側清單、右側驗收面板；窄螢幕清單在上、面板在下。
+   顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
+.crew-review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .crew-review {
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  }
+}
+
+.crew-review h3,
+.crew-review h4,
+.crew-review p {
+  margin: 0;
+}
+
+.crew-review__list,
+.crew-review__panel,
+.crew-review__group,
+.crew-review__section,
+.crew-review__head {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.crew-review__list,
+.crew-review__panel {
+  gap: 1rem;
+}
+
+.crew-review__items,
+.crew-review__checks,
+.crew-review__changes {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crew-review__item {
+  display: grid;
+  justify-items: start;
+  gap: 0.15rem;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.crew-review__item[aria-current="true"] {
+  border-color: var(--color-primary);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.crew-review__item-title {
+  font-weight: 700;
+}
+
+.crew-review__ref {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.crew-review__level,
+.crew-review__checks li,
+.crew-review__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.crew-review__changes li {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.crew-review .badge[data-level="light"],
+.crew-review .badge[data-check="pass"],
+.crew-review .badge[data-verdict="accepted"] {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.crew-review .badge[data-check="fail"],
+.crew-review .badge[data-verdict="returned"] {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.crew-review__notice {
+  border-inline-start: 3px solid var(--color-border);
+  padding-inline-start: 0.5rem;
+}
+
+.crew-review__details summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.crew-review__body {
+  margin-top: 0.5rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.crew-review__note {
+  display: block;
+  margin-top: 0.25rem;
+  white-space: pre-wrap;
+}
+
+.crew-review__return {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: 0.75rem;
+}
+
+.crew-review__reason {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.crew-review__note-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.crew-review__note-field textarea {
+  min-height: 4rem;
+  font: inherit;
+}
