@@ -163,13 +163,12 @@ export function App() {
   // 輸入框的文字（「接著問」填進來），與「在圖譜中查看」要選取的實體
   const [draft, setDraft] = useState("");
   const [graphFocus, setGraphFocus] = useState<string | null>(null);
-  // knowledge-crew：從 crew 頁之外切到 crew 的某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；離開 crew 頁時清除，
-  // 之後從導覽切到 AI 員工時回到「今天」
+  // knowledge-crew：從 crew 頁之外切到 crew 的某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；離開 crew 頁時清除，從導覽進來時是「今天」
   const [crewRequest, setCrewRequest] = useState<{ target: CrewTarget; n: number } | null>(null);
   useEffect(() => {
     if (view !== "crew") setCrewRequest(null);
   }, [view]);
-  const openCrewAt = (target: CrewTarget) => (setCrewRequest((last) => ({ target, n: (last?.n ?? 0) + 1 })), setView("crew"));
+  const openCrew = (target: CrewTarget) => (setCrewRequest((last) => ({ target, n: (last?.n ?? 0) + 1 })), setView("crew"));
   // 展示模式的劇本（#260 決定 3）：目前題目是最後點的劇本題，只在記憶體；劇本切換身分時頂端列的身分徽章跳一下
   const [scriptCurrent, setScriptCurrent] = useState<string | null>(null);
   // （count 換 key 重播動畫；以頂端列手動切換身分時清除，不跳）
@@ -671,7 +670,7 @@ export function App() {
         identity={identity}
         language={language}
         documentId={documentId}
-        onOpen={(assignmentId) => (closeSource(), openCrewAt({ section: "works", assignmentId }))}
+        onOpen={(assignmentId) => (closeSource(), openCrew({ section: "works", assignmentId }))}
       />
     );
   // 桌機原文欄的 ✕：焦點回到引用標號（還在畫面上時）
@@ -1051,7 +1050,7 @@ export function App() {
             onOpenEntity={(id) => (setGraphFocus(id), setView("graph"))}
             todaySummary={<HomeTodaySummary state={crewToday} identity={identity} language={language} />}
             todayCard={
-              <HomeTodayCard state={crewToday} identity={identity} language={language} phone={phone} onOpen={openCrewAt} />
+              <HomeTodayCard state={crewToday} identity={identity} language={language} phone={phone} onOpen={openCrew} />
             }
           />
         </main>

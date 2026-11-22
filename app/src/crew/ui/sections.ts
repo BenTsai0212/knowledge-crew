@@ -32,7 +32,7 @@ export interface CrewScreenProps {
   navigate?: (target: CrewTarget) => void;
   /** 交辦頁預選的員工（#83：員工卡的「交辦給 ○○」） */
   employeeId?: string;
-  /** 「工作與驗收」選取的交辦（#92：原文的「來自 AI 員工 ○○」） */
+  /** 「工作與驗收」選取的交辦（#92：原文的「來自 AI 員工 ○○」；#96：首頁的今天的工作） */
   assignmentId?: string;
   /** 打開知識庫的原文（#92：回流的「已收進知識庫」；App 提供，沒有時不顯示「打開原文」） */
   onOpenSource?: (passageId: string) => void;
