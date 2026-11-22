@@ -7,6 +7,7 @@ import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import type { DemoFile } from "../demo/types";
+import { toPlainText } from "../work/body";
 import { initialSelection, readReviewPanel, readWorkList, RECENT_LIMIT } from "./review";
 import { canReviewOf } from "./today";
 
@@ -142,7 +143,8 @@ describe("readReviewPanel：匯入虛構資料後", () => {
       expect(p.item.sourceName).toBe(label("company-kb", language));
       expect(p.current.summary).toBe(w.summary[language]);
       expect(p.focus.points).toEqual(w.points.map((t) => t[language]));
-      expect(p.focus.body.text).toBe(w.body[language]);
+      expect(p.focus.body.text).toBe(toPlainText(w.body[language]));
+      expect(p.focus.body.text).not.toContain("@@");
       const c11 = (await panel(db, "manager", "c11", language))!;
       const cw = demo.assignments.find((a) => a.id === "c11")!.works[0];
       expect(c11.focus.changes).toEqual({ mode: "items", items: cw.changes.map((c) => ({ path: c.path, summary: c.summary[language] })) });

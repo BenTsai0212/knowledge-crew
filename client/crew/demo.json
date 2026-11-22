@@ -239,7 +239,10 @@
         {
           "round": 1, "submittedAt": "2026-10-24T11:00:00+08:00",
           "summary": { "zh-TW": "說明目前只寄送國內，附上代購的說明", "en": "Explain we ship domestically only and point to forwarding" },
-          "body": { "zh-TW": "說明目前只寄送國內，附上代購的說明。請看「要看的重點」。", "en": "Explain we ship domestically only and point to forwarding. See the points to review." },
+          "body": {
+            "zh-TW": "@@ reply/to\n陳先生\n@@ reply/subject\n海外寄送的詢問\n@@ reply/greeting\n陳先生您好，謝謝您的詢問。\n@@ reply/p2\n目前我們只寄送國內地址，暫時無法寄往海外。若需要寄往海外，可以先寄到國內的代收地址，再由代購或轉寄服務處理。\n@@ reply/closing\n〔1〕轉寄服務的費用與時間由該服務決定，我們無法代為負擔或保證。〔/1〕如有其他問題歡迎再與我們聯繫。",
+            "en": "@@ reply/to\nMr. Chen\n@@ reply/subject\nQuestion about overseas shipping\n@@ reply/greeting\nDear Mr. Chen, thank you for your question.\n@@ reply/p2\nWe currently ship to domestic addresses only and cannot ship overseas. If you need the item abroad, you can ship it to a domestic receiving address and use a forwarding service from there.\n@@ reply/closing\n〔1〕Fees and timing for forwarding are set by that service; we cannot cover or guarantee them.〔/1〕 Please let us know if you have any other questions."
+          },
           "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
           "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明寄送範圍", "en": "Explain where we ship" } }],
           "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-24T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-24T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-24T11:20:00+08:00" }],
@@ -254,7 +257,10 @@
         {
           "round": 1, "submittedAt": "2026-11-17T11:00:00+08:00",
           "summary": { "zh-TW": "回覆預購的到貨週與運費", "en": "Reply with the pre-order arrival week and shipping fee" },
-          "body": { "zh-TW": "回覆預購的到貨週與運費。請看「要看的重點」。", "en": "Reply with the pre-order arrival week and shipping fee. See the points to review." },
+          "body": {
+            "zh-TW": "@@ reply/to\n林小姐\n@@ reply/subject\n預購保溫瓶的到貨時間\n@@ reply/greeting\n林小姐您好，謝謝您的來信。\n@@ reply/p2\n您預購的保溫瓶預計在〔1〕12 月第 2 週〔/1〕到貨，出貨後會再寄送通知。\n@@ reply/closing\n運費部分，〔2〕單筆滿 NT$ 1,000 免運，未滿酌收運費 NT$ 80〔/2〕。如有其他問題歡迎再與我們聯繫。",
+            "en": "@@ reply/to\nMs. Lin\n@@ reply/subject\nArrival of your pre-ordered bottle\n@@ reply/greeting\nDear Ms. Lin, thank you for your message.\n@@ reply/p2\nYour pre-ordered bottle is expected to arrive in 〔1〕the second week of December〔/1〕. We will send another notice when it ships.\n@@ reply/closing\nAs for shipping, 〔2〕orders of NT$ 1,000 or more ship free; a NT$ 80 fee applies below that〔/2〕. Please let us know if you have any other questions."
+          },
           "points": [
             { "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" },
             { "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }
@@ -451,7 +457,10 @@
         {
           "round": 1, "submittedAt": "2026-10-27T11:00:00+08:00",
           "summary": { "zh-TW": "公告盤點期間暫停出貨的日期", "en": "Announce the dates shipping pauses for stocktake" },
-          "body": { "zh-TW": "公告盤點期間暫停出貨的日期。請看「要看的重點」。", "en": "Announce the dates shipping pauses for stocktake. See the points to review." },
+          "body": {
+            "zh-TW": "@@ post/account\n範例公司\n@@ post/title\n年終盤點暫停出貨公告\n@@ post/body\n因年終盤點，〔1〕12/28～12/30〔/1〕暫停出貨。期間仍可下單，訂單會在〔1〕12/31〔/1〕起依序出貨。\n@@ post/hashtags\n#出貨公告",
+            "en": "@@ post/account\nExample Co.\n@@ post/title\nShipping pauses for the year-end stocktake\n@@ post/body\nShipping pauses 〔1〕12/28 to 12/30〔/1〕 for the year-end stocktake. You can still order, and orders ship in sequence from 〔1〕12/31〔/1〕.\n@@ post/hashtags\n#ShippingNotice"
+          },
           "points": [{ "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }],
           "changes": [
             { "path": "post/title", "summary": { "zh-TW": "公告標題", "en": "Notice title" } },
@@ -469,7 +478,10 @@
         {
           "round": 1, "submittedAt": "2026-11-18T11:00:00+08:00",
           "summary": { "zh-TW": "介紹組合內容、售價與販售期間", "en": "Introduce the bundle contents, price and sale period" },
-          "body": { "zh-TW": "介紹組合內容、售價與販售期間。請看「要看的重點」。", "en": "Introduce the bundle contents, price and sale period. See the points to review." },
+          "body": {
+            "zh-TW": "@@ post/account\n範例公司\n@@ post/title\n冬季限定組合上市\n@@ post/body\n保溫瓶加上兩個杯套的冬季限定組合，售價〔1〕NT$ 1,580，比單買省 15%〔/1〕，〔1〕限量 300 組〔/1〕。\n販售期間為〔2〕12/1～12/31〔/2〕，售完為止。\n@@ post/hashtags\n#冬季限定 #保溫瓶\n@@ post/image\n組合的商品照\n@@ post/image-alt\n保溫瓶與兩個杯套放在木桌上",
+            "en": "@@ post/account\nExample Co.\n@@ post/title\nThe winter bundle is here\n@@ post/body\nOur winter bundle pairs a bottle with two sleeves for 〔1〕NT$ 1,580, 15% off buying them separately〔/1〕, with 〔1〕only 300 sets〔/1〕.\nOn sale 〔2〕12/1 to 12/31〔/2〕 while stocks last.\n@@ post/hashtags\n#WinterEdition #Bottles\n@@ post/image\nProduct photo of the bundle\n@@ post/image-alt\nA bottle and two sleeves on a wooden table"
+          },
           "points": [
             { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" },
             { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }
@@ -676,7 +688,10 @@
         {
           "round": 1, "submittedAt": "2026-10-27T11:00:00+08:00",
           "summary": { "zh-TW": "說明向供應商下單的步驟與審核", "en": "Describe the steps and approvals for supplier orders" },
-          "body": { "zh-TW": "說明向供應商下單的步驟與審核。請看「要看的重點」。", "en": "Describe the steps and approvals for supplier orders. See the points to review." },
+          "body": {
+            "zh-TW": "@@ kb/supplier-orders | 供應商下單流程\n@@ kb/supplier-orders#owner [required] | 負責部門\n〔1〕採購組〔/1〕\n@@ kb/supplier-orders#steps [required] | 步驟\n1. 在採購表單填寫品項與數量。\n2. 金額超過 NT$ 50,000 時，由〔1〕採購組〔/1〕主管核准。\n3. 核准後寄出訂單，並在表單記錄預計到貨日。\n@@ kb/supplier-orders#updated [point 2] | 最後更新\n2025 年 3 月",
+            "en": "@@ kb/supplier-orders | Supplier ordering process\n@@ kb/supplier-orders#owner [required] | Owner department\n〔1〕Purchasing〔/1〕\n@@ kb/supplier-orders#steps [required] | Steps\n1. Fill in the items and quantities on the purchase form.\n2. Orders over NT$ 50,000 are approved by the 〔1〕Purchasing〔/1〕 lead.\n3. Once approved, send the order and record the expected arrival date on the form.\n@@ kb/supplier-orders#updated [point 2] | Last updated\nMarch 2025"
+          },
           "points": [
             { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
             { "zh-TW": "過期的資訊", "en": "Outdated information" }
@@ -694,7 +709,10 @@
         {
           "round": 1, "submittedAt": "2026-11-18T11:00:00+08:00",
           "summary": { "zh-TW": "新增預購的付款、到貨與取消規則", "en": "Add payment, delivery and cancellation rules for pre-orders" },
-          "body": { "zh-TW": "新增預購的付款、到貨與取消規則。請看「要看的重點」。", "en": "Add payment, delivery and cancellation rules for pre-orders. See the points to review." },
+          "body": {
+            "zh-TW": "@@ kb/pre-orders | 預購商品說明\n@@ kb/pre-orders#owner [required] [point 1] | 負責部門\n電商營運組\n@@ kb/pre-orders#payment | 付款方式\n預購商品在下單時全額付款，可使用信用卡或轉帳。\n@@ kb/pre-orders#arrival | 到貨時間\n預購商品在〔2〕下單後 4 至 6 週〔/2〕到貨，實際日期以出貨通知為準。\n@@ kb/pre-orders#cancellation | 取消規則\n出貨前可以免費取消，款項在 7 個工作天內退回。\n@@ kb/pre-orders#effective-date [required] | 生效日期",
+            "en": "@@ kb/pre-orders | Pre-order items\n@@ kb/pre-orders#owner [required] [point 1] | Owner department\nE-commerce operations\n@@ kb/pre-orders#payment | Payment\nPre-orders are paid in full when ordered, by credit card or bank transfer.\n@@ kb/pre-orders#arrival | Arrival\nPre-orders arrive 〔2〕4 to 6 weeks after ordering〔/2〕; the shipping notice gives the exact date.\n@@ kb/pre-orders#cancellation | Cancellation\nOrders can be cancelled free of charge before shipping; refunds take 7 business days.\n@@ kb/pre-orders#effective-date [required] | Effective date"
+          },
           "points": [
             { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
             { "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }
@@ -795,7 +813,10 @@
         {
           "round": 1, "externalRef": "37", "submittedAt": "2026-10-22T11:00:00+08:00",
           "summary": { "zh-TW": "頁尾加入客服時間，從設定檔讀取", "en": "Show support hours in the footer from config" },
-          "body": { "zh-TW": "頁尾加入客服時間，從設定檔讀取。請看「要看的重點」。", "en": "Show support hours in the footer from config. See the points to review." },
+          "body": {
+            "zh-TW": "@@ src/layout/Footer.tsx [modified]\n頁尾加入客服時間，從設定檔讀取；〔1〕假日顯示「假日休息」〔/1〕。\n@@ src/config/support.ts [added]\n新增客服時間的設定：平日 9:00～18:00。\n@@ pr/description\n頁尾加入客服時間，時間改由設定檔管理。\n- 〔1〕國定假日依設定檔的日期清單判斷〔/1〕。",
+            "en": "@@ src/layout/Footer.tsx [modified]\nShow support hours in the footer, read from config; 〔1〕on holidays it shows \"Closed for the holiday\"〔/1〕.\n@@ src/config/support.ts [added]\nAdd the support hours config: weekdays 9:00 to 18:00.\n@@ pr/description\nShow support hours in the footer, managed in a config file.\n- 〔1〕Public holidays come from a list of dates in the config〔/1〕."
+          },
           "points": [{ "zh-TW": "假日的顯示", "en": "Display on holidays" }],
           "changes": [
             { "path": "src/layout/Footer.tsx", "summary": { "zh-TW": "加入客服時間", "en": "Add support hours" } },
@@ -813,7 +834,10 @@
         {
           "round": 1, "externalRef": "38", "submittedAt": "2026-11-19T11:00:00+08:00",
           "summary": { "zh-TW": "常見問題頁加入關鍵字搜尋", "en": "Add keyword search to the FAQ page" },
-          "body": { "zh-TW": "常見問題頁加入關鍵字搜尋。請看「要看的重點」。", "en": "Add keyword search to the FAQ page. See the points to review." },
+          "body": {
+            "zh-TW": "@@ src/faq/FaqSearch.tsx [added]\n新增搜尋框：依問題與答案的文字篩選，〔1〕沒有結果時顯示「找不到相關問題」與清除按鈕〔/1〕。\n@@ src/faq/FaqPage.tsx [modified]\n在問題清單上方接上搜尋框，搜尋時只顯示符合的問題。\n@@ pr/description\n常見問題頁加入關鍵字搜尋。\n- 比對時不分英文大小寫與全形半形，〔2〕中英文混合的關鍵字以空白分開後逐一比對〔/2〕。\n- 新增搜尋與沒有結果的單元測試。",
+            "en": "@@ src/faq/FaqSearch.tsx [added]\nAdd a search box that filters by question and answer text; 〔1〕when nothing matches, show \"No matching questions\" and a clear button〔/1〕.\n@@ src/faq/FaqPage.tsx [modified]\nPut the search box above the question list and show only matching questions while searching.\n@@ pr/description\nAdd keyword search to the FAQ page.\n- Matching ignores letter case and full-width or half-width forms; 〔2〕mixed-language keywords are split on spaces and matched one by one〔/2〕.\n- Add unit tests for search and for no results."
+          },
           "points": [
             { "zh-TW": "沒有結果時的畫面", "en": "Screen when nothing matches" },
             { "zh-TW": "中英文混合的搜尋", "en": "Searching mixed-language text" }
@@ -837,7 +861,10 @@
       "replies": [
         {
           "summary": { "zh-TW": "已擬好回信，請驗收", "en": "Reply drafted, ready for review" },
-          "body": { "zh-TW": "回覆詢問配送時間的信，說明到貨日期與運費。", "en": "Reply to a question about delivery time, with the arrival date and shipping fee." },
+          "body": {
+            "zh-TW": "@@ reply/to\n張小姐\n@@ reply/subject\n訂單的配送時間\n@@ reply/greeting\n張小姐您好，謝謝您的來信。\n@@ reply/p2\n您的訂單預計在〔1〕3 個工作天內〔/1〕送達，出貨後會寄送通知。\n@@ reply/closing\n這筆訂單〔2〕已滿 NT$ 1,000，免運費〔/2〕。如有其他問題歡迎再與我們聯繫。",
+            "en": "@@ reply/to\nMs. Chang\n@@ reply/subject\nDelivery time for your order\n@@ reply/greeting\nDear Ms. Chang, thank you for your message.\n@@ reply/p2\nYour order is expected to arrive 〔1〕within 3 business days〔/1〕. We will send a notice when it ships.\n@@ reply/closing\nThis order 〔2〕is over NT$ 1,000, so shipping is free〔/2〕. Please let us know if you have any other questions."
+          },
           "points": [
             { "zh-TW": "答應的到貨或回覆日期", "en": "Delivery or reply dates promised to the customer" },
             { "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }
@@ -850,7 +877,10 @@
         },
         {
           "summary": { "zh-TW": "依退回的意見修改回信", "en": "Revised the reply after the review" },
-          "body": { "zh-TW": "依退回的意見改寫第 2 段與結尾，請再驗收。", "en": "Rewrote the second paragraph and closing per the review, ready again." },
+          "body": {
+            "zh-TW": "@@ reply/to\n張小姐\n@@ reply/subject\n訂單的配送時間\n@@ reply/greeting\n張小姐您好，謝謝您的來信。\n@@ reply/p2 [point 1]\n您的訂單已在今天出貨，預計 3 個工作天內送達，可以依出貨通知查詢配送進度。\n@@ reply/closing [point 1]\n這筆訂單已滿 NT$ 1,000，運費由我們負擔。如有其他問題歡迎再與我們聯繫。",
+            "en": "@@ reply/to\nMs. Chang\n@@ reply/subject\nDelivery time for your order\n@@ reply/greeting\nDear Ms. Chang, thank you for your message.\n@@ reply/p2 [point 1]\nYour order shipped today and should arrive within 3 business days; the shipping notice lets you track it.\n@@ reply/closing [point 1]\nThis order is over NT$ 1,000, so we cover the shipping. Please let us know if you have any other questions."
+          },
           "points": [{ "zh-TW": "修改的段落", "en": "The revised paragraphs" }],
           "changes": [
             { "path": "reply/p2", "summary": { "zh-TW": "依意見改寫", "en": "Rewrite per the review" } },
@@ -865,7 +895,10 @@
       "replies": [
         {
           "summary": { "zh-TW": "已擬好貼文，請驗收", "en": "Post drafted, ready for review" },
-          "body": { "zh-TW": "新品介紹貼文，包含售價與活動期限。", "en": "A new product post with the price and campaign deadline." },
+          "body": {
+            "zh-TW": "@@ post/account\n範例公司\n@@ post/title\n新品保溫杯上市\n@@ post/body\n新品保溫杯售價〔1〕NT$ 890〔/1〕，〔2〕即日起至月底〔/2〕購買加贈杯套。\n@@ post/hashtags\n#新品 #保溫杯",
+            "en": "@@ post/account\nExample Co.\n@@ post/title\nMeet our new tumbler\n@@ post/body\nThe new tumbler is 〔1〕NT$ 890〔/1〕, with a free sleeve 〔2〕from today until the end of the month〔/2〕.\n@@ post/hashtags\n#NewArrival #Tumbler"
+          },
           "points": [
             { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" },
             { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }
@@ -878,7 +911,10 @@
         },
         {
           "summary": { "zh-TW": "依退回的意見修改貼文", "en": "Revised the post after the review" },
-          "body": { "zh-TW": "依退回的意見修改標題與內文，請再驗收。", "en": "Revised the title and body per the review, ready again." },
+          "body": {
+            "zh-TW": "@@ post/account\n範例公司\n@@ post/title [point 1]\n新品保溫杯開賣\n@@ post/body [point 1]\n新品保溫杯售價 NT$ 890，本月底前購買加贈杯套，贈品送完為止。\n@@ post/hashtags\n#新品 #保溫杯",
+            "en": "@@ post/account\nExample Co.\n@@ post/title [point 1]\nOur new tumbler is on sale\n@@ post/body [point 1]\nThe new tumbler is NT$ 890, with a free sleeve until the end of this month while supplies last.\n@@ post/hashtags\n#NewArrival #Tumbler"
+          },
           "points": [{ "zh-TW": "修改的部分", "en": "What changed since the last round" }],
           "changes": [
             { "path": "post/title", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } },
@@ -893,7 +929,10 @@
       "replies": [
         {
           "summary": { "zh-TW": "已整理成知識庫條目，請驗收", "en": "Knowledge base entry ready for review" },
-          "body": { "zh-TW": "新增「保固申請」條目，標出不確定的型號與可能重複的條目。", "en": "Added a warranty claim entry, flagging uncertain model numbers and possible duplicates." },
+          "body": {
+            "zh-TW": "@@ kb/warranty-claims [point 2] | 保固申請\n@@ kb/warranty-claims#owner [required] | 負責部門\n客服組\n@@ kb/warranty-claims#models | 適用型號\n〔1〕TB-500 與 TB-750〔/1〕\n@@ kb/warranty-claims#steps | 步驟\n附上購買證明與商品照片，向客服信箱提出申請。",
+            "en": "@@ kb/warranty-claims [point 2] | Warranty claims\n@@ kb/warranty-claims#owner [required] | Owner department\nCustomer support\n@@ kb/warranty-claims#models | Models\n〔1〕TB-500 and TB-750〔/1〕\n@@ kb/warranty-claims#steps | Steps\nSend proof of purchase and a photo of the item to the support inbox."
+          },
           "points": [
             { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
             { "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }
@@ -906,7 +945,10 @@
         },
         {
           "summary": { "zh-TW": "依退回的意見修改條目", "en": "Revised the entry after the review" },
-          "body": { "zh-TW": "依退回的意見補上欄位並合併重複的條目，請再驗收。", "en": "Filled in the fields and merged the duplicate entry per the review, ready again." },
+          "body": {
+            "zh-TW": "@@ kb/warranty-claims [point 1] | 保固申請\n@@ kb/warranty-claims#owner [required] | 負責部門\n客服組\n@@ kb/warranty-claims#models | 適用型號\nTB-500 與 TB-750\n@@ kb/warranty-claims#period [point 1] | 保固期限\n自購買日起一年。\n@@ kb/warranty-claims#steps | 步驟\n附上購買證明與商品照片，向客服信箱提出申請。",
+            "en": "@@ kb/warranty-claims [point 1] | Warranty claims\n@@ kb/warranty-claims#owner [required] | Owner department\nCustomer support\n@@ kb/warranty-claims#models | Models\nTB-500 and TB-750\n@@ kb/warranty-claims#period [point 1] | Warranty period\nOne year from the date of purchase.\n@@ kb/warranty-claims#steps | Steps\nSend proof of purchase and a photo of the item to the support inbox."
+          },
           "points": [{ "zh-TW": "補上的欄位與合併的條目", "en": "Added fields and the merged entry" }],
           "changes": [{ "path": "kb/warranty-claims", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }],
           "checks": [{ "name": "format", "status": "pass" }, { "name": "required-fields", "status": "pass" }]
@@ -918,7 +960,10 @@
       "replies": [
         {
           "summary": { "zh-TW": "依交辦完成，請驗收", "en": "Done as assigned, ready for review" },
-          "body": { "zh-TW": "官網聯絡表單加上欄位驗證，並附上畫面的變更。", "en": "Added field validation to the site contact form, with the UI changes." },
+          "body": {
+            "zh-TW": "@@ src/contact/ContactForm.tsx [modified]\n送出前檢查必填欄位與電子郵件的格式，〔1〕錯誤訊息顯示在欄位下方，並以 aria-describedby 連到欄位〔/1〕。\n@@ src/contact/validate.ts [added]\n新增必填、長度與電子郵件格式的驗證規則。\n@@ pr/description\n官網聯絡表單加上欄位驗證。\n- 新增驗證規則的單元測試。",
+            "en": "@@ src/contact/ContactForm.tsx [modified]\nCheck required fields and the email format before sending; 〔1〕error messages appear under each field and are linked with aria-describedby〔/1〕.\n@@ src/contact/validate.ts [added]\nAdd validation rules for required fields, length and email format.\n@@ pr/description\nAdd field validation to the site contact form.\n- Add unit tests for the validation rules."
+          },
           "points": [{ "zh-TW": "錯誤訊息與欄位的關聯", "en": "Error messages are linked to their fields" }],
           "changes": [
             { "path": "src/contact/ContactForm.tsx", "summary": { "zh-TW": "加上驗證", "en": "Add validation" } },
@@ -928,7 +973,10 @@
         },
         {
           "summary": { "zh-TW": "依退回的意見修改", "en": "Revised after the review" },
-          "body": { "zh-TW": "依退回的意見修改，請再驗收。", "en": "Revised according to the review, ready again." },
+          "body": {
+            "zh-TW": "@@ src/contact/ContactForm.tsx [modified] [point 1]\n錯誤訊息改為送出後才顯示，並把焦點移到第一個有錯誤的欄位。\n@@ src/contact/validate.ts [added]\n新增必填、長度與電子郵件格式的驗證規則。\n@@ pr/description\n官網聯絡表單加上欄位驗證；依意見調整錯誤訊息的顯示時機。\n- 新增驗證規則的單元測試。",
+            "en": "@@ src/contact/ContactForm.tsx [modified] [point 1]\nShow error messages only after sending, and move focus to the first field with an error.\n@@ src/contact/validate.ts [added]\nAdd validation rules for required fields, length and email format.\n@@ pr/description\nAdd field validation to the site contact form; error messages now appear after sending, per the review.\n- Add unit tests for the validation rules."
+          },
           "points": [{ "zh-TW": "修改的部分", "en": "What changed since the last round" }],
           "changes": [{ "path": "src/contact/ContactForm.tsx", "summary": { "zh-TW": "依意見修改", "en": "Revise per the review" } }],
           "checks": [{ "name": "ci", "status": "pending" }, { "name": "ci", "status": "pass" }]

@@ -2,6 +2,7 @@
 // seed 在匯入前呼叫，有錯就不寫入。check:client 不讀 client/crew/，所以形狀也在這裡檢查。
 import type { AccessFile, LanguageCode } from "../../client/types";
 import { SOURCE_KINDS } from "../db/store";
+import { parseWorkBody, type WorkSection } from "../work/body";
 import type { DemoFile } from "./types";
 
 export interface ValidateOptions {
@@ -15,6 +16,18 @@ const STATUS = ["pass", "fail", "pending"];
 const REASON = ["wrong", "different_approach", "process"];
 const DECISION = ["relax", "revoke"];
 const ORG = "example-org/";
+
+// 交件全文的鍵與工作類型（docs/crew/work-body-format.md）：dev 是程式檔案路徑與 pr/description；其他工作類型不檢查
+const NON_CODE = ["reply/", "post/", "kb/"];
+const KEY_PREFIX: Record<string, string | null> = { support: "reply/", content: "post/", knowledge: "kb/", dev: null };
+function keyFits(workType: string, key: string): boolean {
+  if (!Object.hasOwn(KEY_PREFIX, workType)) return true;
+  const prefix = KEY_PREFIX[workType];
+  return prefix ? key.startsWith(prefix) : !NON_CODE.some((p) => key.startsWith(p));
+}
+// 兩種語言必須相同的部分：鍵與順序、屬性、各區塊的重點編號（名稱與文字可以不同）
+const shape = (s: WorkSection) =>
+  [s.key, s.attrs.required, s.attrs.change, s.attrs.points.join(","), [...new Set(s.marks.map((m) => m.point))].sort((a, b) => a - b).join(",")].join(" ");
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -70,6 +83,33 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
   };
   const ordered = (earlier: number, later: number, path: string, message: string, strict = true) => {
     if (!Number.isNaN(earlier) && !Number.isNaN(later) && (strict ? earlier >= later : earlier > later)) err(path, message);
+  };
+
+  // 交件全文的格式（#65）：有標頭行的全文要能解析、每個重點都有位置、每個 changes[].path 是區塊的鍵、兩種語言對齊。
+  // 沒有標頭行的舊全文（一行摘要）不檢查位置；等待驗收的交件必須是有結構的全文。
+  const body = (w: Obj, path: string, workType: string, awaiting: boolean) => {
+    const texts = w.body;
+    if (!isObj(texts)) return;
+    const count = list(w.points).length;
+    const parsed = languages.flatMap((lang) => (typeof texts[lang] === "string" ? [[lang, parseWorkBody(texts[lang] as string, count)] as const] : []));
+    const structured = parsed.filter(([, p]) => p.structured).length;
+    if (structured === 0) {
+      if (awaiting && parsed.length > 0) err(`${path}.body`, "must have sections while waiting for review");
+      return;
+    }
+    if (structured < parsed.length) return err(`${path}.body`, "must have sections in every language or in none");
+    const paths = list(w.changes).flatMap((c) => (isObj(c) && typeof c.path === "string" ? [c.path] : []));
+    const [base, first] = parsed[0];
+    for (const [lang, p] of parsed) {
+      const at = `${path}.body.${lang}`;
+      for (const e of p.errors) err(at, `line ${e.line}: ${e.code}${e.key ? ` (${e.key})` : ""}`);
+      p.points.forEach((locations, i) => locations.length === 0 && err(at, `point ${i + 1} must be marked in the body`));
+      const keys = new Set(p.sections.map((s) => s.key));
+      for (const c of paths) if (!keys.has(c)) err(at, `changes path ${c} must be a section key`);
+      for (const s of p.sections) if (s.key !== null && !keyFits(workType, s.key)) err(at, `section ${s.key} does not fit work type ${workType}`);
+      if (lang !== base && p.sections.map(shape).join("\n") !== first.sections.map(shape).join("\n"))
+        err(at, `sections must match ${base} (keys, order, attributes and points)`);
+    }
   };
 
   if (!isObj(raw)) return ["demo: must be an object"];
@@ -143,6 +183,8 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
         str(c, "path", cp);
         loc(c.summary, `${cp}.summary`);
       }
+      const isLast = i === works.length - 1;
+      body(w, wp, String(a.workType), isLast && !isObj(w.review));
       let latestCheck = submitted;
       for (const [c, cp] of objects(w, "checks", wp)) {
         str(c, "name", cp);
@@ -151,7 +193,6 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
         ordered(submitted, at, `${cp}.checkedAt`, "must not be before the work was submitted", false);
         latestCheck = Math.max(latestCheck, at);
       }
-      const isLast = i === works.length - 1;
       if (!isObj(w.review)) {
         if (!isLast) err(`${wp}.review`, "only the last round may be waiting for review");
         return;
@@ -197,6 +238,7 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
         str(c, "path", cp);
         loc(c.summary, `${cp}.summary`);
       }
+      body(r, rp, String(s.workType), false);
       for (const [c, cp] of objects(r, "checks", rp)) {
         str(c, "name", cp);
         oneOf(c, "status", cp, STATUS);

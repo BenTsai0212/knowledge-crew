@@ -5,6 +5,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredWork } from "../db/store";
 import { demoText } from "../demo/texts";
+import { toPlainText } from "../work/body";
 import { sourceLabel } from "./refs";
 import { reviewFocus, reviewLevel } from "../trust/rules";
 import type { ReturnReason, ReviewFocus, Verdict } from "../trust/types";
@@ -162,7 +163,8 @@ function localize(w: StoredWork, language: LanguageCode): StoredWork {
   return {
     ...w,
     summary: demoText("summary", w.id, language) ?? w.summary,
-    body: demoText("body", w.id, language) ?? w.body,
+    // 驗收面板 v3 之前的過渡顯示：有結構的全文轉成純文字（#65 的計畫第 3 點）
+    body: toPlainText(demoText("body", w.id, language) ?? w.body),
     points: w.points.map((p, i) => demoText("point", `${w.id}/${i + 1}`, language) ?? p),
     changes: w.changes.map((c, i) => ({ ...c, summary: demoText("change", `${w.id}/${i + 1}`, language) ?? c.summary })),
   };

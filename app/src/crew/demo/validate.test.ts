@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { clientConfig } from "../../client/load";
 import type { AccessFile } from "../../client/types";
+import { parseWorkBody } from "../work/body";
 import { DEMO, DEMO_RAW } from "./load";
 import { demoText, demoTextIndex } from "./texts";
 import { demoWorkId, type DemoFile } from "./types";
@@ -17,6 +18,8 @@ const access: AccessFile = {
   ],
 };
 const NOW = new Date("2026-11-01T00:00:00Z");
+// 有結構的全文（#65）：等待驗收的交件必須是這種寫法
+const SECTIONS = t("@@ src/a.ts [modified]\n加上〔1〕排序〔/1〕", "@@ src/a.ts [modified]\nAdd 〔1〕sorting〔/1〕");
 
 // 最小的虛構資料：一筆交辦，第 1 輪退回、第 2 輪通過；另一筆等待驗收
 function fixture(): DemoFile {
@@ -58,7 +61,7 @@ function fixture(): DemoFile {
         title: t("排序", "Sorting"),
         assignedBy: "manager",
         assignedAt: "2026-09-04T09:00:00+08:00",
-        works: [{ ...work(1, 5), externalRef: "301" }],
+        works: [{ ...work(1, 5), externalRef: "301", body: SECTIONS }],
       },
     ],
     levelDecisions: [
@@ -184,6 +187,44 @@ describe("validateDemo", () => {
     expect(duplicated.join("\n")).toContain("assignments[1].externalRef: duplicate");
   });
 
+  const awaiting = (d: any) => d.assignments[1].works[0];
+  it.each([
+    ["等待驗收的交件是一行摘要", (d: any) => (awaiting(d).body = t("本文", "Body")), "works[0].body: must have sections while waiting for review"],
+    ["只有一種語言有結構", (d: any) => (awaiting(d).body.en = "Body"), "works[0].body: must have sections in every language or in none"],
+    ["格式錯誤（標記沒有關閉）", (d: any) => (awaiting(d).body.en = "@@ src/a.ts [modified]\nAdd 〔1〕sorting"), "works[0].body.en: line 2: unclosed-mark (src/a.ts)"],
+    ["重點沒有標出位置", (d: any) => awaiting(d).points.push(t("第二個重點", "Second point")), "works[0].body.zh-TW: point 2 must be marked in the body"],
+    ["changes 的位置不是區塊的鍵", (d: any) => (awaiting(d).changes[0].path = "src/b.ts"), "works[0].body.en: changes path src/b.ts must be a section key"],
+    ["兩種語言的屬性不同", (d: any) => (awaiting(d).body.en = "@@ src/a.ts [added]\nAdd 〔1〕sorting〔/1〕"), "works[0].body.en: sections must match zh-TW"],
+    ["兩種語言的重點位置不同", (d: any) => (awaiting(d).body.en = "@@ src/a.ts [modified] [point 1]\nAdd sorting"), "works[0].body.en: sections must match zh-TW"],
+    [
+      "區塊的鍵不符合工作類型",
+      (d: any) => {
+        d.workTypes.push("support");
+        d.assignments[1].workType = "support";
+      },
+      "works[0].body.zh-TW: section src/a.ts does not fit work type support",
+    ],
+    ["模擬回覆的全文也檢查", (d: any) => (d.simulations[0].replies[0].body = { ...SECTIONS, en: "@@ src/a.ts\nAdd sorting" }), "simulations[0].replies[0].body.en: point 1 must be marked"],
+  ])("交件全文（#65）：%s", (_name, change, expected) => {
+    expect(errorsAfter(change).join("\n")).toContain(expected);
+  });
+
+  it("交件全文：一行摘要的歷史交件與模擬回覆不檢查位置（舊格式）", () => {
+    expect(errorsAfter((d: any) => (d.simulations[0].replies[0].points = [t("一", "One"), t("二", "Two")]))).toEqual([]);
+  });
+
+  it("demo.json：改寫的 16 份全文都有結構，其他交件維持一行摘要（#65 的 `## 決定` 3）", () => {
+    const rewritten = ["s14", "c11", "k13", "j06", "s13", "c10", "k12", "j05"];
+    const works = DEMO!.assignments.flatMap((a) => a.works.map((w) => ({ id: a.id, w })));
+    const replies = DEMO!.simulations.flatMap((s) => s.replies);
+    for (const language of clientConfig.client.languages) {
+      const structured = (w: { body: Record<string, string>; points: unknown[] }) => parseWorkBody(w.body[language], w.points.length).structured;
+      expect(works.filter(({ w }) => structured(w)).map(({ id }) => id).sort(), language).toEqual([...rewritten].sort());
+      expect(replies.every(structured), language).toBe(true);
+    }
+    expect(rewritten.length + replies.length).toBe(16);
+  });
+
   it("來源的顯示名稱（label）可以省略；有的話雙語齊全即通過（#60）", () => {
     expect(errorsAfter((d: any) => (d.sources[0].label = t("筆記", "Notes")))).toEqual([]);
     expect(errorsAfter((d: any) => delete d.sources[0].label)).toEqual([]);
@@ -210,7 +251,7 @@ describe("demoText", () => {
     expect(demoText("title", "j01", "en", index)).toBe("Empty state");
     expect(demoText("roleNote", "juniper", "zh-TW", index)).toBe("前端與畫面");
     expect(demoText("summary", w1, "en", index)).toBe("Summary");
-    expect(demoText("body", "j02-w1", "zh-TW", index)).toBe("本文");
+    expect(demoText("body", w1, "zh-TW", index)).toBe("本文");
     expect(demoText("point", `${w1}/1`, "en", index)).toBe("Point");
     expect(demoText("change", `${w1}/1`, "zh-TW", index)).toBe("變更");
   });
