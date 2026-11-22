@@ -80,5 +80,13 @@
   "reasonSeparator": "・",
   "impactTrust": "影響信任",
   "impactNone": "不影響信任",
-  "viewOnlyNote": "你目前的身分只能查看，通過或退回由能驗收的身分進行。"
+  "viewOnlyNote": "你目前的身分只能查看，通過或退回由能驗收的身分進行。",
+  "fieldRequired": "必填",
+  "fieldEmptyRequired": "空白・必填",
+  "fieldEmpty": "（空白）",
+  "codeFiles": "變更的檔案",
+  "fileAdded": "新增",
+  "fileModified": "修改",
+  "codeDiff": "到 GitHub 看差異：{ref}",
+  "mergeNote": "通過只記錄驗收；合併在 GitHub 進行"
 }

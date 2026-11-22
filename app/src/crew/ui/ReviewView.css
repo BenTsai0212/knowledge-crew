@@ -337,6 +337,127 @@ button.crew-review__confirm {
   color: var(--color-surface);
 }
 
+/* 四種交件（#72 計畫第 3 點） */
+.crew-review__reply-head {
+  display: grid;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.75rem;
+}
+
+.crew-review__reply-head .crew-review__block-text {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.crew-review__block[data-part="reply/subject"] .crew-review__block-text,
+.crew-review__block[data-part="post/title"] .crew-review__block-text {
+  font-weight: 700;
+}
+
+.crew-review__block[data-part="post/hashtags"] .crew-review__block-text {
+  color: var(--color-textMuted);
+}
+
+.crew-review__block[data-part="post/image"] .crew-review__block-text {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surfaceRaised);
+  padding: 1.5rem 0.75rem;
+  color: var(--color-textMuted);
+  text-align: center;
+}
+
+.crew-review__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-inline-end: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.crew-review__kb-entry,
+.crew-review__kb-head {
+  display: grid;
+  gap: 0.5rem;
+}
+
+p.crew-review__kb-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.crew-review__kb-title[data-active] {
+  background: var(--color-surfaceRaised);
+}
+
+.crew-review__kb-title[data-point] {
+  border-inline-start: 2px solid var(--color-text);
+  padding-inline-start: 0.5rem;
+}
+
+.crew-review__fields {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.crew-review__fields dd {
+  margin: 0;
+}
+
+.crew-review__required {
+  margin-inline-start: 0.35rem;
+  font-size: 11px;
+}
+
+/* 空白的必填欄位 */
+.crew-review__empty-required {
+  display: block;
+  border: 1px dashed var(--color-danger);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  color: var(--color-danger);
+  font-size: 14px;
+}
+
+.crew-review__files {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crew-review__file {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.crew-review__file-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 14px;
+}
+
+.crew-review__pr .crew-review__block-text {
+  margin-top: 0.5rem;
+}
+
+.crew-review__code-ref,
+.crew-review__merge-note {
+  font-size: 14px;
+}
+
 @media (max-width: 599px) {
   .crew-review__block {
     grid-template-columns: minmax(0, 1fr);

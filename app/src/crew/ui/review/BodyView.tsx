@@ -1,33 +1,19 @@
 // 驗收面板 v3 的交件本身與重點卡（#72 計畫第 1、4 點）：依 parseWorkBody() 的區塊逐一列出，左側欄放區塊名稱與「已修改」，
 // 重點在內容中畫底線＋上標編號。不能標出重點（舊格式、解析有錯）時退回純文字。
 // 點選重點：重點卡的列是 aria-pressed 的按鈕，選中時內容中 data-point 相符的位置加 data-active（surfaceRaised 底）。
-// 四種交件各自的樣子在之後的 PR 依同一套標記加上。
+// 交件類型是回信、貼文、知識庫條目或程式修改時，依 Deliverables.tsx 以原本的樣子呈現。
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
 import type { ChangesView } from "../../trust/types";
 import { toPlainText, type ParsedBody, type WorkSection } from "../../work/body";
-import { crewStrings } from "../../i18n";
+import { crewStrings, type CrewTexts } from "../../i18n";
 import { isCodePosition, positionLabel } from "../glossary";
-import { pointPlaces } from "./conclusion";
-import { canMark, pointLocated, segments } from "./marked";
+import { pointPlaces, type Deliverable } from "./conclusion";
+import { CodeBody, KbBody, PostBody, ReplyBody } from "./Deliverables";
+import { canMark, pointLocated } from "./marked";
+import { Block, type ActivePoint, type SectionContext } from "./parts";
 
-/** 目前選中的重點編號（從 1 開始）；沒有選中是 null */
-export type ActivePoint = number | null;
-
-/** 元素的 data-point（以空白分隔的編號）是否含選中的重點 */
-const isActive = (points: readonly number[], active: ActivePoint) => active !== null && points.includes(active);
-
-/** 上標的重點編號；螢幕閱讀器讀「重點 N」 */
-function PointNumber({ n, language }: { n: number; language: LanguageCode }) {
-  return (
-    <>
-      <sup className="crew-point-number" aria-hidden="true">
-        {n}
-      </sup>
-      <span className="visually-hidden">{fill(crewStrings("review", language).pointMark, { n })}</span>
-    </>
-  );
-}
+export type { ActivePoint } from "./parts";
 
 interface PointListProps {
   points: string[];
@@ -86,22 +72,11 @@ export function PointList({ points, body, language, active = null, onToggle }: P
   );
 }
 
-/** 區塊的內容：依 marks 切成片段，重點片段畫底線＋上標 */
-function MarkedText({ section, language, active }: { section: WorkSection; language: LanguageCode; active: ActivePoint }) {
-  return (
-    <>
-      {segments(section.text, section.marks).map((s, i) =>
-        s.point === null ? (
-          s.text
-        ) : (
-          <span key={i} className="crew-review__mark" data-point={s.point} data-active={s.point === active || undefined}>
-            {s.text}
-            <PointNumber n={s.point} language={language} />
-          </span>
-        ),
-      )}
-    </>
-  );
+/** 一般的寫法（交件類型不是四種之一）的區塊名稱：程式檔案路徑以等寬字顯示 */
+function SectionName({ section: s, t, language }: { section: WorkSection; t: CrewTexts<"review">; language: LanguageCode }) {
+  if (s.key === "pr/description") return t.prDescription;
+  if (s.label !== null) return s.label;
+  return <span className={isCodePosition(s.key!) ? "crew-review__ref" : undefined}>{positionLabel(s.key!, language)}</span>;
 }
 
 interface BodyViewProps {
@@ -113,42 +88,38 @@ interface BodyViewProps {
   changes: ChangesView;
   language: LanguageCode;
   active?: ActivePoint;
+  /** 交件類型：決定呈現的樣子；null 是一般的寫法（依序列出區塊） */
+  deliverable?: Deliverable | null;
+  /** 程式修改的來源與編號（差異的參照） */
+  reference?: string | null;
 }
 
-export function BodyView({ name, body, raw, changes, language, active = null }: BodyViewProps) {
+export function BodyView({ name, body, raw, changes, language, active = null, deliverable = null, reference = null }: BodyViewProps) {
   const t = crewStrings("review", language);
-  const modified = new Map(changes.mode === "items" ? changes.items.map((c) => [c.path, c.summary]) : []);
-
-  const sectionName = (s: WorkSection) => (s.key === "pr/description" ? t.prDescription : (s.label ?? positionLabel(s.key!, language)));
+  const ctx: SectionContext = {
+    language,
+    active,
+    modified: new Map(changes.mode === "items" ? changes.items.map((c) => [c.path, c.summary]) : []),
+  };
+  const sections = body.sections;
   return (
-    <article className="card crew-review__body-card" aria-label={name}>
-      {canMark(body) ? (
-        <div className="crew-review__sections">
-          {body.sections.map((s) => {
-            const summary = modified.get(s.key!);
-            const whole = s.attrs.points;
-            return (
-              <div key={s.key} className="crew-review__block">
-                <div className="crew-review__block-name">
-                  <span className={isCodePosition(s.key!) && s.label === null && s.key !== "pr/description" ? "crew-review__ref" : undefined}>{sectionName(s)}</span>
-                  {whole.map((n) => (
-                    <PointNumber key={n} n={n} language={language} />
-                  ))}
-                  {summary !== undefined && <span className="crew-review__modified">{fill(t.modified, { summary })}</span>}
-                </div>
-                <div
-                  className="crew-review__block-text"
-                  data-point={whole.length > 0 ? whole.join(" ") : undefined}
-                  data-active={isActive(whole, active) || undefined}
-                >
-                  <MarkedText section={s} language={language} active={active} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
+    <article className="card crew-review__body-card" aria-label={name} data-deliverable={canMark(body) ? (deliverable ?? undefined) : undefined}>
+      {!canMark(body) ? (
         <p className="crew-review__body">{toPlainText(raw)}</p>
+      ) : deliverable === "reply" ? (
+        <ReplyBody sections={sections} ctx={ctx} />
+      ) : deliverable === "post" ? (
+        <PostBody sections={sections} ctx={ctx} />
+      ) : deliverable === "kb" ? (
+        <KbBody sections={sections} ctx={ctx} />
+      ) : deliverable === "code" ? (
+        <CodeBody sections={sections} ctx={ctx} reference={reference} />
+      ) : (
+        <div className="crew-review__sections">
+          {sections.map((s) => (
+            <Block key={s.key} section={s} name={<SectionName section={s} t={t} language={language} />} ctx={ctx} />
+          ))}
+        </div>
       )}
       {changes.mode === "items" ? (
         changes.items.length > 0 && (
