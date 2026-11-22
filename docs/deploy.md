@@ -2,6 +2,8 @@
 
 以參考情境 `client/` 運作、不用安裝就能試用的線上 demo（#100，RFC 0002 提案 5）。決策與取捨見 [ADR 0005](adr/0005-online-demo.md)。
 
+> **knowledge-crew**：本 repo 目前只部署只展示 AI 員工的版本（`knowledge-crew-demo`，見文末[只展示 AI 員工的線上 demo](#只展示-ai-員工的線上-demo)）。以下各節是含問答的版本，Worker 名稱已改為 `knowledge-crew-qa-demo`（#84），與 knowledge-kit 的線上 demo 在同一個 Cloudflare 帳號時不會覆蓋它。
+
 - **部署、secret 的設定與回退一律由人執行**；agent 不部署、不設定 secret，也不保存任何帳號的登入狀態。
 - merge 不會改變線上版本：沒有部署 workflow，線上版本只在人執行 `wrangler deploy` 時更新。
 
@@ -10,8 +12,8 @@
 | 項目 | 內容 |
 | --- | --- |
 | Worker | 一個 Worker 同時提供 `dist/` 的靜態檔與 `/api/*`（同站，不設 `ALLOWED_ORIGINS`） |
-| 設定 | `wrangler.jsonc` 的 `env.demo`：Worker 名稱 `knowledge-kit-demo`、`workers_dev: true`、計數用的 Durable Object、非機密的變數 |
-| 網址 | `https://knowledge-kit-demo.<帳號子網域>.workers.dev`（Cloudflare 提供的子網域，不買網域） |
+| 設定 | `wrangler.jsonc` 的 `env.demo`：Worker 名稱 `knowledge-crew-qa-demo`、`workers_dev: true`、計數用的 Durable Object、非機密的變數 |
+| 網址 | `https://knowledge-crew-qa-demo.<帳號子網域>.workers.dev`（Cloudflare 提供的子網域，不買網域） |
 | secret | `ANTHROPIC_API_KEY`、`ACCESS_CODES`（以 `wrangler secret put --env demo` 設定，不進 repo） |
 | 網頁的 build | `VITE_ONLINE_DEMO=1`、`VITE_PUBLIC_ACCESS_CODE=<公開碼>`，只用 `client/`（[docs/qa.md](qa.md)「線上 demo」） |
 
@@ -75,14 +77,14 @@ npm run check:client && npm test
 
 以訪客的身分（無痕視窗、桌機寬度）確認。引號內是畫面上的文字（`client/i18n/zh-TW.json`）：
 
-- [ ] `https://knowledge-kit-demo.<帳號子網域>.workers.dev/api/health` 回 `{"ok":true}`
+- [ ] `https://knowledge-crew-qa-demo.<帳號子網域>.workers.dev/api/health` 回 `{"ok":true}`
 - [ ] 登入頁：頂端列有「虛構資料」「展示用權限」兩個標籤
 - [ ] 登入頁的面板按「使用邀請碼體驗」：「輸入邀請碼」的邀請碼欄已填入公開碼，下方說明「線上 demo 已填入公開的試用碼，所有訪客共用每日的提問次數。」；按「開始使用」進入
 - [ ] 登入後：左側欄底部的虛線框是「虛構資料 · 展示用權限」
 - [ ] 左側欄點「問答」：頁首下方有「請勿輸入個人或機密資料：問題會傳給模型供應商。」；點一題預設問題（輸入框上方），得到附出處的回答，點出處在右側開啟「原文」欄
 - [ ] 點左側欄底部的身分卡（「訪客」），在「身分與語言」切換為「主管」：左側欄沒有「評測台」；網址加上 `?tools=evals` 重新載入（需要時再按「使用邀請碼體驗」進入），以「主管」身分也沒有（評測台只給能審核的身分，所以用「主管」確認）
 - [ ] 「上傳」「待審」：以「主管」身分，左側欄有「上傳」「待審」且都能開啟；上傳頁有「上傳的內容會傳給模型供應商進行萃取，請勿上傳個人或機密資料；上傳的文件只存在你的瀏覽器，重新整理即消失。」（「訪客」沒有「待審」，上傳頁是「目前的身分沒有上傳文件的權限。」）
-- [ ] 全站上限的畫面：在 Cloudflare 主控台把 `GLOBAL_DAILY_LIMIT` 暫時改為 `1`（Workers & Pages → `knowledge-kit-demo` → Settings → Variables and Secrets），再問一題，輸入框上方出現「今天的線上試用額度已用完（所有使用者共用），請明天（台灣時間早上 8 點後）再試，或在本機執行。」，輸入框與預設問題停用；之後以 `npx wrangler deploy --env demo` 恢復 repo 的值（計數不會歸零，當天已用的次數照算）
+- [ ] 全站上限的畫面：在 Cloudflare 主控台把 `GLOBAL_DAILY_LIMIT` 暫時改為 `1`（Workers & Pages → `knowledge-crew-qa-demo` → Settings → Variables and Secrets），再問一題，輸入框上方出現「今天的線上試用額度已用完（所有使用者共用），請明天（台灣時間早上 8 點後）再試，或在本機執行。」，輸入框與預設問題停用；之後以 `npx wrangler deploy --env demo` 恢復 repo 的值（計數不會歸零，當天已用的次數照算）
 - [ ] Claude Console 的用量出現在 demo 專用的 workspace
 
 ## 更新
@@ -141,7 +143,7 @@ Cloudflare 端以免費方案運作；Workers 與 Durable Objects 的免費額�
 
 不加外部監控（ADR 0005）。需要時由人查看：
 
-- **Cloudflare 主控台**：`knowledge-kit-demo` 的請求數與錯誤率。
+- **Cloudflare 主控台**：`knowledge-crew-qa-demo` 的請求數與錯誤率。
 - **即時 log**：`npx wrangler tail --env demo`。每次請求一行 JSON（`event`、`status`、`error`、`group` 等），不含金鑰、邀請碼與提示全文。
 - **Claude Console**：demo workspace 的用量與花費。
 
@@ -150,3 +152,86 @@ Cloudflare 端以免費方案運作；Workers 與 Durable Objects 的免費額�
 - 拿到碼的人可以用 curl 偽造 `Origin` 直接呼叫 `/api/ask`，也能把呼叫用在問答以外的用途；費用由上面的兩層上限擋住。
 - 公開碼等於公開：任何人都能在一天內用完公開碼的 `DAILY_LIMIT`，或全站的 `GLOBAL_DAILY_LIMIT`，其他訪客當天就不能用。不以 IP 計數；需要時由人在 Cloudflare 加 rate limiting 規則（選用）。
 - 上傳的文件與核准結果只存在訪客的瀏覽器（記憶體資料庫），重新整理即消失；伺服器端不保存資料。
+
+## 只展示 AI 員工的線上 demo
+
+knowledge-crew 的線上 demo（#84，決策見 [crew ADR 0005](crew/adr/0005-crew-only-demo.md)）：只有 AI 員工的畫面，全部在瀏覽器內執行（PGlite＋`client/crew/demo.json`），不呼叫模型、不需要 API 金鑰與 secret、不產生模型費用。部署與 Cloudflare 的設定同樣一律由人執行。
+
+### 架構
+
+| 項目 | 內容 |
+| --- | --- |
+| Worker | Workers 的 assets-only：只提供 `dist/` 的靜態檔，沒有 Worker 程式與 Durable Object |
+| 設定 | `wrangler.crew-demo.jsonc`：Worker 名稱 `knowledge-crew-demo`、`workers_dev: true`、`assets`（`single-page-application`） |
+| 網址 | `https://knowledge-crew-demo.<帳號子網域>.workers.dev` |
+| secret | 不需要 |
+| 網頁的 build | `VITE_CREW_ONLY=1`，只用 `client/`；不設 `VITE_ONLINE_DEMO` |
+
+### 與含問答的線上 demo 的區別
+
+| | 只展示 AI 員工（本 repo 部署的版本） | 含問答（上方各節、knowledge-kit 的線上 demo） |
+| --- | --- | --- |
+| Worker 名稱 | `knowledge-crew-demo` | `knowledge-crew-qa-demo`（knowledge-kit 是 `knowledge-kit-demo`） |
+| 設定檔 | `wrangler.crew-demo.jsonc` | `wrangler.jsonc` 的 `env.demo` |
+| `/api/*` | 沒有（沒有 Worker 程式處理） | 問答、上傳萃取、說法比對 |
+| secret | 不需要 | `ANTHROPIC_API_KEY`、`ACCESS_CODES` |
+| 費用 | Cloudflare 免費方案；不呼叫模型 | 模型費用，以兩層上限控制（「費用上限」） |
+| 登入 | 不要求邀請碼，「直接體驗」以主管身分進入 | 邀請碼（公開碼預先填入） |
+| 可用的頁 | 只有 AI 員工（今天、員工、交辦、工作與驗收、信任、工作帳本） | 首頁、問答、圖譜、時間軸、上傳、待審，以及 AI 員工 |
+
+### 部署步驟
+
+事前準備只需要 Cloudflare 帳號（免費方案；第一次使用 `workers.dev` 時在主控台設定帳號子網域）。在乾淨的 `main` 上執行：
+
+```bash
+git switch main && git pull
+npm ci
+```
+
+1. build：只用 `client/`，所以清掉 `KK_CLIENT`。
+
+   ```bash
+   env -u KK_CLIENT VITE_CREW_ONLY=1 npm run build
+   ```
+
+2. 確認設定（不需登入、不會上傳）：輸出列出 `dist/` 的檔案、沒有任何綁定（`No bindings found.`）。
+
+   ```bash
+   npx wrangler deploy -c wrangler.crew-demo.jsonc --dry-run
+   ```
+
+3. 登入並部署（第一次會建立 Worker）。
+
+   ```bash
+   npx wrangler login
+   npx wrangler deploy -c wrangler.crew-demo.jsonc
+   ```
+
+- build 時忘了 `VITE_CREW_ONLY=1` 會部署出有問答與上傳、但沒有 `/api/*` 的版本（提問時出錯）：用下方的驗收清單確認，錯了就重新 build 與部署。
+- 不要以 `npx wrangler deploy`（不加 `-c`）或 `--env demo` 部署這個 build：那是含問答的 Worker。
+
+### 部署後的驗收清單
+
+以訪客的身分（無痕視窗）在桌機寬度與手機寬度各確認一次。引號內是畫面上的文字（`client/i18n/zh-TW.json`、`client/i18n/crew/`）：
+
+- [ ] 登入頁：頂端列有「虛構資料」「展示用權限」兩個標籤；沒有邀請碼欄，也沒有「使用邀請碼體驗」，改為「直接體驗」
+- [ ] 按「直接體驗」：進入 AI 員工的「今天」，身分是「主管」，有「待驗收」「進行中」與「建議少看」
+- [ ] 左側欄（手機是底部分頁列）只有「AI 員工」：沒有首頁、問答、圖譜、時間軸、上傳、待審、評測台；左側欄底部的虛線框是「虛構資料 · 展示用權限」，沒有「更換邀請碼」
+- [ ] 「今天」「員工」「交辦」「工作與驗收」「信任」「工作帳本」六個子畫面都能開啟，沒有錯誤訊息
+- [ ] 點身分卡切換為「訪客」：「今天」是「今天沒有需要你處理的事」；切回「主管」後恢復
+- [ ] 以「主管」交辦一件、按模擬交件，在「工作與驗收」驗收或退回（重新整理後回到初始資料，這是預期的行為）
+- [ ] 改用帳號登入（重新整理後在登入頁選一個帳號）：沒有邀請碼欄，按「登入」直接進入 AI 員工
+- [ ] 網址加上 `?mode=presentation` 或 `?tools=evals` 重新載入：畫面不變，仍只有 AI 員工
+- [ ] DevTools 的 Network：整個流程沒有 `/api/` 的請求
+
+### 更新、回退與下線
+
+- **新版本**：重複「部署步驟」的 1～3，部署後再跑一次驗收清單。
+- **回退**：`npx wrangler deployments list -c wrangler.crew-demo.jsonc` 找到前一版，`npx wrangler rollback <版本 id> -c wrangler.crew-demo.jsonc -m "<理由>"`（不給 id 時回到前一版）；回退後重新跑一次驗收清單。
+- **下線**：主控台關閉 `knowledge-crew-demo` 的 `workers.dev` 路由，或 `npx wrangler delete -c wrangler.crew-demo.jsonc`（刪除 Worker）。
+- **監控**：不加外部監控；需要時在 Cloudflare 主控台查看 `knowledge-crew-demo` 的請求數。沒有 Worker 程式，所以沒有 `wrangler tail` 的 log。
+
+### 限制
+
+- 資料只存在訪客的瀏覽器（記憶體資料庫），交辦與驗收的結果重新整理即消失；伺服器端不保存資料。
+- 權限是展示用，不是真正的存取控制：所有虛構資料都在 `dist/` 裡，任何人都能下載。

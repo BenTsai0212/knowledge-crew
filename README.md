@@ -4,6 +4,7 @@ knowledge-crew 是帶領 AI 員工的工作平台：交辦、驗收，信任隨�
 
 - **建立在 knowledge-kit 之上**：本 repo 以 [knowledge-kit](https://github.com/BenTsai0212/knowledge-kit) 為上游，連同 git 歷史匯入，保留它的全部功能與 CI，之後持續同步（[ADR 0002](docs/crew/adr/0002-knowledge-kit-upstream.md)）。
 - **與 CrewAI 框架無關**：名稱中的 crew 指「帶領一群 AI 員工」，本 repo 不使用、也不衍生自 CrewAI。
+- **線上 demo**：只展示 AI 員工（虛構資料，不呼叫模型、不需要邀請碼）；網址在部署後補上，部署方式見 [docs/deploy.md](docs/deploy.md#只展示-ai-員工的線上-demo)「只展示 AI 員工的線上 demo」。
 - 專案章程與決策紀錄：[docs/crew/rfcs/](docs/crew/rfcs/)、[docs/crew/adr/](docs/crew/adr/README.md)。knowledge-kit 的 [docs/rfcs/](docs/rfcs/)、[docs/adr/](docs/adr/README.md) 同樣有效，除非 knowledge-crew 的 ADR 另有決定。
 
 以下是從 knowledge-kit 繼承的功能。knowledge-kit 是用虛構資料、快速為一個組織建立「第二大腦」知識平台 demo 的範本：換一個組織只改設定（`client/` 或 `clients/<名稱>/`），不改程式。demo 是展示用的原型，不是正式系統。

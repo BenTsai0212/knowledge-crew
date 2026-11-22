@@ -383,7 +383,8 @@ Playwright 的端對端測試（`*.spec.ts`）；設定在根目錄的 `playwrig
 - `vite.config.ts`：Vite 的設定
 - `vitest.clients.config.ts`：客戶檢查的 target 測試
 - `vitest.config.ts`：Vitest 的設定
-- `wrangler.jsonc`：頂層供本機 `wrangler dev`，`env.demo` 是線上 demo
+- `wrangler.crew-demo.jsonc`：只展示 AI 員工的線上 demo（assets-only，沒有 Worker 程式；crew ADR 0005、`docs/deploy.md`）
+- `wrangler.jsonc`：頂層供本機 `wrangler dev`，`env.demo` 是含問答的線上 demo（`knowledge-crew-qa-demo`）
 
 ### `docs/`
 
