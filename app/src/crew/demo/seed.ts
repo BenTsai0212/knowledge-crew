@@ -24,7 +24,11 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
     const insert = (table: string, columns: string[], values: unknown[]) =>
       tx.query(`INSERT INTO crew.${table} (${columns.join(", ")}) VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})`, values);
 
-    for (const s of demo.sources) await insert("sources", ["id", "kind", "name", "project_id"], [s.id, s.kind, s.name, s.project]);
+    for (const s of demo.sources) {
+      await insert("sources", ["id", "kind", "name", "project_id", "knowledge_visibility_level_id"], [
+        s.id, s.kind, s.name, s.project, s.knowledgeVisibility ?? null,
+      ]);
+    }
     for (const e of demo.employees) {
       await insert("employees", ["id", "display_name", "role_note"], [e.id, e.displayName, e.roleNote[language]]);
     }

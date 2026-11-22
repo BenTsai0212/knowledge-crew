@@ -2,7 +2,10 @@
 // 讀取：看不到的資料回傳空結果（RLS 的行為）。寫入：不傳時間欄位與 assigned_by／decided_by（由資料庫預設），
 // 權限不足時資料庫的錯誤原樣拋出。時間一律轉成 ISO 8601 字串。
 import type { Transaction } from "@electric-sql/pglite";
+import { clientConfig } from "../../client/load";
+import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
+import { flowbackDocumentId, toFlowbackDocument } from "../knowledge/flowback";
 import type { LevelDecision, LevelDecisionKind, ReturnReason, Review, Verdict, WorkChange, WorkCheck, WorkForReview } from "../trust/types";
 
 /** 工作來源的類型（RFC 0001 的 2026-11-21 修訂）；repo 類的外部編號是 Issue／PR 編號。 */
@@ -293,15 +296,74 @@ export function createWork(db: Database, identityId: string | null, input: NewWo
 
 export type NewReview = { workId: string; note?: string } & ({ verdict: "accepted" } | { verdict: "returned"; reason: ReturnReason });
 
-export function createReview(db: Database, identityId: string | null, input: NewReview): Promise<{ id: string }> {
+/**
+ * 驗收「通過」時知識庫條目的回流（#92）：`flowed` 已收進知識庫；`not-applicable` 不需要回流（退回、來源沒有回流等級、
+ * 全文不是一個知識庫條目）；`no-upload-permission` 驗收者沒有上傳權限，驗收照常通過、不回流（#92 的 `## 決定` 4）。
+ */
+export type FlowbackOutcome = "flowed" | "not-applicable" | "no-upload-permission";
+
+export interface ReviewOptions {
+  /** 交件全文的語言（works.body 存 defaultLanguage）；回流文件與段落的語言 */
+  language?: LanguageCode;
+  /** 回流文件的日期（YYYY-MM-DD）；預設是執行當下的本地日期（＝驗收日） */
+  date?: string;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+/**
+ * 寫入驗收。「通過」且是要回流的知識庫條目時，在同一個交易中寫入文件、段落與 crew.knowledge_flowbacks；
+ * 寫入一律受 RLS 檢查（knowledge-kit 的上傳規則與 crew 0005 的 policy），任一步被拒絕時整筆驗收回滾。
+ */
+export function createReview(
+  db: Database,
+  identityId: string | null,
+  input: NewReview,
+  options: ReviewOptions = {},
+): Promise<{ id: string; flowback: FlowbackOutcome }> {
   return db.withIdentity(identityId, async (tx) => {
     const id = crypto.randomUUID();
     const reason = input.verdict === "returned" ? input.reason : null;
     await tx.query("INSERT INTO crew.reviews (id, work_id, verdict, reason, note) VALUES ($1, $2, $3, $4, $5)", [
       id, input.workId, input.verdict, reason, input.note ?? null,
     ]);
-    return { id };
+    const flowback = input.verdict === "accepted" ? await flowBack(tx, id, input.workId, options) : "not-applicable";
+    return { id, flowback };
   });
+}
+
+async function flowBack(tx: Transaction, reviewId: string, workId: string, options: ReviewOptions): Promise<FlowbackOutcome> {
+  const [work] = await rows<{ body: string; projectId: string; level: string | null }>(
+    tx,
+    `SELECT w.body, s.project_id AS "projectId", s.knowledge_visibility_level_id AS level
+     FROM crew.works w JOIN crew.assignments a ON a.id = w.assignment_id JOIN crew.sources s ON s.id = a.source_id
+     WHERE w.id = $1`,
+    [workId],
+  );
+  if (!work || work.level === null) return "not-applicable";
+  const doc = toFlowbackDocument(work.body);
+  if (!doc) return "not-applicable";
+  const [{ canUpload }] = await rows<{ canUpload: boolean }>(tx, `SELECT kk.can_upload() AS "canUpload"`);
+  if (!canUpload) return "no-upload-permission";
+
+  const documentId = flowbackDocumentId(workId);
+  const language = options.language ?? clientConfig.client.defaultLanguage;
+  // 與上傳（upload/write.ts）相同的寫法：uploaded_by 由資料庫取目前身分，段落 id 是「文件 id-序號」、ordinal 從 0 開始
+  await tx.query(
+    `INSERT INTO kk.documents (id, title, language, visibility_level_id, project_id, document_date, uploaded_by)
+     VALUES ($1, $2, $3, $4, $5, $6, kk.current_identity_id())`,
+    [documentId, doc.title, language, work.level, work.projectId, options.date ?? localDate(new Date())],
+  );
+  for (const [i, content] of doc.passages.entries()) {
+    await tx.query(
+      `INSERT INTO kk.passages (id, document_id, ordinal, language, content, visibility_level_id, project_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [`${documentId}-${i + 1}`, documentId, i, language, content, work.level, work.projectId],
+    );
+  }
+  await tx.query("INSERT INTO crew.knowledge_flowbacks (review_id, document_id) VALUES ($1, $2)", [reviewId, documentId]);
+  return "flowed";
 }
 
 export interface NewLevelDecision {

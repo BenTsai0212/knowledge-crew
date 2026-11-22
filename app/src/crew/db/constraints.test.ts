@@ -1,4 +1,4 @@
-// crew 0002 的 CHECK 與 UNIQUE（#26），與 0004 的工作來源與外部編號（#57）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
+// crew 0002 的 CHECK 與 UNIQUE（#26）、0004 的工作來源與外部編號（#57），與 0005 的知識庫回流（#92）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyMigrations } from "../../db/migrate";
@@ -97,5 +97,26 @@ describe("crew 0004 的工作來源與外部編號", () => {
       "SELECT conname FROM pg_constraint WHERE conname IN ('sources_name_key', 'assignments_source_id_external_ref_key') ORDER BY 1",
     )).rows.map((r) => r.conname);
     expect(names).toEqual(["assignments_source_id_external_ref_key", "sources_name_key"]);
+  });
+});
+
+describe("crew 0005 的約束（#92）", () => {
+  it("回流等級只能填在知識庫類的來源，且是存在的機密等級", async () => {
+    const source = (id: string, kind: string, level: string) =>
+      `INSERT INTO crew.sources (id, kind, name, project_id, knowledge_visibility_level_id) VALUES ('${id}', '${kind}', '${id}', 'bluewing', '${level}')`;
+    await pg.exec(source("kb-ok", "knowledge_base", "internal"));
+    await expect(pg.exec(source("kb-repo", "repo", "internal"))).rejects.toThrow(/check constraint/);
+    await expect(pg.exec(source("kb-missing", "knowledge_base", "secret"))).rejects.toThrow(/foreign key/);
+  });
+
+  // 約束不看驗收的結果（是否「通過」由 policy 檢查），沿用上面寫入的 r1、r2
+  it("回流紀錄：一次驗收一份文件，一份文件只來自一次驗收，文件必須存在", async () => {
+    await pg.exec(`
+      INSERT INTO kk.documents (id, title, language, visibility_level_id) VALUES ('crew-w1', 'T', 'en', 'internal'), ('crew-w2', 'T', 'en', 'internal');
+      INSERT INTO crew.knowledge_flowbacks (review_id, document_id) VALUES ('r1', 'crew-w1');
+    `);
+    await expect(pg.exec("INSERT INTO crew.knowledge_flowbacks (review_id, document_id) VALUES ('r1', 'crew-w2')")).rejects.toThrow(/unique|duplicate key/);
+    await expect(pg.exec("INSERT INTO crew.knowledge_flowbacks (review_id, document_id) VALUES ('r2', 'crew-w1')")).rejects.toThrow(/unique|duplicate key/);
+    await expect(pg.exec("INSERT INTO crew.knowledge_flowbacks (review_id, document_id) VALUES ('r2', 'nowhere')")).rejects.toThrow(/foreign key/);
   });
 });
