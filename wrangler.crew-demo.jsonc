@@ -1,0 +1,14 @@
+// 只展示 AI 員工的線上 demo（#84，crew ADR 0005；部署由人執行，步驟見 docs/deploy.md「只展示 AI 員工的線上 demo」）。
+// Workers 的 assets-only：只提供 dist/ 的靜態檔，沒有 main（Worker 程式）、Durable Object 與 secret，不呼叫模型。
+// build：env -u KK_CLIENT VITE_CREW_ONLY=1 npm run build；部署：npx wrangler deploy -c wrangler.crew-demo.jsonc
+// → https://knowledge-crew-demo.<帳號子網域>.workers.dev。不含 account_id、routes、自訂網域。
+// env.* 無法取消 wrangler.jsonc 頂層的 main，所以另開這個設定檔，而不是在 wrangler.jsonc 加一個 env。
+{
+  "name": "knowledge-crew-demo",
+  "compatibility_date": "2026-10-27",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./dist/",
+    "not_found_handling": "single-page-application"
+  }
+}

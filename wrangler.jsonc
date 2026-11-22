@@ -1,7 +1,9 @@
-// 頂層供本機 wrangler dev；env.demo 是線上 demo（#100，部署由人執行，步驟見 docs/deploy.md）。
+// 頂層供本機 wrangler dev；env.demo 是含問答的線上 demo（#100，部署由人執行，步驟見 docs/deploy.md）。
+// 名稱改為 knowledge-crew（#84）：與 knowledge-kit 在同一個 Cloudflare 帳號時不會覆蓋它的 Worker。
+// 只展示 AI 員工的線上 demo 是另一個設定檔 wrangler.crew-demo.jsonc（沒有 Worker 程式，crew ADR 0005）。
 // 不含 account_id、routes、自訂網域；secret 不寫在這裡。
 {
-  "name": "knowledge-kit",
+  "name": "knowledge-crew",
   "main": "./worker/src/index.ts",
   "compatibility_date": "2026-10-27",
   "assets": {
@@ -16,10 +18,10 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["UsageCounter"] }],
   "env": {
-    // npx wrangler deploy --env demo → https://knowledge-kit-demo.<帳號子網域>.workers.dev
+    // npx wrangler deploy --env demo → https://knowledge-crew-qa-demo.<帳號子網域>.workers.dev
     // durable_objects 與 vars 不會從頂層繼承，要在這裡重寫
     "demo": {
-      "name": "knowledge-kit-demo",
+      "name": "knowledge-crew-qa-demo",
       "workers_dev": true,
       "durable_objects": {
         "bindings": [{ "name": "USAGE", "class_name": "UsageCounter" }]

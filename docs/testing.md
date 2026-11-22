@@ -10,7 +10,7 @@
 | `workflows/ci.yml` | `clients` | `npm run check:clients`（[docs/client-config.md](client-config.md)「客戶檢查」） | 每個 PR 與 push 到 `main` |
 | `workflows/pr-body.yml` | `pr-body` | PR 描述要連到 Issue（`tools/workflow/check-pr-body.mjs`，見 [tools/workflow/README.md](../tools/workflow/README.md)） | PR 開啟、編輯、更新與標籤變更 |
 | `workflows/sensitive.yml` | `sensitive-names`、`gitleaks` | 見下方[敏感資料檢查](#敏感資料檢查) | 每個 PR 與 push 到 `main`；手動觸發時掃描整段歷史 |
-| `workflows/e2e.yml` | `list`、`playwright`、`demo` | 見下方 [Playwright](#playwright) 的「CI」 | 每個 PR（目標 `main`）與 push 到 `main`，另可手動執行；不是必要檢查 |
+| `workflows/e2e.yml` | `list`、`playwright`、`demo`、`crew-only` | 見下方 [Playwright](#playwright) 的「CI」 | 每個 PR（目標 `main`）與 push 到 `main`，另可手動執行；不是必要檢查 |
 
 `ci.yml` 與 `e2e.yml` 設定 `ONNXRUNTIME_NODE_INSTALL=skip`：`@huggingface/transformers` 帶進的 `onnxruntime-node` 在 linux/x64 安裝時會從 NuGet 下載 CUDA，app 用不到它（#163）。
 
@@ -177,6 +177,7 @@ repo 預計公開，CI 紀錄也會公開，所以兩者的輸出都**不包含�
 | `presentation.spec.ts` | 客戶展示模式（#129，`/?mode=presentation`）：每個身分都只有問答與圖譜兩個頁籤（同時帶 `?tools=evals` 也一樣）；問答附出處並打開原文、圖譜畫出畫布；1920×1080 時照畫板 `H-QA`、`H-Graph`（#349：問題泡泡是 `text` 底、劇本有編號、原文是浮動卡片且 Esc 關閉後焦點回到引用標號、圖譜沒有搜尋框與找路徑、右側卡片的關聯列、`/` 不作用、沒有橫向捲動，截圖附在報告） |
 | `compare.spec.ts` | 展示模式的身分對照（#261，需要 `VITE_DEMO_COMPARE=1` 的 build，見下方「本機執行」）：頂端列的按鈕開關對照，沒有題目時是說明；對照打開時點劇本中只有一個身分看得到答案段落的題目（以 `oracle.ts` 算出；沒有時略過），每個身分一欄、依 `access.json` 的順序，只有目前身分的欄是 `is-current`；假的 `/api/ask` 只在送出的段落含答案段落時回答（比對答案段落中第一段其他段落都不含的 20 字，不用開頭：開頭可能與看得到的段落相同；另有不需要瀏覽器與開關的測試確認比對文字只出現在一個答案段落），所以看得到的身分的欄有引用，其他欄是一般的拒答與「先確認要找的是哪一種」的提問（#377），每一欄都不出現該身分看不到的段落；`C` 打開與關閉、`Esc` 關閉，焦點在輸入框時 `C` 是文字；1920×1080 時照畫板 `H-QA`（#349：題目泡泡、欄內的回答不是卡片、各欄等高、對照時沒有輸入區、沒有橫向捲動，截圖附在報告）；減少動態效果時欄的動畫時間是 0 |
 | `demo.spec.ts` | 線上 demo 的設定（#100，只在 `VITE_ONLINE_DEMO=1` 的 build 執行，見下方「線上 demo」）：公開試用碼預先填入並以它提問、問答與上傳頁的提醒、評測台隱藏（帶 `?tools=evals` 也一樣）而待審保留、上傳後萃取的實體出現在待審；以 `VITE_DEMO_COMPARE=1` build 時，展示模式也沒有身分對照（#261） |
+| `crew-only.spec.ts` | 只展示 AI 員工的設定（#84，只在 `VITE_CREW_ONLY=1` 的 build 執行，見下方「只展示 AI 員工」）：登入頁不要求邀請碼、「直接體驗」以主管進入「今天」、導覽只有 AI 員工（帶 `?tools=evals`、`?mode=presentation` 也一樣）、六個子畫面都能開啟、切換身分後內容改變、帳號登入不要求邀請碼；整個流程沒有任何 `/api/*` 請求 |
 
 - **看不到的段落**以 `app/src/evals/oracle.ts` 的 `expectedVisible()` 從選定客戶的 `data/` 算出（`e2e/support/dataset.ts`），不以畫面或資料庫的結果為準；畫面文字以每段開頭 20 個字元比對（空白先合併）。切換前先確認畫面上確實有看不到的段落，比對本身才有效。
 - **串流中的回答**：`route.fulfill` 一次送出整個 body，做不出串流到一半的狀態，所以 `holdAskStream()` 在頁面內替換 `fetch`，由測試以 `pushAskStream()` 逐段送出。
@@ -205,6 +206,17 @@ VITE_ONLINE_DEMO=1 VITE_PUBLIC_ACCESS_CODE=e2e-public-code VITE_DEMO_COMPARE=1 n
 
 測試後要跑一般的 e2e 時，先不帶 `VITE_ONLINE_DEMO` 與 `VITE_PUBLIC_ACCESS_CODE` 重新 `npm run build`。只用參考情境 `client/`（線上 demo 不放客戶）。
 
+### 只展示 AI 員工
+
+`VITE_CREW_ONLY=1` 時只執行 `crew-only.spec.ts`，其他情況不執行它（優先於 `VITE_ONLINE_DEMO`；部署方式見 [docs/deploy.md](deploy.md)「只展示 AI 員工的線上 demo」）。build 與測試用同一個變數，只用參考情境 `client/`：
+
+```bash
+VITE_CREW_ONLY=1 npm run build
+VITE_CREW_ONLY=1 npm run test:e2e
+```
+
+測試以 `page.route` 讓 `/api/*` 一被呼叫就失敗，並記錄所有 `/api/` 請求，每個測試結束時要是空的。測試後要跑一般的 e2e 時，先不帶 `VITE_CREW_ONLY` 重新 `npm run build`。
+
 ### CI
 
 `.github/workflows/e2e.yml` 在每個 PR（目標 `main`）與 push 到 `main` 時執行（ADR 0010，取代 ADR 0004 的「只在 push 到 `main` 後執行」）；不列為分支保護的必要檢查。PR 的 E2E 結果就是審查時的判準：runner 不在本機啟動瀏覽器，PR 描述的「驗證」寫「E2E 以 PR 上的 `E2E` 結果為準」。要對其他分支執行時，用 `workflow_dispatch`：Actions → E2E → Run workflow，或 `gh workflow run e2e.yml --ref <分支>`。
@@ -214,6 +226,7 @@ VITE_ONLINE_DEMO=1 VITE_PUBLIC_ACCESS_CODE=e2e-public-code VITE_DEMO_COMPARE=1 n
 
 - `list` job 列出參考情境（`""`）與 `clients/` 底下的客戶（`scripts/check-clients.mjs` 的 `listClients()`），`playwright` job 以 matrix 對每一個各執行一格（`KK_CLIENT` 設為該名稱，build 後執行測試；`fail-fast: false`）。`playwright` 與 `demo` 兩個 job 都設 `VITE_DEMO_COMPARE=1`（#261）：一般 build 執行 `compare.spec.ts`，線上 demo 的 build 確認身分對照仍然關閉。
 - `demo` job 以線上 demo 的設定（`VITE_ONLINE_DEMO=1`、虛構的 `VITE_PUBLIC_ACCESS_CODE`）build 參考情境，執行 `demo.spec.ts`；失敗時的 artifact 是 `playwright-online-demo`，成功時是 `playwright-report-online-demo`。
+- `crew-only` job 以 `VITE_CREW_ONLY=1` build 參考情境，以 `npx wrangler deploy -c wrangler.crew-demo.jsonc --dry-run` 確認設定檔有效（不需登入、不上傳），再執行 `crew-only.spec.ts`；失敗時的 artifact 是 `playwright-crew-only`，成功時是 `playwright-report-crew-only`。
 - 權限只有 `contents: read`，不使用任何 secret。
 - PR 上失敗時：程式造成的失敗由決策中心貼修正要求；GitHub 端異常造成的失敗由決策中心重跑（[decision-center.md](workflow/decision-center.md) 第 4 節）。main 上失敗時由決策中心另開修正 Issue（workflow 不會自動開 Issue）。
 
