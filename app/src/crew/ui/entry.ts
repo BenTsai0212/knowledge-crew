@@ -50,8 +50,8 @@ export function crewNoAskNote(language: LanguageCode): string {
   return CREW_TRANSLATIONS.common?.[language]?.noAsk ?? "";
 }
 
-/** 登入後的預設頁：crew-only 時是 AI 員工（CrewPage 的預設是「今天」；首頁加入今天的工作後再改），其他情況沿用 knowledge-kit 的預設頁。 */
-export const crewDefaultView = (base: View, only: boolean): View => (only ? "crew" : base);
+/** 登入後的預設頁：crew-only 時是首頁（今天的工作在首頁，#96），其他情況沿用 knowledge-kit 的預設頁。 */
+export const crewDefaultView = (base: View, only: boolean): View => (only ? "home" : base);
 
 /**
  * 一開始的身分：crew-only 時是第一個能驗收的身分（主管，client/access.json 的 canReview；#86 的修正要求 2），

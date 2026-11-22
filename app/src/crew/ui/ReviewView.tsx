@@ -18,7 +18,7 @@ type Texts = CrewTexts<"review">;
 type Data = { list: WorkList; selected: string | null; panel: PanelData | null };
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: Data };
 
-export function ReviewView({ db, identity, language, assignmentId, onOpenSource }: CrewScreenProps) {
+export function ReviewView({ db, identity, language, assignmentId, onOpenSource, onChanged }: CrewScreenProps) {
   const t = crewStrings("review", language);
   const canReview = canReviewOf(clientConfig.access, identity);
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -26,7 +26,7 @@ export function ReviewView({ db, identity, language, assignmentId, onOpenSource 
   const [saveFailed, setSaveFailed] = useState(false);
   // 剛才的「通過」因為沒有上傳權限而沒有收進知識庫（#92 的 `## 決定` 4）；只在這次畫面中註明，換一筆時清除
   const [noUpload, setNoUpload] = useState(false);
-  // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆。從原文的來源切過來時（#92）先選那一件
+  // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆。從原文的來源（#92）或首頁的今天的工作（#96）切過來時先選那一件
   const selectedRef = useRef<string | null>(assignmentId ?? null);
   // 在清單選了一筆之後把面板捲進畫面（窄螢幕面板在清單之上；已在畫面上時不捲動）
   const panelRef = useRef<HTMLElement>(null);
@@ -89,6 +89,7 @@ export function ReviewView({ db, identity, language, assignmentId, onOpenSource 
     try {
       const { flowback } = await createReview(db, identity, input);
       setNoUpload(flowback === "no-upload-permission");
+      onChanged?.();
     } catch {
       setSaveFailed(true);
     }

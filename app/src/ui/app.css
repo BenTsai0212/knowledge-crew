@@ -113,6 +113,7 @@ h3 {
 }
 
 /* 待審的筆數：項目右側的 primary 圓形徽章（22px） */
+.sidebar .crew-tab-count,
 .sidebar .tab-count {
   display: inline-flex;
   align-items: center;
@@ -1673,6 +1674,7 @@ main.qa > .source .source-text mark.entering {
 }
 
 /* 待審的數字疊在圖示右上 */
+.mobile-tabbar .crew-tab-count,
 .mobile-tabbar .tab-count {
   position: absolute;
   top: 0.5rem;
@@ -2090,6 +2092,7 @@ main.qa > .source .source-text mark.entering {
   line-height: 1.2;
 }
 
+.nav-rail .crew-tab-count,
 .nav-rail .tab-count {
   position: absolute;
   top: 0.25rem;
@@ -5017,6 +5020,7 @@ label.inline {
 }
 
 /* 待審頁籤的筆數（#48） */
+.crew-tab-count,
 .tab-count {
   display: inline-block;
   margin-left: 0.35rem;

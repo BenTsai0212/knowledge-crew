@@ -78,9 +78,9 @@ describe("crew-only（VITE_CREW_ONLY=1，#84）", () => {
     expect(withCrew(base, true, false, false)).toEqual(withCrew(base, true, false));
   });
 
-  it("登入後的預設頁：開啟時是 AI 員工，關閉時沿用 knowledge-kit 的預設頁", () => {
-    expect(crewDefaultView("home", true)).toBe("crew");
-    expect(crewDefaultView("qa", true)).toBe("crew");
+  it("登入後的預設頁：開啟時是首頁（今天的工作，#96），關閉時沿用 knowledge-kit 的預設頁", () => {
+    expect(crewDefaultView("home", true)).toBe("home");
+    expect(crewDefaultView("qa", true)).toBe("home");
     expect(crewDefaultView("home", false)).toBe("home");
     expect(crewDefaultView("qa", false)).toBe("qa");
   });

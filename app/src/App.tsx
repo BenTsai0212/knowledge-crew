@@ -80,6 +80,7 @@ import { NavRail } from "./ui/NavRail";
 import { useLayout } from "./ui/layout";
 import { crewMigrations } from "./crew/db/migrate";
 import { CrewPage } from "./crew/ui/CrewPage";
+import { CrewTabCount, HomeTodayCard, HomeTodaySummary, useCrewToday } from "./crew/ui/HomeToday";
 import type { CrewTarget } from "./crew/ui/sections";
 import { SourceOrigin } from "./crew/ui/SourceOrigin";
 import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, hasCrewDemo, withCrew } from "./crew/ui/entry";
@@ -162,11 +163,12 @@ export function App() {
   // 輸入框的文字（「接著問」填進來），與「在圖譜中查看」要選取的實體
   const [draft, setDraft] = useState("");
   const [graphFocus, setGraphFocus] = useState<string | null>(null);
-  // knowledge-crew：原文的「來自 AI 員工 ○○」要切到的 crew 位置（#92）；離開 crew 頁時清除
+  // knowledge-crew：從 crew 頁之外切到 crew 的某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；離開 crew 頁時清除，從導覽進來時是「今天」
   const [crewRequest, setCrewRequest] = useState<{ target: CrewTarget; n: number } | null>(null);
   useEffect(() => {
     if (view !== "crew") setCrewRequest(null);
   }, [view]);
+  const openCrew = (target: CrewTarget) => (setCrewRequest((last) => ({ target, n: (last?.n ?? 0) + 1 })), setView("crew"));
   // 展示模式的劇本（#260 決定 3）：目前題目是最後點的劇本題，只在記憶體；劇本切換身分時頂端列的身分徽章跳一下
   const [scriptCurrent, setScriptCurrent] = useState<string | null>(null);
   // （count 換 key 重播動畫；以頂端列手動切換身分時清除，不跳）
@@ -219,6 +221,10 @@ export function App() {
   const canUpload = (access.roles.find((r) => r.id === identity)?.canUpload ?? false) && views(canReview).includes("upload");
   // 首頁與圖譜上切到問答、待審、上傳的入口：目標頁籤看不到時不顯示（crew-only，#91）
   const entries = entryPoints(views(canReview));
+  // knowledge-crew 的今天的工作（#96）：首頁與側欄「AI 員工」的待驗收件數共用一次讀取；切換頁籤與 crew 寫入後重新讀取
+  const [crewVersion, setCrewVersion] = useState(0);
+  const crewToday = useCrewToday(db, identity, language, views(canReview).includes("crew"), `${view}/${crewVersion}`);
+  const crewAwaiting = crewToday?.identity === identity ? crewToday.awaiting : null;
   const [reviewVersion, setReviewVersion] = useState(0);
   // 首頁的「等你處理」用同一次讀取的結果（#283），導覽列的數字是其中的 total（與 pendingCount() 相同）
   const [pending, setPending] = useState<{ identity: string; count: number; summary: WaitingSummary } | null>(null);
@@ -664,7 +670,7 @@ export function App() {
         identity={identity}
         language={language}
         documentId={documentId}
-        onOpen={(assignmentId) => (closeSource(), setCrewRequest((last) => ({ target: { section: "works", assignmentId }, n: (last?.n ?? 0) + 1 })), setView("crew"))}
+        onOpen={(assignmentId) => (closeSource(), openCrew({ section: "works", assignmentId }))}
       />
     );
   // 桌機原文欄的 ✕：焦點回到引用標號（還在畫面上時）
@@ -870,6 +876,8 @@ export function App() {
                 {pending.count}
               </span>
             ),
+            // AI 員工的待驗收件數（#96，與待審分開）：只給能驗收的身分；手機 0 時不顯示（與待審相同）
+            crew: crewAwaiting !== null && (!phone || crewAwaiting > 0) && <CrewTabCount count={crewAwaiting} language={language} />,
           }}
         />
       )}
@@ -896,7 +904,14 @@ export function App() {
               onViewed={onViewed}
             />
           ) : view === "crew" ? (
-            <CrewPage db={db} identity={identity} language={language} request={crewRequest} onOpenSource={(passageId) => void onOpenSource(passageId)} />
+            <CrewPage
+              db={db}
+              identity={identity}
+              language={language}
+              request={crewRequest}
+              onOpenSource={(passageId) => void onOpenSource(passageId)}
+              onChanged={() => setCrewVersion((v) => v + 1)}
+            />
           ) : view === "evals" ? (
             <EvalPage
               language={language}
@@ -1033,6 +1048,10 @@ export function App() {
             viewed={viewed[identity] ?? NONE}
             onOpenDocument={(id) => (setFocusDocument(id), setView("timeline"))}
             onOpenEntity={(id) => (setGraphFocus(id), setView("graph"))}
+            todaySummary={<HomeTodaySummary state={crewToday} identity={identity} language={language} />}
+            todayCard={
+              <HomeTodayCard state={crewToday} identity={identity} language={language} phone={phone} onOpen={openCrew} />
+            }
           />
         </main>
       ) : (

@@ -48,3 +48,9 @@
 - **會改的 knowledge-kit 檔案**另加原文的元件 `app/src/ui/SourcePanel.tsx`（桌機）與 `app/src/ui/SourceSheet.tsx`（手機）（原文的接入點：顯示「來自 AI 員工 ○○・驗收 ○○」並可點回「工作與驗收」，各約 5 行；文字與判斷放在 crew），在 #92 的 PR 3 修改。問答的出處與圖譜節點的出處都打開原文，所以一個接入點涵蓋兩處。
 - **`#owner` → 部門實體**（#92 的 `## 決定` 3，PR 2）：在同一個交易中寫入 `kk.pending_entities`、`kk.pending_entity_sources`、`kk.review_decisions`（`mode = 'manual'`，核准者＝驗收者）、`kk.entities`、`kk.entity_sources`，寫法與 `extraction/store.ts` 的核准相同，受 knowledge-kit 0006、0009、0013 的 policy 檢查；合併比對用 `extraction/merge.ts` 的 `nameKeys()`（剛好一個同名的部門時合併，沒有時新建，兩個以上時不寫進圖譜）。knowledge-kit 改到這幾張表、核准的寫入規則或 `nameKeys()` 時，同步要檢查 `db/store.ts` 的 `writeFlowback()` 與 `app/tests/crew/flowback-access.test.ts`。
 - **demo 的 seed**：`demo.json` 已通過的知識庫條目（k12）在 seed 時以同一個 `writeFlowback()` 回流，所以有 crew demo 的客戶，主管的圖譜與時間軸一開始就多一份文件與一個部門。依資料集計算預期的 E2E 以 `e2e/support/crew.ts` 補上回流的部分（會改的 knowledge-kit 檔案見 #92 PR 2 的描述）。
+
+## 修訂（2026-11-22，#96）
+
+- **首頁的今天的工作**（RFC 0001 的 2026-11-22 修訂「首頁」）：首頁加入「今天的工作」，側欄與手機導覽的「AI 員工」顯示待驗收件數（與「待審」分開）。分組、文字與資料讀取都在 crew（`app/src/crew/ui/home-today.ts`、`HomeToday.tsx`、`client/i18n/crew/home.<語言>.json`），資料沿用 `today.ts` 的 `readToday()`，不另寫查詢。
+- **會改的 knowledge-kit 檔案**另加 `app/src/ui/HomePage.tsx`（兩個可省略的插槽 `todaySummary`、`todayCard`，HomePage 不 import crew）與 `app/src/ui/app.css`（待審徽章的四條規則各加一個 `.crew-tab-count` 選擇器，樣式相同）。側欄與手機導覽沿用既有的 `tabExtra`，`Sidebar.tsx`、`MobileNav.tsx` 不改；`App.tsx` 讀一次今天的工作，傳給首頁與 `tabExtra.crew`；從首頁點進 AI 員工與原文的來源（#92）共用同一個 `crewRequest`（`openCrew()`）。
+- 徽章用另一個 class（不是 `.tab-count`）：手機的「更多」顯示第一個有內容的徽章，待審是 0 時會顯示 AI 員工的件數；knowledge-kit 以 `.tab-count` 判斷待審徽章的 E2E 因此不受影響。

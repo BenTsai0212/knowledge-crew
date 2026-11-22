@@ -21,7 +21,7 @@ const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
 };
 
 interface Props extends Omit<CrewScreenProps, "navigate" | "employeeId" | "assignmentId"> {
-  /** 從 crew 頁之外切到某個位置（原文的「來自 AI 員工 ○○」，#92）；n 每次要求都不同，同一個位置也重新切換 */
+  /** 從 crew 頁之外切到某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；n 每次要求都不同，同一個位置也重新切換 */
   request?: { target: CrewTarget; n: number } | null;
 }
 
