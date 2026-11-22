@@ -93,3 +93,14 @@ describe("rowStatus、rowTarget", () => {
     expect(awaitingCount(today({ canReview: false, awaitingReview: [item({})] }))).toBeNull();
   });
 });
+
+describe("HomeTodayCard：沒有 AI 員工的客戶", () => {
+  it("沒有資料時不讀 crew 的翻譯檔（沒有翻譯檔的語言也不拋錯），不輸出任何內容", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { HomeTodayCard, HomeTodaySummary } = await import("./HomeToday");
+    const props = { state: null, identity: "manager", language: "xx", phone: false, onOpen: () => {} };
+    expect(renderToStaticMarkup(createElement(HomeTodayCard, props))).toBe("");
+    expect(renderToStaticMarkup(createElement(HomeTodaySummary, props))).toBe("");
+  });
+});

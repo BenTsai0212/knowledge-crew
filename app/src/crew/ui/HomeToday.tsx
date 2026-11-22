@@ -58,11 +58,12 @@ interface CardProps {
 
 /** 「今天的工作」：依設計規格 v3 第 6.1 節分組，空的組不顯示；不能驗收的身分沒有可看的事時整區不顯示 */
 export function HomeTodayCard({ state, identity, language, phone, onOpen }: CardProps) {
-  const t = crewStrings("home", language);
-  const { colon } = strings(language);
+  // 沒有 AI 員工的客戶沒有 crew 的翻譯檔：先確認有資料，再讀文字
   const data = ready(state, identity);
   if (data === null) return null;
   if (data !== "failed" && isHomeTodayEmpty(data) && !data.canReview) return null;
+  const t = crewStrings("home", language);
+  const { colon } = strings(language);
   const className = phone ? "home__card crew-home" : "card home__card crew-home";
   let first = true;
   // 只有第一列的「開始驗收」是主要按鈕（規格 6.1）；不能驗收的身分是「查看」
