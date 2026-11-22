@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ConfirmationAction } from "../sources/confirmations";
 import type { CitedSource, SourceDocument } from "../sources/source";
 import { AccessBadges } from "./AccessBadges";
@@ -15,11 +16,13 @@ interface Props {
   onClose(): void;
   // 確認、撤銷確認一段（ADR 0013）：source.confirmable 時才顯示按鈕
   onConfirm?(passageId: string, action: ConfirmationAction): Promise<void>;
+  // knowledge-crew：文件標題下的來源（回流的文件來自哪位 AI 員工，crew ADR 0004 的 2026-11-22 修訂）；沒有時不顯示
+  origin?: ReactNode;
 }
 
 // 桌機的原文欄（#335，畫板 QA）：貼齊右緣的整高欄；手機改用底部面板（SourceSheet，#256），平板是滑出面板（#255）。
 // 展示模式（#349，畫板 H-QA）是浮在右側的圓角卡片（app.css），關閉按鈕是「關閉 Esc」（Esc 由 App 處理，焦點回到引用標號）
-export function SourcePanel({ language, source, onOpenSource, cited, onClose, onConfirm }: Props) {
+export function SourcePanel({ language, source, onOpenSource, cited, onClose, onConfirm, origin }: Props) {
   const s = strings(language);
   const current = cited?.find((c) => c.passageId === source.highlight);
   return (
@@ -44,6 +47,7 @@ export function SourcePanel({ language, source, onOpenSource, cited, onClose, on
         <p>
           <AccessBadges visibility={source.visibility} project={source.project} language={language} />
         </p>
+        {origin}
       </div>
       {/* 原文紙面（#225）：Dark 也是亮色的 reading 底 */}
       <SourceText language={language} source={source} onOpenSource={onOpenSource} numbered onConfirm={onConfirm} />
