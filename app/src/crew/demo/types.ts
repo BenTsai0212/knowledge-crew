@@ -14,6 +14,8 @@ export interface DemoSource {
   label?: LocalizedText;
   /** access.json 的專案：誰看得到由專案決定 */
   project: Id;
+  /** 知識庫類來源：驗收通過的知識庫條目回流成這個機密等級（access.json 的等級）的文件；省略時不回流（#92） */
+  knowledgeVisibility?: Id;
 }
 
 export interface DemoEmployee {

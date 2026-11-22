@@ -115,6 +115,7 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
   if (!isObj(raw)) return ["demo: must be an object"];
   const demo = raw;
   const projects = new Set(access.projects.map((p) => p.id));
+  const levels = new Set(access.visibilityLevels.map((l) => l.id));
   const reviewers = new Set(access.roles.filter((r) => r.canReview).map((r) => r.id));
   const reviewer = (o: Obj, k: string, path: string) => {
     if (!reviewers.has(str(o, k, path))) err(`${path}.${k}`, "must be an identity in access.json with canReview");
@@ -133,6 +134,10 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     if (r.label !== undefined) loc(r.label, `${p}.label`);
     if (kind === "repo" && !name.startsWith(ORG)) err(`${p}.name`, `must start with ${ORG} for a repo source`);
     if (!projects.has(str(r, "project", p))) err(`${p}.project`, "must be a project in access.json");
+    if (r.knowledgeVisibility !== undefined) {
+      if (kind !== "knowledge_base") err(`${p}.knowledgeVisibility`, "is only for a knowledge_base source");
+      else if (!levels.has(r.knowledgeVisibility as string)) err(`${p}.knowledgeVisibility`, "must be a visibility level in access.json");
+    }
   }
   const employees = new Set<string>();
   for (const [e, p] of objects(demo, "employees", "", 1)) {

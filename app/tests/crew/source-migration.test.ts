@@ -44,7 +44,8 @@ it("0004 套用在已有資料的資料庫上：repo 成為 repo 類、Issue／P
   };
   const visibleBefore = [await visible("manager"), await visible("staff")];
 
-  expect(await applyMigrations(pg, crewMigrations)).toEqual([SOURCES]);
+  // 只套用到 0004（之後的 crew migration 另有測試）
+  expect(await applyMigrations(pg, crewMigrations.filter((m) => m.version <= SOURCES))).toEqual([SOURCES]);
   expect((await pg.query("SELECT id, kind, name FROM crew.sources ORDER BY id")).rows).toEqual([
     { id: "harbor", kind: "repo", name: "example-org/harbor-docs" },
     { id: "lantern", kind: "repo", name: "example-org/lantern-notes" },
