@@ -20,24 +20,41 @@ const points = ["Dates", "Tone"];
 const noop = () => {};
 
 describe("重點卡", () => {
-  it("每點一列，有編號與內容中的位置；不是按鈕（點選在之後的 PR）", () => {
+  it("每點一列，有編號與內容中的位置；沒有 onToggle 時不是按鈕", () => {
     const out = html(createElement(PointList, { points, body: parseWorkBody(STRUCTURED, 2), language }));
     expect(out).toMatch(/^<div><ol /);
-    expect(out.match(/<li /g)).toHaveLength(2);
+    expect(out.match(/<li>/g)).toHaveLength(2);
     expect(out.match(/crew-review__point-place/g)).toHaveLength(2);
     expect(out).not.toContain("<button");
   });
 
-  it("舊格式的全文：只列重點，不顯示位置", () => {
-    const out = html(createElement(PointList, { points, body: parseWorkBody("one line summary", 2), language }));
-    expect(out.match(/<li /g)).toHaveLength(2);
+  it("舊格式的全文：只列重點，不顯示位置，也不是按鈕", () => {
+    const out = html(createElement(PointList, { points, body: parseWorkBody("one line summary", 2), language, active: 1, onToggle: noop }));
+    expect(out.match(/<li>/g)).toHaveLength(2);
     expect(out).not.toContain("crew-review__point-place");
+    expect(out).not.toContain("<button");
+    expect(out).not.toContain("aria-pressed");
+  });
+
+  it("可以點選：有位置的列是 aria-pressed 的按鈕，選中的是 true", () => {
+    const out = html(createElement(PointList, { points, body: parseWorkBody(STRUCTURED, 2), language, active: 2, onToggle: noop }));
+    expect(out.match(/<button type="button" class="crew-review__point" aria-pressed="(true|false)"/g)).toEqual([
+      '<button type="button" class="crew-review__point" aria-pressed="false"',
+      '<button type="button" class="crew-review__point" aria-pressed="true"',
+    ]);
+  });
+
+  it("只有部分重點有位置：沒有位置的那一列不是按鈕", () => {
+    const body = parseWorkBody(["@@ reply/greeting", `Hi ${mark(1, "there")}`].join("\n"), 2);
+    const out = html(createElement(PointList, { points, body, language, onToggle: noop }));
+    expect(out.match(/<button /g)).toHaveLength(1);
+    expect(out).toContain('<div class="crew-review__point">');
   });
 });
 
 describe("交件本身", () => {
-  const view = (body: string, changes = { mode: "items" as const, items: [{ path: "reply/p2", summary: "Week" }] }) =>
-    html(createElement(BodyView, { name: t.deliverableReply, body: parseWorkBody(body, 2), raw: body, changes, language }));
+  const view = (body: string, changes = { mode: "items" as const, items: [{ path: "reply/p2", summary: "Week" }] }, active: number | null = null) =>
+    html(createElement(BodyView, { name: t.deliverableReply, body: parseWorkBody(body, 2), raw: body, changes, language, active }));
 
   it("詞句重點有底線的片段與上標編號；整個區塊的重點標在區塊上", () => {
     const out = view(STRUCTURED);
@@ -46,6 +63,14 @@ describe("交件本身", () => {
     expect(out).toContain(`<span class="visually-hidden">${fill(t.pointMark, { n: 1 })}</span>`);
     expect(out).toMatch(/class="crew-review__block-text" data-point="2">/);
     expect(out).not.toContain("<mark");
+  });
+
+  it("選中的重點：內容中對應的片段或區塊有 data-active，其他沒有", () => {
+    const changes = { mode: "items" as const, items: [] };
+    expect(view(STRUCTURED, changes, 1)).toMatch(/class="crew-review__mark" data-point="1" data-active="true"/);
+    expect(view(STRUCTURED, changes, 1)).not.toMatch(/data-point="2" data-active/);
+    expect(view(STRUCTURED, changes, 2)).toMatch(/class="crew-review__block-text" data-point="2" data-active="true"/);
+    expect(view(STRUCTURED, changes, null)).not.toContain("data-active");
   });
 
   it("有變更的區塊標「已修改」，底部一行列出變更", () => {
@@ -76,6 +101,11 @@ describe("驗收面板的樣式", () => {
   it("內容中的重點是 2px 墨色底線；整個區塊的重點是 2px 墨色左線", () => {
     expect(block(".crew-review__mark")).toContain("underline 2px var(--color-text)");
     expect(block(".crew-review__block-text[data-point]")).toContain("border-inline-start: 2px solid var(--color-text)");
+  });
+
+  it("選中的重點列是 1px 墨色內框；內容中對應的位置是 surfaceRaised 底", () => {
+    expect(block('button.crew-review__point[aria-pressed="true"]')).toContain("box-shadow: inset 0 0 0 1px var(--color-text)");
+    expect(css).toMatch(/\.crew-review__mark\[data-active\],\s*\.crew-review__block-text\[data-active\] \{\s*background: var\(--color-surfaceRaised\)/);
   });
 
   it("「影響信任」是 danger 字；「確定退回」是墨色實心", () => {

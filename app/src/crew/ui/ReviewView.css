@@ -175,6 +175,29 @@
   padding: 0.4rem 0.5rem;
 }
 
+/* 可點的重點列（#72 計畫第 4 點）：外觀與文字列相同；選中時 1px 墨色內框 */
+button.crew-review__point {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  text-align: start;
+}
+
+button.crew-review__point:hover {
+  background: var(--color-surfaceRaised);
+}
+
+button.crew-review__point[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px var(--color-text);
+}
+
+/* 內容中對應選中重點的位置 */
+.crew-review__mark[data-active],
+.crew-review__block-text[data-active] {
+  background: var(--color-surfaceRaised);
+}
+
 .crew-review__point-number {
   display: inline-flex;
   flex: none;

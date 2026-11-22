@@ -1,6 +1,6 @@
 // 驗收面板 v3（#72 計畫第 1、5 點；設計規格 v3 第 6.2 節）：標題卡（結論列）→ 重點＋自動檢查 → 交件本身 → 前幾輪 → 決定列。
 // 資料只來自 readReviewPanel()；文字在 client/i18n/crew/review.<語言>.json。寫入行為與 v2 相同（createReview() 後重新讀取）。
-import { useState, type RefObject } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
 import type { createReview } from "../../db/store";
@@ -9,7 +9,7 @@ import { crewStrings, type CrewTexts } from "../../i18n";
 import { CheckRow, ConclusionRow, LevelBadge, withEmployee } from "../components";
 import type { ReviewPanel as PanelData, WorkListItem } from "../review";
 import { assignmentRef, workRef } from "../refs";
-import { BodyView, PointList } from "./BodyView";
+import { BodyView, PointList, type ActivePoint } from "./BodyView";
 import { conclusionOf, decisionQuestion, deliverableName, type Audience } from "./conclusion";
 
 type Texts = CrewTexts<"review">;
@@ -40,6 +40,14 @@ interface PanelProps {
 export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide }: PanelProps) {
   const t = crewStrings("review", language);
   const { item, focus, current, earlier, body, deliverable } = panel;
+  // 選中的重點只存在元件 state；換一筆工作時（key 改變）重設
+  const [active, setActive] = useState<ActivePoint>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const toggle = (n: number) => {
+    const next = active === n ? null : n;
+    setActive(next);
+    if (next !== null) revealPoint(bodyRef.current, next);
+  };
   const audience: Audience = panel.canDecide ? "decide" : item.verdict !== null ? "decided" : "view";
   const conclusion = conclusionOf(focus.checks, { deliverable, body, pointCount: focus.points.length, audience, language });
   const name = deliverableName(deliverable, language);
@@ -86,7 +94,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
               {t.noPoints}
             </p>
           ) : (
-            <PointList points={focus.points} body={body} language={language} />
+            <PointList points={focus.points} body={body} language={language} active={active} onToggle={toggle} />
           )}
         </section>
         <section className="card crew-review__section">
@@ -105,7 +113,9 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
         </section>
       </div>
 
-      <BodyView name={name} body={body} raw={focus.body.text} changes={focus.changes} language={language} />
+      <div ref={bodyRef}>
+        <BodyView name={name} body={body} raw={focus.body.text} changes={focus.changes} language={language} active={active} />
+      </div>
 
       {earlier.length > 0 && (
         <section className="card crew-review__section">
@@ -217,6 +227,15 @@ function DecisionBar({ question, workId, saving, decide, t }: DecisionProps) {
       )}
     </section>
   );
+}
+
+/** 把第 n 個重點在內容中的第一個位置捲進畫面；位置在收起的 details 裡時先展開 */
+function revealPoint(root: HTMLElement | null, n: number) {
+  const target = root?.querySelector<HTMLElement>(`[data-point~="${n}"]`);
+  if (!target) return;
+  const details = target.closest("details");
+  if (details) details.open = true;
+  target.scrollIntoView?.({ block: "nearest" });
 }
 
 function formatDate(iso: string, language: LanguageCode): string {

@@ -1,5 +1,5 @@
-// 驗收面板 v3（#72 計畫第 7 點）：結論列、重點的標記、退回原因的「影響信任」、手機寬度不破版。
-// 只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。點重點與四種交件各自的畫面在之後的 PR 加上。
+// 驗收面板 v3（#72 計畫第 7 點）：結論列、重點的標記與點選、退回原因的「影響信任」、手機寬度不破版。
+// 只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。四種交件各自的畫面在之後的 PR 加上。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import { language, readClientJson, theme } from "./support/client";
@@ -64,6 +64,35 @@ test("重點：重點卡列出內容中的位置，內容中的對應文字有�
   await expect(body.locator('[data-point="1"]')).toHaveCount(1);
   await expect(body.locator('[data-point="1"]')).toContainText(crewFill(ct.review.pointMark, { n: 1 }));
   await expect(body.getByText(crewFill(ct.review.modified, { summary: demoChange("s14", 0) }), { exact: true })).toBeVisible();
+});
+
+test("點重點：按鈕變成 aria-pressed，內容中的對應位置是 surfaceRaised 底，再點一次取消；鍵盤也能操作", async ({ page }) => {
+  const panel = await openWork(page, "s14");
+  const buttons = pointsCard(panel).getByRole("button");
+  await expect(buttons).toHaveCount(2);
+  const [first, second] = [buttons.nth(0), buttons.nth(1)];
+  const body = panel.getByRole("article", { name: ct.review.deliverableReply });
+  const spot = (n: number) => body.locator(`[data-point~="${n}"]`).first();
+  const transparent = "rgba(0, 0, 0, 0)";
+
+  await expect(first).toHaveAttribute("aria-pressed", "false");
+  await expect(spot(1)).toHaveCSS("background-color", transparent);
+  await first.click();
+  await expect(first).toHaveAttribute("aria-pressed", "true");
+  await expect(first).toHaveCSS("box-shadow", `${rgb(theme.colors.text)} 0px 0px 0px 1px inset`);
+  await expect(spot(1)).toHaveCSS("background-color", rgb(theme.colors.surfaceRaised));
+  await expect(spot(2)).toHaveCSS("background-color", transparent);
+  await first.click();
+  await expect(first).toHaveAttribute("aria-pressed", "false");
+  await expect(spot(1)).toHaveCSS("background-color", transparent);
+
+  await first.focus();
+  await page.keyboard.press("Tab");
+  await expect(second).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(second).toHaveAttribute("aria-pressed", "true");
+  await expect(first).toHaveAttribute("aria-pressed", "false");
+  await expect(spot(2)).toHaveCSS("background-color", rgb(theme.colors.surfaceRaised));
 });
 
 test("決定列與退回：問句、三張原因卡，「做錯了」的「影響信任」是 danger 字，「確定退回」是墨色", async ({ page }) => {
