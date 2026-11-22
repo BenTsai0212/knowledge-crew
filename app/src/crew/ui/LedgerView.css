@@ -1,61 +1,107 @@
-/* 「工作帳本」畫面（#40）：篩選與依時間新到舊的紀錄。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
+/* 「工作帳本」畫面（#40；#77 改成表格，設計規格 v3 第 6.7 節）。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts）；
+   不用 mark 系列，danger 只用在文字（規格第 3 節第 1、2 點） */
 .crew-ledger {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 
-.crew-ledger__filters {
+.crew-ledger__top {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  align-items: flex-end;
+  gap: 1rem;
 }
 
-.crew-ledger__filters label {
+.crew-ledger__header {
+  display: grid;
+  flex: 1 1 26rem;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.crew-ledger__title {
+  margin: 0;
+}
+
+.crew-ledger__lead {
+  margin: 0;
+}
+
+.crew-ledger__filter {
   display: grid;
   gap: 0.25rem;
+  font-size: 0.85rem;
 }
 
-.crew-ledger__list {
+.crew-ledger__filter select {
+  min-height: 44px;
+}
+
+.crew-ledger__card {
   display: grid;
-  gap: 0.5rem;
-  margin: 0;
-  list-style: none;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
-.crew-ledger__item {
-  display: grid;
-  gap: 0.15rem;
-  overflow-wrap: anywhere;
+/* 表格在框內橫向捲動，頁面本身不水平捲動；position 讓表格內的 .visually-hidden（absolute）也被框裁切 */
+.crew-ledger__scroll {
+  position: relative;
+  overflow-x: auto;
 }
 
-.crew-ledger__item + .crew-ledger__item {
-  border-top: 1px solid var(--color-border);
-  padding-top: 0.5rem;
+.crew-ledger__table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
 }
 
-.crew-ledger__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+.crew-ledger__table th {
+  border-bottom: 2px solid var(--color-text);
+  padding: 0.6rem 0.75rem;
+  color: var(--color-textMuted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: start;
+  white-space: nowrap;
 }
 
-.crew-ledger__time {
+.crew-ledger__table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.7rem 0.75rem;
   font-size: 0.9rem;
+  vertical-align: top;
 }
 
-.crew-ledger__item-title {
+.crew-ledger__date {
+  color: var(--color-textMuted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.crew-ledger__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+/* 層級改變：灰底列、粗體 */
+.crew-ledger__table tr[data-tone="level"] td {
+  background: var(--color-surfaceRaised);
+}
+
+.crew-ledger__table tr[data-tone="level"] .crew-ledger__kind {
   font-weight: 700;
 }
 
-.crew-ledger__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 0.75rem;
-  font-size: 0.9rem;
+/* 退回（做錯了）：danger 粗體字，不做底色 */
+.crew-ledger__table tr[data-tone="wrong"] .crew-ledger__kind {
+  color: var(--color-danger);
+  font-weight: 700;
 }
 
-.crew-ledger__ref {
-  font-family: var(--font-mono);
+.crew-ledger__more {
+  display: flex;
+  justify-content: center;
 }

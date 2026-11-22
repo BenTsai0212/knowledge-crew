@@ -1,4 +1,4 @@
-// 「工作帳本」的資料整理（#40 計畫第 1～3 節）：交辦、交件、驗收、同意少看與收回、因做錯了改回逐項看，
+// 「工作帳本」的資料整理（#40 計畫第 1～3 節；#77 加上事件篩選與列的樣式）：交辦、交件、驗收、同意少看與收回、因做錯了改回逐項看，
 // 依時間新到舊列出。一律經 withIdentity() 讀取，可見範圍由 RLS 決定；改回逐項看由 autoResets() 推得，不另存。
 import type { Transaction } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
@@ -32,15 +32,33 @@ export interface LedgerEvent {
   assignment: LedgerAssignment | null;
   /** 誰做的：身分的 id；依規則自動發生（autoReset）時是 null */
   actor: string | null;
-  /** 交件的輪次；其他種類是 null */
+  /** 交件與驗收的輪次；其他種類是 null */
   round: number | null;
   /** 退回原因；其他種類是 null */
   reason: ReturnReason | null;
 }
 
+/** 事件的篩選（設計規格 v3 第 6.7 節）：全部／只看層級改變／只看退回 */
+export type LedgerEventFilter = "all" | "level" | "returned";
+
 export interface LedgerFilter {
   employeeId?: string | null;
   workTypeId?: string | null;
+  event?: LedgerEventFilter;
+}
+
+/** 「載入更早的紀錄」一次多顯示的筆數；資料已全部讀進來，只是分批顯示（#77） */
+export const LEDGER_PAGE_SIZE = 20;
+
+const LEVEL_KINDS: ReadonlySet<LedgerKind> = new Set(["relax", "revoke", "autoReset"]);
+
+/** 層級改變的紀錄：同意少看、收回少看、因做錯了改回逐項看（畫面以灰底標出）。 */
+export const isLevelChange = (kind: LedgerKind): boolean => LEVEL_KINDS.has(kind);
+
+/** 事件文字的樣式：層級改變是粗體灰底列，退回（做錯了）是 danger 粗體，其他沒有。 */
+export function ledgerTone(event: Pick<LedgerEvent, "kind" | "reason">): "level" | "wrong" | null {
+  if (isLevelChange(event.kind)) return "level";
+  return event.kind === "returned" && event.reason === "wrong" ? "wrong" : null;
 }
 
 // 原始資料：store.ts 沒有的讀取（交件的時間、層級決定的 id 與決定者）
@@ -163,7 +181,8 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
   for (const r of sources.reviews) {
     const a = assignmentOfReview(r.id);
     if (!a) continue;
-    events.push({ ...base(a), id: `${r.verdict}:${r.id}`, kind: r.verdict, at: r.decidedAt, actor: r.decidedBy, reason: r.reason });
+    const round = works.get(r.workId)?.round ?? null;
+    events.push({ ...base(a), id: `${r.verdict}:${r.id}`, kind: r.verdict, at: r.decidedAt, actor: r.decidedBy, round, reason: r.reason });
   }
   for (const d of sources.decisions) {
     // RLS 已於 crew/0003 收緊到同一員工 × 同一工作類型（#49）；這裡的過濾保留，作為雙重保護
@@ -189,10 +208,16 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
   return events.sort(compareLedger);
 }
 
-/** 依員工與工作類型篩選；沒有指定（null 或省略）的條件不篩選。 */
+const matchesEvent = (kind: LedgerKind, event: LedgerEventFilter = "all"): boolean =>
+  event === "all" || (event === "level" ? isLevelChange(kind) : kind === "returned");
+
+/** 依員工、工作類型與事件篩選；沒有指定（null、省略或 "all"）的條件不篩選。 */
 export function filterLedger(events: readonly LedgerEvent[], filter: LedgerFilter): LedgerEvent[] {
   return events.filter(
-    (e) => (filter.employeeId == null || e.employee.id === filter.employeeId) && (filter.workTypeId == null || e.workTypeId === filter.workTypeId),
+    (e) =>
+      (filter.employeeId == null || e.employee.id === filter.employeeId) &&
+      (filter.workTypeId == null || e.workTypeId === filter.workTypeId) &&
+      matchesEvent(e.kind, filter.event),
   );
 }
 
