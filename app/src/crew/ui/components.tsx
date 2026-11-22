@@ -1,10 +1,11 @@
-// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節「元件」）：AI 標記、層級徽章、結論列、收起的區塊（自動檢查列在 #66 PR 2）。
+// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節「元件」）：AI 標記、層級徽章、結論列、自動檢查列、收起的區塊。
 // 文字在 client/i18n/crew/common.<語言>.json；樣式在 components.css（只用 theme.json 的變數）。
 import { Fragment, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
 import type { LanguageCode } from "../../client/types";
 import type { CheckStatus, ReviewLevel } from "../trust/types";
 import { crewStrings } from "../i18n";
+import { checkLabel, checkSentence } from "./glossary";
 import "./components.css";
 
 type Tone = "fail" | "pending";
@@ -78,6 +79,23 @@ export function ConclusionRow({ tone, title, description }: { tone: Tone; title:
       <Icon status={tone} size={24} />
       <p className="crew-conclusion__title">{title}</p>
       <p className="crew-conclusion__description">{description}</p>
+    </div>
+  );
+}
+
+const CHECK_TEXT = { pass: "checkPass", fail: "checkFail", pending: "checkPending" } as const satisfies Record<CheckStatus, string>;
+
+/** 自動檢查列：圖示＋白話名稱與說明＋右側狀態。未通過有 danger 框，通過與檢查中無框；都不用底色。 */
+export function CheckRow({ name, status, language }: { name: string; status: CheckStatus; language: LanguageCode }) {
+  const sentence = checkSentence(name, status, language);
+  return (
+    <div className="crew-check" data-status={status}>
+      <Icon status={status} size={20} />
+      <span className="crew-check__text">
+        <span className="crew-check__name">{checkLabel(name, language)}</span>
+        {sentence !== null && <span className="crew-check__sentence">{sentence}</span>}
+      </span>
+      <span className="crew-check__status">{crewStrings("review", language)[CHECK_TEXT[status]]}</span>
     </div>
   );
 }

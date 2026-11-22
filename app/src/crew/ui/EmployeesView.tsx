@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fill } from "../../client/i18n";
 import { crewStrings } from "../i18n";
-import { EmployeeName } from "./components";
+import { EmployeeName, LevelBadge } from "./components";
 import { readEmployees, type EmployeeSummary } from "./employees";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
@@ -60,9 +60,7 @@ export function EmployeesView({ db, identity, language }: CrewScreenProps) {
                   <tr key={w.workTypeId}>
                     <th scope="row">{workTypeLabel(w.workTypeId, language)}</th>
                     <td>
-                      <span className="badge" data-level={w.level}>
-                        {w.level === "light" ? t.levelLight : t.levelItem}
-                      </span>
+                      <LevelBadge level={w.level}>{w.level === "light" ? t.levelLight : t.levelItem}</LevelBadge>
                     </td>
                     <td>{fill(t.reviewCount, { count: w.reviewCount }, language)}</td>
                   </tr>

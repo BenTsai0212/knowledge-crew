@@ -6,7 +6,7 @@ import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import type { Dot } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { withEmployee } from "./components";
+import { LevelBadge, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
 import { canReviewOf } from "./today";
@@ -86,9 +86,7 @@ export function TrustView({ db, identity, language }: CrewScreenProps) {
             <Dots dots={row.dots} t={t} language={language} />
             <p className="crew-trust__level">
               <span className="muted">{t.levelLabel}</span>
-              <span className="badge" data-level={row.level}>
-                {row.level === "light" ? t.levelLight : t.levelItem}
-              </span>
+              <LevelBadge level={row.level}>{row.level === "light" ? t.levelLight : t.levelItem}</LevelBadge>
             </p>
             {row.lastReset !== null && <p className="muted">{fill(t.lastReset, { date: formatDate(row.lastReset, language) })}</p>}
             {suggestion && <p>{fill(t.suggestion, { count: suggestion.count }, language)}</p>}

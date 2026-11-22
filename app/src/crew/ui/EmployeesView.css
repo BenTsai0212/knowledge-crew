@@ -34,8 +34,3 @@
   color: var(--color-textMuted);
   font-weight: 400;
 }
-
-.crew-employees__table .badge[data-level="light"] {
-  border-color: var(--color-success);
-  color: var(--color-success);
-}

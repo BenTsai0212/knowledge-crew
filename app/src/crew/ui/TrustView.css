@@ -64,11 +64,6 @@
   gap: 0.5rem;
 }
 
-.crew-trust__level .badge[data-level="light"] {
-  border-color: var(--color-success);
-  color: var(--color-success);
-}
-
 .crew-trust__actions {
   display: flex;
   flex-wrap: wrap;
