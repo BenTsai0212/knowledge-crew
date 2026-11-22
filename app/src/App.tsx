@@ -80,6 +80,8 @@ import { NavRail } from "./ui/NavRail";
 import { useLayout } from "./ui/layout";
 import { crewMigrations } from "./crew/db/migrate";
 import { CrewPage } from "./crew/ui/CrewPage";
+import type { CrewTarget } from "./crew/ui/sections";
+import { SourceOrigin } from "./crew/ui/SourceOrigin";
 import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
@@ -160,6 +162,11 @@ export function App() {
   // 輸入框的文字（「接著問」填進來），與「在圖譜中查看」要選取的實體
   const [draft, setDraft] = useState("");
   const [graphFocus, setGraphFocus] = useState<string | null>(null);
+  // knowledge-crew：原文的「來自 AI 員工 ○○」要切到的 crew 位置（#92）；離開 crew 頁時清除
+  const [crewRequest, setCrewRequest] = useState<{ target: CrewTarget; n: number } | null>(null);
+  useEffect(() => {
+    if (view !== "crew") setCrewRequest(null);
+  }, [view]);
   // 展示模式的劇本（#260 決定 3）：目前題目是最後點的劇本題，只在記憶體；劇本切換身分時頂端列的身分徽章跳一下
   const [scriptCurrent, setScriptCurrent] = useState<string | null>(null);
   // （count 換 key 重播動畫；以頂端列手動切換身分時清除，不跳）
@@ -647,6 +654,19 @@ export function App() {
   }
 
   const closeSource = () => (sources.current.cancel(), setSource(null));
+  // knowledge-crew：回流文件的來源（#92，crew ADR 0004 的 2026-11-22 修訂）；點了切到「工作與驗收」的那一件。
+  // 看不到 crew 頁籤時（沒有 demo.json、展示模式）不顯示
+  const sourceOrigin = (documentId: string) =>
+    db !== null &&
+    views(canReview).includes("crew") && (
+      <SourceOrigin
+        db={db}
+        identity={identity}
+        language={language}
+        documentId={documentId}
+        onOpen={(assignmentId) => (closeSource(), setCrewRequest((last) => ({ target: { section: "works", assignmentId }, n: (last?.n ?? 0) + 1 })), setView("crew"))}
+      />
+    );
   // 桌機原文欄的 ✕：焦點回到引用標號（還在畫面上時）
   const closeSourcePanel = () => {
     closeSource();
@@ -748,6 +768,7 @@ export function App() {
         onClose={closeSource}
         side={side}
         onConfirm={onConfirm}
+        origin={sourceOrigin(source.id)}
       />
     );
   };
@@ -761,6 +782,7 @@ export function App() {
         cited={sourceTurn !== null && citedSources?.turn === sourceTurn ? citedSources.items : null}
         onClose={closeSourcePanel}
         onConfirm={onConfirm}
+        origin={sourceOrigin(source.id)}
       />
     );
   const mentionPanel = (inSheet: boolean) =>
@@ -874,7 +896,7 @@ export function App() {
               onViewed={onViewed}
             />
           ) : view === "crew" ? (
-            <CrewPage db={db} identity={identity} language={language} />
+            <CrewPage db={db} identity={identity} language={language} request={crewRequest} onOpenSource={(passageId) => void onOpenSource(passageId)} />
           ) : view === "evals" ? (
             <EvalPage
               language={language}

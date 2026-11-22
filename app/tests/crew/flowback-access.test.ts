@@ -5,9 +5,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { clientConfig } from "../../src/client/load";
 import { crewMigrations } from "../../src/crew/db/migrate";
 import { createReview } from "../../src/crew/db/store";
+import { readFlowbackOrigin, readFlowbackPassage } from "../../src/crew/knowledge/origin";
 import { readGraph } from "../../src/graph/read";
 import { DEMO_RAW } from "../../src/crew/demo/load";
 import { demoSeed } from "../../src/crew/demo/seed";
+import type { DemoFile } from "../../src/crew/demo/types";
 import { openDatabase, type Database } from "../../src/db/database";
 import { expectedVisible } from "../db/oracle";
 
@@ -279,5 +281,44 @@ describe("seed 時回流與部門的合併", { timeout: 60_000 }, () => {
     db = await openDatabase(clientConfig, { migrations: crewMigrations, seed: taken });
     await expect(createReview(db, "manager", { workId: WORK, verdict: "accepted" })).rejects.toThrow(/duplicate key|unique/);
     expect(await flowed("manager")).toEqual({ documents: [], passages: [], flowbacks: [], entities: [], reviews: [] });
+  });
+});
+
+// 原文的「來自 AI 員工 ○○」與「已收進知識庫」讀的回流紀錄（#92 PR 3）：看得到驗收與文件的身分才有
+describe("回流的來源", { timeout: 60_000 }, () => {
+  const lang = clientConfig.client.defaultLanguage;
+  const origin = (identity: string | null, doc: string) => readFlowbackOrigin(db, identity, doc, lang);
+
+  it("seed 時回流的 k12：主管讀到員工、交辦與驗收時間；一般員工、訪客、沒有身分讀不到", async () => {
+    await open();
+    expect(await origin("manager", SEEDED)).toEqual({
+      assignmentId: "k12", title: (DEMO_RAW as DemoFile).assignments.find((a) => a.id === "k12")!.title[lang], employeeName: "Linden",
+      decidedAt: new Date("2026-10-27T15:00:00+08:00").toISOString(),
+    });
+    expect(await readFlowbackPassage(db, "manager", "k12-w1")).toBe(`${SEEDED}-1`);
+    for (const identity of ["staff", "guest", null]) {
+      expect(await origin(identity, SEEDED), String(identity)).toBeNull();
+      expect(await readFlowbackPassage(db, identity, "k12-w1"), String(identity)).toBeNull();
+    }
+  });
+
+  it("通過 k13 之後才有來源；不是回流的文件與退回的工作沒有", async () => {
+    await open();
+    expect(await origin("manager", DOC)).toBeNull();
+    expect(await readFlowbackPassage(db, "manager", WORK)).toBeNull();
+    await createReview(db, "manager", { workId: WORK, verdict: "accepted" });
+    expect(await origin("manager", DOC)).toMatchObject({ assignmentId: "k13", employeeName: "Linden" });
+    expect(await readFlowbackPassage(db, "manager", WORK)).toBe(`${DOC}-1`);
+    expect(await origin("staff", DOC)).toBeNull();
+    // 資料集的文件不是回流的文件
+    const [plain] = await ids("manager", "SELECT id AS k FROM kk.documents WHERE id NOT LIKE 'crew-%' ORDER BY id LIMIT 1");
+    expect(await origin("manager", plain)).toBeNull();
+  });
+
+  it("沒有上傳權限的驗收者通過：沒有回流紀錄，所以沒有來源", async () => {
+    await open();
+    await createReview(db, "clerk", { workId: WORK, verdict: "accepted" });
+    expect(await readFlowbackPassage(db, "manager", WORK)).toBeNull();
+    expect(await origin("manager", DOC)).toBeNull();
   });
 });
