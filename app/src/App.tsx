@@ -80,7 +80,7 @@ import { NavRail } from "./ui/NavRail";
 import { useLayout } from "./ui/layout";
 import { crewMigrations } from "./crew/db/migrate";
 import { CrewPage } from "./crew/ui/CrewPage";
-import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, hasCrewDemo, withCrew } from "./crew/ui/entry";
+import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, crewStartIdentity, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
 import { ScriptPanel } from "./ui/ScriptPanel";
@@ -118,7 +118,8 @@ export function App() {
   // 登入後的預設頁是首頁，展示模式是問答（#283）；還沒登入時兩者都顯示登入頁
   const [view, setView] = useState<View>(startView);
   const [language, setLanguage] = useState(client.defaultLanguage);
-  const [identity, setIdentity] = useState(access.roles[0].id);
+  // crew-only 時一開始是主管（能驗收的身分，#84），其他情況是第一個身分
+  const [identity, setIdentity] = useState(() => crewStartIdentity(access, crewOnlyMode));
   const [accessCode, setAccessCode] = useState(loadAccessCode);
   // 登入的方式（#287）：只在記憶體。帳號登入不保存任何東西，重新整理後回到登入頁；分頁中留有邀請碼時是以邀請碼體驗
   const [signIn, setSignIn] = useState<SignIn | null>(() => (accessCode === null ? null : { kind: "code" }));

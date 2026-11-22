@@ -1,7 +1,7 @@
 // knowledge-kit 的畫面接上 crew 的接入點（#34，ADR 0004「畫面入口」）：頁籤是否顯示、頁籤名稱、組合 seed。
 // knowledge-kit 的 App.tsx、Sidebar.tsx 只呼叫這裡的函式；crew 的功能一律放在 app/src/crew/。
 import type { PGliteInterface } from "@electric-sql/pglite";
-import type { LanguageCode } from "../../client/types";
+import type { AccessFile, LanguageCode } from "../../client/types";
 import { crewOnly, type View } from "../../ui/online-demo";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed, type DemoSeedConfig } from "../demo/seed";
@@ -28,6 +28,15 @@ export function withCrew(views: readonly View[], hasDemo: boolean, presentation:
 
 /** 登入後的預設頁：crew-only 時是 AI 員工（CrewPage 的預設是「今天」），其他情況沿用 knowledge-kit 的預設頁。 */
 export const crewDefaultView = (base: View, only: boolean): View => (only ? "crew" : base);
+
+/**
+ * 一開始的身分：crew-only 時是第一個能驗收的身分（主管，client/access.json 的 canReview；#86 的修正要求 2），
+ * 讓「直接體驗」後的「今天」就有待驗收的工作與少看建議；身分仍可切換。沒有能驗收的身分或其他情況是第一個身分。
+ */
+export function crewStartIdentity(access: Pick<AccessFile, "roles">, only: boolean): string {
+  const first = access.roles[0].id;
+  return only ? (access.roles.find((r) => r.canReview)?.id ?? first) : first;
+}
 
 /**
  * crew-only 時登入用的固定值：App 以「邀請碼不是 null」代表已登入，沿用既有的登入、身分切換流程。

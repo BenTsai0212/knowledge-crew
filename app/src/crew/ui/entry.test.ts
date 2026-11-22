@@ -5,7 +5,7 @@ import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { CREW_TRANSLATIONS } from "../i18n";
 import { visibleViews, type View } from "../../ui/online-demo";
-import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, crewTabLabel, hasCrewDemo, withCrew } from "./entry";
+import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, crewStartIdentity, crewTabLabel, hasCrewDemo, withCrew } from "./entry";
 import { CREW_SECTIONS } from "./sections";
 
 const off = { enabled: false };
@@ -61,6 +61,23 @@ describe("crew-only（VITE_CREW_ONLY=1，#84）", () => {
     expect(crewDefaultView("qa", true)).toBe("crew");
     expect(crewDefaultView("home", false)).toBe("home");
     expect(crewDefaultView("qa", false)).toBe("qa");
+  });
+
+  it("一開始的身分：開啟時是能驗收的主管，關閉時是第一個身分（線上 demo 與一般 build 不變）", () => {
+    const { access } = clientConfig;
+    expect(crewStartIdentity(access, true)).toBe("manager");
+    expect(access.roles.find((r) => r.id === crewStartIdentity(access, true))?.canReview).toBe(true);
+    expect(crewStartIdentity(access, false)).toBe(access.roles[0].id);
+    expect(crewStartIdentity(access, crewOnlyMode)).toBe(access.roles[0].id);
+  });
+
+  it("一開始的身分：沒有能驗收的身分時是第一個身分", () => {
+    const roles = [
+      { id: "a", canReview: false },
+      { id: "b", canReview: false },
+    ];
+    expect(crewStartIdentity({ roles } as never, true)).toBe("a");
+    expect(crewStartIdentity({ roles: [{ id: "a", canReview: false }, { id: "b", canReview: true }, { id: "c", canReview: true }] } as never, true)).toBe("b");
   });
 
   it("測試環境沒有設定開關，所以是關閉的", () => {

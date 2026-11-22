@@ -256,7 +256,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數、待驗收件數、平常的工作來源、最近的圓點與一句說明；測試在 `employees.test.ts`）
 - `ui/EmployeesView.css`：「員工」畫面的員工卡（桌機兩欄、窄螢幕一欄；職務圖示的方框）
 - `ui/EmployeesView.tsx`：「員工」畫面（設計規格 v3 第 6.5 節）：呈現 `employees.ts` 的員工卡（職務圖示、交件與來源、圓點、說明）；「看信任紀錄」切到信任頁，「交辦給 ○○」只給能驗收的身分，切到交辦頁並預選員工
-- `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`；只展示 AI 員工的 build（crew ADR 0005）：`crewOnlyMode`、`crewDefaultView()`、`CREW_ONLY_ACCESS_CODE`、`crewDirectEntryLabel()`
+- `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`；只展示 AI 員工的 build（crew ADR 0005）：`crewOnlyMode`、`crewDefaultView()`、`crewStartIdentity()`、`CREW_ONLY_ACCESS_CODE`、`crewDirectEntryLabel()`
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看，依時間新到舊；`filterLedger()`：依員工、工作類型與事件篩選；`ledgerTone()`：層級改變與退回（做錯了）的樣式；測試在 `ledger.test.ts`）
 - `ui/LedgerView.css`：「工作帳本」畫面的篩選與表格（窄螢幕時表格在框內橫向捲動）
