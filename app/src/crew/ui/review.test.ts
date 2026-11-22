@@ -7,7 +7,7 @@ import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import type { DemoFile } from "../demo/types";
-import { toPlainText } from "../work/body";
+import { parseWorkBody } from "../work/body";
 import { initialSelection, readReviewPanel, readWorkList, RECENT_LIMIT } from "./review";
 import { canReviewOf } from "./today";
 
@@ -58,7 +58,7 @@ describe("readWorkList：匯入虛構資料後", () => {
       sourceName: label("support-inbox"),
       externalRef: "1054",
       workRef: null,
-      employee: { id: "rowan", displayName: "Rowan" },
+      employee: { id: "rowan", displayName: "Rowan", roleNote: demo.employees.find((e) => e.id === "rowan")!.roleNote[lang] },
       workTypeId: "support",
       round: 1,
       verdict: null,
@@ -143,11 +143,32 @@ describe("readReviewPanel：匯入虛構資料後", () => {
       expect(p.item.sourceName).toBe(label("company-kb", language));
       expect(p.current.summary).toBe(w.summary[language]);
       expect(p.focus.points).toEqual(w.points.map((t) => t[language]));
-      expect(p.focus.body.text).toBe(toPlainText(w.body[language]));
-      expect(p.focus.body.text).not.toContain("@@");
+      // 原始全文交給 parseWorkBody()，依結構呈現（#72 計畫第 1 點）
+      expect(p.focus.body.text).toBe(w.body[language]);
+      expect(p.body).toEqual(parseWorkBody(w.body[language], w.points.length));
+      expect(p.body.structured).toBe(true);
+      expect(p.body.sections.map((s) => s.key)).toContain("kb/pre-orders#effective-date");
+      expect(p.item.employee.roleNote).toBe(demo.employees.find((e) => e.id === "linden")!.roleNote[language]);
       const c11 = (await panel(db, "manager", "c11", language))!;
       const cw = demo.assignments.find((a) => a.id === "c11")!.works[0];
       expect(c11.focus.changes).toEqual({ mode: "items", items: cw.changes.map((c) => ({ path: c.path, summary: c.summary[language] })) });
+    }
+  });
+});
+
+describe("readReviewPanel：交件的種類與全文的結構", () => {
+  it("工作類型決定交件的種類：客服是回信、內容是貼文、知識庫是條目、開發是程式修改", async () => {
+    const kinds = await Promise.all(AWAITING.map(async (id) => (await panel(db, "manager", id))!.deliverable));
+    expect(kinds).toEqual(["reply", "post", "kb", "code"]);
+  });
+
+  it.each([lang, other])("待驗收四件的全文（%s）都解析成功，每個重點在內容中都有位置", async (language) => {
+    for (const id of AWAITING) {
+      const p = (await panel(db, "manager", id, language))!;
+      expect(p.body.structured, id).toBe(true);
+      expect(p.body.errors, id).toEqual([]);
+      expect(p.body.points, id).toHaveLength(p.focus.points.length);
+      expect(p.body.points.every((l) => l.length > 0), id).toBe(true);
     }
   });
 });
@@ -163,6 +184,8 @@ describe("寫入後讀回", { timeout: DB_TIMEOUT }, () => {
       const p = (await panel(own, "manager", id, other))!;
       expect(p.item.title).toBe("Own task");
       expect(p.focus.body.text).toBe("Body");
+      // 舊格式（沒有標頭行）：一個沒有鍵的區塊，畫面退回純文字
+      expect(p.body).toMatchObject({ structured: false, sections: [{ key: null, text: "Body" }], errors: [] });
       expect(p.focus.level).toBe("light");
       expect(p.focus.noPoints).toBe(true);
       expect(p.focus.changes).toEqual({ mode: "items", items: changes });
