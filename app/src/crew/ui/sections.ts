@@ -16,11 +16,21 @@ export const CREW_SECTIONS = [
 
 export type CrewSection = (typeof CREW_SECTIONS)[number]["id"];
 
+/** 切到另一個位置（#83）；employeeId 是交辦頁預選的員工。 */
+export interface CrewTarget {
+  section: CrewSection;
+  employeeId?: string;
+}
+
 /** 每個畫面元件收到的 props；identity 與 App.tsx 的身分相同（目前一定有值）。 */
 export interface CrewScreenProps {
   db: Database;
   identity: string;
   language: LanguageCode;
+  /** 切到另一個位置（CrewPage 提供；單獨使用畫面時沒有） */
+  navigate?: (target: CrewTarget) => void;
+  /** 交辦頁預選的員工（#83：員工卡的「交辦給 ○○」） */
+  employeeId?: string;
 }
 
 export type CrewScreen = ComponentType<CrewScreenProps>;

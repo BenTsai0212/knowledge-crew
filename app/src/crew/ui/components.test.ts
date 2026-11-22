@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { clientConfig } from "../../client/load";
 import { crewStrings } from "../i18n";
-import { AiMark, CheckRow, CollapsedFields, ConclusionRow, employeeOptionText, LevelBadge, withEmployee } from "./components";
+import { AiMark, CheckRow, CollapsedFields, ConclusionRow, DotMark, DotRow, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
 import { checkLabel, checkSentence } from "./glossary";
 import css from "./components.css?raw";
 
@@ -154,5 +154,33 @@ describe("顏色規則（規格第 3 節第 1、2 點）", () => {
       expect(text, path).not.toMatch(/--color-mark/);
       expect(text, path).not.toMatch(/background[^;]*--color-warning/);
     }
+  });
+});
+
+describe("圓點（#83：信任頁與員工卡共用）", () => {
+  const tr = crewStrings("trust", language);
+  const count = (key: string, n: number) => key.replace("{count}", String(n));
+
+  it("摘要只列出有的結果，依通過、做錯了、其他退回的順序", () => {
+    expect(dotsSummary(["ok", "wrong", "ok"], language)).toBe([count(tr.dotsAriaOk, 2), count(tr.dotsAriaWrong, 1)].join(tr.dotsAriaSeparator));
+    expect(dotsSummary(["neutral", "ok"], language)).toBe([count(tr.dotsAriaOk, 1), count(tr.dotsAriaNeutral, 1)].join(tr.dotsAriaSeparator));
+    expect(dotsSummary([], language)).toBe("");
+  });
+
+  it("DotMark：做錯了是 ×，其他是空的；螢幕閱讀器不讀；可加上畫面自己的 class", () => {
+    expect(html(createElement(DotMark, { dot: "wrong" }))).toContain('<span class="crew-dot" data-dot="wrong" aria-hidden="true">×</span>');
+    expect(html(createElement(DotMark, { dot: "ok", className: "x" }))).toContain('<span class="crew-dot x" data-dot="ok" aria-hidden="true"></span>');
+  });
+
+  it("DotRow：整排是一張圖，aria-label 是摘要，每次一個圓點", () => {
+    const out = html(createElement(DotRow, { dots: ["ok", "neutral", "wrong"], language }));
+    expect(out).toContain(`role="img" aria-label="${dotsSummary(["ok", "neutral", "wrong"], language)}"`);
+    expect(out.match(/class="crew-dot"/g)).toHaveLength(3);
+  });
+
+  it("通過＝success 實心、做錯了＝danger、其他退回＝textMuted 虛線", () => {
+    expect(rule('.crew-dot[data-dot="ok"]')).toContain("background: var(--color-success)");
+    expect(rule('.crew-dot[data-dot="wrong"]')).toContain("color: var(--color-danger)");
+    expect(rule('.crew-dot[data-dot="neutral"]')).toContain("border: 1.5px dashed var(--color-textMuted)");
   });
 });
