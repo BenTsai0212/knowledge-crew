@@ -1,6 +1,6 @@
 // 驗收面板 v3（#72 計畫第 1、5 點；設計規格 v3 第 6.2 節）：標題卡（結論列）→ 重點＋自動檢查 → 交件本身 → 前幾輪 → 決定列。
 // 資料只來自 readReviewPanel()；文字在 client/i18n/crew/review.<語言>.json。寫入行為與 v2 相同（createReview() 後重新讀取）。
-import { useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
 import type { createReview } from "../../db/store";
@@ -239,15 +239,23 @@ interface DecisionProps {
   t: Texts;
 }
 
-/** 決定列：問句＋退回（次要）＋通過（主要）；按退回後展開三張原因卡，「確定退回」是墨色實心按鈕。 */
+/**
+ * 決定列：問句＋退回（次要）＋通過（主要）；按退回後展開三張原因卡，「確定退回」是墨色實心按鈕。
+ * 手機（#103）的決定列固定在底部分頁列之上（ReviewView.css）；展開退回原因時取消固定、回到面板最後，並把原因捲進畫面。
+ */
 function DecisionBar({ question, workId, saving, decide, t }: DecisionProps) {
   // 退回的表單只存在元件 state；換一筆工作時（key 改變）重設
   const [returning, setReturning] = useState(false);
   const [reason, setReason] = useState<ReturnReason | null>(null);
   const [note, setNote] = useState("");
   const trimmed = note.trim();
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = ref.current;
+    if (returning && bar?.closest(".app--phone")) bar.scrollIntoView?.({ block: "nearest" });
+  }, [returning]);
   return (
-    <section className="card crew-review__decision">
+    <section ref={ref} className="card crew-review__decision" data-returning={returning}>
       {!returning ? (
         <div className="crew-review__decision-row">
           <p className="crew-review__question">{question}</p>
