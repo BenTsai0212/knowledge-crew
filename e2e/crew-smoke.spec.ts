@@ -4,6 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import {
   crewContent,
+  crewFill,
   ct,
   demo,
   employeeName,
@@ -11,6 +12,7 @@ import {
   hasCrewDemo,
   openCrew,
   sourceLabel,
+  sourceOf,
   sourcesOf,
   trustRow,
   workTypeName,
@@ -67,9 +69,40 @@ test.describe("冒煙（主管，桌機）", () => {
   test("交辦：表單與交辦清單", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionAssignments);
     const form = page.getByRole("form", { name: ct.assign.formTitle });
-    await expect(form.getByRole("textbox")).toBeVisible();
+    await expect(form.getByRole("textbox", { name: ct.assign.fieldTitle, exact: true })).toBeVisible();
     await expect(form.getByRole("button", { name: ct.assign.submit, exact: true })).toBeDisabled();
     await expect(page.getByRole("region", { name: ct.assign.listTitle }).getByRole("listitem").first()).toBeVisible();
+  });
+
+  // 範本中 {employee} 之後的文字（員工名字前有 AI 標記，整句不容易比對）
+  const after = (template: string) => template.split("{employee}")[1].trim();
+  const escape = (text: string) => text.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
+
+  test("交辦（#76）：選了員工帶入平常的來源與工作類型、出現結果說明；改來源時提示；清單預設最近 4 件", async ({ page }) => {
+    await gotoCrewSection(page, ct.common.sectionAssignments);
+    const form = page.getByRole("form", { name: ct.assign.formTitle });
+    await expect(form.getByRole("status")).toHaveCount(0);
+    const cards = form.getByRole("group", { name: ct.assign.fieldEmployee }).getByRole("radio");
+    await expect(cards).toHaveCount(demo.employees.length);
+    await form.getByRole("radio", { name: new RegExp(employeeName("rowan")) }).check();
+    const source = form.getByLabel(new RegExp(`^${ct.assign.fieldSource}`));
+    await expect(source).toHaveValue(sourceOf("rowan", "support").id);
+    await expect(form.getByLabel(new RegExp(`^${ct.assign.fieldWorkType}`))).toHaveValue(workTypeName("support"));
+    const result = form.getByRole("status");
+    await expect(result).toContainText(after(ct.assign.resultReply));
+    await expect(result).toContainText(ct.assign.levelItem);
+    await expect(form.getByText(ct.assign.demoNote, { exact: true })).toBeVisible();
+    await expect(source).toHaveAccessibleDescription(new RegExp(escape(after(ct.assign.sourceUsual))));
+    await source.selectOption(sourceOf("sorrel", "content").id);
+    await expect(source).toHaveAccessibleDescription(new RegExp(escape(after(ct.assign.sourceChanged))));
+    await form.getByRole("textbox", { name: ct.assign.fieldTitle, exact: true }).fill("回覆詢問到貨日的來信");
+    await expect(form.getByRole("button", { name: ct.assign.submit, exact: true })).toBeEnabled();
+
+    const list = page.getByRole("region", { name: ct.assign.listTitle });
+    await expect(list.getByRole("listitem")).toHaveCount(4);
+    await list.getByRole("button", { name: crewFill(ct.assign.listShowAll, { count: demo.assignments.length }) }).click();
+    await expect(list.getByRole("listitem")).toHaveCount(demo.assignments.length);
+    await expectAiMarks(page);
   });
 
   test("工作與驗收：工作清單與驗收面板", async ({ page }) => {
@@ -115,6 +148,8 @@ test.describe("權限（桌機）", () => {
     await gotoCrewSection(page, ct.common.sectionAssignments);
     await expect(page.getByText(ct.assign.readOnlyNote, { exact: true })).toBeVisible();
     const list = page.getByRole("region", { name: ct.assign.listTitle });
+    // 清單預設最近 4 件（#76）：看全部後再比對來源
+    await list.getByRole("button", { name: new RegExp(`^${ct.assign.listShowAll.split("{")[0]}`) }).click();
     for (const name of bluewing) await expect(list.getByText(startsWith(name)).first()).toBeVisible();
     for (const name of longpier) await expect(list.getByText(startsWith(name))).toHaveCount(0);
 

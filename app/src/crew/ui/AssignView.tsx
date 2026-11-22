@@ -1,4 +1,5 @@
-// 「交辦」畫面（#38）：交辦表單、交辦清單與「模擬交件」。資料整理與寫入在 assign.ts，這裡只負責呈現；
+// 「交辦」畫面（#38；#76 改成設計規格 v3 第 6.6 節）：交辦表單（員工單選卡、依員工帶入來源與工作類型、結果說明）、
+// 交辦清單（最近 4 件，可看全部）與「模擬交件」。資料整理與寫入在 assign.ts，這裡只負責呈現；
 // 表單與按鈕只給能驗收的身分（RLS 的寫入條件也是 can_review）。寫入後一律重新讀取，畫面與資料庫一致。
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { fill } from "../../client/i18n";
@@ -6,12 +7,23 @@ import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { DEMO } from "../demo/load";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { readAssign, simulateAssignment, submitAssignment, type AssignData, type AssignItem, type AssignStatus } from "./assign";
-import { employeeOptionText, withEmployee } from "./components";
+import {
+  readAssign,
+  resultKey,
+  RECENT_COUNT,
+  simulateAssignment,
+  submitAssignment,
+  visibleAssignments,
+  type AssignData,
+  type AssignEmployee,
+  type AssignItem,
+  type AssignStatus,
+} from "./assign";
+import { EmployeeName, LevelBadge, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import { assignmentRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
-import { canReviewOf, type TodayEmployee } from "./today";
+import { canReviewOf } from "./today";
 import "./AssignView.css";
 
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: AssignData };
@@ -28,6 +40,7 @@ export function AssignView({ db, identity, language }: CrewScreenProps) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const [showAll, setShowAll] = useState(false);
 
   // 第一次讀取時才顯示「讀取中」；寫入後的重新讀取保留目前的畫面
   useEffect(() => {
@@ -63,13 +76,19 @@ export function AssignView({ db, identity, language }: CrewScreenProps) {
         <p className="muted">{t.readOnlyNote}</p>
       )}
       <section className="card crew-assign__block" aria-labelledby="crew-assign-list">
-        <h3 id="crew-assign-list">{t.listTitle}</h3>
-        <p className="muted">
-          {data.assignments.length === 0 ? t.listEmpty : fill(t.listCount, { count: data.assignments.length }, language)}
-        </p>
+        <div className="crew-assign__list-head">
+          <h3 id="crew-assign-list">{t.listTitle}</h3>
+          <span className="muted crew-assign__hint">
+            {data.assignments.length === 0
+              ? t.listEmpty
+              : showAll || data.assignments.length <= RECENT_COUNT
+                ? fill(t.listCount, { count: data.assignments.length }, language)
+                : fill(t.listRecent, { count: RECENT_COUNT }, language)}
+          </span>
+        </div>
         {data.assignments.length > 0 && (
           <ul className="crew-assign__list">
-            {data.assignments.map((a) => (
+            {visibleAssignments(data.assignments, showAll).map((a) => (
               <AssignRow
                 key={a.id}
                 item={a}
@@ -80,18 +99,24 @@ export function AssignView({ db, identity, language }: CrewScreenProps) {
             ))}
           </ul>
         )}
+        {data.assignments.length > RECENT_COUNT && (
+          <button type="button" className="crew-assign__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+            {showAll ? fill(t.listShowRecent, { count: RECENT_COUNT }, language) : fill(t.listShowAll, { count: data.assignments.length }, language)}
+          </button>
+        )}
       </section>
     </div>
   );
 }
 
-// 表單選項只能放文字：名字前加「AI」的文字；清單中用 AI 標記
-function employeeOption(e: TodayEmployee, t: CrewTexts<"assign">, language: LanguageCode): string {
-  const name = employeeOptionText(e.displayName, language);
-  return e.roleNote === null ? name : fill(t.employeeOption, { employee: name, roleNote: e.roleNote });
-}
-const employeeLabel = (e: TodayEmployee, t: CrewTexts<"assign">, language: LanguageCode) =>
+const employeeLabel = (e: AssignEmployee | AssignItem["employee"], t: CrewTexts<"assign">, language: LanguageCode) =>
   withEmployee(e.roleNote === null ? "{employee}" : t.employeeOption, e.roleNote === null ? {} : { roleNote: e.roleNote }, e.displayName, language);
+
+function formatDay(iso: string, language: LanguageCode): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat(language, { month: "numeric", day: "numeric", timeZone: "UTC" }).format(date);
+}
 
 interface FormInput {
   sourceId: string;
@@ -113,12 +138,20 @@ function AssignForm({
 }) {
   const [title, setTitle] = useState("");
   const [sourceId, setSourceId] = useState(data.sources[0]?.id ?? "");
-  const [employeeId, setEmployeeId] = useState(data.employees[0]?.id ?? "");
-  const [workTypeId, setWorkTypeId] = useState(data.workTypes[0] ?? "");
+  const [employeeId, setEmployeeId] = useState("");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const employee = data.employees.find((e) => e.id === employeeId) ?? null;
+  const workTypeId = employee?.workTypeId ?? "";
   const blank = title.trim() === "";
-  const ready = !blank && sourceId !== "" && employeeId !== "" && workTypeId !== "";
+  const ready = !blank && sourceId !== "" && employee !== null && workTypeId !== "";
+  const levelText = (e: AssignEmployee) => (e.level === "light" ? t.levelLight : t.levelItem);
+
+  // 選了員工就帶入他平常的來源（看不到時保留目前的選擇）
+  const choose = (e: AssignEmployee) => {
+    setEmployeeId(e.id);
+    if (e.usualSourceId !== null) setSourceId(e.usualSourceId);
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -137,12 +170,22 @@ function AssignForm({
     );
   };
 
+  const sourceHint =
+    employee === null
+      ? t.sourcePickEmployee
+      : employee.usualSourceId !== null && employee.usualSourceId !== sourceId
+        ? t.sourceChanged
+        : t.sourceUsual;
+
   return (
     <form className="card crew-assign__block crew-assign__form" aria-labelledby="crew-assign-form" onSubmit={submit}>
       <h3 id="crew-assign-form">{t.formTitle}</h3>
-      <label className="crew-assign__field crew-assign__field--wide">
-        <span>{t.fieldTitle}</span>
+      <div className="crew-assign__field">
+        <label htmlFor="crew-assign-title" className="crew-assign__label">
+          {t.fieldTitle}
+        </label>
         <input
+          id="crew-assign-title"
           type="text"
           value={title}
           placeholder={t.fieldTitlePlaceholder}
@@ -154,41 +197,71 @@ function AssignForm({
             {t.titleRequired}
           </span>
         )}
-      </label>
-      <label className="crew-assign__field">
-        <span>{t.fieldSource}</span>
-        <select value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
-          {data.sources.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="crew-assign__field">
-        <span>{t.fieldEmployee}</span>
-        <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
+      </div>
+      <fieldset className="crew-assign__employees">
+        <legend className="crew-assign__label">{t.fieldEmployee}</legend>
+        <div className="crew-assign__cards">
           {data.employees.map((e) => (
-            <option key={e.id} value={e.id}>
-              {employeeOption(e, t, language)}
-            </option>
+            <label key={e.id} className="crew-assign__card" data-selected={e.id === employeeId || undefined}>
+              <input type="radio" name="crew-assign-employee" value={e.id} checked={e.id === employeeId} onChange={() => choose(e)} />
+              <span className="crew-assign__card-text">
+                <strong>{employeeLabel(e, t, language)}</strong>
+                <span className="muted crew-assign__hint">
+                  {fill(t.employeeCardMeta, { workType: e.workTypeId === null ? "—" : workTypeLabel(e.workTypeId, language), level: levelText(e) })}
+                </span>
+              </span>
+            </label>
           ))}
-        </select>
-      </label>
-      <label className="crew-assign__field">
-        <span>{t.fieldWorkType}</span>
-        <select value={workTypeId} onChange={(e) => setWorkTypeId(e.target.value)}>
-          {data.workTypes.map((w) => (
-            <option key={w} value={w}>
-              {workTypeLabel(w, language)}
-            </option>
-          ))}
-        </select>
-      </label>
+        </div>
+        {employee === null && <span className="muted crew-assign__hint">{t.employeeRequired}</span>}
+      </fieldset>
+      <div className="crew-assign__pair">
+        <div className="crew-assign__field">
+          <label htmlFor="crew-assign-source" className="crew-assign__label">
+            {t.fieldSource}
+          </label>
+          <select id="crew-assign-source" value={sourceId} aria-describedby="crew-assign-source-hint" onChange={(e) => setSourceId(e.target.value)}>
+            {data.sources.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          <span id="crew-assign-source-hint" className="muted crew-assign__hint">
+            {employee === null ? sourceHint : withEmployee(sourceHint, {}, employee.displayName, language)}
+          </span>
+        </div>
+        <div className="crew-assign__field">
+          <label htmlFor="crew-assign-work-type" className="crew-assign__label">
+            {t.fieldWorkType}
+          </label>
+          <input
+            id="crew-assign-work-type"
+            className="crew-assign__readonly"
+            type="text"
+            readOnly
+            value={workTypeId === "" ? "" : workTypeLabel(workTypeId, language)}
+            placeholder={t.workTypePending}
+            aria-describedby="crew-assign-work-type-hint"
+          />
+          <span id="crew-assign-work-type-hint" className="muted crew-assign__hint">
+            {t.workTypeNote}
+          </span>
+        </div>
+      </div>
+      {employee !== null && workTypeId !== "" && (
+        <p className="crew-assign__result" role="status">
+          <strong>{withEmployee(t[resultKey(workTypeId)], {}, employee.displayName, language)}</strong>
+          {t.resultRest}
+          <LevelBadge level={employee.level}>{levelText(employee)}</LevelBadge>
+          {t.resultEnd}
+        </p>
+      )}
       <div className="crew-assign__actions">
         <button type="submit" disabled={!ready || busy}>
           {busy ? t.submitting : t.submit}
         </button>
+        <span className="muted crew-assign__hint">{t.demoNote}</span>
         {failed && (
           <p className="error" role="alert">
             {t.writeFailed}
@@ -226,15 +299,17 @@ function AssignRow({
   };
   return (
     <li className="crew-assign__item">
-      <span className="crew-assign__item-head">
-        <span className="crew-assign__item-title">{item.title}</span>
-        <span className="badge">{t[STATUS_KEY[item.status]]}</span>
-      </span>
+      <span className="crew-assign__item-title">{item.title}</span>
       <span className="crew-assign__item-meta muted">
+        <span>
+          <EmployeeName name={item.employee.displayName} language={language} />
+          {t.metaSeparator}
+          {fill(t.assignedOn, { date: formatDay(item.assignedAt, language) })}
+        </span>
         <span className="crew-assign__ref">{assignmentRef(item, language)}</span>
-        <span>{employeeLabel(item.employee, t, language)}</span>
         <span>{workTypeLabel(item.workTypeId, language)}</span>
       </span>
+      <span className="badge crew-assign__status">{t[STATUS_KEY[item.status]]}</span>
       {item.simulate === "available" && (
         <span className="crew-assign__item-actions">
           <button type="button" disabled={busy} onClick={simulate}>
