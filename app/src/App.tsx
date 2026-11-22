@@ -80,7 +80,7 @@ import { NavRail } from "./ui/NavRail";
 import { useLayout } from "./ui/layout";
 import { crewMigrations } from "./crew/db/migrate";
 import { CrewPage } from "./crew/ui/CrewPage";
-import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, crewStartIdentity, hasCrewDemo, withCrew } from "./crew/ui/entry";
+import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
 import { ScriptPanel } from "./ui/ScriptPanel";
@@ -210,6 +210,8 @@ export function App() {
   const canReview = access.roles.find((r) => r.id === identity)?.canReview ?? false;
   // 拒答的下一步是否列出上傳（#192）：能上傳、且上傳頁籤看得到（展示模式沒有上傳頁籤）
   const canUpload = (access.roles.find((r) => r.id === identity)?.canUpload ?? false) && views(canReview).includes("upload");
+  // 首頁與圖譜上切到問答、待審、上傳的入口：目標頁籤看不到時不顯示（crew-only，#91）
+  const entries = entryPoints(views(canReview));
   const [reviewVersion, setReviewVersion] = useState(0);
   // 首頁的「等你處理」用同一次讀取的結果（#283），導覽列的數字是其中的 total（與 pendingCount() 相同）
   const [pending, setPending] = useState<{ identity: string; count: number; summary: WaitingSummary } | null>(null);
@@ -864,7 +866,7 @@ export function App() {
               language={language}
               onOpenSource={onOpenSource}
               // 在問答中問（#199）：填進輸入框並切到問答頁，不送出
-              onAskAbout={(question) => (setDraft(question), setView("qa"))}
+              onAskAbout={entries.ask ? (question) => (setDraft(question), setView("qa")) : undefined}
               canReview={canReview}
               onRetracted={() => setReviewVersion((v) => v + 1)}
               initialSelected={graphFocus}
@@ -992,9 +994,9 @@ export function App() {
             identity={identity}
             wide={!phone && !tablet}
             phone={phone}
-            waiting={canReview ? (pending?.identity === identity ? pending.summary : null) : undefined}
+            waiting={canReview && entries.review ? (pending?.identity === identity ? pending.summary : null) : undefined}
             // 一般員工的「有更新」：不能審核的身分；自己上傳的文件（#284）與已處理的回報（#286）
-            updates={!canReview ? { extracting: activeExtractions, onOpenUpload: (id) => (setUploadFocus(id), setView("upload")) } : undefined}
+            updates={!canReview && entries.upload ? { extracting: activeExtractions, onOpenUpload: (id) => (setUploadFocus(id), setView("upload")) } : undefined}
             asked={asked[identity] ?? []}
             maybeAnswerable={maybeAnswerable[identity] ?? []}
             onAcknowledge={onAcknowledge}
@@ -1003,7 +1005,8 @@ export function App() {
             draft={draft}
             onDraft={setDraft}
             // 提問與「再問一次」都切到問答頁，以現在的身分與看得到的資料回答
-            onAsk={(question) => (setView("qa"), void onAsk(question, identity, undefined, undefined, true))}
+            onAsk={entries.ask ? (question) => (setView("qa"), void onAsk(question, identity, undefined, undefined, true)) : undefined}
+            askNote={crewNoAskNote(language)}
             onStartReview={() => setView("review")}
             viewed={viewed[identity] ?? NONE}
             onOpenDocument={(id) => (setFocusDocument(id), setView("timeline"))}

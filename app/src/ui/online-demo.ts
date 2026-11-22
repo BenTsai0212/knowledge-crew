@@ -15,7 +15,7 @@ export function readOnlineDemo(env: Record<string, unknown>): OnlineDemo {
 export const onlineDemo: OnlineDemo = readOnlineDemo(import.meta.env);
 
 // knowledge-crew：只展示 AI 員工的線上 demo（#84，docs/crew/adr/0005-crew-only-demo.md）。營運開關，預設關閉：只有 VITE_CREW_ONLY 是 "1" 時開啟。
-// 開啟時只留 AI 員工的頁籤、不要求邀請碼（頁籤與登入的判斷在 crew/ui/entry.ts），身分對照、展示模式與評測台一律關閉。build 時代入
+// 開啟時頁籤只有首頁、圖譜、時間軸與 AI 員工（#91）、不要求邀請碼（頁籤與登入的判斷在 crew/ui/entry.ts），身分對照、展示模式與評測台一律關閉。build 時代入
 export function readCrewOnly(env: Record<string, unknown>): boolean {
   return env.VITE_CREW_ONLY === "1";
 }

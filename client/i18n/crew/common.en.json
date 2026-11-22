@@ -26,5 +26,6 @@
   "collapsedFields": "{count, plural, one {# other field is collapsed (lighter review)} other {# other fields are collapsed (lighter review)}}: {fields}",
   "collapsedFieldsSeparator": ", ",
   "collapseFields": "Collapse fields without marked points",
-  "directEntry": "Try it now"
+  "directEntry": "Try it now",
+  "noAsk": "The online demo does not include Q&A. Explore the graph and timeline, or see the AI employees' work."
 }

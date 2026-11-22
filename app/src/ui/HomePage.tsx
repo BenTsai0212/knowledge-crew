@@ -66,8 +66,10 @@ interface Props {
   limit: string | null;
   draft: string;
   onDraft(text: string): void;
-  // 提問與「再問一次」：切到問答頁，用現在看得到的資料回答
-  onAsk(question: string): void;
+  // 提問與「再問一次」：切到問答頁，用現在看得到的資料回答。沒有問答頁籤時（crew-only，#91）省略：不顯示提問框、預設問題、
+  // 「以前答不出來」與問過的問題，提問框的位置改為 askNote 的一行說明
+  onAsk?(question: string): void;
+  askNote?: string;
   onStartReview(): void;
   // 最近看過的實體 id（最新的在前）；名稱與能否看到在這裡以目前身分讀取
   viewed: readonly string[];
@@ -155,7 +157,7 @@ function scopeTag(visibility: string, project: string | null, language: string):
 }
 
 export function HomePage(props: Props) {
-  const { db, language, identity, wide, phone = false, waiting, updates: updatesProps, asked, maybeAnswerable = [], onAcknowledge, askDisabled, limit, draft, onDraft, onAsk, onStartReview, viewed, onOpenDocument, onOpenEntity } = props;
+  const { db, language, identity, wide, phone = false, waiting, updates: updatesProps, asked, maybeAnswerable = [], onAcknowledge, askDisabled, limit, draft, onDraft, onAsk, askNote, onStartReview, viewed, onOpenDocument, onOpenEntity } = props;
   const s = strings(language);
   const recent = useRecent(db, identity, language, viewed);
   const [updatesVersion, setUpdatesVersion] = useState(0);
@@ -190,7 +192,7 @@ export function HomePage(props: Props) {
   const [nowBefore, nowAfter = ""] = s.home.maybeNow.split("{document}");
   const maybeActions = (m: MaybeAnswerable, className: string) => (
     <span className={className}>
-      <button type="button" className="home__again" disabled={askBlocked} aria-label={`${s.home.askAgain}${s.colon}${m.question}`} onClick={() => onAsk(m.question)}>
+      <button type="button" className="home__again" disabled={askBlocked} aria-label={`${s.home.askAgain}${s.colon}${m.question}`} onClick={() => onAsk?.(m.question)}>
         {s.home.askAgain}
       </button>
       <button type="button" className="home__dismiss" aria-label={`${s.home.acknowledge}${s.colon}${m.question}`} onClick={() => onAcknowledge?.(m)}>
@@ -200,7 +202,7 @@ export function HomePage(props: Props) {
   );
 
   // A2：問候下方一句話＋三點時間線（你問了 → 帶來變化的文件 → 今天）；手機的時間線收成一行
-  const recall = latest !== null && (
+  const recall = latest !== null && onAsk !== undefined && (
     <section className="home__recall" aria-label={s.home.recallTitle}>
       <p className="home__recall-text">{fill(s.home.recallText, { time: ago(latest.at), question: latest.question })}</p>
       <ol className="home__timeline" aria-label={s.home.recallTimeline}>
@@ -323,8 +325,8 @@ export function HomePage(props: Props) {
                   language={language}
                   report={r}
                   onReportAgain={() => setAgainReport(r.id)}
-                  onAskAgain={() => onAsk(r.question)}
-                  askDisabled={askDisabled || limit !== null}
+                  onAskAgain={() => onAsk?.(r.question)}
+                  askDisabled={askDisabled || limit !== null || onAsk === undefined}
                 />
               )}
               {againReport === r.id && db !== null && (
@@ -374,7 +376,7 @@ export function HomePage(props: Props) {
     </section>
   );
 
-  const askedSection = (
+  const askedSection = onAsk !== undefined && (
     <section className={`${card} home__asked`} aria-labelledby="home-asked">
       <h3 id="home-asked">{s.home.askedTitle}</h3>
       {asked.length === 0 ? (
@@ -522,7 +524,11 @@ export function HomePage(props: Props) {
       {recall}
       {/* 手機的主管：待辦的數字放最上（畫板 K-Mobile） */}
       {phone && waitingSection}
-      <QuestionPanel language={language} disabled={askDisabled} text={draft} onText={onDraft} onAsk={onAsk} limit={limit} role={identity} compact={wide || phone} />
+      {onAsk === undefined ? (
+        askNote && <p className="home__note">{askNote}</p>
+      ) : (
+        <QuestionPanel language={language} disabled={askDisabled} text={draft} onText={onDraft} onAsk={onAsk} limit={limit} role={identity} compact={wide || phone} />
+      )}
       <div className="home__cards">
         {phone ? (
           // 手機：一般員工是有更新、問過的問題；主管是最近新增的文件（畫板 K-Mobile）；其他區塊接在後面

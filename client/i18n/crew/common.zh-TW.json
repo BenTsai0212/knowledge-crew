@@ -26,5 +26,6 @@
   "collapsedFields": "其他 {count} 個欄位已收起（少看）：{fields}",
   "collapsedFieldsSeparator": "、",
   "collapseFields": "收起沒標重點的欄位",
-  "directEntry": "直接體驗"
+  "directEntry": "直接體驗",
+  "noAsk": "線上 demo 不提供問答；可以看圖譜、時間軸與 AI 員工的工作。"
 }
