@@ -14,10 +14,18 @@ export function readOnlineDemo(env: Record<string, unknown>): OnlineDemo {
 
 export const onlineDemo: OnlineDemo = readOnlineDemo(import.meta.env);
 
+// knowledge-crew：只展示 AI 員工的線上 demo（#84，docs/crew/adr/0005-crew-only-demo.md）。營運開關，預設關閉：只有 VITE_CREW_ONLY 是 "1" 時開啟。
+// 開啟時只留 AI 員工的頁籤、不要求邀請碼（頁籤與登入的判斷在 crew/ui/entry.ts），身分對照、展示模式與評測台一律關閉。build 時代入
+export function readCrewOnly(env: Record<string, unknown>): boolean {
+  return env.VITE_CREW_ONLY === "1";
+}
+
+export const crewOnly: boolean = readCrewOnly(import.meta.env);
+
 // 展示模式的身分對照（#261，docs/qa.md「身分對照」）：營運開關，預設關閉。一題會送出「身分數」次，計入每日提問次數，
 // 所以只有 VITE_DEMO_COMPARE 是 "1" 時開啟；線上 demo（VITE_ONLINE_DEMO 是 "1"）一律關閉。build 時代入，執行時不能更改
 export function readDemoCompare(env: Record<string, unknown>): boolean {
-  return env.VITE_DEMO_COMPARE === "1" && !readOnlineDemo(env).enabled;
+  return env.VITE_DEMO_COMPARE === "1" && !readOnlineDemo(env).enabled && !readCrewOnly(env);
 }
 
 export const demoCompare: boolean = readDemoCompare(import.meta.env);
@@ -32,7 +40,8 @@ export function readPresentationMode(search: string): boolean {
 }
 
 // 測試環境（Node）沒有 location，所以是關閉的
-export const presentationMode: boolean = readPresentationMode(globalThis.location?.search ?? "");
+// crew-only 時一律關閉（展示模式會拿掉 AI 員工的頁籤，畫面會是空的）
+export const presentationMode: boolean = !crewOnly && readPresentationMode(globalThis.location?.search ?? "");
 
 // 展示模式時 <html> 的標記（#260）：app.css 的 :root[data-mode="presentation"] 以 --present-* 放大字級，顏色不變
 export const MODE_ATTRIBUTE = "data-mode";
@@ -46,7 +55,7 @@ export function readEvalsMode(search: string): boolean {
   return new URLSearchParams(search).get("tools") === "evals";
 }
 
-export const evalsMode: boolean = readEvalsMode(globalThis.location?.search ?? "");
+export const evalsMode: boolean = !crewOnly && readEvalsMode(globalThis.location?.search ?? "");
 
 // 頁籤：待審只給 canReview 的身分；評測台另外要以 tools=evals 開啟（#192）。線上 demo 隱藏評測台（一次會呼叫大量問答，#100 決定 4）；
 // 展示模式只留問答與圖譜，所有身分相同（#129）。兩者同時開啟時取交集。首頁在最前面（#283）；展示模式沒有首頁

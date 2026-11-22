@@ -80,7 +80,7 @@ import { NavRail } from "./ui/NavRail";
 import { useLayout } from "./ui/layout";
 import { crewMigrations } from "./crew/db/migrate";
 import { CrewPage } from "./crew/ui/CrewPage";
-import { crewSeed, hasCrewDemo, withCrew } from "./crew/ui/entry";
+import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
 import { ScriptPanel } from "./ui/ScriptPanel";
@@ -102,8 +102,10 @@ let onModelProgress: ProgressListener = () => {};
 const activeProvider = () => (sharedProvider ??= createProvider(client.retrieval, PROVIDERS, (progress) => onModelProgress(progress)));
 
 // 頁籤：導覽列與切換身分時的判斷用同一份結果（線上 demo、展示模式、評測台的網址參數都在載入時決定）
-// knowledge-crew：crew 頁籤接在其後（沒有 demo.json 或展示模式時不加，ADR 0004）
-const views = (canReview: boolean) => withCrew(visibleViews(canReview, onlineDemo, presentationMode, evalsMode), hasCrewDemo, presentationMode);
+// knowledge-crew：crew 頁籤接在其後（沒有 demo.json 或展示模式時不加，ADR 0004）；crew-only 時只有 crew（#84）
+const views = (canReview: boolean) => withCrew(visibleViews(canReview, onlineDemo, presentationMode, evalsMode), hasCrewDemo, presentationMode, crewOnlyMode);
+// 登入後的預設頁（crew-only 時是 AI 員工，#84）
+const startView = () => crewDefaultView(defaultView(presentationMode), crewOnlyMode);
 // 沒有看過的實體時傳給首頁的空清單（固定同一個陣列，首頁不會因此重新讀取）
 const NONE: readonly string[] = [];
 // 略過的說法不同的鍵：身分與兩段（順序不拘）
@@ -114,7 +116,7 @@ const NO_TURNS: readonly Turn[] = [];
 
 export function App() {
   // 登入後的預設頁是首頁，展示模式是問答（#283）；還沒登入時兩者都顯示登入頁
-  const [view, setView] = useState<View>(() => defaultView(presentationMode));
+  const [view, setView] = useState<View>(startView);
   const [language, setLanguage] = useState(client.defaultLanguage);
   const [identity, setIdentity] = useState(access.roles[0].id);
   const [accessCode, setAccessCode] = useState(loadAccessCode);
@@ -350,7 +352,7 @@ export function App() {
     setAccessCode(code);
     setSignIn(next);
     setRejectedCode(null);
-    setView(defaultView(presentationMode));
+    setView(startView());
   }
 
   // 切換身分：捨棄進行中的提問（discard）；目前頁籤在新身分看不到時回到問答
@@ -360,7 +362,7 @@ export function App() {
     discard();
     setIdentity(id);
     // 沒有 canReview 的身分看不到待審與評測台頁籤（離開評測台時停止評測、關閉評測專用資料庫）；展示模式只有問答與圖譜
-    if (!views(access.roles.find((r) => r.id === id)?.canReview ?? false).includes(view)) setView("qa");
+    if (!views(access.roles.find((r) => r.id === id)?.canReview ?? false).includes(view)) setView(crewDefaultView("qa", crewOnlyMode));
   }
 
   // 點劇本的題目（#260）：先切到情境的身分（沿用切換身分，捨棄進行中的提問），再以該身分送出
@@ -809,8 +811,9 @@ export function App() {
           onIdentity={changeIdentity}
           // 切換語言：原地交叉淡換（#246）；View Transitions 在回呼結束時拍下新畫面，所以同步更新
           onLanguage={(code) => crossFade(() => flushSync(() => changeLanguage(code)))}
+          // crew-only 沒有邀請碼可以更換，不顯示（#84 的 `## 決定` 4）
           onChangeAccessCode={
-            accessCode === null
+            accessCode === null || crewOnlyMode
               ? undefined
               : () => {
                   // 更換邀請碼；帳號登入時是「登出」，回到登入頁（#287 決定 3）
@@ -973,6 +976,7 @@ export function App() {
               presentation={presentationMode}
               onAccount={(role, code) => onSignIn({ kind: "account", role }, code)}
               onCode={(code) => onSignIn({ kind: "code" }, code)}
+              direct={crewOnlyMode ? { label: crewDirectEntryLabel(language), code: CREW_ONLY_ACCESS_CODE } : undefined}
               progress={phoneEntry && <RetrievalNotice language={language} preparesModel={preparesModel(client.retrieval)} status={providerStatus} bar />}
             />
             {!phoneEntry && <RetrievalNotice language={language} preparesModel={preparesModel(client.retrieval)} status={providerStatus} />}

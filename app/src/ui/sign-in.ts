@@ -12,11 +12,13 @@ export type SignIn = { kind: "account"; role: string } | { kind: "code" };
 // 身分是否能在介面上切換（docs/design.md「身分是登入的人，不是設定」）
 export const canSwitchIdentity = (signIn: SignIn | null) => signIn?.kind !== "account";
 
-// 帳號登入要不要另外輸入邀請碼：線上 demo 有內建的公開碼時不用；沒有公開碼的部署要輸入
-export const needsAccessCode = (publicCode: string) => publicCode.trim() === "";
+// 帳號登入要不要另外輸入邀請碼：線上 demo 有內建的公開碼時不用；沒有公開碼的部署要輸入。
+// fixed：不需要邀請碼的部署（knowledge-crew 的 crew-only，#84）登入時用的固定值，有值時不用輸入
+export const needsAccessCode = (publicCode: string, fixed?: string) => fixed === undefined && publicCode.trim() === "";
 
-// 帳號登入時送給 /api/ask 的邀請碼：有公開碼時用公開碼，否則用輸入的碼；都沒有時為 null（不能登入）
-export function accountAccessCode(publicCode: string, typed: string): string | null {
+// 帳號登入時送給 /api/ask 的邀請碼：有固定值時用固定值；有公開碼時用公開碼，否則用輸入的碼；都沒有時為 null（不能登入）
+export function accountAccessCode(publicCode: string, typed: string, fixed?: string): string | null {
+  if (fixed !== undefined) return fixed;
   const code = needsAccessCode(publicCode) ? typed.trim() : publicCode.trim();
   return code === "" ? null : code;
 }

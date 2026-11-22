@@ -37,6 +37,19 @@ describe("帳號登入的邀請碼", () => {
   });
 });
 
+describe("不需要邀請碼的部署（固定值，knowledge-crew #84）", () => {
+  it("有固定值時不必輸入，以固定值登入（忽略公開碼與輸入的內容）", () => {
+    expect(needsAccessCode("", "crew-only")).toBe(false);
+    expect(accountAccessCode("", "", "crew-only")).toBe("crew-only");
+    expect(accountAccessCode("demo-code", "typed", "crew-only")).toBe("crew-only");
+  });
+
+  it("沒有固定值時與現行相同", () => {
+    expect(needsAccessCode("", undefined)).toBe(true);
+    expect(accountAccessCode("", "", undefined)).toBeNull();
+  });
+});
+
 describe("offersAccountSignIn", () => {
   it("展示模式只顯示邀請碼，一般模式才有帳號登入", () => {
     expect(offersAccountSignIn(true)).toBe(false);

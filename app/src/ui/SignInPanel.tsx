@@ -25,16 +25,18 @@ interface Props {
   onCode(accessCode: string): void;
   // 手機（#355，畫板 K-Mobile）：語意模型的下載進度列，放在「登入」（或「開始使用」）上方；其他寬度在面板下方另外顯示
   progress?: ReactNode;
+  // 不需要邀請碼的部署（knowledge-crew 的 crew-only，#84）：帳號登入不顯示邀請碼欄，「使用邀請碼體驗」換成以 label 直接進入（code 是登入用的固定值）
+  direct?: { label: string; code: string };
 }
 
-export function SignInPanel({ language, identity, rejected, presentation, onAccount, onCode, progress }: Props) {
+export function SignInPanel({ language, identity, rejected, presentation, onAccount, onCode, progress, direct }: Props) {
   const s = strings(language);
   const [withCode, setWithCode] = useState(!offersAccountSignIn(presentation) || rejected?.via === "code");
   const [role, setRole] = useState(identity);
   const [code, setCode] = useState(rejected?.via === "account" ? rejected.code : "");
   const ids = { title: useId(), account: useId(), group: useId(), hint: useId(), error: useId() };
-  const needsCode = needsAccessCode(onlineDemo.publicAccessCode);
-  const accessCode = accountAccessCode(onlineDemo.publicAccessCode, code);
+  const needsCode = needsAccessCode(onlineDemo.publicAccessCode, direct?.code);
+  const accessCode = accountAccessCode(onlineDemo.publicAccessCode, code, direct?.code);
   const invalid = rejected?.via === "account";
 
   // 「使用邀請碼體驗」與「改用帳號登入」切換後，焦點移到新的標題（第一次顯示時不搶焦點）
@@ -124,8 +126,8 @@ export function SignInPanel({ language, identity, rejected, presentation, onAcco
       <p className="sign-in__or" aria-hidden="true">
         {s.signInOr}
       </p>
-      <button type="button" className="secondary sign-in__alt" onClick={() => switchTo(true)}>
-        {s.signInWithCode}
+      <button type="button" className="secondary sign-in__alt" onClick={() => (direct ? onCode(direct.code) : switchTo(true))}>
+        {direct ? direct.label : s.signInWithCode}
       </button>
     </section>
   );
