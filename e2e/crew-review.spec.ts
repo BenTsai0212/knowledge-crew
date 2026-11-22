@@ -1,5 +1,5 @@
 // 驗收面板 v3（#72 計畫第 7 點）：結論列、重點的標記與點選、退回原因的「影響信任」、手機寬度不破版。
-// 只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。四種交件各自的畫面在之後的 PR 加上。
+// 四種交件（回信、貼文、知識庫條目、程式修改）各自的畫面。只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import { language, readClientJson, theme } from "./support/client";
@@ -9,11 +9,25 @@ test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）"
 test.use({ viewport: { width: 1440, height: 900 } });
 
 const glossary = hasCrewDemo ? readClientJson<Record<string, string>>(`i18n/crew/glossary.${language}.json`) : {};
-type DemoAssignment = { id: string; title: Record<string, string>; works: { changes: { summary: Record<string, string> }[] }[] };
+type DemoAssignment = {
+  id: string;
+  title: Record<string, string>;
+  works: { body: Record<string, string>; changes: { summary: Record<string, string> }[] }[];
+};
 const assignments = hasCrewDemo ? readClientJson<{ assignments: DemoAssignment[] }>("crew/demo.json").assignments : [];
 const titles = new Map(assignments.map((a) => [a.id, a.title[language]]));
 // 最新一輪第 i 項變更的說明
 const demoChange = (id: string, i: number) => assignments.find((a) => a.id === id)!.works.at(-1)!.changes[i].summary[language];
+
+// 最新一輪全文中某個區塊標頭行的名稱（`@@ <鍵> … | <名稱>`）
+const demoLabel = (id: string, key: string) =>
+  assignments
+    .find((a) => a.id === id)!
+    .works.at(-1)!
+    .body[language].split("\n")
+    .find((l) => l.startsWith(`@@ ${key} `))!
+    .split("|")[1]
+    .trim();
 
 // theme.json 的顏色（#RRGGBB）→ getComputedStyle 的寫法
 function rgb(hex: string): string {
@@ -117,4 +131,56 @@ test("手機寬度（390px）：驗收面板沒有水平捲動", async ({ page }
   await openWork(page, "s14");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("回信：上方是寄給與主旨，段落有左側的名稱與「已修改」", async ({ page }) => {
+  const panel = await openWork(page, "s14");
+  const body = panel.getByRole("article", { name: ct.review.deliverableReply });
+  const head = body.locator(".crew-review__reply-head");
+  await expect(head.getByText(glossary.positionReplyTo, { exact: true })).toBeVisible();
+  await expect(head.getByText(glossary.positionReplySubject, { exact: true })).toBeVisible();
+  await expect(head.locator('[data-part="reply/subject"] .crew-review__block-text')).toHaveCSS("font-weight", "700");
+  const p2 = body.locator('[data-part="reply/p2"]');
+  await expect(p2.getByText(glossary.positionReplyP2, { exact: true })).toBeVisible();
+  await expect(p2.getByText(crewFill(ct.review.modified, { summary: demoChange("s14", 0) }), { exact: true })).toBeVisible();
+});
+
+test("貼文：帳號列有首字，標籤與圖片說明，圖片是佔位方塊", async ({ page }) => {
+  const panel = await openWork(page, "c11");
+  const body = panel.getByRole("article", { name: ct.review.deliverablePost });
+  await expect(body.locator('[data-part="post/account"] .crew-review__avatar')).toBeVisible();
+  for (const label of [glossary.positionPostAccount, glossary.positionPostHashtags, glossary.positionPostImage, glossary.positionPostImageAlt]) {
+    await expect(body.getByText(label, { exact: true })).toBeVisible();
+  }
+  await expect(body.locator('[data-part="post/image"] .crew-review__block-text')).toHaveCSS("border-top-style", "dashed");
+  await expect(body.locator("img")).toHaveCount(0);
+});
+
+test("知識庫條目：空白的必填欄位是 danger 虛線框的「空白・必填」", async ({ page }) => {
+  const panel = await openWork(page, "k13");
+  const body = panel.getByRole("article", { name: ct.review.deliverableKb });
+  await expect(body.locator(".crew-review__kb-title")).toContainText(demoLabel("k13", "kb/pre-orders"));
+  const field = body.locator(".crew-review__block").filter({ has: page.locator("dt", { hasText: demoLabel("k13", "kb/pre-orders#effective-date") }) });
+  const empty = field.getByText(ct.review.fieldEmptyRequired, { exact: true });
+  await expect(empty).toBeVisible();
+  await expect(empty).toHaveCSS("border-top-style", "dashed");
+  await expect(empty).toHaveCSS("border-top-color", rgb(theme.colors.danger));
+  await expect(empty).toHaveCSS("color", rgb(theme.colors.danger));
+  await expect(body.getByText(ct.review.fieldEmptyRequired, { exact: true })).toHaveCount(1);
+});
+
+test("程式修改：檔案清單，PR 描述預設收起、點到其中的重點時展開，合併在 GitHub 進行", async ({ page }) => {
+  const panel = await openWork(page, "j06");
+  const body = panel.getByRole("article", { name: ct.review.deliverableCode });
+  await expect(body.getByRole("list", { name: ct.review.codeFiles }).getByRole("listitem")).toHaveCount(2);
+  await expect(body.getByText(ct.review.fileAdded, { exact: true })).toBeVisible();
+  await expect(body.getByText(ct.review.mergeNote, { exact: true })).toBeVisible();
+  await expect(body.locator("a")).toHaveCount(0);
+  const details = body.locator("details");
+  await expect(details).toHaveJSProperty("open", false);
+  await expect(body.locator('[data-point~="2"]').first()).toBeHidden();
+  await pointsCard(panel).getByRole("button").nth(1).click();
+  await expect(details).toHaveJSProperty("open", true);
+  await expect(body.locator('[data-point~="2"]').first()).toBeVisible();
+  await expect(body.locator('[data-point~="2"]').first()).toHaveCSS("background-color", rgb(theme.colors.surfaceRaised));
 });

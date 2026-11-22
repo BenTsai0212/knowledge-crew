@@ -114,7 +114,16 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
       </div>
 
       <div ref={bodyRef}>
-        <BodyView name={name} body={body} raw={focus.body.text} changes={focus.changes} language={language} active={active} />
+        <BodyView
+          name={name}
+          body={body}
+          raw={focus.body.text}
+          changes={focus.changes}
+          language={language}
+          active={active}
+          deliverable={deliverable}
+          reference={deliverable === "code" ? itemRef(item, t, language) : null}
+        />
       </div>
 
       {earlier.length > 0 && (

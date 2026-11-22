@@ -80,5 +80,13 @@
   "reasonSeparator": " · ",
   "impactTrust": "Affects trust",
   "impactNone": "Doesn’t affect trust",
-  "viewOnlyNote": "Your role can only view this work; a role that can review accepts or returns it."
+  "viewOnlyNote": "Your role can only view this work; a role that can review accepts or returns it.",
+  "fieldRequired": "Required",
+  "fieldEmptyRequired": "Empty · required",
+  "fieldEmpty": "(empty)",
+  "codeFiles": "Changed files",
+  "fileAdded": "Added",
+  "fileModified": "Modified",
+  "codeDiff": "See the diff on GitHub: {ref}",
+  "mergeNote": "Accepting only records the review; merging happens on GitHub."
 }
