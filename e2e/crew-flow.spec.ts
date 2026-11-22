@@ -16,6 +16,14 @@ test.beforeEach(async ({ page }) => {
   await openCrew(page);
 });
 
+// 交件全文中第一個有內容的行（不是 @@ 標頭行），去掉重點標記 〔N〕〔/N〕
+const firstFieldText = (body: string) =>
+  body
+    .split("\n")
+    .find((line) => line.trim() !== "" && !line.startsWith("@@"))!
+    .replace(/\u3014\/?\d+\u3015/g, "")
+    .trim();
+
 async function expectLevel(page: Page, employee: string, workType: string, expected: string): Promise<void> {
   await expect(trustRow(page, employee, workType).getByText(expected, { exact: true })).toBeVisible();
 }
@@ -35,15 +43,15 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
     beforeReturn: async (panel) => {
       const points = panel.getByRole("heading", { name: ct.review.points, exact: true });
       const checks = panel.getByRole("heading", { name: ct.review.checks, exact: true });
-      const body = panel.getByText(ct.review.body, { exact: true });
+      const body = panel.getByRole("article", { name: ct.review.deliverableKb });
       await expect(points).toBeVisible();
       await expect(checks).toBeVisible();
       await expect(body).toBeVisible();
-      // 重點與自動檢查在全文之上；全文預設收起
+      // 重點與自動檢查在交件本身之上（#72）；交件依區塊呈現，第一個有內容的欄位直接看得到
       const bodyTop = (await body.boundingBox())!.y;
       expect((await points.boundingBox())!.y).toBeLessThan(bodyTop);
       expect((await checks.boundingBox())!.y).toBeLessThan(bodyTop);
-      await expect(panel.getByText(firstReplyBody("linden", "knowledge"), { exact: true })).toBeHidden();
+      await expect(body.getByText(firstFieldText(firstReplyBody("linden", "knowledge")), { exact: true })).toBeVisible();
     },
   });
 
