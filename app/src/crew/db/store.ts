@@ -5,7 +5,8 @@ import type { Transaction } from "@electric-sql/pglite";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { flowbackDocumentId, toFlowbackDocument } from "../knowledge/flowback";
+import { nameKeys } from "../../extraction/merge";
+import { flowbackDocumentId, flowbackOwnerPendingId, OWNER_ENTITY_TYPE, toFlowbackDocument } from "../knowledge/flowback";
 import type { LevelDecision, LevelDecisionKind, ReturnReason, Review, Verdict, WorkChange, WorkCheck, WorkForReview } from "../trust/types";
 
 /** 工作來源的類型（RFC 0001 的 2026-11-21 修訂）；repo 類的外部編號是 Issue／PR 編號。 */
@@ -313,7 +314,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 /**
- * 寫入驗收。「通過」且是要回流的知識庫條目時，在同一個交易中寫入文件、段落與 crew.knowledge_flowbacks；
+ * 寫入驗收。「通過」且是要回流的知識庫條目時，在同一個交易中寫入文件、段落、`#owner` 的部門實體與 crew.knowledge_flowbacks（writeFlowback()）；
  * 寫入一律受 RLS 檢查（knowledge-kit 的上傳規則與 crew 0005 的 policy），任一步被拒絕時整筆驗收回滾。
  */
 export function createReview(
@@ -342,28 +343,103 @@ async function flowBack(tx: Transaction, reviewId: string, workId: string, optio
     [workId],
   );
   if (!work || work.level === null) return "not-applicable";
-  const doc = toFlowbackDocument(work.body);
-  if (!doc) return "not-applicable";
-  const [{ canUpload }] = await rows<{ canUpload: boolean }>(tx, `SELECT kk.can_upload() AS "canUpload"`);
+  if (!toFlowbackDocument(work.body)) return "not-applicable";
+  const [{ canUpload, actor }] = await rows<{ canUpload: boolean; actor: string }>(
+    tx,
+    `SELECT kk.can_upload() AS "canUpload", kk.current_identity_id() AS actor`,
+  );
   if (!canUpload) return "no-upload-permission";
+  await writeFlowback(tx, {
+    reviewId, workId, body: work.body, projectId: work.projectId, level: work.level, actor,
+    language: options.language ?? clientConfig.client.defaultLanguage, date: options.date ?? localDate(new Date()),
+  });
+  return "flowed";
+}
 
-  const documentId = flowbackDocumentId(workId);
-  const language = options.language ?? clientConfig.client.defaultLanguage;
-  // 與上傳（upload/write.ts）相同的寫法：uploaded_by 由資料庫取目前身分，段落 id 是「文件 id-序號」、ordinal 從 0 開始
+export interface FlowbackWrite {
+  reviewId: string;
+  workId: string;
+  /** 交件全文（不是一個知識庫條目時不寫入任何資料） */
+  body: string;
+  projectId: string;
+  level: string;
+  /** 上傳者與核准者（＝驗收者）；以 kk_app 寫入時必須是目前身分，RLS 檢查 */
+  actor: string;
+  language: LanguageCode;
+  /** 文件日期（YYYY-MM-DD） */
+  date: string;
+  /** 回流紀錄的時間；不傳時由資料庫預設（kk_app 不能指定，只有 seed 以 superuser 寫入時傳） */
+  at?: string;
+}
+
+/**
+ * 回流的寫入（createReview() 與 demo 的 seed 共用）：文件與段落（上傳的寫入規則），`#owner` 欄位對到部門實體
+ * （待審實體 → 人做的核准（manual，核准者＝驗收者）→ 正式實體或合併到既有部門，與出處；#92 的 `## 決定` 3），
+ * 最後是 crew.knowledge_flowbacks。以 kk_app 寫入時每一列都受 RLS 檢查；回傳寫入的文件 id，不是知識庫條目時是 null。
+ */
+export async function writeFlowback(tx: Transaction, input: FlowbackWrite): Promise<string | null> {
+  const doc = toFlowbackDocument(input.body);
+  if (!doc) return null;
+  const { actor, language, level, projectId } = input;
+  const documentId = flowbackDocumentId(input.workId);
+  // 與上傳（upload/write.ts）相同的寫法：段落 id 是「文件 id-序號」、ordinal 從 0 開始
   await tx.query(
     `INSERT INTO kk.documents (id, title, language, visibility_level_id, project_id, document_date, uploaded_by)
-     VALUES ($1, $2, $3, $4, $5, $6, kk.current_identity_id())`,
-    [documentId, doc.title, language, work.level, work.projectId, options.date ?? localDate(new Date())],
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [documentId, doc.title, language, level, projectId, input.date, actor],
   );
+  const passageId = (i: number) => `${documentId}-${i + 1}`;
   for (const [i, content] of doc.passages.entries()) {
     await tx.query(
       `INSERT INTO kk.passages (id, document_id, ordinal, language, content, visibility_level_id, project_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [`${documentId}-${i + 1}`, documentId, i, language, content, work.level, work.projectId],
+      [passageId(i), documentId, i, language, content, level, projectId],
     );
   }
-  await tx.query("INSERT INTO crew.knowledge_flowbacks (review_id, document_id) VALUES ($1, $2)", [reviewId, documentId]);
-  return "flowed";
+  if (doc.owner) await writeOwner(tx, input, documentId, doc.owner.name, passageId(doc.owner.passage));
+  await tx.query(
+    `INSERT INTO crew.knowledge_flowbacks (review_id, document_id${input.at ? ", created_at" : ""}) VALUES ($1, $2${input.at ? ", $3" : ""})`,
+    input.at ? [input.reviewId, documentId, input.at] : [input.reviewId, documentId],
+  );
+  return documentId;
+}
+
+/**
+ * `#owner` → 部門實體。合併對象是寫入者看得到、名稱依 aliasRules 相同的部門（extraction/merge.ts 的 nameKeys()）：
+ * 剛好一個時合併（加上出處），沒有時新建；兩個以上時無法自動選擇，不寫進圖譜（段落照常回流）。
+ * 寫法與 knowledge-kit 的核准（extraction/store.ts 的 approveEntity()）相同，受 0006／0009／0013 的 policy 檢查。
+ */
+async function writeOwner(tx: Transaction, input: FlowbackWrite, documentId: string, name: string, passageId: string): Promise<void> {
+  const entityTypes = clientConfig.knowledgeModel.entityTypes;
+  if (!entityTypes.some((t) => t.id === OWNER_ENTITY_TYPE)) return;
+  const keys = nameKeys(OWNER_ENTITY_TYPE, [name], entityTypes);
+  const teams = await rows<{ id: string; name: string; names: Record<string, string> }>(
+    tx,
+    "SELECT id, name, names FROM kk.entities WHERE entity_type = $1 ORDER BY id",
+    [OWNER_ENTITY_TYPE],
+  );
+  const candidates = teams.filter((e) => [...nameKeys(OWNER_ENTITY_TYPE, [e.name, ...Object.values(e.names)], entityTypes)].some((k) => keys.has(k)));
+  if (candidates.length > 1) return;
+  const mergeInto = candidates[0]?.id ?? null;
+
+  const pendingId = flowbackOwnerPendingId(input.workId);
+  const names = { [input.language]: name };
+  await tx.query("INSERT INTO kk.pending_entities (id, document_id, entity_type, names) VALUES ($1, $2, $3, $4)", [
+    pendingId, documentId, OWNER_ENTITY_TYPE, names,
+  ]);
+  await tx.query("INSERT INTO kk.pending_entity_sources (pending_entity_id, document_id, passage_id) VALUES ($1, $2, $3)", [
+    pendingId, documentId, passageId,
+  ]);
+  // 新的待審項目：第 1 筆決定，id 等於項目 id（0009）
+  await tx.query(
+    `INSERT INTO kk.review_decisions (item_id, round, decision, decided_by, merge_into, mode) VALUES ($1, 1, 'approve', $2, $3, 'manual')`,
+    [pendingId, input.actor, mergeInto],
+  );
+  const entityId = mergeInto ?? pendingId;
+  if (mergeInto === null) {
+    await tx.query("INSERT INTO kk.entities (id, entity_type, name, names) VALUES ($1, $2, $3, $4)", [pendingId, OWNER_ENTITY_TYPE, name, names]);
+  }
+  await tx.query("INSERT INTO kk.entity_sources (entity_id, passage_id, decision_id) VALUES ($1, $2, $3)", [entityId, passageId, pendingId]);
 }
 
 export interface NewLevelDecision {

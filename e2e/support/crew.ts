@@ -127,3 +127,39 @@ export async function assignSimulateReturn(
 
 // 「工作與驗收」的驗收面板（名稱是工作的標題）
 export const reviewPanel = (page: Page, title: string) => page.getByRole("article", { name: title });
+
+// ---- 知識庫條目的回流（#92）：seed 時回流的部門。依資料集算圖譜預期的 E2E 以此補上 ----
+import type { DemoFile } from "../../app/src/crew/demo/types";
+import { OWNER_ENTITY_TYPE, flowbackOwnerPendingId, toFlowbackDocument } from "../../app/src/crew/knowledge/flowback";
+import { demoWorkId } from "../../app/src/crew/demo/types";
+import { nameKeys } from "../../app/src/extraction/merge";
+import type { Graph } from "../../app/src/graph/read";
+import type { RoleId } from "./app";
+import { access, knowledgeModel } from "./client";
+
+// demo.json 已通過的知識庫條目在 seed 時新建的部門（crew/demo/seed.ts 與 db/store.ts 的 writeFlowback() 的規則），
+// 加在 graph（資料集算出的預期）之後。同名的部門已在 graph 中時是合併，不新增節點
+export function withCrewFlowback(graph: Graph, role: RoleId): Graph {
+  const r = access.roles.find((x) => x.id === role);
+  if (!hasCrewDemo || !r || !knowledgeModel.entityTypes.some((t) => t.id === OWNER_ENTITY_TYPE)) return graph;
+  const demo = readClientJson<DemoFile>("crew/demo.json");
+  const rank = new Map(access.visibilityLevels.map((l) => [l.id, l.rank]));
+  const uploaders = new Set(access.roles.filter((x) => x.canUpload).map((x) => x.id));
+  const keysOf = (names: string[]) => nameKeys(OWNER_ENTITY_TYPE, names, knowledgeModel.entityTypes);
+  const added: Graph["entities"] = [];
+  for (const a of demo.assignments) {
+    const source = demo.sources.find((x) => x.id === a.source)!;
+    const level = source.knowledgeVisibility;
+    if (!level || rank.get(level)! > rank.get(r.visibility)! || !r.projects.includes(source.project)) continue;
+    for (const w of a.works) {
+      if (w.review?.verdict !== "accepted" || !uploaders.has(w.review.decidedBy)) continue;
+      const owner = toFlowbackDocument(w.body[language])?.owner;
+      if (!owner) continue;
+      const keys = keysOf([owner.name]);
+      const same = [...graph.entities, ...added].filter((e) => e.type === OWNER_ENTITY_TYPE && [...keysOf([e.name, ...Object.values(e.names)])].some((k) => keys.has(k)));
+      if (same.length > 0) continue;
+      added.push({ id: flowbackOwnerPendingId(demoWorkId(a.id, w.round)), type: OWNER_ENTITY_TYPE, name: owner.name, names: { [language]: owner.name }, sources: [] });
+    }
+  }
+  return { entities: [...graph.entities, ...added], relations: graph.relations };
+}

@@ -7,7 +7,18 @@ export interface FlowbackDocument {
   title: string;
   /** 依出現順序：條目本身的說明（有寫時），以及每個非空白的欄位 */
   passages: string[];
+  /**
+   * `#owner` 欄位（負責部門）：名稱與它在 passages 中的位置（從 0 開始）。沒有、空白或不是一行時是 null。
+   * 驗收通過時對到圖譜的部門實體（#92 的 `## 決定` 3）
+   */
+  owner: { name: string; passage: number } | null;
 }
+
+/** `#owner` 欄位對到的實體類型（knowledge-model.json 沒有這個類型時不寫進圖譜） */
+export const OWNER_ENTITY_TYPE = "team";
+
+/** 回流的部門在待審資料表中的 id：`pe-crew-<工作 id>-owner`（符合 knowledge-kit 0007 的 `pe-` 格式） */
+export const flowbackOwnerPendingId = (workId: string): string => `pe-crew-${workId}-owner`;
 
 /** 回流文件的 id：`crew-<工作 id>`（crew migration 0005 的 policy 檢查同一個格式） */
 export const flowbackDocumentId = (workId: string): string => `crew-${workId}`;
@@ -34,9 +45,11 @@ export function toFlowbackDocument(body: string): FlowbackDocument | null {
   const fieldPrefix = `${entry.key}#`;
   if (parsed.sections.some((s) => s !== entry && !s.key!.startsWith(fieldPrefix))) return null;
 
-  const passages = parsed.sections
-    .filter((s) => s.text.trim() !== "")
-    .map((s) => (s === entry ? s.text : passageOf(s)));
+  const written = parsed.sections.filter((s) => s.text.trim() !== "");
+  const passages = written.map((s) => (s === entry ? s.text : passageOf(s)));
   if (passages.length === 0) return null;
-  return { title: entry.label ?? entry.key!.slice(ENTRY_PREFIX.length), passages };
+  const ownerAt = written.findIndex((s) => s.key === `${fieldPrefix}owner`);
+  const ownerName = ownerAt < 0 ? "" : written[ownerAt].text.trim();
+  const owner = ownerName !== "" && !ownerName.includes("\n") ? { name: ownerName, passage: ownerAt } : null;
+  return { title: entry.label ?? entry.key!.slice(ENTRY_PREFIX.length), passages, owner };
 }
