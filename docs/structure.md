@@ -246,15 +246,16 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數
 - `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
 - `trust/types.ts`：信任規則用的型別
-- `ui/assign.ts`：「交辦」的資料整理（`readAssign()`：交辦清單與表單的選項，員工平常的來源與工作類型由 `usualOf()` 從交辦紀錄推得；`resultKey()`、`visibleAssignments()`：結果說明的文字鍵與清單的最近 4 件；`submitAssignment()`、`simulateAssignment()`：交辦與模擬交件；測試在 `assign.test.ts`）
+- `ui/assign.ts`：「交辦」的資料整理（`readAssign()`：交辦清單與表單的選項，員工平常的來源與工作類型由 `usualOf()` 從交辦紀錄推得；`initialChoice()`：員工卡「交辦給 ○○」預選的員工與來源；`resultKey()`、`visibleAssignments()`：結果說明的文字鍵與清單的最近 4 件；`submitAssignment()`、`simulateAssignment()`：交辦與模擬交件；測試在 `assign.test.ts`）
 - `ui/AssignView.css`：「交辦」畫面的表單（員工單選卡、來源與工作類型、結果說明）與交辦清單
 - `ui/AssignView.tsx`：「交辦」畫面：交辦表單（依員工帶入來源與工作類型、結果說明）、交辦清單（最近 4 件，可看全部）與「模擬交件」（只呈現 `assign.ts` 的結果；表單與按鈕只給能驗收的身分）
+- `ui/components.tsx`：AI 員工畫面共用的元件（AI 標記、層級徽章、圓點 `DotMark`／`DotRow`／`dotsSummary()`（信任頁與員工卡共用）、結論列、自動檢查列、收起的區塊；樣式在 `components.css`，測試在 `components.test.ts`）
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數）
-- `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」
+- `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」；畫面以 `navigate` 切換位置（交辦頁可預選員工）
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
-- `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數；測試在 `employees.test.ts`）
-- `ui/EmployeesView.css`：「員工」畫面的員工卡片與層級的小表
-- `ui/EmployeesView.tsx`：「員工」畫面：只負責呈現 `employees.ts` 的結果（載入中、讀取失敗、員工卡片或空狀態）；只讀
+- `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數、待驗收件數、平常的工作來源、最近的圓點與一句說明；測試在 `employees.test.ts`）
+- `ui/EmployeesView.css`：「員工」畫面的員工卡（桌機兩欄、窄螢幕一欄；職務圖示的方框）
+- `ui/EmployeesView.tsx`：「員工」畫面（設計規格 v3 第 6.5 節）：呈現 `employees.ts` 的員工卡（職務圖示、交件與來源、圓點、說明）；「看信任紀錄」切到信任頁，「交辦給 ○○」只給能驗收的身分，切到交辦頁並預選員工
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看，依時間新到舊；`filterLedger()`：依員工、工作類型與事件篩選；`ledgerTone()`：層級改變與退回（做錯了）的樣式；測試在 `ledger.test.ts`）
@@ -264,7 +265,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果與交件的種類；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）
 - `ui/review/conclusion.ts`：驗收面板 v3 的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`conclusionOf()`：結論列；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
+- `ui/review/Deliverables.tsx`：驗收面板 v3 的四種交件（回信、貼文、知識庫條目、程式修改）依原本的樣子呈現（測試在 `Deliverables.test.ts`）
 - `ui/review/marked.ts`：驗收面板 v3 的重點標記（`segments()`：依標記切片段；`canMark()`：能不能在內容中標出重點；測試在 `marked.test.ts`）
+- `ui/review/parts.tsx`：驗收面板 v3 的交件內容共用的小元件（上標的重點編號、依標記切開的內容、區塊的名稱欄與內容；四種交件與一般的寫法共用）
 - `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列、重點＋自動檢查（並排，窄螢幕堆疊）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆；「通過」「退回」只給能驗收的身分，寫入後重新讀取

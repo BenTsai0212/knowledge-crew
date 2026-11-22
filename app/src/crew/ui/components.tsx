@@ -1,9 +1,9 @@
-// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節「元件」）：AI 標記、層級徽章、結論列、自動檢查列、收起的區塊。
+// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節「元件」）：AI 標記、層級徽章、圓點（#83）、結論列、自動檢查列、收起的區塊。
 // 文字在 client/i18n/crew/common.<語言>.json；樣式在 components.css（只用 theme.json 的變數）。
 import { Fragment, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
 import type { LanguageCode } from "../../client/types";
-import type { CheckStatus, ReviewLevel } from "../trust/types";
+import type { CheckStatus, Dot, ReviewLevel } from "../trust/types";
 import { crewStrings } from "../i18n";
 import { checkLabel, checkSentence } from "./glossary";
 import "./components.css";
@@ -68,6 +68,39 @@ export function LevelBadge({ level, children }: { level: ReviewLevel; children: 
   return (
     <span className="badge crew-level-badge" data-level={level}>
       {children}
+    </span>
+  );
+}
+
+const DOT_ARIA = { ok: "dotsAriaOk", wrong: "dotsAriaWrong", neutral: "dotsAriaNeutral" } as const satisfies Record<Dot, string>;
+
+/** 圓點的 aria-label 摘要（例如「通過 9、做錯了 1」）：沒有的結果不列出。文字在 trust 翻譯檔。 */
+export function dotsSummary(dots: readonly Dot[], language: LanguageCode): string {
+  const t = crewStrings("trust", language);
+  const counts: Record<Dot, number> = { ok: 0, wrong: 0, neutral: 0 };
+  for (const d of dots) counts[d] += 1;
+  return (Object.keys(DOT_ARIA) as Dot[])
+    .filter((d) => counts[d] > 0)
+    .map((d) => fill(t[DOT_ARIA[d]], { count: counts[d] }))
+    .join(t.dotsAriaSeparator);
+}
+
+/** 一個圓點（設計規格 v3 第 4 節）：通過＝success 實心圓、做錯了＝danger 粗體 ×、其他退回＝textMuted 虛線空心圓；none 是不足的空格。 */
+export function DotMark({ dot, className }: { dot: Dot | "none"; className?: string }) {
+  return (
+    <span className={className === undefined ? "crew-dot" : `crew-dot ${className}`} data-dot={dot} aria-hidden="true">
+      {dot === "wrong" ? "×" : ""}
+    </span>
+  );
+}
+
+/** 一排圓點（員工卡）：整排是一張圖，aria-label 是摘要。信任頁的時間軸以同一個 DotMark 與 dotsSummary() 排成格線。 */
+export function DotRow({ dots, language }: { dots: readonly Dot[]; language: LanguageCode }) {
+  return (
+    <span className="crew-dots" role="img" aria-label={dotsSummary(dots, language)}>
+      {dots.map((d, i) => (
+        <DotMark key={i} dot={d} />
+      ))}
     </span>
   );
 }

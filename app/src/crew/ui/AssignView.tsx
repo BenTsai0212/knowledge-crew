@@ -8,6 +8,7 @@ import type { LanguageCode } from "../../client/types";
 import { DEMO } from "../demo/load";
 import { crewStrings, type CrewTexts } from "../i18n";
 import {
+  initialChoice,
   readAssign,
   resultKey,
   RECENT_COUNT,
@@ -35,7 +36,7 @@ const STATUS_KEY: Record<AssignStatus, "statusNotSubmitted" | "statusAwaitingRev
   accepted: "statusAccepted",
 };
 
-export function AssignView({ db, identity, language }: CrewScreenProps) {
+export function AssignView({ db, identity, language, employeeId }: CrewScreenProps) {
   const t = crewStrings("assign", language);
   const [state, setState] = useState<State>({ kind: "loading" });
   const [version, setVersion] = useState(0);
@@ -71,7 +72,7 @@ export function AssignView({ db, identity, language }: CrewScreenProps) {
   return (
     <div className="crew-assign">
       {data.canReview ? (
-        <AssignForm data={data} t={t} language={language} onSubmit={(input) => submitAssignment(db, identity, input).then(reload)} />
+        <AssignForm data={data} t={t} language={language} preselect={employeeId} onSubmit={(input) => submitAssignment(db, identity, input).then(reload)} />
       ) : (
         <p className="muted">{t.readOnlyNote}</p>
       )}
@@ -129,16 +130,20 @@ function AssignForm({
   data,
   t,
   language,
+  preselect,
   onSubmit,
 }: {
   data: AssignData;
   t: CrewTexts<"assign">;
   language: LanguageCode;
+  /** 預選的員工（員工卡的「交辦給 ○○」） */
+  preselect: string | undefined;
   onSubmit: (input: FormInput) => Promise<void>;
 }) {
+  const [initial] = useState(() => initialChoice(data, preselect));
   const [title, setTitle] = useState("");
-  const [sourceId, setSourceId] = useState(data.sources[0]?.id ?? "");
-  const [employeeId, setEmployeeId] = useState("");
+  const [sourceId, setSourceId] = useState(initial.sourceId);
+  const [employeeId, setEmployeeId] = useState(initial.employeeId);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const employee = data.employees.find((e) => e.id === employeeId) ?? null;

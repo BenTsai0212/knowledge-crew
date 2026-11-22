@@ -2,7 +2,7 @@
 // H～K 掛上畫面時：新增 <畫面>View.tsx／.css，在 SCREENS 插入一行 import 與一行登錄。
 import { useState } from "react";
 import { crewStrings } from "../i18n";
-import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection } from "./sections";
+import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection, type CrewTarget } from "./sections";
 import { AssignView } from "./AssignView";
 import { EmployeesView } from "./EmployeesView";
 import { LedgerView } from "./LedgerView";
@@ -20,10 +20,11 @@ const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
   ledger: LedgerView,
 };
 
-export function CrewPage(props: CrewScreenProps) {
+export function CrewPage(props: Omit<CrewScreenProps, "navigate" | "employeeId">) {
   const t = crewStrings("common", props.language);
-  // 目前位置只存在元件 state，不寫瀏覽器儲存
-  const [section, setSection] = useState<CrewSection>("today");
+  // 目前位置（與交辦頁預選的員工）只存在元件 state，不寫瀏覽器儲存
+  const [target, setTarget] = useState<CrewTarget>({ section: "today" });
+  const { section } = target;
   const Screen = SCREENS[section];
   return (
     <section className="crew-page">
@@ -40,14 +41,14 @@ export function CrewPage(props: CrewScreenProps) {
             type="button"
             className="crew-page__section"
             aria-current={s.id === section ? "page" : undefined}
-            onClick={() => setSection(s.id)}
+            onClick={() => setTarget({ section: s.id })}
           >
             {t[s.label]}
           </button>
         ))}
       </nav>
       {Screen ? (
-        <Screen {...props} />
+        <Screen key={`${section}/${target.employeeId ?? ""}`} {...props} navigate={setTarget} employeeId={target.employeeId} />
       ) : (
         <section className="empty-state">
           <p className="empty-state__title">{t.preparingTitle}</p>

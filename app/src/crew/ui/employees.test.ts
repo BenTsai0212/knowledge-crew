@@ -7,6 +7,7 @@ import { getTrustInputs } from "../db/store";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import { groupEmployees, readEmployees } from "./employees";
+import { sourceLabel } from "./refs";
 
 const lang = clientConfig.client.defaultLanguage;
 const shape = (list: Awaited<ReturnType<typeof readEmployees>>) =>
@@ -58,15 +59,66 @@ describe("readEmployees：匯入虛構資料後", () => {
   });
 });
 
+describe("readEmployees：員工卡（#83）", () => {
+  it("manager：交件來源、待驗收件數、最近 10 次圓點與一句說明（Sorrel 有少看建議、Rowan 做錯了、Linden 同意少看）", async () => {
+    const list = await readEmployees(db, "manager", lang, true);
+    const work = (id: string) => list.find((e) => e.id === id)!.workTypes[0];
+    expect(work("rowan").source).toEqual({ label: sourceLabel("support-inbox", "Support inbox", lang), kind: "mailbox" });
+    expect(work("juniper").source?.kind).toBe("repo");
+    expect(list.map((e) => e.workTypes[0].awaiting)).toEqual([1, 1, 1, 1]);
+    expect(work("rowan").dots).toHaveLength(10);
+    expect(work("rowan").dots.filter((d) => d === "wrong")).toHaveLength(1);
+    expect(work("juniper").dots).toHaveLength(7);
+    expect(work("sorrel").note).toEqual({ kind: "suggestion" });
+    expect(work("rowan").note).toMatchObject({ kind: "event", event: { kind: "reset" } });
+    expect(work("linden").note).toMatchObject({ kind: "event", event: { kind: "relax" } });
+    expect(work("juniper").note).toBeNull();
+  });
+
+  it("不能驗收時沒有少看建議", async () => {
+    const list = await readEmployees(db, "manager", lang, false);
+    expect(list.find((e) => e.id === "sorrel")!.workTypes[0].note).toBeNull();
+  });
+});
+
 describe("groupEmployees", () => {
+  const fern = { id: "fern", displayName: "Fern", roleNote: null };
+  const basil = { id: "basil", displayName: "Basil", roleNote: null };
+  const reset = { kind: "reset" as const, at: "2026-10-15T00:00:00Z" };
+  const docs = {
+    employee: basil,
+    workTypeId: "docs",
+    dots: ["ok" as const],
+    level: "item" as const,
+    reviewCount: 1,
+    lastReset: null,
+    suggestion: null,
+    timeline: { cells: [], empty: 0, events: [{ column: 0, items: [{ kind: "relax" as const, at: "2026-10-13T00:00:00Z" }, reset] }] },
+    note: null,
+  };
+  const assignment = (sourceId: string, latestRound: number | null, latestVerdict: "accepted" | null, workTypeId = "docs") => ({
+    employeeId: "basil",
+    workTypeId,
+    sourceId,
+    sourceKind: "mailbox" as const,
+    sourceName: sourceId,
+    latestRound,
+    latestVerdict,
+  });
+
   it("沒有看得到的組合的員工也列出，workTypes 為空；完全沒有組合時是空的", () => {
-    const fern = { id: "fern", displayName: "Fern", roleNote: null };
-    const basil = { id: "basil", displayName: "Basil", roleNote: null };
-    const docs = { employee: basil, workTypeId: "docs", dots: [], level: "item" as const, reviewCount: 0, lastReset: null, suggestion: null, timeline: { cells: [], empty: 0, events: [] }, note: null };
-    expect(groupEmployees({ employees: [basil, fern], rows: [docs] })).toEqual([
-      { ...basil, workTypes: [{ workTypeId: "docs", level: "item", reviewCount: 0 }] },
+    expect(groupEmployees({ employees: [basil, fern], rows: [docs] }, [], lang)).toEqual([
+      { ...basil, workTypes: [{ workTypeId: "docs", level: "item", reviewCount: 1, dots: ["ok"], awaiting: 0, source: null, note: { kind: "event", event: reset } }] },
       { ...fern, workTypes: [] },
     ]);
-    expect(groupEmployees({ employees: [fern], rows: [] })).toEqual([]);
+    expect(groupEmployees({ employees: [fern], rows: [] }, [], lang)).toEqual([]);
+  });
+
+  it("來源是同一工作類型最常用的；待驗收只算已交件、還沒驗收的；有建議時說明是建議", () => {
+    const list = [assignment("a", 1, null), assignment("b", null, null), assignment("b", 2, "accepted"), assignment("c", 1, null, "other")];
+    const [{ workTypes }] = groupEmployees({ employees: [basil], rows: [{ ...docs, suggestion: { count: 10, basisReviewId: "r" } }] }, list, lang);
+    expect(workTypes[0].source).toEqual({ label: "b", kind: "mailbox" });
+    expect(workTypes[0].awaiting).toBe(1);
+    expect(workTypes[0].note).toEqual({ kind: "suggestion" });
   });
 });
