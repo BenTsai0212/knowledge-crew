@@ -1,36 +1,130 @@
-/* 「員工」畫面（#37）：每位員工一張卡片與層級的小表。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
+/* 「員工」畫面（#37；#83 改為員工卡，設計規格 v3 第 6.5 節）：頁首與員工卡（桌機兩欄、窄螢幕一欄）。
+   顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts）；AI 員工畫面不用 mark */
 .crew-employees {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 
-.crew-employees__card {
-  display: grid;
-  gap: 0.5rem;
-}
-
+.crew-employees__header h2,
+.crew-employees__header p,
 .crew-employees__card h3,
+.crew-employees__card h4,
 .crew-employees__card p {
   margin: 0;
 }
 
-.crew-employees__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
+.crew-employees__header {
+  display: grid;
+  gap: 0.25rem;
 }
 
-.crew-employees__table th,
-.crew-employees__table td {
-  border-top: 1px solid var(--color-border);
-  padding: 0.4rem 0.5rem 0.4rem 0;
-  text-align: left;
+.crew-employees__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+}
+
+.crew-employees__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.crew-employees__top {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.crew-employees__identity {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.crew-employees__table thead th {
-  border-top: none;
+.crew-employees__identity h3 {
+  font-size: 1.125rem;
+}
+
+/* 職務圖示：48px 方框、1px text 框、12px 圓角 */
+.crew-employees__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--color-text);
+  border-radius: 12px;
+  color: var(--color-text);
+}
+
+.crew-employees__work {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.crew-employees__work h4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.crew-employees__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.375rem 0.75rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.crew-employees__facts dt {
   color: var(--color-textMuted);
-  font-weight: 400;
+}
+
+.crew-employees__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.crew-employees__mono {
+  font-family: var(--font-mono);
+}
+
+/* 員工卡的圓點比信任頁的時間軸小（設計稿 10px） */
+.crew-employees__facts .crew-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+.crew-employees__facts .crew-dot[data-dot="wrong"] {
+  width: 0.75rem;
+  height: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.crew-employees__note {
+  font-size: 0.9rem;
+  color: var(--color-textMuted);
+}
+
+.crew-employees__note[data-kind="suggestion"] {
+  color: var(--color-primary);
+}
+
+.crew-employees__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+}
+
+.crew-employees__links button.link {
+  min-height: 44px;
+  font-size: 0.9rem;
 }

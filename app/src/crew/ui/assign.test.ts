@@ -8,7 +8,7 @@ import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import { pickReply } from "../demo/simulate";
 import type { DemoFile } from "../demo/types";
-import { assignStatus, readAssign, RECENT_COUNT, resultKey, simulateAssignment, submitAssignment, usualOf, visibleAssignments } from "./assign";
+import { assignStatus, initialChoice, readAssign, RECENT_COUNT, resultKey, simulateAssignment, submitAssignment, usualOf, visibleAssignments } from "./assign";
 import { canReviewOf, readToday } from "./today";
 
 const demo = DEMO_RAW as DemoFile;
@@ -53,6 +53,25 @@ describe("usualOf：員工平常的來源與工作類型（#76）", () => {
   it("沒有交辦紀錄時都是 null", () => {
     expect(usualOf([a("rowan", "x")], "juniper")).toEqual({ sourceId: null, workTypeId: null });
     expect(usualOf([], "rowan")).toEqual({ sourceId: null, workTypeId: null });
+  });
+});
+
+describe("initialChoice：交辦頁預選的員工（#83）", () => {
+  const source = (id: string) => ({ id, label: id }) as never;
+  const employee = (id: string, usualSourceId: string | null, workTypeId: string | null = "support") =>
+    ({ id, displayName: id, roleNote: null, usualSourceId, workTypeId, level: "item" }) as const;
+  const data = { sources: [source("a"), source("b")], employees: [employee("rowan", "b"), employee("sorrel", null), employee("linden", "b", null)] };
+
+  it("預選的員工選上並帶入平常的來源；沒有平常的來源時用第一個來源", () => {
+    expect(initialChoice(data, "rowan")).toEqual({ employeeId: "rowan", sourceId: "b" });
+    expect(initialChoice(data, "sorrel")).toEqual({ employeeId: "sorrel", sourceId: "a" });
+  });
+
+  it("沒有預選、看不到或沒有工作類型時不選員工", () => {
+    expect(initialChoice(data, undefined)).toEqual({ employeeId: "", sourceId: "a" });
+    expect(initialChoice(data, "nobody")).toEqual({ employeeId: "", sourceId: "a" });
+    expect(initialChoice(data, "linden")).toEqual({ employeeId: "", sourceId: "a" });
+    expect(initialChoice({ sources: [], employees: [] }, "rowan")).toEqual({ employeeId: "", sourceId: "" });
   });
 });
 

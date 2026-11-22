@@ -58,11 +58,11 @@ test.describe("冒煙（主管，桌機）", () => {
     }
   });
 
-  test("員工：每個員工一張卡片，列出工作類型與目前層級", async ({ page }) => {
+  test("員工：每個員工一張卡片，列出工作類型、交件與目前層級", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionEmployees);
     const card = page.getByRole("region", { name: employeeName("linden") });
-    await expect(card.getByRole("columnheader", { name: ct.employees.columnLevel })).toBeVisible();
-    await expect(card.getByRole("rowheader", { name: workTypeName("knowledge") })).toBeVisible();
+    await expect(card.getByText(ct.employees.levelLight, { exact: true })).toBeVisible();
+    await expect(card.getByText(workTypeName("knowledge"), { exact: false })).toBeVisible();
     await expect(page.getByRole("region", { name: employeeName("sorrel") })).toBeVisible();
   });
 

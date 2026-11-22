@@ -7,7 +7,7 @@ import type { LanguageCode } from "../../client/types";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import type { Dot, ReviewLevel } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { LevelBadge, withEmployee } from "./components";
+import { DotMark, dotsSummary, LevelBadge, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
 import { canReviewOf } from "./today";
@@ -93,9 +93,9 @@ export function TrustView({ db, identity, language }: CrewScreenProps) {
           <p className="muted">{fill(t.intro, { count: DEMO_PARAMS.dots }, language)}</p>
         </div>
         <ul className="crew-trust__legend" aria-label={t.legendLabel}>
-          <li><span className="crew-trust__dot" data-dot="ok" aria-hidden="true" />{t.legendOk}</li>
-          <li><span className="crew-trust__dot" data-dot="wrong" aria-hidden="true">×</span>{t.legendWrong}</li>
-          <li><span className="crew-trust__dot" data-dot="neutral" aria-hidden="true" />{t.legendNeutral}</li>
+          <li><DotMark dot="ok" className="crew-trust__dot" />{t.legendOk}</li>
+          <li><DotMark dot="wrong" className="crew-trust__dot" />{t.legendWrong}</li>
+          <li><DotMark dot="neutral" className="crew-trust__dot" />{t.legendNeutral}</li>
         </ul>
       </header>
       <p className="crew-trust__rules">{t.rules}</p>
@@ -143,7 +143,6 @@ export function TrustView({ db, identity, language }: CrewScreenProps) {
 type T = CrewTexts<"trust">;
 
 const DOT_TEXT = { ok: "dotOk", wrong: "dotWrong", neutral: "dotNeutral" } as const satisfies Record<Dot, keyof T>;
-const DOT_ARIA = { ok: "dotsAriaOk", wrong: "dotsAriaWrong", neutral: "dotsAriaNeutral" } as const satisfies Record<Dot, keyof T>;
 const EVENT_TEXT = { relax: "eventRelax", revoke: "eventRevoke", reset: "eventReset" } as const satisfies Record<TimelineEvent["kind"], keyof T>;
 
 const levelText = (level: ReviewLevel, t: T) => (level === "light" ? t.levelLight : t.levelItem);
@@ -188,11 +187,7 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
   const columns = cells.length + empty;
   if (cells.length === 0) return <p className="muted">{t.dotsNone}</p>;
   const date = (iso: string) => (isSameDay(iso, now) ? t.today : shortDate(iso, language));
-  const counts = countDots(timeline);
-  const aria = (Object.keys(DOT_ARIA) as Dot[])
-    .filter((d) => counts[d] > 0)
-    .map((d) => fill(t[DOT_ARIA[d]], { count: counts[d] }))
-    .join(t.dotsAriaSeparator);
+  const aria = dotsSummary(cells.map((c) => c.dot), language);
   const style = { "--crew-trust-columns": columns } as CSSProperties;
   return (
     <div className="crew-trust__timeline" style={style}>
@@ -214,9 +209,7 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
       <ol className="crew-trust__grid crew-trust__dots" aria-label={aria}>
         {cells.map((c, i) => (
           <li key={i} className="crew-trust__cell" aria-label={fill(t.dotCell, { result: t[DOT_TEXT[c.dot]], date: date(c.at) })}>
-            <span className="crew-trust__dot" data-dot={c.dot} aria-hidden="true">
-              {c.dot === "wrong" ? "×" : ""}
-            </span>
+            <DotMark dot={c.dot} className="crew-trust__dot" />
             <span className="crew-trust__date" aria-hidden="true">
               {/* 窄螢幕時在斜線後換行，不把數字拆開 */}
               {date(c.at).split("/").map((part, j) => (
@@ -231,7 +224,7 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
         {/* 不足的空格不是驗收，不算清單項目 */}
         {Array.from({ length: empty }, (_, i) => (
           <li key={`empty-${i}`} role="none" className="crew-trust__cell" aria-hidden="true">
-            <span className="crew-trust__dot" data-dot="none" />
+            <DotMark dot="none" className="crew-trust__dot" />
           </li>
         ))}
       </ol>

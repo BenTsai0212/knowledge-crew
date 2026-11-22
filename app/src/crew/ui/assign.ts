@@ -99,6 +99,20 @@ export function usualOf(
   return { sourceId: mostCommon(own.map((a) => a.sourceId)), workTypeId: mostCommon(own.map((a) => a.workTypeId)) };
 }
 
+/**
+ * 表單一開始的選擇（#83）：預選的員工看得到、且有工作類型時選他並帶入平常的來源；
+ * 否則不選員工，來源是第一個看得到的來源（沒有時是空字串）。
+ */
+export function initialChoice(
+  data: Pick<AssignData, "sources" | "employees">,
+  employeeId: string | undefined,
+): { employeeId: string; sourceId: string } {
+  const first = data.sources[0]?.id ?? "";
+  const e = data.employees.find((x) => x.id === employeeId && x.workTypeId !== null);
+  if (!e) return { employeeId: "", sourceId: first };
+  return { employeeId: e.id, sourceId: e.usualSourceId ?? first };
+}
+
 /** 結果說明的文字鍵（assign 翻譯檔的 result*）：交件的稱呼依工作類型。 */
 export function resultKey(workTypeId: string): "resultReply" | "resultPost" | "resultKb" | "resultCode" | "resultOther" {
   const d = deliverableOf(workTypeId);
