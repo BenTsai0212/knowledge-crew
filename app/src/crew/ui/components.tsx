@@ -73,7 +73,7 @@ export function LevelBadge({ level, children }: { level: ReviewLevel; children: 
 }
 
 /** 結論列：未通過（danger）或檢查中（warning）；沒有問題時畫面不放這個元件。 */
-export function ConclusionRow({ tone, title, description }: { tone: Tone; title: string; description: string }) {
+export function ConclusionRow({ tone, title, description }: { tone: Tone; title: string; description: ReactNode }) {
   return (
     <div className="crew-conclusion" data-tone={tone}>
       <Icon status={tone} size={24} />
