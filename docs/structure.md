@@ -235,15 +235,15 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `db/constraints.test.ts`：crew migration 的 CHECK 與 UNIQUE
 - `db/migrate.ts`：crew 的 migration 清單（版本加 `crew/` 前綴，由 `openDatabase()` 的 `migrations` 選項套用；測試在 `migrate.test.ts`）
 - `db/migrations/*.sql`：crew 的 migration（已合併的不可修改）
-- `db/store.ts`：crew 的資料存取，一律經 `withIdentity()`，可見範圍由 RLS 決定；`createReview()` 在「通過」時於同一個交易中把知識庫條目回流成 knowledge-kit 的文件與段落（#92，crew ADR 0004 的 2026-11-22 修訂）
+- `db/store.ts`：crew 的資料存取，一律經 `withIdentity()`，可見範圍由 RLS 決定；`createReview()` 在「通過」時於同一個交易中把知識庫條目回流成 knowledge-kit 的文件與段落，`#owner` 欄位經待審與人做的核准成為部門實體（`writeFlowback()`，demo 的 seed 共用；#92，crew ADR 0004 的 2026-11-22 修訂）
 - `demo/load.ts`：選定客戶的 `crew/demo.json`（沒有時是 `null`）
-- `demo/seed.ts`：`demo.json` 驗證後匯入資料庫（交給 `openDatabase()` 的 seed）
+- `demo/seed.ts`：`demo.json` 驗證後匯入資料庫（交給 `openDatabase()` 的 seed）；已通過的知識庫條目以 `writeFlowback()` 回流
 - `demo/simulate.ts`：「模擬交件」：以目前身分寫入下一輪的工作
 - `demo/texts.ts`：`demoText()`：虛構資料的文字換成目前語言
 - `demo/types.ts`：`demo.json` 的結構
 - `demo/validate.ts`：`demo.json` 的驗證
 - `i18n.ts`：crew 介面文字唯一的讀取模組（`crewStrings()`；一個畫面一份翻譯檔，`CrewScreenKeys` 一行一個畫面）
-- `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題與段落，不是一個知識庫條目時是 null）、`flowbackDocumentId()`（測試在 `flowback.test.ts`）
+- `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題、段落與 `#owner` 的部門名稱，不是一個知識庫條目時是 null）、`flowbackDocumentId()`、`flowbackOwnerPendingId()`（測試在 `flowback.test.ts`）
 - `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數
 - `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
 - `trust/types.ts`：信任規則用的型別
