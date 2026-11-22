@@ -46,3 +46,9 @@
 - **migration 的依賴**另加 `kk.documents`、`kk.visibility_levels`（crew 0005 的外鍵與 policy），以及 `kk.can_upload()`、`kk.passages` 的寫入（`db/store.ts`）。knowledge-kit 改到這幾張表的欄位或上傳的寫入規則時，同步要檢查 crew 0005 與 `app/tests/crew/flowback-access.test.ts`。
 - **資料**：`crew.sources.knowledge_visibility_level_id`（回流文件的機密等級；NULL 表示不回流，只有知識庫類的來源可以填），與 `crew.knowledge_flowbacks`（哪一次驗收回流成哪一份文件；文件 id 是 `crew-<工作 id>`）。同樣 ENABLE＋FORCE RLS、`kk_app` 只有 SELECT／INSERT、不使用 SECURITY DEFINER。
 - **會改的 knowledge-kit 檔案**另加原文的元件 `app/src/ui/SourcePanel.tsx`（桌機）與 `app/src/ui/SourceSheet.tsx`（手機）（原文的接入點：顯示「來自 AI 員工 ○○・驗收 ○○」並可點回「工作與驗收」，各約 5 行；文字與判斷放在 crew），在 #92 的 PR 3 修改。問答的出處與圖譜節點的出處都打開原文，所以一個接入點涵蓋兩處。
+
+## 修訂（2026-11-22，#96）
+
+- **首頁的今天的工作**（RFC 0001 的 2026-11-22 修訂「首頁」）：首頁加入「今天的工作」，側欄與手機導覽的「AI 員工」顯示待驗收件數（與「待審」分開）。分組、文字與資料讀取都在 crew（`app/src/crew/ui/home-today.ts`、`HomeToday.tsx`、`client/i18n/crew/home.<語言>.json`），資料沿用 `today.ts` 的 `readToday()`，不另寫查詢。
+- **會改的 knowledge-kit 檔案**另加 `app/src/ui/HomePage.tsx`（兩個可省略的插槽 `todaySummary`、`todayCard`，HomePage 不 import crew）與 `app/src/ui/app.css`（待審徽章的四條規則各加一個 `.crew-tab-count` 選擇器，樣式相同）。側欄與手機導覽沿用既有的 `tabExtra`，`Sidebar.tsx`、`MobileNav.tsx` 不改；`App.tsx` 讀一次今天的工作，傳給首頁與 `tabExtra.crew`。
+- 徽章用另一個 class（不是 `.tab-count`）：手機的「更多」顯示第一個有內容的徽章，待審是 0 時會顯示 AI 員工的件數；knowledge-kit 以 `.tab-count` 判斷待審徽章的 E2E 因此不受影響。

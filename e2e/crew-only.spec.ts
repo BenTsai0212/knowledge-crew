@@ -1,11 +1,11 @@
 // 只展示 AI 員工的 build（VITE_CREW_ONLY=1，#84，crew ADR 0005）：只在這個 build 執行（playwright.config.ts）。
-// 不要求邀請碼、「直接體驗」以主管進入 AI 員工的「今天」、左側欄是首頁、圖譜、時間軸與 AI 員工（#91，RFC 0001 的 2026-11-22 修訂）、
+// 不要求邀請碼、「直接體驗」以主管進入首頁（今天的工作在首頁，#96）、左側欄是首頁、圖譜、時間軸與 AI 員工（#91，RFC 0001 的 2026-11-22 修訂）、
 // 首頁與圖譜沒有提問的入口、身分可切換，整個流程沒有任何 /api/* 請求。
 // 部署的是 assets-only（wrangler.crew-demo.jsonc），沒有 /api/*：這裡讓 /api/* 一被呼叫就失敗並記錄下來。
 import { expect, test, type Page } from "@playwright/test";
 import { blockModelDownload, chooseAccount, EVALS_PATH, gotoView, s, signInPanel, switchIdentity, userCard } from "./support/app";
 import { access } from "./support/client";
-import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo } from "./support/crew";
+import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo, homeToday, openCrew } from "./support/crew";
 import type { Cy } from "./support/graph";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（crew-only 不生效）");
@@ -74,13 +74,13 @@ async function expectTimeline(page: Page): Promise<void> {
   await expect(page.getByRole("alert")).toHaveCount(0);
 }
 
-// 「直接體驗」進入：資料庫載入完成後是 AI 員工的「今天」
+// 「直接體驗」進入：資料庫載入完成後是首頁，主管的今天的工作有待驗收（#96）
 async function enter(page: Page, path = "/"): Promise<void> {
   await page.goto(path);
   await directEntry(page).click();
-  await expect(crewSections(page)).toBeVisible();
-  await expect(crewSections(page).getByRole("button", { name: ct.common.sectionToday, exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByText(ct.today.loading, { exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-view="home"][aria-current="page"]')).toHaveCount(1);
+  await expect(homeToday(page)).toBeVisible();
+  await expect(homeToday(page).getByRole("heading", { name: ct.home.groupAwaiting, exact: true })).toBeVisible();
 }
 
 test.describe("桌機", () => {
@@ -97,9 +97,11 @@ test.describe("桌機", () => {
     await expect(page.getByText(s.demoPermissions, { exact: true }).first()).toBeVisible();
   });
 
-  test("直接體驗：以主管進入「今天」，有待驗收的工作；左側欄是首頁、圖譜、時間軸、AI 員工，沒有「更換邀請碼」", async ({ page }) => {
+  test("直接體驗：以主管進入首頁，今天的工作有待驗收；左側欄是首頁、圖譜、時間軸、AI 員工，沒有「更換邀請碼」", async ({ page }) => {
     await enter(page);
-    await expect(page.getByRole("heading", { name: ct.today.awaitingReview, exact: true })).toBeVisible();
+    await expect(homeToday(page).getByRole("button", { name: new RegExp(`^${ct.home.actionReview}`) }).first()).toBeVisible();
+    // 側欄的 AI 員工有待驗收件數
+    await expect(page.locator('.primary-tabs [data-view="crew"] .crew-tab-count')).toHaveText(/^[1-9]\d*/);
     await expect(navViews(page)).toHaveCount(VIEWS.length);
     await expect(navViews(page).last()).toHaveAttribute("data-view", "crew");
     await expectViews(page);
@@ -109,6 +111,7 @@ test.describe("桌機", () => {
 
   test("六個子畫面都能開啟，沒有錯誤", async ({ page }) => {
     await enter(page);
+    await openCrew(page);
     for (const section of [
       ct.common.sectionToday,
       ct.common.sectionEmployees,
@@ -127,21 +130,22 @@ test.describe("桌機", () => {
     const guest = access.roles.find((r) => !r.canReview && !r.canUpload);
     test.skip(guest === undefined, "沒有不能審查也不能上傳的身分");
     await enter(page);
-    await expect(page.getByRole("heading", { name: ct.today.awaitingReview, exact: true })).toBeVisible();
     await switchIdentity(page, guest!.id);
-    await expect(page.getByText(ct.today.allEmpty, { exact: true })).toBeVisible();
-    await expect(navViews(page)).toHaveCount(VIEWS.length);
-    // 訪客的首頁同樣沒有提問與「有更新」的入口
-    await gotoView(page, "home");
+    // 訪客沒有可做的事：首頁不顯示今天的工作，同樣沒有提問與「有更新」的入口
+    await expect(homeToday(page)).toHaveCount(0);
     await expectHomeWithoutAsk(page);
+    await expect(navViews(page)).toHaveCount(VIEWS.length);
+    await openCrew(page);
+    await expect(page.getByText(ct.today.allEmpty, { exact: true })).toBeVisible();
   });
 
-  test("帳號登入：沒有邀請碼欄，按「登入」就進入 AI 員工", async ({ page }) => {
+  test("帳號登入：沒有邀請碼欄，按「登入」就進入首頁", async ({ page }) => {
     await page.goto("/");
     const panel = signInPanel(page);
     await chooseAccount(panel, access.roles[0].id);
     await panel.getByRole("button", { name: s.signInSubmit, exact: true }).click();
-    await expect(crewSections(page)).toBeVisible();
+    await expect(page.locator(".home")).toBeVisible();
+    await expect(crewSections(page)).toHaveCount(0);
     await expect(navViews(page)).toHaveCount(VIEWS.length);
   });
 
@@ -189,8 +193,11 @@ test.describe("桌機 1280：首頁、圖譜、時間軸（#91）", () => {
 test.describe("手機", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test("直接體驗後是 AI 員工的「今天」", async ({ page }) => {
+  test("直接體驗後是首頁的今天的工作；點一列到「工作與驗收」該件", async ({ page }) => {
     await enter(page);
+    const row = homeToday(page).getByRole("button", { name: new RegExp(`^${ct.home.actionReview}`) }).first();
+    await row.click();
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(crewContent(page).first()).toBeVisible();
   });
 });

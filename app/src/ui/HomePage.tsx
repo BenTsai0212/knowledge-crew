@@ -73,6 +73,9 @@ interface Props {
   onStartReview(): void;
   // 最近看過的實體 id（最新的在前）；名稱與能否看到在這裡以目前身分讀取
   viewed: readonly string[];
+  // knowledge-crew 的今天的工作（#96，crew/ui/HomeToday.tsx）：問候下方的一句總結與卡片區最前面的一區；沒有 AI 員工時省略
+  todaySummary?: ReactNode;
+  todayCard?: ReactNode;
   // 最近新增的文件：在時間軸打開
   onOpenDocument(documentId: string): void;
   // 最近看過的實體：在圖譜打開
@@ -157,7 +160,7 @@ function scopeTag(visibility: string, project: string | null, language: string):
 }
 
 export function HomePage(props: Props) {
-  const { db, language, identity, wide, phone = false, waiting, updates: updatesProps, asked, maybeAnswerable = [], onAcknowledge, askDisabled, limit, draft, onDraft, onAsk, askNote, onStartReview, viewed, onOpenDocument, onOpenEntity } = props;
+  const { db, language, identity, wide, phone = false, waiting, updates: updatesProps, asked, maybeAnswerable = [], onAcknowledge, askDisabled, limit, draft, onDraft, onAsk, askNote, onStartReview, viewed, todaySummary, todayCard, onOpenDocument, onOpenEntity } = props;
   const s = strings(language);
   const recent = useRecent(db, identity, language, viewed);
   const [updatesVersion, setUpdatesVersion] = useState(0);
@@ -505,6 +508,7 @@ export function HomePage(props: Props) {
     <div className={wide ? "home home--wide" : phone ? "home home--phone" : "home"}>
       <header className="home__top">
         <h2>{s.home[greetingPeriod(now.getHours())]}</h2>
+        {todaySummary}
         {/* 可見範圍：桌機在左側欄的使用者卡（#330），手機在身分與語言面板（#255、#356）；只有平板在問候下方 */}
         {!wide && !phone && (
           <p className="home__scope">
@@ -530,6 +534,7 @@ export function HomePage(props: Props) {
         <QuestionPanel language={language} disabled={askDisabled} text={draft} onText={onDraft} onAsk={onAsk} limit={limit} role={identity} compact={wide || phone} />
       )}
       <div className="home__cards">
+        {todayCard}
         {phone ? (
           // 手機：一般員工是有更新、問過的問題；主管是最近新增的文件（畫板 K-Mobile）；其他區塊接在後面
           waiting !== undefined ? (

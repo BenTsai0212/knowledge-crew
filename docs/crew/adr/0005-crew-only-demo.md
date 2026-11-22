@@ -34,3 +34,7 @@
 - #91 改到的 knowledge-kit 檔案：`app/src/App.tsx`（以 `entryPoints()` 決定首頁與圖譜的入口）、`app/src/ui/HomePage.tsx`（`onAsk` 可省略、`askNote`）、`app/src/ui/GraphPage.tsx` 與 `app/src/ui/EntityPanel.tsx`（`onAskAbout` 可省略）。
 - 「直接體驗」的文字放在 crew 的翻譯檔（`client/i18n/crew/common.<語言>.json` 的 `directEntry`），不加 knowledge-kit 的必填鍵，示範客戶的翻譯檔不必改。
 - **後續工作**（#84 的 PR 2）：wrangler 改名與新設定檔、以這個開關 build 的 E2E 與 CI job（先不設為必要檢查）、`docs/deploy.md` 的新章節、README；網址由人部署後補。
+
+## 修訂（2026-11-22，#96）
+
+- 決定 6 的「預設頁仍是 AI 員工的『今天』」改為**首頁**：首頁加入了今天的工作（#96），「直接體驗」後以主管進入首頁就看到待驗收與少看建議（`entry.ts` 的 `crewDefaultView()`）。切換身分後目前頁籤看不到時同樣回到首頁。其他決定不變；`crew-only.spec.ts` 仍斷言整個流程沒有 `/api/*` 請求。

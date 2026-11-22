@@ -18,14 +18,14 @@ type Texts = CrewTexts<"review">;
 type Data = { list: WorkList; selected: string | null; panel: PanelData | null };
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: Data };
 
-export function ReviewView({ db, identity, language }: CrewScreenProps) {
+export function ReviewView({ db, identity, language, assignmentId, onChanged }: CrewScreenProps) {
   const t = crewStrings("review", language);
   const canReview = canReviewOf(clientConfig.access, identity);
   const [state, setState] = useState<State>({ kind: "loading" });
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
-  // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆
-  const selectedRef = useRef<string | null>(null);
+  // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆。從首頁點進來時先選該件（#96）
+  const selectedRef = useRef<string | null>(assignmentId ?? null);
   // 在清單選了一筆之後把面板捲進畫面（窄螢幕面板在清單之上；已在畫面上時不捲動）
   const panelRef = useRef<HTMLElement>(null);
   const scrollPending = useRef(false);
@@ -84,6 +84,7 @@ export function ReviewView({ db, identity, language }: CrewScreenProps) {
     setSaveFailed(false);
     try {
       await createReview(db, identity, input);
+      onChanged?.();
     } catch {
       setSaveFailed(true);
     }

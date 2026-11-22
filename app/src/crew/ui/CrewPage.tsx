@@ -20,10 +20,11 @@ const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
   ledger: LedgerView,
 };
 
-export function CrewPage(props: Omit<CrewScreenProps, "navigate" | "employeeId">) {
+// initial：一開始的位置（首頁的今天的工作點進來時，#96）；省略時是「今天」
+export function CrewPage({ initial, ...props }: Omit<CrewScreenProps, "navigate" | "employeeId" | "assignmentId"> & { initial?: CrewTarget }) {
   const t = crewStrings("common", props.language);
   // 目前位置（與交辦頁預選的員工）只存在元件 state，不寫瀏覽器儲存
-  const [target, setTarget] = useState<CrewTarget>({ section: "today" });
+  const [target, setTarget] = useState<CrewTarget>(initial ?? { section: "today" });
   const { section } = target;
   const Screen = SCREENS[section];
   return (
@@ -48,7 +49,13 @@ export function CrewPage(props: Omit<CrewScreenProps, "navigate" | "employeeId">
         ))}
       </nav>
       {Screen ? (
-        <Screen key={`${section}/${target.employeeId ?? ""}`} {...props} navigate={setTarget} employeeId={target.employeeId} />
+        <Screen
+          key={`${section}/${target.employeeId ?? ""}/${target.assignmentId ?? ""}`}
+          {...props}
+          navigate={setTarget}
+          employeeId={target.employeeId}
+          assignmentId={target.assignmentId}
+        />
       ) : (
         <section className="empty-state">
           <p className="empty-state__title">{t.preparingTitle}</p>

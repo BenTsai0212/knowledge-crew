@@ -2,12 +2,12 @@
 // 可見範圍由 RLS 決定。資料庫的文字以 demoText() 換成目前語言，找不到時用資料庫的原文。
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredEmployee } from "../db/store";
+import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredEmployee } from "../db/store";
 import { demoText } from "../demo/texts";
 import { sourceLabel } from "./refs";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import { relaxSuggestion } from "../trust/rules";
-import type { TrustParams } from "../trust/types";
+import type { TrustParams, WorkCheck } from "../trust/types";
 
 export interface TodayEmployee {
   id: string;
@@ -24,6 +24,10 @@ export interface TodayAssignment {
   externalRef: string | null;
   workTypeId: string;
   employee: TodayEmployee;
+  /** 待驗收：最新一輪各檢查最新一筆的狀態（首頁的「有檢查沒通過」，#96）；進行中是空的 */
+  checks: WorkCheck[];
+  /** 進行中：退回後等下一輪（否則是還沒交件） */
+  returned: boolean;
 }
 
 export interface TodaySuggestion {
@@ -73,12 +77,18 @@ export async function readToday(
     externalRef: a.externalRef,
     workTypeId: a.workTypeId,
     employee: employee(a.employeeId),
+    checks: [],
+    returned: a.latestVerdict === "returned",
   });
+  const withChecks = async (item: TodayAssignment): Promise<TodayAssignment> => {
+    const works = await getAssignmentWorks(db, identity, item.id);
+    return { ...item, checks: works.at(-1)?.checks ?? [] };
+  };
   // listAssignments() 是新到舊；畫面依交辦時間舊到新排
   const oldestFirst = [...assignments].reverse();
   const today: Today = {
     ...EMPTY(canReview),
-    awaitingReview: oldestFirst.filter(isAwaiting).map(toItem),
+    awaitingReview: await Promise.all(oldestFirst.filter(isAwaiting).map(toItem).map(withChecks)),
     inProgress: oldestFirst.filter(isInProgress).map(toItem),
   };
   // 建議少看只給能驗收的身分（只有他們能同意少看），其他身分不必計算

@@ -36,11 +36,12 @@ const STATUS_KEY: Record<AssignStatus, "statusNotSubmitted" | "statusAwaitingRev
   accepted: "statusAccepted",
 };
 
-export function AssignView({ db, identity, language, employeeId }: CrewScreenProps) {
+export function AssignView({ db, identity, language, employeeId, onChanged }: CrewScreenProps) {
   const t = crewStrings("assign", language);
   const [state, setState] = useState<State>({ kind: "loading" });
   const [version, setVersion] = useState(0);
-  const reload = useCallback(() => setVersion((v) => v + 1), []);
+  // 交辦與模擬交件會改變首頁與側欄的件數（#96）
+  const reload = useCallback(() => (setVersion((v) => v + 1), onChanged?.()), [onChanged]);
   const [showAll, setShowAll] = useState(false);
 
   // 第一次讀取時才顯示「讀取中」；寫入後的重新讀取保留目前的畫面

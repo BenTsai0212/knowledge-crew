@@ -80,6 +80,8 @@ import { NavRail } from "./ui/NavRail";
 import { useLayout } from "./ui/layout";
 import { crewMigrations } from "./crew/db/migrate";
 import { CrewPage } from "./crew/ui/CrewPage";
+import { CrewTabCount, HomeTodayCard, HomeTodaySummary, useCrewToday } from "./crew/ui/HomeToday";
+import type { CrewTarget } from "./crew/ui/sections";
 import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
@@ -212,6 +214,12 @@ export function App() {
   const canUpload = (access.roles.find((r) => r.id === identity)?.canUpload ?? false) && views(canReview).includes("upload");
   // 首頁與圖譜上切到問答、待審、上傳的入口：目標頁籤看不到時不顯示（crew-only，#91）
   const entries = entryPoints(views(canReview));
+  // knowledge-crew 的今天的工作（#96）：首頁與側欄「AI 員工」的待驗收件數共用一次讀取；切換頁籤與 crew 寫入後重新讀取
+  const [crewVersion, setCrewVersion] = useState(0);
+  const crewToday = useCrewToday(db, identity, language, views(canReview).includes("crew"), `${view}/${crewVersion}`);
+  const crewAwaiting = crewToday?.identity === identity ? crewToday.awaiting : null;
+  // 從首頁點進 AI 員工時的位置；從導覽切換頁籤時清掉（回到「今天」）
+  const [crewTarget, setCrewTarget] = useState<CrewTarget | undefined>(undefined);
   const [reviewVersion, setReviewVersion] = useState(0);
   // 首頁的「等你處理」用同一次讀取的結果（#283），導覽列的數字是其中的 total（與 pendingCount() 相同）
   const [pending, setPending] = useState<{ identity: string; count: number; summary: WaitingSummary } | null>(null);
@@ -835,7 +843,7 @@ export function App() {
           }
           views={views(canReview)}
           view={view}
-          onView={(next) => (setGraphFocus(null), setView(next))}
+          onView={(next) => (setGraphFocus(null), setCrewTarget(undefined), setView(next))}
           tabExtra={{
             upload: phone && showsUploadDot(unseenUploads, uploaders, identity) && (
               <span className="tab-dot">
@@ -848,6 +856,8 @@ export function App() {
                 {pending.count}
               </span>
             ),
+            // AI 員工的待驗收件數（#96，與待審分開）：只給能驗收的身分；手機 0 時不顯示（與待審相同）
+            crew: crewAwaiting !== null && (!phone || crewAwaiting > 0) && <CrewTabCount count={crewAwaiting} language={language} />,
           }}
         />
       )}
@@ -874,7 +884,7 @@ export function App() {
               onViewed={onViewed}
             />
           ) : view === "crew" ? (
-            <CrewPage db={db} identity={identity} language={language} />
+            <CrewPage db={db} identity={identity} language={language} initial={crewTarget} onChanged={() => setCrewVersion((v) => v + 1)} />
           ) : view === "evals" ? (
             <EvalPage
               language={language}
@@ -1011,6 +1021,10 @@ export function App() {
             viewed={viewed[identity] ?? NONE}
             onOpenDocument={(id) => (setFocusDocument(id), setView("timeline"))}
             onOpenEntity={(id) => (setGraphFocus(id), setView("graph"))}
+            todaySummary={<HomeTodaySummary state={crewToday} identity={identity} language={language} />}
+            todayCard={
+              <HomeTodayCard state={crewToday} identity={identity} language={language} phone={phone} onOpen={(target) => (setCrewTarget(target), setView("crew"))} />
+            }
           />
         </main>
       ) : (

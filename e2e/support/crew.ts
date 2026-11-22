@@ -14,6 +14,7 @@ import { gotoView } from "./app";
 type CrewFiles = {
   common: typeof import("@client/i18n/crew/common.zh-TW.json");
   today: typeof import("@client/i18n/crew/today.zh-TW.json");
+  home: typeof import("@client/i18n/crew/home.zh-TW.json");
   employees: typeof import("@client/i18n/crew/employees.zh-TW.json");
   assign: typeof import("@client/i18n/crew/assign.zh-TW.json");
   review: typeof import("@client/i18n/crew/review.zh-TW.json");
@@ -25,6 +26,7 @@ const crewJson = <S extends keyof CrewFiles>(screen: S): CrewFiles[S] =>
 export const ct = {
   common: crewJson("common"),
   today: crewJson("today"),
+  home: crewJson("home"),
   employees: crewJson("employees"),
   assign: crewJson("assign"),
   review: crewJson("review"),
@@ -124,6 +126,9 @@ export async function assignSimulateReturn(
   const listed = page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").filter({ hasText: title });
   await expect(listed.getByText(ct.review.verdictReturned, { exact: true })).toBeVisible();
 }
+
+// 首頁的「今天的工作」（#96）
+export const homeToday = (page: Page) => page.getByRole("region", { name: ct.home.title, exact: true });
 
 // 「工作與驗收」的驗收面板（名稱是工作的標題）
 export const reviewPanel = (page: Page, title: string) => page.getByRole("article", { name: title });
