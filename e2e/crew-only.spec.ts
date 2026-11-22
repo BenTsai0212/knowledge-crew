@@ -243,4 +243,17 @@ test.describe("手機 390：首頁、圖譜、時間軸（#91）", () => {
     await expectTimeline(page);
     await expectNoOverflow(page);
   });
+
+  test("AI 員工：子頁是按鈕列、帶待驗收件數，決定列固定在底部（#103）", async ({ page }) => {
+    await enter(page);
+    await openCrew(page);
+    const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });
+    await expect(works).toHaveAttribute("aria-current", "page");
+    await expect(works.locator(".crew-page__count")).toBeVisible();
+    expect(await crewSections(page).evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    const bar = page.locator(".crew-review__decision");
+    await expect(bar).toBeVisible();
+    expect(await bar.evaluate((el) => getComputedStyle(el).position)).toBe("sticky");
+    await expectNoOverflow(page);
+  });
 });

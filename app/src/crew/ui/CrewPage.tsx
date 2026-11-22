@@ -1,7 +1,11 @@
 // crew 頁（#34）：頁首（標題與「虛構資料」標示）、子導覽與目前位置的畫面。
 // H～K 掛上畫面時：新增 <畫面>View.tsx／.css，在 SCREENS 插入一行 import 與一行登錄。
-import { useEffect, useState } from "react";
+// 子導覽的「工作與驗收」「信任」帶數字（#103，只給能驗收的身分）；目前的子頁捲進按鈕列（手機是可橫向滑動的按鈕列）。
+import { useEffect, useRef, useState } from "react";
+import { fill } from "../../client/i18n";
 import { crewStrings } from "../i18n";
+import { useCrewToday } from "./HomeToday";
+import { scrollDelta, sectionCounts } from "./section-counts";
 import { CREW_SECTIONS, DEFAULT_CREW_SECTION, type CrewScreen, type CrewScreenProps, type CrewSection, type CrewTarget } from "./sections";
 import { AssignView } from "./AssignView";
 import { EmployeesView } from "./EmployeesView";
@@ -32,6 +36,22 @@ export function CrewPage({ request = null, ...props }: Props) {
   }, [request?.n]);
   const { section } = target;
   const Screen = SCREENS[section];
+  // 子導覽的數字：切換子頁與畫面寫入後重新讀取（寫入後也照舊通知 App 更新首頁與側欄）
+  const [version, setVersion] = useState(0);
+  const today = useCrewToday(props.db, props.identity, props.language, true, `${section}/${version}`);
+  const counts = today?.identity === props.identity && today.data !== "failed" ? sectionCounts(today.data) : {};
+  const onChanged = () => {
+    setVersion((v) => v + 1);
+    props.onChanged?.();
+  };
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = navRef.current;
+    const current = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !current) return;
+    const delta = scrollDelta(nav.getBoundingClientRect(), current.getBoundingClientRect());
+    if (delta !== 0) nav.scrollLeft += delta;
+  }, [section]);
   return (
     <section className="crew-page">
       <header className="crew-page__header">
@@ -40,23 +60,40 @@ export function CrewPage({ request = null, ...props }: Props) {
           {t.fictionalData}
         </span>
       </header>
-      <nav className="crew-page__sections" aria-label={t.sectionsLabel}>
-        {CREW_SECTIONS.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            className="crew-page__section"
-            aria-current={s.id === section ? "page" : undefined}
-            onClick={() => setTarget({ section: s.id })}
-          >
-            {t[s.label]}
-          </button>
-        ))}
+      <nav ref={navRef} className="crew-page__sections" aria-label={t.sectionsLabel}>
+        {CREW_SECTIONS.map((s) => {
+          const count = counts[s.id];
+          const countId = `crew-section-count-${s.id}`;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              className="crew-page__section"
+              aria-current={s.id === section ? "page" : undefined}
+              aria-describedby={count === undefined ? undefined : countId}
+              onClick={() => setTarget({ section: s.id })}
+            >
+              {t[s.label]}
+              {count !== undefined && (
+                <>
+                  <span className="crew-page__count" aria-hidden="true">
+                    {count}
+                  </span>
+                  {/* 數字的說明放在 aria-describedby，按鈕的名稱仍是子頁的名稱 */}
+                  <span id={countId} hidden>
+                    {fill(s.id === "works" ? t.sectionWorksCount : t.sectionTrustCount, { count }, props.language)}
+                  </span>
+                </>
+              )}
+            </button>
+          );
+        })}
       </nav>
       {Screen ? (
         <Screen
           key={`${section}/${target.employeeId ?? ""}/${target.assignmentId ?? ""}`}
           {...props}
+          onChanged={onChanged}
           navigate={setTarget}
           employeeId={target.employeeId}
           assignmentId={target.assignmentId}
