@@ -1,6 +1,7 @@
 // 手機的原文面板（#256；平板是右側的滑出面板，#255，docs/design.md「問答（手機）」）：點引用標號時從底部升起（BottomSheet，高 74%）。
 // 標題列是「原文 · 出處 N／M」小字（平板是「出處 N／M」）與上一個、下一個出處（44px）；原文在 reading 紙面、引用段落用 markReading、
 // 其他段落 textMuted（SourceText，與桌機相同，#354）；下方是並排的「在圖譜中查看」與「回報有錯」（畫板 G-Mobile-QA）。不是從某一題的引用打開時（段落旁的標示、其他頁面）只顯示「原文」。
+import type { ReactNode } from "react";
 import { fill, strings } from "../client/i18n";
 import type { ConfirmationAction } from "../sources/confirmations";
 import type { SourceDocument } from "../sources/source";
@@ -27,9 +28,11 @@ interface Props {
   side?: "bottom" | "right";
   // 確認、撤銷確認一段（ADR 0013）：source.confirmable 時才顯示按鈕
   onConfirm?(passageId: string, action: ConfirmationAction): Promise<void>;
+  // knowledge-crew：標題下的來源（回流的文件來自哪位 AI 員工，crew ADR 0004 的 2026-11-22 修訂）；沒有時不顯示
+  origin?: ReactNode;
 }
 
-export function SourceSheet({ language, source, steps, onStep, onOpenSource, onViewInGraph, onReport, onClose, side, onConfirm }: Props) {
+export function SourceSheet({ language, source, steps, onStep, onOpenSource, onViewInGraph, onReport, onClose, side, onConfirm, origin }: Props) {
   const s = strings(language);
   const step = (label: string, target: string | null, glyph: string) => (
     <button type="button" className="secondary source-step" aria-label={label} disabled={target === null} onClick={() => target !== null && onStep(target)}>
@@ -56,6 +59,7 @@ export function SourceSheet({ language, source, steps, onStep, onOpenSource, onV
       <p className="source-sheet__title">
         {source.title} <AccessBadges visibility={source.visibility} project={source.project} language={language} />
       </p>
+      {origin}
       <SourceText language={language} source={source} onOpenSource={onOpenSource} onConfirm={onConfirm} />
       {(onViewInGraph !== undefined || onReport !== undefined) && (
         <p className="source-sheet__actions">

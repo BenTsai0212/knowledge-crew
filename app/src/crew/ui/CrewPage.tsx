@@ -1,6 +1,6 @@
 // crew 頁（#34）：頁首（標題與「虛構資料」標示）、子導覽與目前位置的畫面。
 // H～K 掛上畫面時：新增 <畫面>View.tsx／.css，在 SCREENS 插入一行 import 與一行登錄。
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { crewStrings } from "../i18n";
 import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection, type CrewTarget } from "./sections";
 import { AssignView } from "./AssignView";
@@ -20,11 +20,18 @@ const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
   ledger: LedgerView,
 };
 
-// initial：一開始的位置（首頁的今天的工作點進來時，#96）；省略時是「今天」
-export function CrewPage({ initial, ...props }: Omit<CrewScreenProps, "navigate" | "employeeId" | "assignmentId"> & { initial?: CrewTarget }) {
+interface Props extends Omit<CrewScreenProps, "navigate" | "employeeId" | "assignmentId"> {
+  /** 從 crew 頁之外切到某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；n 每次要求都不同，同一個位置也重新切換 */
+  request?: { target: CrewTarget; n: number } | null;
+}
+
+export function CrewPage({ request = null, ...props }: Props) {
   const t = crewStrings("common", props.language);
   // 目前位置（與交辦頁預選的員工）只存在元件 state，不寫瀏覽器儲存
-  const [target, setTarget] = useState<CrewTarget>(initial ?? { section: "today" });
+  const [target, setTarget] = useState<CrewTarget>(() => request?.target ?? { section: "today" });
+  useEffect(() => {
+    if (request !== null) setTarget(request.target);
+  }, [request?.n]);
   const { section } = target;
   const Screen = SCREENS[section];
   return (

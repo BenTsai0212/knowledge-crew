@@ -1,8 +1,11 @@
 // 虛構資料 client/crew/demo.json 的匯入（#29）。交給 openDatabase() 的 seed 選項，以 superuser 寫入，可以填過去的時間。
 // 匯入前以 validateDemo() 驗證，有錯就拋錯、一筆也不寫入。文字寫入 client.json 的 defaultLanguage（#29 的 `## 決定` 1）；
 // 畫面依目前語言以 texts.ts 的 demoText() 換成 demo.json 的對應文字。
+// 已通過的知識庫條目以 createReview() 相同的寫法回流（db/store.ts 的 writeFlowback()，#92 的 `## 決定` 與計畫第 5 節），
+// 所以 demo 一開始就看得到；驗收者沒有上傳權限時不回流（同 createReview()）。
 import type { PGliteInterface } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
+import { writeFlowback } from "../db/store";
 import { demoWorkId, type DemoFile } from "./types";
 import { assertDemo, type ValidateOptions } from "./validate";
 
@@ -15,11 +18,11 @@ export interface DemoSeedConfig {
 export function demoSeed(raw: unknown, config: DemoSeedConfig, options: Pick<ValidateOptions, "now"> = {}) {
   return async (pg: PGliteInterface): Promise<void> => {
     const demo = assertDemo(raw, config.access, { ...options, languages: config.client.languages });
-    await insertDemo(pg, demo, config.client.defaultLanguage);
+    await insertDemo(pg, demo, config.client.defaultLanguage, config.access);
   };
 }
 
-async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: LanguageCode): Promise<void> {
+async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: LanguageCode, access: AccessFile): Promise<void> {
   await pg.transaction(async (tx) => {
     const insert = (table: string, columns: string[], values: unknown[]) =>
       tx.query(`INSERT INTO crew.${table} (${columns.join(", ")}) VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})`, values);
@@ -61,6 +64,21 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
             [r.id, workId, r.verdict, r.reason ?? null, r.note ?? null, r.decidedBy, r.decidedAt],
           );
         }
+      }
+    }
+
+    const kbLevel = new Map(demo.sources.map((s) => [s.id, s.knowledgeVisibility ?? null]));
+    const uploaders = new Set(access.roles.filter((r) => r.canUpload).map((r) => r.id));
+    for (const a of demo.assignments) {
+      const level = kbLevel.get(a.source);
+      const project = demo.sources.find((s) => s.id === a.source)!.project;
+      for (const w of a.works) {
+        const r = w.review;
+        if (!level || r?.verdict !== "accepted" || !uploaders.has(r.decidedBy)) continue;
+        await writeFlowback(tx, {
+          reviewId: r.id, workId: demoWorkId(a.id, w.round), body: w.body[language], projectId: project, level,
+          actor: r.decidedBy, language, date: r.decidedAt.slice(0, 10), at: r.decidedAt,
+        });
       }
     }
 

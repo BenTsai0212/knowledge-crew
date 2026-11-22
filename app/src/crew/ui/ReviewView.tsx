@@ -18,17 +18,19 @@ type Texts = CrewTexts<"review">;
 type Data = { list: WorkList; selected: string | null; panel: PanelData | null };
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: Data };
 
-export function ReviewView({ db, identity, language, assignmentId, onChanged }: CrewScreenProps) {
+export function ReviewView({ db, identity, language, assignmentId, onOpenSource, onChanged }: CrewScreenProps) {
   const t = crewStrings("review", language);
   const canReview = canReviewOf(clientConfig.access, identity);
   const [state, setState] = useState<State>({ kind: "loading" });
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
-  // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆。從首頁點進來時先選該件（#96）
+  // 剛才的「通過」因為沒有上傳權限而沒有收進知識庫（#92 的 `## 決定` 4）；只在這次畫面中註明，換一筆時清除
+  const [noUpload, setNoUpload] = useState(false);
+  // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆。從原文的來源（#92）或首頁的今天的工作（#96）切過來時先選那一件
   const selectedRef = useRef<string | null>(assignmentId ?? null);
   // 在清單選了一筆之後把面板捲進畫面（窄螢幕面板在清單之上；已在畫面上時不捲動）
   const panelRef = useRef<HTMLElement>(null);
-  const scrollPending = useRef(false);
+  const scrollPending = useRef(assignmentId !== undefined);
 
   const load = useCallback(
     async (want: string | null): Promise<Data> => {
@@ -68,6 +70,7 @@ export function ReviewView({ db, identity, language, assignmentId, onChanged }: 
 
   const select = (id: string) => {
     setSaveFailed(false);
+    setNoUpload(false);
     scrollPending.current = true;
     void refresh(id);
   };
@@ -82,8 +85,10 @@ export function ReviewView({ db, identity, language, assignmentId, onChanged }: 
   const decide = async (input: Parameters<typeof createReview>[2]) => {
     setSaving(true);
     setSaveFailed(false);
+    setNoUpload(false);
     try {
-      await createReview(db, identity, input);
+      const { flowback } = await createReview(db, identity, input);
+      setNoUpload(flowback === "no-upload-permission");
       onChanged?.();
     } catch {
       setSaveFailed(true);
@@ -110,7 +115,17 @@ export function ReviewView({ db, identity, language, assignmentId, onChanged }: 
         <ListGroup title={t.recent} count={t.recentCount} empty={t.recentEmpty} items={list.recent} {...{ selected, select, t, language }} />
       </nav>
       {panel ? (
-        <ReviewPanel key={panel.current.id} anchor={panelRef} panel={panel} language={language} saving={saving} saveFailed={saveFailed} decide={decide} />
+        <ReviewPanel
+          key={panel.current.id}
+          anchor={panelRef}
+          panel={panel}
+          language={language}
+          saving={saving}
+          saveFailed={saveFailed}
+          decide={decide}
+          noUpload={noUpload}
+          onOpenSource={onOpenSource}
+        />
       ) : (
         <p className="muted crew-review__hint">{t.selectHint}</p>
       )}

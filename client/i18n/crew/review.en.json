@@ -88,5 +88,8 @@
   "fileAdded": "Added",
   "fileModified": "Modified",
   "codeDiff": "See the diff on GitHub: {ref}",
-  "mergeNote": "Accepting only records the review; merging happens on GitHub."
+  "mergeNote": "Accepting only records the review; merging happens on GitHub.",
+  "knowledgeFlowed": "Added to the knowledge base",
+  "knowledgeOpen": "Open the source",
+  "knowledgeNoUpload": "Not added to the knowledge base: no upload permission"
 }
