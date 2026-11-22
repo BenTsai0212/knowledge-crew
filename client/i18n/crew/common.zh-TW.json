@@ -9,6 +9,8 @@
   "sectionWorks": "工作與驗收",
   "sectionTrust": "信任",
   "sectionLedger": "工作帳本",
+  "sectionWorksCount": "{count} 件待驗收",
+  "sectionTrustCount": "{count} 個少看建議等你決定",
   "preparingTitle": "準備中",
   "preparingBody": "這個畫面還在準備，之後會在這裡顯示。",
   "workTypeSupport": "客戶回覆",

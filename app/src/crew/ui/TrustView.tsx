@@ -29,7 +29,7 @@ type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; trust: 
 
 const rowKey = (r: TrustRow) => `${r.employee.id}/${r.workTypeId}`;
 
-export function TrustView({ db, identity, language }: CrewScreenProps) {
+export function TrustView({ db, identity, language, onChanged }: CrewScreenProps) {
   const t = crewStrings("trust", language);
   const canReview = canReviewOf(clientConfig.access, identity);
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -61,6 +61,8 @@ export function TrustView({ db, identity, language }: CrewScreenProps) {
     setFailed(null);
     try {
       await action();
+      // 子導覽的少看建議數與首頁的「等你決定」跟著更新（#103）
+      onChanged?.();
     } catch {
       setFailed(key);
     }

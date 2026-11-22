@@ -9,6 +9,8 @@
   "sectionWorks": "Work and review",
   "sectionTrust": "Trust",
   "sectionLedger": "Work ledger",
+  "sectionWorksCount": "{count, plural, one {# awaiting review} other {# awaiting review}}",
+  "sectionTrustCount": "{count, plural, one {# lighter review suggestion to decide} other {# lighter review suggestions to decide}}",
   "preparingTitle": "Coming soon",
   "preparingBody": "This screen is still being prepared and will appear here later.",
   "workTypeSupport": "Customer replies",
