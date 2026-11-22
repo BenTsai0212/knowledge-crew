@@ -56,7 +56,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
 
   // 6：最新的四筆是交辦、交件、退回（做錯了）與改回逐項看（同一時間的先後不斷言）
   await gotoCrewSection(page, ct.common.sectionLedger);
-  const items = page.getByRole("list", { name: ct.ledger.listLabel }).getByRole("listitem");
+  const items = page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row");
   await expect(items.first()).toBeVisible();
   const kinds = [
     ct.ledger.kindAssigned,

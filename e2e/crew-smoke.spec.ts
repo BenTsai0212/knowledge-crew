@@ -95,7 +95,7 @@ test.describe("冒煙（主管，桌機）", () => {
   test("工作帳本：篩選與紀錄", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionLedger);
     await expect(crewContent(page).getByRole("combobox", { name: new RegExp(`^${ct.ledger.filterEmployee}`) })).toBeVisible();
-    await expect(page.getByRole("list", { name: ct.ledger.listLabel }).getByRole("listitem").first()).toBeVisible();
+    await expect(page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row").first()).toBeVisible();
   });
 });
 

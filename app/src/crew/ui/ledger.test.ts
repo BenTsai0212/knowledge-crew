@@ -8,7 +8,7 @@ import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import { simulateSubmission } from "../demo/simulate";
 import type { DemoFile } from "../demo/types";
-import { actorName, filterLedger, ledgerOptions, mergeLedger, readLedger, type LedgerEvent, type LedgerKind } from "./ledger";
+import { actorName, filterLedger, isLevelChange, ledgerOptions, ledgerTone, mergeLedger, readLedger, type LedgerEvent, type LedgerKind } from "./ledger";
 
 const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
@@ -68,7 +68,7 @@ describe("mergeLedger：排序", () => {
     const events = mergeLedger(sources, lang);
     expect(events.map((e) => e.kind)).toEqual(["autoReset", "returned", "relax", "submitted", "assigned"]);
     expect(events[0]).toMatchObject({ actor: null, assignment: { id: "a1" } });
-    expect(events[1]).toMatchObject({ reason: "wrong", actor: "manager" });
+    expect(events[1]).toMatchObject({ reason: "wrong", actor: "manager", round: 1 });
     expect(events[2].assignment).toBeNull();
     expect(events[3]).toMatchObject({ round: 1, actor: "basil" });
   });
@@ -94,9 +94,37 @@ describe("filterLedger 與 ledgerOptions", () => {
     expect(filterLedger(events, { employeeId: null, workTypeId: null })).toHaveLength(3);
   });
 
+  it("依事件：只看層級改變（同意少看、收回少看、改回逐項看）、只看退回；all 與省略時全部（#77）", () => {
+    const mixed = [
+      event("a", "autoReset", "2026-10-05T00:00:00.000Z"),
+      event("b", "returned", "2026-10-05T00:00:00.000Z"),
+      event("c", "relax", "2026-10-04T00:00:00.000Z", "juniper", "ui"),
+      event("d", "accepted", "2026-10-03T00:00:00.000Z"),
+      event("e", "revoke", "2026-10-02T00:00:00.000Z"),
+      event("f", "submitted", "2026-10-01T00:00:00.000Z"),
+    ];
+    expect(filterLedger(mixed, { event: "level" }).map((e) => e.id)).toEqual(["a", "c", "e"]);
+    expect(filterLedger(mixed, { event: "returned" }).map((e) => e.id)).toEqual(["b"]);
+    expect(filterLedger(mixed, { event: "all" })).toHaveLength(6);
+    expect(filterLedger(mixed, { employeeId: "basil", event: "level" }).map((e) => e.id)).toEqual(["a", "e"]);
+  });
+
   it("選項只來自目前的事件", () => {
     expect(ledgerOptions(events)).toEqual({ employees: [{ id: "basil", displayName: "basil" }, { id: "juniper", displayName: "juniper" }], workTypeIds: ["docs", "ui"] });
     expect(ledgerOptions([])).toEqual({ employees: [], workTypeIds: [] });
+  });
+});
+
+describe("isLevelChange 與 ledgerTone（#77）", () => {
+  it("層級改變是灰底列；退回只有「做錯了」是 danger；其他沒有樣式", () => {
+    expect((["relax", "revoke", "autoReset"] as LedgerKind[]).every(isLevelChange)).toBe(true);
+    expect((["assigned", "submitted", "accepted", "returned"] as LedgerKind[]).some(isLevelChange)).toBe(false);
+    expect(ledgerTone({ kind: "relax", reason: null })).toBe("level");
+    expect(ledgerTone({ kind: "autoReset", reason: null })).toBe("level");
+    expect(ledgerTone({ kind: "returned", reason: "wrong" })).toBe("wrong");
+    expect(ledgerTone({ kind: "returned", reason: "different_approach" })).toBeNull();
+    expect(ledgerTone({ kind: "returned", reason: "process" })).toBeNull();
+    expect(ledgerTone({ kind: "accepted", reason: null })).toBeNull();
   });
 });
 
@@ -126,6 +154,10 @@ describe("readLedger：匯入虛構資料後", () => {
     expect(relax[1]).toMatchObject({ employee: { id: "rowan", displayName: "Rowan" } });
     expect(events.filter((e) => e.kind === "autoReset")).toMatchObject([{ id: "autoReset:s12-1", employee: { id: "rowan" }, workTypeId: "support", actor: null }]);
     for (let i = 1; i < events.length; i++) expect(events[i - 1].at >= events[i].at).toBe(true);
+    // 驗收帶著交件的輪次（「驗收通過（第 2 輪）」）
+    const accepted = events.filter((e) => e.kind === "accepted");
+    expect(accepted.every((e) => e.round !== null && e.round >= 1)).toBe(true);
+    expect(accepted.some((e) => e.round! > 1)).toBe(true);
   });
 
   it("staff：只看到青翼專案（客服信箱、官方社群帳號）的事件", async () => {
@@ -165,7 +197,7 @@ describe("readLedger：匯入虛構資料後", () => {
     expect(after).toHaveLength(before.length + 4);
     expect(after.slice(0, 4).map((e) => e.id)).toEqual([`autoReset:${r.id}`, `returned:${r.id}`, `submitted:${s.workId}`, `assigned:${a.id}`]);
     expect(after[0]).toMatchObject({ actor: null, employee: { id: "sorrel" }, workTypeId: "content", assignment: { id: a.id, title: "Ledger flow" } });
-    expect(after[1]).toMatchObject({ kind: "returned", reason: "wrong", actor: "manager" });
+    expect(after[1]).toMatchObject({ kind: "returned", reason: "wrong", actor: "manager", round: 1 });
     expect(after[2]).toMatchObject({ kind: "submitted", round: 1, actor: "sorrel" });
     expect(after[3]).toMatchObject({ kind: "assigned", actor: "manager", assignment: { sourceName: label("social-account") } });
     // staff 同樣看得到青翼專案的這四筆
