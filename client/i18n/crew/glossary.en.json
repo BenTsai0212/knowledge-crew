@@ -55,5 +55,9 @@
   "fieldOwner": "Owner department",
   "fieldFees": "Shipping fees",
   "fieldBottles": "Bottles",
-  "fieldAccounts": "Account requests"
+  "fieldAccounts": "Account requests",
+  "positionReplyTo": "To",
+  "positionReplySubject": "Subject",
+  "positionPostAccount": "Account",
+  "positionPostImage": "Image"
 }

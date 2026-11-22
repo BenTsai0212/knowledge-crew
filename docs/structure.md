@@ -261,7 +261,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/LedgerView.css`：「工作帳本」畫面的篩選與紀錄
 - `ui/LedgerView.tsx`：「工作帳本」畫面：只負責呈現 `ledger.ts` 的結果（載入中、讀取失敗、空狀態、依員工與工作類型篩選的紀錄；只讀）
 - `ui/refs.ts`：工作來源與外部編號的顯示（`assignmentRef()`、`workRef()`：repo 類是 `<repo>#<Issue>`、`PR #<編號>`，其他類型是來源名稱與編號，沒有編號時只有來源名稱；文字在 `common` 的 `ref*`）
-- `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪；`initialSelection()`；測試在 `review.test.ts`）
+- `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果與交件的種類；`initialSelection()`；測試在 `review.test.ts`）
+- `ui/review/conclusion.ts`：驗收面板 v3 的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`conclusionOf()`：結論列；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
+- `ui/review/marked.ts`：驗收面板 v3 的重點標記（`segments()`：依標記切片段；`canMark()`：能不能在內容中標出重點；測試在 `marked.test.ts`）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單與面板；進入時選取待驗收的第一筆；「通過」「退回」只給能驗收的身分，寫入後重新讀取
 - `ui/sections.ts`：子導覽的位置與名稱的鍵、畫面元件的 props

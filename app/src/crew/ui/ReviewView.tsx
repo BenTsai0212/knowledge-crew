@@ -5,6 +5,7 @@ import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { createReview } from "../db/store";
+import { toPlainText } from "../work/body";
 import type { ReturnReason } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
 import { CheckRow, LevelBadge, withEmployee } from "./components";
@@ -262,7 +263,7 @@ function Panel({ anchor, panel, t, language, saving, saveFailed, decide }: Panel
 
       <details className="crew-review__details">
         <summary>{t.body}</summary>
-        <p className="crew-review__body">{focus.body.text}</p>
+        <p className="crew-review__body">{toPlainText(focus.body.text)}</p>
       </details>
 
       {earlier.length > 0 && (

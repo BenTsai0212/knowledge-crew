@@ -55,5 +55,9 @@
   "fieldOwner": "負責部門",
   "fieldFees": "運費",
   "fieldBottles": "保溫瓶",
-  "fieldAccounts": "帳號申請"
+  "fieldAccounts": "帳號申請",
+  "positionReplyTo": "寄給",
+  "positionReplySubject": "主旨",
+  "positionPostAccount": "帳號",
+  "positionPostImage": "圖片"
 }

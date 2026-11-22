@@ -5,8 +5,9 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredWork } from "../db/store";
 import { demoText } from "../demo/texts";
-import { toPlainText } from "../work/body";
+import { parseWorkBody, type ParsedBody } from "../work/body";
 import { sourceLabel } from "./refs";
+import { deliverableOf, type Deliverable } from "./review/conclusion";
 import { reviewFocus, reviewLevel } from "../trust/rules";
 import type { ReturnReason, ReviewFocus, Verdict } from "../trust/types";
 
@@ -21,7 +22,8 @@ export interface WorkListItem {
   externalRef: string | null;
   /** 最新一輪的 PR 編號 */
   workRef: string | null;
-  employee: { id: string; displayName: string };
+  /** 職務說明（「客服」等）；沒有時是 null */
+  employee: { id: string; displayName: string; roleNote: string | null };
   workTypeId: string;
   /** 最新一輪 */
   round: number;
@@ -52,6 +54,10 @@ export interface ReviewPanel {
   earlier: EarlierRound[];
   /** 能驗收的身分，且最新一輪還沒驗收 */
   canDecide: boolean;
+  /** 最新一輪全文（目前語言）的解析結果；`focus.body.text` 是同一份原始全文，給退回純文字時用 */
+  body: ParsedBody;
+  /** 交件的種類，由工作類型決定；其他工作類型是 null */
+  deliverable: Deliverable | null;
 }
 
 const EMPTY: WorkList = { awaiting: [], recent: [] };
@@ -83,7 +89,7 @@ async function readItems(db: Database, identity: string, language: LanguageCode)
     listEmployees(db, identity),
     readLatest(db, identity),
   ]);
-  const names = new Map(employees.map((e) => [e.id, e.displayName]));
+  const names = new Map(employees.map((e) => [e.id, { displayName: e.displayName, roleNote: demoText("roleNote", e.id, language) ?? e.roleNote }]));
   const byAssignment = new Map(latest.map((l) => [l.assignmentId, l]));
   const items: Sortable[] = [];
   // listAssignments() 是新到舊；清單依交辦時間舊到新
@@ -95,7 +101,9 @@ async function readItems(db: Database, identity: string, language: LanguageCode)
   return items;
 }
 
-function toItem(a: AssignmentSummary, round: number, workRef: string | null, names: Map<string, string>, language: LanguageCode): WorkListItem {
+type Names = Map<string, { displayName: string; roleNote: string | null }>;
+
+function toItem(a: AssignmentSummary, round: number, workRef: string | null, names: Names, language: LanguageCode): WorkListItem {
   return {
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
@@ -103,7 +111,7 @@ function toItem(a: AssignmentSummary, round: number, workRef: string | null, nam
     sourceName: sourceLabel(a.sourceId, a.sourceName, language),
     externalRef: a.externalRef,
     workRef,
-    employee: { id: a.employeeId, displayName: names.get(a.employeeId) ?? a.employeeId },
+    employee: { id: a.employeeId, ...(names.get(a.employeeId) ?? { displayName: a.employeeId, roleNote: null }) },
     workTypeId: a.workTypeId,
     round,
     verdict: a.latestVerdict,
@@ -155,6 +163,8 @@ export async function readReviewPanel(
       review: w.review && { verdict: w.review.verdict, reason: w.review.reason, note: w.review.note, decidedAt: w.review.decidedAt },
     })),
     canDecide: canReview && current.review === null,
+    body: parseWorkBody(current.body, current.points.length),
+    deliverable: deliverableOf(item.workTypeId),
   };
 }
 
@@ -163,8 +173,8 @@ function localize(w: StoredWork, language: LanguageCode): StoredWork {
   return {
     ...w,
     summary: demoText("summary", w.id, language) ?? w.summary,
-    // 驗收面板 v3 之前的過渡顯示：有結構的全文轉成純文字（#65 的計畫第 3 點）
-    body: toPlainText(demoText("body", w.id, language) ?? w.body),
+    // 原始全文（含標頭行與重點標記）：面板以 parseWorkBody() 依結構呈現（#72 計畫第 1 點）
+    body: demoText("body", w.id, language) ?? w.body,
     points: w.points.map((p, i) => demoText("point", `${w.id}/${i + 1}`, language) ?? p),
     changes: w.changes.map((c, i) => ({ ...c, summary: demoText("change", `${w.id}/${i + 1}`, language) ?? c.summary })),
   };
