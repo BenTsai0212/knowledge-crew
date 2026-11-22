@@ -121,7 +121,9 @@ test.describe("權限（桌機）", () => {
 
     await gotoCrewSection(page, ct.common.sectionWorks);
     await expect(page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").first()).toBeVisible();
-    await expect(crewContent(page).getByRole("article")).toBeVisible();
+    // 驗收面板（外層的 article；交件本身也是 article，#72）；不能驗收的身分看到「只能查看」
+    await expect(crewContent(page).getByRole("article").first()).toBeVisible();
+    await expect(crewContent(page).getByText(ct.review.viewOnlyNote, { exact: true })).toBeVisible();
 
     for (const section of SECTIONS) {
       await gotoCrewSection(page, section);

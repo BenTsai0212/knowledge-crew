@@ -55,7 +55,7 @@
 
 .crew-review__items,
 .crew-review__checks,
-.crew-review__changes {
+.crew-review__points {
   display: grid;
   gap: 0.4rem;
   margin: 0;
@@ -93,17 +93,12 @@
   overflow-wrap: anywhere;
 }
 
-.crew-review__level,
+.crew-review__head-top,
 .crew-review__buttons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-}
-
-.crew-review__changes li {
-  display: grid;
-  gap: 0.1rem;
 }
 
 .crew-review .badge[data-verdict="accepted"] {
@@ -127,7 +122,6 @@
 }
 
 .crew-review__body {
-  margin-top: 0.5rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -146,11 +140,6 @@
   padding: 0.75rem;
 }
 
-.crew-review__reason {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
 
 .crew-review__note-field {
   display: grid;
@@ -160,4 +149,174 @@
 .crew-review__note-field textarea {
   min-height: 4rem;
   font: inherit;
+}
+
+/* ---- 驗收面板 v3（#72；設計規格 v3 第 4、6.2 節）：不用 mark 系列 ---- */
+.crew-review__head-top {
+  justify-content: space-between;
+}
+
+.crew-review__pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.crew-review__by {
+  font-size: 13px;
+}
+
+.crew-review__point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border-radius: var(--radius-medium);
+  padding: 0.4rem 0.5rem;
+}
+
+.crew-review__point-number {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.crew-review__point-text {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.crew-review__point-place {
+  color: var(--color-textMuted);
+  font-size: 13px;
+}
+
+.crew-review__body-card,
+.crew-review__sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.crew-review__block {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.crew-review__block-name {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.15rem;
+  color: var(--color-textMuted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.crew-review__modified {
+  color: var(--color-text);
+}
+
+.crew-review__block-text,
+.crew-review__body {
+  font-size: 16px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+.crew-review__block-text {
+  white-space: pre-line;
+}
+
+.crew-review__block-text[data-point] {
+  border-inline-start: 2px solid var(--color-text);
+  padding-inline-start: 0.5rem;
+}
+
+.crew-review__mark {
+  text-decoration: underline 2px var(--color-text);
+  text-underline-offset: 4px;
+}
+
+.crew-point-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  margin-inline-start: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  vertical-align: super;
+}
+
+.crew-review__changes-line {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+  font-size: 14px;
+}
+
+.crew-review__decision-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.crew-review__question {
+  font-weight: 700;
+}
+
+.crew-review__reasons {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.crew-review__reason {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+}
+
+.crew-review__reason[data-checked="true"] {
+  border-color: var(--color-primary);
+}
+
+.crew-review__impact {
+  color: var(--color-textMuted);
+}
+
+.crew-review__impact[data-impact="trust"] {
+  color: var(--color-danger);
+}
+
+button.crew-review__confirm {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+@media (max-width: 599px) {
+  .crew-review__block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+  }
 }
