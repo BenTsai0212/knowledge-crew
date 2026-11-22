@@ -25,5 +25,6 @@
   "aiOption": "AI {name}",
   "collapsedFields": "其他 {count} 個欄位已收起（少看）：{fields}",
   "collapsedFieldsSeparator": "、",
-  "collapseFields": "收起沒標重點的欄位"
+  "collapseFields": "收起沒標重點的欄位",
+  "directEntry": "直接體驗"
 }

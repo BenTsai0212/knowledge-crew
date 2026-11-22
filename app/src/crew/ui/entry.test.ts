@@ -5,7 +5,7 @@ import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { CREW_TRANSLATIONS } from "../i18n";
 import { visibleViews, type View } from "../../ui/online-demo";
-import { crewSeed, crewTabLabel, hasCrewDemo, withCrew } from "./entry";
+import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, crewStartIdentity, crewTabLabel, hasCrewDemo, withCrew } from "./entry";
 import { CREW_SECTIONS } from "./sections";
 
 const off = { enabled: false };
@@ -34,6 +34,63 @@ describe("withCrew：crew 頁籤顯示的條件", () => {
 
   it("參考情境 client/ 有 demo.json", () => {
     expect(hasCrewDemo).toBe(true);
+  });
+});
+
+describe("crew-only（VITE_CREW_ONLY=1，#84）", () => {
+  it("只有 AI 員工的頁籤：身分（canReview）、線上 demo、展示模式都不影響", () => {
+    for (const canReview of [true, false])
+      for (const enabled of [true, false])
+        for (const presentation of [true, false]) {
+          expect(withCrew(visibleViews(canReview, { enabled }, presentation, true), true, presentation, true)).toEqual(["crew"]);
+        }
+  });
+
+  it("沒有 demo.json 的客戶不生效，沿用 knowledge-kit 的頁籤", () => {
+    const base = visibleViews(true, off, false, false);
+    expect(withCrew(base, false, false, true)).toEqual(base);
+  });
+
+  it("關閉時與現行相同（預設參數）", () => {
+    const base = visibleViews(true, off, false, false);
+    expect(withCrew(base, true, false, false)).toEqual(withCrew(base, true, false));
+  });
+
+  it("登入後的預設頁：開啟時是 AI 員工，關閉時沿用 knowledge-kit 的預設頁", () => {
+    expect(crewDefaultView("home", true)).toBe("crew");
+    expect(crewDefaultView("qa", true)).toBe("crew");
+    expect(crewDefaultView("home", false)).toBe("home");
+    expect(crewDefaultView("qa", false)).toBe("qa");
+  });
+
+  it("一開始的身分：開啟時是能驗收的主管，關閉時是第一個身分（線上 demo 與一般 build 不變）", () => {
+    const { access } = clientConfig;
+    expect(crewStartIdentity(access, true)).toBe("manager");
+    expect(access.roles.find((r) => r.id === crewStartIdentity(access, true))?.canReview).toBe(true);
+    expect(crewStartIdentity(access, false)).toBe(access.roles[0].id);
+    expect(crewStartIdentity(access, crewOnlyMode)).toBe(access.roles[0].id);
+  });
+
+  it("一開始的身分：沒有能驗收的身分時是第一個身分", () => {
+    const roles = [
+      { id: "a", canReview: false },
+      { id: "b", canReview: false },
+    ];
+    expect(crewStartIdentity({ roles } as never, true)).toBe("a");
+    expect(crewStartIdentity({ roles: [{ id: "a", canReview: false }, { id: "b", canReview: true }, { id: "c", canReview: true }] } as never, true)).toBe("b");
+  });
+
+  it("測試環境沒有設定開關，所以是關閉的", () => {
+    expect(crewOnlyMode).toBe(false);
+  });
+
+  it("登入用的固定值不是空字串（App 以「不是 null」代表已登入）", () => {
+    expect(CREW_ONLY_ACCESS_CODE.trim()).not.toBe("");
+  });
+
+  it("「直接體驗」的文字：每個語言都有；沒有翻譯時是空字串，不拋錯", () => {
+    for (const language of clientConfig.client.languages) expect(crewDirectEntryLabel(language)).not.toBe("");
+    expect(crewDirectEntryLabel("xx")).toBe("");
   });
 });
 

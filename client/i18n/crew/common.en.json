@@ -25,5 +25,6 @@
   "aiOption": "AI {name}",
   "collapsedFields": "{count, plural, one {# other field is collapsed (lighter review)} other {# other fields are collapsed (lighter review)}}: {fields}",
   "collapsedFieldsSeparator": ", ",
-  "collapseFields": "Collapse fields without marked points"
+  "collapseFields": "Collapse fields without marked points",
+  "directEntry": "Try it now"
 }

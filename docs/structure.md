@@ -118,7 +118,7 @@
 - `motion.ts`：動態的刻度與 CSS 變數 `--motion-*`、`--ease-*`；圖譜展開的動態與「減少動態效果」的判斷
 - `NavRail.tsx`：平板（601–1024px）的左側圖示導覽列，與 `Sidebar`、`MobileNav` 共用 `NavProps`；App 依 `useLayout()` 只渲染其中一種
 - `Notice.tsx`：共用的提示框（`className` 依位置調整樣式，例如桌機問答頁的額度與需要管理者的說明條）
-- `online-demo.ts`：唯一讀取處：線上 demo 的 `VITE_ONLINE_DEMO`、`VITE_PUBLIC_ACCESS_CODE`（預設關閉；開啟時隱藏評測台），展示模式 `?mode=presentation`（只顯示問答與圖譜），評測台的 `?tools=evals`，身分對照的 `VITE_DEMO_COMPARE`（預設關閉、線上 demo 一律關閉）；見 `docs/qa.md`「線上 demo」「展示模式」「身分對照」、`docs/evals.md`「開啟評測台」
+- `online-demo.ts`：唯一讀取處：線上 demo 的 `VITE_ONLINE_DEMO`、`VITE_PUBLIC_ACCESS_CODE`（預設關閉；開啟時隱藏評測台），展示模式 `?mode=presentation`（只顯示問答與圖譜），評測台的 `?tools=evals`，身分對照的 `VITE_DEMO_COMPARE`（預設關閉、線上 demo 一律關閉），只展示 AI 員工的 `VITE_CREW_ONLY`（crew ADR 0005）；見 `docs/qa.md`「線上 demo」「展示模式」「身分對照」、`docs/evals.md`「開啟評測台」
 - `PassageMarks.tsx`：時間軸與原文面板的標示
 - `PathPanel.tsx`：圖譜頁的路徑面板；`panel` 是桌機「找路徑」打開的面板（#336）
 - `PresentationBar.tsx`：展示模式登入後的頂端列（不論寬度都取代 `Sidebar`／`MobileNav`；畫板 `H-QA`、`H-Graph`，#349）；`VITE_DEMO_COMPARE` 開啟時有「身分對照」按鈕，見 `docs/qa.md`「展示模式」「身分對照」
@@ -230,7 +230,7 @@
 
 ### `app/src/crew/`
 
-knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew 的功能只放這裡。介面文字只經 `i18n.ts` 讀 `client/i18n/crew/`；knowledge-kit 檔案的接入點只限 ADR 0004 的清單（`App.tsx`、`ui/online-demo.ts`、`ui/Sidebar.tsx`、`ui/layout.ts`、`vitest.config.ts`、本文件，以及 ADR 0004 修訂加入的 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`、`e2e/tablet.spec.ts`）。
+knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew 的功能只放這裡。介面文字只經 `i18n.ts` 讀 `client/i18n/crew/`；knowledge-kit 檔案的接入點只限 ADR 0004 的清單（`App.tsx`、`ui/online-demo.ts`、`ui/Sidebar.tsx`、`ui/layout.ts`、`vitest.config.ts`、本文件，以及 ADR 0004 修訂加入的 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`、`e2e/tablet.spec.ts`，與 crew ADR 0005 加入的 `ui/SignInPanel.tsx`、`ui/sign-in.ts`）。
 
 - `db/constraints.test.ts`：crew migration 的 CHECK 與 UNIQUE
 - `db/migrate.ts`：crew 的 migration 清單（版本加 `crew/` 前綴，由 `openDatabase()` 的 `migrations` 選項套用；測試在 `migrate.test.ts`）
@@ -256,7 +256,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數、待驗收件數、平常的工作來源、最近的圓點與一句說明；測試在 `employees.test.ts`）
 - `ui/EmployeesView.css`：「員工」畫面的員工卡（桌機兩欄、窄螢幕一欄；職務圖示的方框）
 - `ui/EmployeesView.tsx`：「員工」畫面（設計規格 v3 第 6.5 節）：呈現 `employees.ts` 的員工卡（職務圖示、交件與來源、圓點、說明）；「看信任紀錄」切到信任頁，「交辦給 ○○」只給能驗收的身分，切到交辦頁並預選員工
-- `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`
+- `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`；只展示 AI 員工的 build（crew ADR 0005）：`crewOnlyMode`、`crewDefaultView()`、`crewStartIdentity()`、`CREW_ONLY_ACCESS_CODE`、`crewDirectEntryLabel()`
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看，依時間新到舊；`filterLedger()`：依員工、工作類型與事件篩選；`ledgerTone()`：層級改變與退回（做錯了）的樣式；測試在 `ledger.test.ts`）
 - `ui/LedgerView.css`：「工作帳本」畫面的篩選與表格（窄螢幕時表格在框內橫向捲動）
