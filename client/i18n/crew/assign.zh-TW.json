@@ -38,7 +38,7 @@
   "resultKb": "{employee} 會交一則知識庫條目",
   "resultCode": "{employee} 會交一份程式修改",
   "resultOther": "{employee} 會交件",
-  "resultRest": "，交件後出現在「今天」等你驗收；目前層級是",
+  "resultRest": "，交件後出現在首頁的「今天的工作」等你驗收；目前層級是",
   "resultEnd": "。",
   "demoNote": "示範用：交辦只寫進瀏覽器內的資料庫，不會真的寄信、發文或開 Issue。",
   "listRecent": "最近 {count} 件",

@@ -1,4 +1,4 @@
-// 「今天」畫面的資料整理（#34 計畫第 5 節）：待驗收、進行中、建議少看。只用 store.ts 與 rules.ts，
+// 今天的工作的資料整理（#34 計畫第 5 節）：待驗收、進行中、建議少看；首頁的「今天的工作」（#96，home-today.ts）使用。只用 store.ts 與 rules.ts，
 // 可見範圍由 RLS 決定。資料庫的文字以 demoText() 換成目前語言，找不到時用資料庫的原文。
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
@@ -106,6 +106,3 @@ export async function readToday(
 function toEmployee(e: StoredEmployee, language: LanguageCode): TodayEmployee {
   return { id: e.id, displayName: e.displayName, roleNote: demoText("roleNote", e.id, language) ?? e.roleNote };
 }
-
-/** 三個區塊都是空的（顯示「今天沒有需要你處理的事」） */
-export const isAllEmpty = (t: Today) => t.awaitingReview.length === 0 && t.inProgress.length === 0 && t.suggestions.length === 0;

@@ -276,11 +276,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列、重點＋自動檢查（並排，窄螢幕堆疊）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆（從原文的來源或首頁的今天的工作切過來時選那一件，#92、#96）；已回流的工作顯示「已收進知識庫」與「打開原文」，沒有上傳權限而沒有回流時註明原因；「通過」「退回」只給能驗收的身分，寫入後重新讀取（並通知 App 更新首頁與側欄的待驗收件數，#96）
-- `ui/sections.ts`：子導覽的位置與名稱的鍵、畫面元件的 props
+- `ui/sections.ts`：子導覽的位置與名稱的鍵（員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：工作與驗收，#100）、畫面元件的 props
 - `ui/SourceOrigin.tsx`：原文的接入點：回流的文件在原文面板（`ui/SourcePanel.tsx`、`ui/SourceSheet.tsx` 的 `origin`）顯示「來自 AI 員工 ○○・驗收「○○」（日期）」，點了切到「工作與驗收」的那一件（`App.tsx` 經 `CrewPage` 的 `request`；測試在 `SourceOrigin.test.ts`）
-- `ui/today.ts`：「今天」的資料整理（`readToday()`：待驗收、進行中、建議少看；測試在 `today.test.ts`）
-- `ui/TodayView.css`：「今天」畫面的三個區塊
-- `ui/TodayView.tsx`：「今天」畫面：只負責呈現 `today.ts` 的結果（載入中、讀取失敗、三個區塊或沒有要處理的事）
+- `ui/today.ts`：今天的工作的資料整理（`readToday()`：待驗收、進行中、建議少看；首頁的「今天的工作」使用，AI 員工頁籤內沒有「今天」子頁（#100）；測試在 `today.test.ts`）
 - `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`trustTimeline()`／`trustNote()`：信任頁的時間軸（每次驗收當時的層級與層級事件）與說明；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
 - `ui/TrustView.css`：「信任」畫面的頁首、卡片與時間軸（事件、圓點與日期、層級帶三列共用欄數；三種結果以符號與文字區分）
 - `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：呈現 `trust.ts` 的結果；「同意少看」「收回少看」只給能驗收的身分，寫入後重新讀取

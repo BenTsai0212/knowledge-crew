@@ -1,6 +1,5 @@
-// 「今天」的資料整理（#34）：以匯入虛構資料後的資料庫，檢查三種身分看到的三個區塊與換語言。
+// 今天的工作的資料整理（#34；首頁的「今天的工作」#96 使用）：以匯入虛構資料後的資料庫，檢查三種身分看到的三個區塊與換語言。
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import { openDatabase, type Database } from "../../db/database";
 import { crewMigrations } from "../db/migrate";
@@ -9,7 +8,7 @@ import { demoSeed } from "../demo/seed";
 import type { DemoFile } from "../demo/types";
 import { crewStrings } from "../i18n";
 import { workTypeLabel } from "./labels";
-import { canReviewOf, isAllEmpty, readToday } from "./today";
+import { canReviewOf, readToday } from "./today";
 
 const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
@@ -55,7 +54,7 @@ describe("readToday：匯入虛構資料後", () => {
 
   it("guest：三個區塊都是空的", async () => {
     const today = await read("guest");
-    expect(isAllEmpty(today)).toBe(true);
+    expect([...today.awaitingReview, ...today.inProgress, ...today.suggestions]).toEqual([]);
   });
 
   it("沒有身分時比照 guest，不拋錯", async () => {
@@ -83,20 +82,10 @@ describe("readToday：匯入虛構資料後", () => {
   });
 });
 
-describe("「今天」的文字", () => {
-  it("manager 用「等你驗收」，不能驗收的身分用中性說法", () => {
-    const t = crewStrings("today", lang);
-    expect(t.awaitingReviewCount).not.toBe(t.awaitingReviewCountOthers);
-    expect(fill(crewStrings("today", "zh-TW").awaitingReviewCount, { count: 2 })).toBe("2 件工作等你驗收");
-    expect(fill(crewStrings("today", "zh-TW").awaitingReviewCountOthers, { count: 1 })).toBe("1 件工作待驗收");
-    expect(fill(crewStrings("today", "en").awaitingReviewCountOthers, { count: 1 }, "en")).toBe("1 work item awaiting review");
-  });
-
-  it("「虛構資料」標示只在 common（CrewPage 的頁首），today 不重複", () => {
+describe("crew 共用的文字", () => {
+  it("「虛構資料」標示在 common（CrewPage 的頁首）", () => {
     for (const language of clientConfig.client.languages) {
       expect(crewStrings("common", language)).toHaveProperty("fictionalData");
-      expect(crewStrings("today", language)).not.toHaveProperty("fictionalData");
-      expect(crewStrings("today", language)).not.toHaveProperty("fictionalDataNote");
     }
   });
 
@@ -104,12 +93,5 @@ describe("「今天」的文字", () => {
     expect(workTypeLabel("knowledge", "zh-TW")).toBe("知識庫整理");
     expect(workTypeLabel("dev", "en")).toBe("Site and tool changes");
     expect(workTypeLabel("design", "en")).toBe("design");
-  });
-
-  it("建議少看：英文名字與中文之間留半形空格；不再有與子導覽重複的「今天」標題", () => {
-    expect(fill(crewStrings("today", "zh-TW").relaxSuggestedItem, { employee: "Sorrel", workType: workTypeLabel("content", "zh-TW"), count: 10 })).toMatch(
-      /^Sorrel 的「貼文與商品介紹」最近 10 次/,
-    );
-    for (const language of clientConfig.client.languages) expect(crewStrings("today", language)).not.toHaveProperty("title");
   });
 });

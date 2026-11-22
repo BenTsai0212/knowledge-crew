@@ -1,4 +1,5 @@
-// crew 頁的子導覽（#34）：六個位置的順序與名稱的鍵（client/i18n/crew/common.<語言>.json）。
+// crew 頁的子導覽（#34）：五個位置的順序與名稱的鍵（client/i18n/crew/common.<語言>.json）。
+// 「今天」子頁已併入首頁的「今天的工作」（#96、#100），子導覽不再有。
 // 畫面元件在 CrewPage.tsx 的 SCREENS 登錄；還沒登錄的位置顯示「準備中」。
 import type { ComponentType } from "react";
 import type { Database } from "../../db/database";
@@ -6,7 +7,6 @@ import type { LanguageCode } from "../../client/types";
 import type { CrewScreenKeys } from "../i18n";
 
 export const CREW_SECTIONS = [
-  { id: "today", label: "sectionToday" },
   { id: "employees", label: "sectionEmployees" },
   { id: "assignments", label: "sectionAssignments" },
   { id: "works", label: "sectionWorks" },
@@ -15,6 +15,9 @@ export const CREW_SECTIONS = [
 ] as const satisfies ReadonlyArray<{ id: string; label: CrewScreenKeys["common"] }>;
 
 export type CrewSection = (typeof CREW_SECTIONS)[number]["id"];
+
+/** 從導覽點進「AI 員工」（CrewPage 沒有收到 request）時的位置（#100） */
+export const DEFAULT_CREW_SECTION: CrewSection = "works";
 
 /** 切到另一個位置（#83）；employeeId 是交辦頁預選的員工，assignmentId 是「工作與驗收」選取的交辦（原文的來源 #92、首頁的今天的工作 #96）。 */
 export interface CrewTarget {

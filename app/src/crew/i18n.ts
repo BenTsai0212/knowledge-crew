@@ -8,7 +8,6 @@ import type { LanguageCode } from "../client/types";
 export type CrewScreenKeys = {
   common: keyof typeof import("@client/i18n/crew/common.zh-TW.json");
   ledger: keyof typeof import("@client/i18n/crew/ledger.zh-TW.json");
-  today: keyof typeof import("@client/i18n/crew/today.zh-TW.json");
   home: keyof typeof import("@client/i18n/crew/home.zh-TW.json");
   assign: keyof typeof import("@client/i18n/crew/assign.zh-TW.json");
   employees: keyof typeof import("@client/i18n/crew/employees.zh-TW.json");

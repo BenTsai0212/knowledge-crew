@@ -1,4 +1,4 @@
-// crew 的冒煙、權限與手機（#53，#15 計畫第 7、8 節的 L）：六個子頁都能進入、staff 沒有寫入按鈕、guest 看到空狀態、
+// crew 的冒煙、權限與手機（#53，#15 計畫第 7、8 節的 L）：五個子頁都能進入（「今天」併入首頁，#100）、staff 沒有寫入按鈕、guest 看到空狀態、
 // 手機從「更多」進入後在「工作與驗收」選一筆，面板標題在畫面上（#50）。只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。
 import { expect, test, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
@@ -21,7 +21,6 @@ import {
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
 const SECTIONS = [
-  ct.common.sectionToday,
   ct.common.sectionEmployees,
   ct.common.sectionAssignments,
   ct.common.sectionWorks,
@@ -50,13 +49,6 @@ async function openCrewAs(page: Page, identity: string): Promise<void> {
 test.describe("冒煙（主管，桌機）", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.beforeEach(async ({ page }) => openCrewAs(page, "manager"));
-
-  test("今天：待驗收、進行中、建議少看", async ({ page }) => {
-    await gotoCrewSection(page, ct.common.sectionToday);
-    for (const title of [ct.today.awaitingReview, ct.today.inProgress, ct.today.relaxSuggested]) {
-      await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
-    }
-  });
 
   test("員工：每個員工一張卡片，列出工作類型、交件與目前層級", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionEmployees);
@@ -162,7 +154,7 @@ test.describe("權限（桌機）", () => {
     for (const section of SECTIONS) {
       await gotoCrewSection(page, section);
       await expect(crewContent(page).first()).toBeVisible();
-      await expect(page.getByText(ct.today.loading, { exact: true })).toHaveCount(0);
+      await expect(page.getByText(ct.review.loading, { exact: true })).toHaveCount(0);
       for (const name of WRITE_BUTTONS) await expect(crewContent(page).getByRole("button", { name, exact: true })).toHaveCount(0);
       await expect(crewContent(page).getByRole("form")).toHaveCount(0);
     }
@@ -171,7 +163,6 @@ test.describe("權限（桌機）", () => {
   test("guest：各子頁都是空狀態，沒有錯誤", async ({ page }) => {
     await openCrewAs(page, "guest");
     const empty: [string, string][] = [
-      [ct.common.sectionToday, ct.today.allEmpty],
       [ct.common.sectionEmployees, ct.employees.empty],
       [ct.common.sectionAssignments, ct.assign.empty],
       [ct.common.sectionWorks, ct.review.empty],

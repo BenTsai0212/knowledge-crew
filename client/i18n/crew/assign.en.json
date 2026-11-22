@@ -38,7 +38,7 @@
   "resultKb": "{employee} will hand in a knowledge base entry",
   "resultCode": "{employee} will hand in a code change",
   "resultOther": "{employee} will hand in the work",
-  "resultRest": ". It will appear in Today for you to review; the current level is ",
+  "resultRest": ". It will appear in Today’s work on Home for you to review; the current level is ",
   "resultEnd": ".",
   "demoNote": "Demo only: assignments are written to the database in your browser. No email is sent, nothing is posted and no Issue is opened.",
   "listRecent": "Latest {count}",

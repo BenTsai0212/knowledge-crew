@@ -110,11 +110,10 @@ test.describe("桌機", () => {
     await expect(page.getByText(s.fictionalData, { exact: false }).first()).toBeVisible();
   });
 
-  test("六個子畫面都能開啟，沒有錯誤", async ({ page }) => {
+  test("五個子畫面都能開啟，沒有錯誤", async ({ page }) => {
     await enter(page);
     await openCrew(page);
     for (const section of [
-      ct.common.sectionToday,
       ct.common.sectionEmployees,
       ct.common.sectionAssignments,
       ct.common.sectionWorks,
@@ -127,7 +126,7 @@ test.describe("桌機", () => {
     }
   });
 
-  test("切換身分後內容改變：訪客的「今天」是空狀態", async ({ page }) => {
+  test("切換身分後內容改變：訪客的「工作與驗收」是空狀態", async ({ page }) => {
     const guest = access.roles.find((r) => !r.canReview && !r.canUpload);
     test.skip(guest === undefined, "沒有不能審查也不能上傳的身分");
     await enter(page);
@@ -137,7 +136,7 @@ test.describe("桌機", () => {
     await expectHomeWithoutAsk(page);
     await expect(navViews(page)).toHaveCount(VIEWS.length);
     await openCrew(page);
-    await expect(page.getByText(ct.today.allEmpty, { exact: true })).toBeVisible();
+    await expect(page.getByText(ct.review.empty, { exact: true })).toBeVisible();
   });
 
   test("帳號登入：沒有邀請碼欄，按「登入」就進入首頁", async ({ page }) => {

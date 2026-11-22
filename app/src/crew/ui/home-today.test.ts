@@ -104,3 +104,22 @@ describe("HomeTodayCard：沒有 AI 員工的客戶", () => {
     expect(renderToStaticMarkup(createElement(HomeTodaySummary, props))).toBe("");
   });
 });
+
+describe("HomeTodayCard：每列的員工後面是工作類型（#100）", () => {
+  it("manager：Rowan 的 s14 顯示「Rowan・客戶回覆」，每一列都有工作類型", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { HomeTodayCard } = await import("./HomeToday");
+    const { workTypeLabel } = await import("./labels");
+    const data = homeToday(await read("manager"));
+    for (const phone of [false, true]) {
+      const html = renderToStaticMarkup(
+        createElement(HomeTodayCard, { state: { identity: "manager", data, awaiting: 4 }, identity: "manager", language: "zh-TW", phone, onOpen: () => {} }),
+      );
+      expect(html).toContain(`Rowan</span>・${workTypeLabel("support", "zh-TW")}`);
+      const rows = [...data.failing, ...data.awaiting];
+      expect(html.match(/class="crew-home__employee"/g)).toHaveLength(rows.length);
+      for (const a of rows) expect(html).toContain(`${a.employee.displayName}</span>・${workTypeLabel(a.workTypeId, "zh-TW")}`);
+    }
+  });
+});
