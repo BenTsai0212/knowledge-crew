@@ -1,4 +1,5 @@
-/* 「信任」畫面（#37）：每個「員工 × 工作類型」一張卡片。圓點的三種結果以符號與文字區分，不只靠顏色。
+/* 「信任」畫面（#37；#75 改為時間軸，設計規格 v3 第 4 節「信任時間軸」「圓點」）。
+   圓點的三種結果以符號與文字區分，不只靠顏色；warning／danger 不做大面積底色。
    顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
 .crew-trust {
   display: grid;
@@ -6,66 +7,217 @@
   gap: 1rem;
 }
 
-.crew-trust__row {
-  display: grid;
-  gap: 0.5rem;
+.crew-trust__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 2rem;
 }
 
+.crew-trust__heading {
+  display: grid;
+  flex: 1 1 30rem;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.crew-trust__heading h2,
+.crew-trust__heading p,
+.crew-trust__rules,
 .crew-trust__row h3,
 .crew-trust__row p {
   margin: 0;
 }
 
-.crew-trust__dots {
+.crew-trust__legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.crew-trust__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.crew-trust__rules {
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  font-size: 0.9rem;
+}
+
+.crew-trust__row {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.crew-trust__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.crew-trust__top h3 {
+  flex: 1 1 auto;
+}
+
+.crew-trust__summary {
+  font-size: 0.85rem;
+}
+
+.crew-trust__timeline {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+/* 三列共用同一組欄（欄數＝DEMO_PARAMS.dots，由畫面以 --crew-trust-columns 給） */
+.crew-trust__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--crew-trust-columns, 10), minmax(0, 1fr));
+  gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.crew-trust__event {
+  grid-column: var(--crew-trust-start) / var(--crew-trust-end);
+  min-width: 0;
+  min-height: 2rem;
+  display: flex;
+  align-items: flex-end;
+  padding-left: 0.4rem;
+  border-left: 1px solid var(--color-text);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.crew-trust__event[data-align="end"] {
+  justify-content: flex-end;
+  padding-left: 0;
+  padding-right: 0.4rem;
+  border-left: none;
+  border-right: 1px solid var(--color-text);
+  text-align: right;
+}
+
+.crew-trust__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
 .crew-trust__dot {
-  display: inline-grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 1px solid var(--color-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 1rem;
+  height: 1rem;
   border-radius: var(--radius-pill);
-  font-size: 0.9rem;
   line-height: 1;
 }
 
 .crew-trust__dot[data-dot="ok"] {
-  border-color: var(--color-success);
-  color: var(--color-success);
+  background: var(--color-success);
 }
 
 .crew-trust__dot[data-dot="wrong"] {
-  border-color: var(--color-danger);
   color: var(--color-danger);
+  font-size: 1rem;
   font-weight: 700;
 }
 
 .crew-trust__dot[data-dot="neutral"] {
-  border-style: dashed;
+  border: 1.5px dashed var(--color-textMuted);
+}
+
+.crew-trust__dot[data-dot="none"] {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin: 0.25rem 0;
+  border: 1px solid var(--color-border);
+}
+
+.crew-trust__date {
+  max-width: 100%;
+  color: var(--color-textMuted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.crew-trust__band {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 1.6rem;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-small);
+  overflow: hidden;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.crew-trust__band[data-level="item"] {
+  background: var(--color-surfaceRaised);
+  color: var(--color-text);
+}
+
+.crew-trust__band[data-level="light"] {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.crew-trust__band[data-level="none"] {
+  border: 1px dashed var(--color-border);
   color: var(--color-textMuted);
 }
 
-.crew-trust__summary {
-  margin-top: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.crew-trust__level {
+.crew-trust__footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-surfaceRaised);
 }
 
-.crew-trust__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.crew-trust__note {
+  flex: 1 1 20rem;
+  font-size: 0.9rem;
+}
+
+/* 窄螢幕：事件文字用整列寬（日期寫在文字裡），層級帶縮小內距 */
+@media (max-width: 640px) {
+  .crew-trust__event,
+  .crew-trust__event[data-align="end"] {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding: 0 0 0 0.4rem;
+    border-left: 1px solid var(--color-text);
+    border-right: none;
+    text-align: left;
+  }
+
+  .crew-trust__band {
+    padding: 0 0.25rem;
+  }
 }

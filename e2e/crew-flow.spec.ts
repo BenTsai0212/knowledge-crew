@@ -16,8 +16,9 @@ test.beforeEach(async ({ page }) => {
   await openCrew(page);
 });
 
+// 層級徽章（#75：時間軸的層級帶也有「逐項看／少看」，所以只看徽章）
 async function expectLevel(page: Page, employee: string, workType: string, expected: string): Promise<void> {
-  await expect(trustRow(page, employee, workType).getByText(expected, { exact: true })).toBeVisible();
+  await expect(trustRow(page, employee, workType).getByText(crewFill(ct.trust.levelBadge, { level: expected }), { exact: true })).toBeVisible();
 }
 
 test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看 → 工作帳本記下四筆", async ({ page }) => {
@@ -50,7 +51,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
   // 5：最後一個圓點是做錯了，層級改回逐項看，「收回」消失
   await gotoCrewSection(page, ct.common.sectionTrust);
   const row = trustRow(page, "linden", "knowledge");
-  await expect(row.getByRole("listitem").last()).toHaveAttribute("aria-label", ct.trust.dotWrong);
+  await expect(row.getByRole("listitem").last()).toHaveAttribute("aria-label", crewFill(ct.trust.dotCell, { result: ct.trust.dotWrong, date: ct.trust.today }));
   await expectLevel(page, "linden", "knowledge", ct.trust.levelItem);
   await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toHaveCount(0);
 
@@ -77,7 +78,10 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
 test("對照：退回選「我想要不一樣的做法」時，Linden 的「知識庫整理」維持少看", async ({ page }) => {
   await assignSimulateReturn(page, { title: TITLE, employee: "linden", workType: "knowledge", reason: ct.review.reasonDifferentApproach });
   await gotoCrewSection(page, ct.common.sectionTrust);
-  await expect(trustRow(page, "linden", "knowledge").getByRole("listitem").last()).toHaveAttribute("aria-label", ct.trust.dotNeutral);
+  await expect(trustRow(page, "linden", "knowledge").getByRole("listitem").last()).toHaveAttribute(
+    "aria-label",
+    crewFill(ct.trust.dotCell, { result: ct.trust.dotNeutral, date: ct.trust.today }),
+  );
   await expectLevel(page, "linden", "knowledge", ct.trust.levelLight);
   await expect(trustRow(page, "linden", "knowledge").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
 });
