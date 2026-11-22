@@ -62,7 +62,7 @@ describe("groupEmployees", () => {
   it("沒有看得到的組合的員工也列出，workTypes 為空；完全沒有組合時是空的", () => {
     const fern = { id: "fern", displayName: "Fern", roleNote: null };
     const basil = { id: "basil", displayName: "Basil", roleNote: null };
-    const docs = { employee: basil, workTypeId: "docs", dots: [], level: "item" as const, reviewCount: 0, lastReset: null, suggestion: null };
+    const docs = { employee: basil, workTypeId: "docs", dots: [], level: "item" as const, reviewCount: 0, lastReset: null, suggestion: null, timeline: { cells: [], empty: 0, events: [] }, note: null };
     expect(groupEmployees({ employees: [basil, fern], rows: [docs] })).toEqual([
       { ...basil, workTypes: [{ workTypeId: "docs", level: "item", reviewCount: 0 }] },
       { ...fern, workTypes: [] },

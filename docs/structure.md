@@ -272,9 +272,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/today.ts`：「今天」的資料整理（`readToday()`：待驗收、進行中、建議少看；測試在 `today.test.ts`）
 - `ui/TodayView.css`：「今天」畫面的三個區塊
 - `ui/TodayView.tsx`：「今天」畫面：只負責呈現 `today.ts` 的結果（載入中、讀取失敗、三個區塊或沒有要處理的事）
-- `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
-- `ui/TrustView.css`：「信任」畫面的卡片與圓點（三種結果以符號與文字區分）
-- `ui/TrustView.tsx`：「信任」畫面：呈現 `trust.ts` 的結果；「同意少看」「收回」只給能驗收的身分，寫入後重新讀取
+- `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`trustTimeline()`／`trustNote()`：信任頁的時間軸（每次驗收當時的層級與層級事件）與說明；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
+- `ui/TrustView.css`：「信任」畫面的頁首、卡片與時間軸（事件、圓點與日期、層級帶三列共用欄數；三種結果以符號與文字區分）
+- `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：呈現 `trust.ts` 的結果；「同意少看」「收回少看」只給能驗收的身分，寫入後重新讀取
 - `work/body.ts`：交件全文的結構與「要看的重點」標記：`parseWorkBody()`、`toPlainText()`（格式見 `docs/crew/work-body-format.md`；測試在 `body.test.ts`）
 
 ### `app/src/db/`
