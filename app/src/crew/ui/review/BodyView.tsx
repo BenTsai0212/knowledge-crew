@@ -2,9 +2,10 @@
 // 重點在內容中畫底線＋上標編號。不能標出重點（舊格式、解析有錯）時退回純文字。
 // 點選重點：重點卡的列是 aria-pressed 的按鈕，選中時內容中 data-point 相符的位置加 data-active（surfaceRaised 底）。
 // 交件類型是回信、貼文、知識庫條目或程式修改時，依 Deliverables.tsx 以原本的樣子呈現。
+import { useState } from "react";
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
-import type { ChangesView } from "../../trust/types";
+import type { ChangesView, WorkChange } from "../../trust/types";
 import { toPlainText, type ParsedBody, type WorkSection } from "../../work/body";
 import { crewStrings, type CrewTexts } from "../../i18n";
 import { isCodePosition, positionLabel } from "../glossary";
@@ -92,14 +93,18 @@ interface BodyViewProps {
   deliverable?: Deliverable | null;
   /** 程式修改的來源與編號（差異的參照） */
   reference?: string | null;
+  /** 少看時收成一行的變更（「逐項列出」展開時列出）；沒有時只顯示件數 */
+  changeItems?: readonly WorkChange[];
 }
 
-export function BodyView({ name, body, raw, changes, language, active = null, deliverable = null, reference = null }: BodyViewProps) {
+export function BodyView({ name, body, raw, changes, language, active = null, deliverable = null, reference = null, changeItems = [] }: BodyViewProps) {
   const t = crewStrings("review", language);
   const ctx: SectionContext = {
     language,
     active,
     modified: new Map(changes.mode === "items" ? changes.items.map((c) => [c.path, c.summary]) : []),
+    // reviewFocus() 只在少看且有標重點時把變更收成一行；收起欄位用同一個條件（沒標重點時不收）
+    light: changes.mode === "summary",
   };
   const sections = body.sections;
   return (
@@ -132,8 +137,41 @@ export function BodyView({ name, body, raw, changes, language, active = null, de
           </p>
         )
       ) : (
-        <p className="muted crew-review__changes-line">{fill(t.changesSummary, { count: changes.count }, language)}</p>
+        changes.count > 0 && <CollapsedChanges count={changes.count} items={changeItems} language={language} />
       )}
     </article>
+  );
+}
+
+/** 少看的變更：收成一行「變更 N 項已收起（少看）：…」＋「逐項列出」；展開狀態只存在元件 state */
+function CollapsedChanges({ count, items, language }: { count: number; items: readonly WorkChange[]; language: LanguageCode }) {
+  const t = crewStrings("review", language);
+  const [expanded, setExpanded] = useState(false);
+  const places = items.map((c) => c.summary).join(t.listSeparator);
+  return (
+    <div className="crew-review__changes-collapsed">
+      <p className="muted crew-review__changes-line">
+        {fill(t.changesSummary, { count, places }, language)}
+        {items.length > 0 && (
+          <>
+            {" "}
+            <button type="button" className="link" aria-expanded={expanded} aria-controls="crew-review-changes" onClick={() => setExpanded(!expanded)}>
+              {expanded ? t.changesHide : t.changesList}
+            </button>
+          </>
+        )}
+      </p>
+      {items.length > 0 && (
+        <ul id="crew-review-changes" className="crew-review__changes-items" hidden={!expanded}>
+          {items.map((c) => (
+            <li key={c.path}>
+              <span className={isCodePosition(c.path) ? "crew-review__ref" : undefined}>{positionLabel(c.path, language)}</span>
+              {t.changesItemSeparator}
+              {c.summary}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

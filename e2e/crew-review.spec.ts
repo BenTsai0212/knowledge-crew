@@ -3,7 +3,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import { language, readClientJson, theme } from "./support/client";
-import { crewContent, crewFill, ct, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
+import { crewContent, crewFill, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -183,4 +183,70 @@ test("程式修改：檔案清單，PR 描述預設收起、點到其中的重�
   await expect(details).toHaveJSProperty("open", true);
   await expect(body.locator('[data-point~="2"]').first()).toBeVisible();
   await expect(body.locator('[data-point~="2"]').first()).toHaveCSS("background-color", rgb(theme.colors.surfaceRaised));
+});
+
+test.describe("少看（#102）：Linden 的 k13", () => {
+  const label = (field: string) => demoLabel("k13", `kb/pre-orders#${field}`);
+  const fieldName = (body: Locator, field: string) => body.locator("dt").filter({ hasText: label(field) });
+
+  test("「為什麼是少看」說明卡；有重點與空白的欄位照樣顯示，其他欄位可以展開與收回；變更收成一行可以逐項列出", async ({ page }) => {
+    const panel = await openWork(page, "k13");
+    const card = panel.getByRole("region", { name: ct.review.lightTitle });
+    await expect(card).toBeVisible();
+    await expect(card).toHaveCSS("border-top-color", rgb(theme.colors.success));
+    await expect(card).toContainText(employeeName("linden"));
+
+    const body = panel.getByRole("article", { name: ct.review.deliverableKb });
+    for (const field of ["owner", "arrival", "effective-date"]) await expect(fieldName(body, field)).toBeVisible();
+    await expect(body.getByText(ct.review.fieldEmptyRequired, { exact: true })).toBeVisible();
+    const toggle = body.locator(".crew-collapsed__toggle");
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    for (const field of ["payment", "cancellation"]) {
+      await expect(toggle).toContainText(label(field));
+      await expect(fieldName(body, field)).toBeHidden();
+    }
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(toggle).toHaveText(ct.common.collapseFields);
+    for (const field of ["payment", "cancellation"]) await expect(fieldName(body, field)).toBeVisible();
+    await toggle.click();
+    for (const field of ["payment", "cancellation"]) await expect(fieldName(body, field)).toBeHidden();
+
+    const line = body.locator(".crew-review__changes-line");
+    await expect(line).toContainText(demoChange("k13", 0));
+    await expect(line).toContainText(demoChange("k13", 1));
+    const items = body.locator(".crew-review__changes-items li");
+    await expect(items.first()).toBeHidden();
+    await line.getByRole("button", { name: ct.review.changesList, exact: true }).click();
+    await expect(items).toHaveCount(2);
+    await expect(items.first()).toBeVisible();
+    await line.getByRole("button", { name: ct.review.changesHide, exact: true }).click();
+    await expect(items.first()).toBeHidden();
+
+    // 決定列不變
+    await expect(panel.getByText(ct.review.decisionKb, { exact: true })).toBeVisible();
+  });
+
+  test("「看信任紀錄」切到信任頁", async ({ page }) => {
+    const panel = await openWork(page, "k13");
+    await panel.getByRole("button", { name: ct.review.lightTrust, exact: true }).click();
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionTrust, exact: true })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("逐項看的件（Rowan 的回信 s14）沒有說明卡，也沒有收起的欄位", async ({ page }) => {
+    const panel = await openWork(page, "s14");
+    await expect(panel.getByRole("region", { name: ct.review.lightTitle })).toHaveCount(0);
+    await expect(panel.locator(".crew-collapsed, .crew-review__changes-collapsed")).toHaveCount(0);
+  });
+
+  for (const width of [1280, 390]) {
+    test(`${width}px：展開後沒有水平捲動`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const panel = await openWork(page, "k13");
+      await panel.locator(".crew-collapsed__toggle").click();
+      await panel.getByRole("button", { name: ct.review.changesList, exact: true }).click();
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
 });

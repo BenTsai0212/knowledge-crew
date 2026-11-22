@@ -291,6 +291,49 @@ button.crew-review__point[aria-pressed="true"] {
   font-size: 14px;
 }
 
+/* 少看的變更（#102）：收成一行，「逐項列出」展開清單 */
+.crew-review__changes-collapsed .crew-review__changes-line {
+  margin-bottom: 0;
+}
+
+.crew-review__changes-items {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+/* 為什麼是少看（規格 6.3）：success 1px 框、盾牌圖示，不填滿 */
+.crew-review__light {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  padding: 1rem;
+  min-width: 0;
+}
+
+.crew-review__light-icon {
+  flex: none;
+  color: var(--color-success);
+}
+
+.crew-review__light-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.crew-review__light-text h4 {
+  margin: 0 0 0.25rem;
+  color: var(--color-success);
+}
+
+.crew-review__light-text p {
+  margin: 0 0 0.25rem;
+}
+
 .crew-review__decision-row {
   display: flex;
   flex-wrap: wrap;

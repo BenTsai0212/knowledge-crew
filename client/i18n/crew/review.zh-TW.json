@@ -23,7 +23,7 @@
   "checkPass": "通過",
   "checkFail": "未通過",
   "checkPending": "檢查中",
-  "changesSummary": "其他 {count} 項變更已收起（少看）",
+  "changesSummary": "變更 {count} 項已收起（少看）：{places}",
   "earlier": "前幾輪",
   "earlierRound": "第 {round} 輪・{work}",
   "earlierRoundNoRef": "第 {round} 輪",
@@ -91,5 +91,12 @@
   "mergeNote": "通過只記錄驗收；合併在 GitHub 進行",
   "knowledgeFlowed": "已收進知識庫",
   "knowledgeOpen": "打開原文",
-  "knowledgeNoUpload": "沒有上傳權限，未收進知識庫"
+  "knowledgeNoUpload": "沒有上傳權限，未收進知識庫",
+  "changesList": "逐項列出",
+  "changesHide": "收起變更",
+  "changesItemSeparator": "：",
+  "lightTitle": "為什麼是少看",
+  "lightSince": "你在 {date} 同意的；{employee} 的「{workType}」最近 {count} 次沒有做錯。",
+  "lightRule": "收起的只有沒標重點的欄位與變更。重點、檢查、空白欄位照樣顯示；一次「做錯了」就自動改回逐項看。",
+  "lightTrust": "看信任紀錄"
 }

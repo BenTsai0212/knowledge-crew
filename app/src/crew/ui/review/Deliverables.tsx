@@ -1,9 +1,11 @@
 // 驗收面板 v3 的四種交件（#72 計畫第 3 點；設計規格 v3 第 6.2 節）：回信、貼文、知識庫條目、程式修改，
 // 各自以原本的樣子呈現。區塊與重點的標記沿用 parts.tsx；段落與部分的名稱、其他文字都在翻譯檔。
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { WorkSection } from "../../work/body";
 import { crewStrings } from "../../i18n";
+import { CollapsedFields } from "../components";
 import { positionLabel } from "../glossary";
+import { splitFields } from "./light";
 import { Block, MarkedText, Modified, WholePoints, pointAttrs, type SectionContext } from "./parts";
 
 export interface DeliverableProps {
@@ -74,27 +76,64 @@ export function KbBody({ sections, ctx }: DeliverableProps) {
               )}
             </div>
           )}
-          {fields.length > 0 && (
-            <dl className="crew-review__fields">
-              {fields.map((s) => (
-                <div key={s.key} className="crew-review__block">
-                  <dt className="crew-review__block-name">
-                    <span>
-                      {s.label ?? positionLabel(s.key!, ctx.language)}
-                      {s.attrs.required && <span className="crew-review__required">{t.fieldRequired}</span>}
-                    </span>
-                    <WholePoints section={s} language={ctx.language} />
-                    <Modified section={s} ctx={ctx} />
-                  </dt>
-                  <dd className="crew-review__block-text" {...pointAttrs(s, ctx.active)}>
-                    {value(s)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          )}
+          {fields.length > 0 && <KbFields id={`crew-review-kb-${i}`} fields={fields} ctx={ctx} value={value} />}
         </div>
       ))}
+    </div>
+  );
+}
+
+interface KbFieldsProps {
+  id: string;
+  fields: WorkSection[];
+  ctx: SectionContext;
+  value: (s: WorkSection) => ReactNode;
+}
+
+/** 條目的欄位清單；少看時沒標重點、不是空白的欄位收進「其他 N 個欄位已收起」（規格 6.3），展開狀態只存在元件 state */
+function KbFields({ id, fields, ctx, value }: KbFieldsProps) {
+  const [expanded, setExpanded] = useState(false);
+  const { shown, collapsed } = splitFields(fields, ctx.light === true);
+  const list = (items: WorkSection[]) => (
+    <dl className="crew-review__fields">
+      {items.map((s) => (
+        <KbField key={s.key} section={s} ctx={ctx} value={value} />
+      ))}
+    </dl>
+  );
+  return (
+    <>
+      {shown.length > 0 && list(shown)}
+      {collapsed.length > 0 && (
+        <CollapsedFields
+          id={id}
+          fields={collapsed.map((s) => s.label ?? positionLabel(s.key!, ctx.language))}
+          expanded={expanded}
+          onToggle={setExpanded}
+          language={ctx.language}
+        >
+          {list(collapsed)}
+        </CollapsedFields>
+      )}
+    </>
+  );
+}
+
+function KbField({ section: s, ctx, value }: { section: WorkSection; ctx: SectionContext; value: (s: WorkSection) => ReactNode }) {
+  const t = crewStrings("review", ctx.language);
+  return (
+    <div className="crew-review__block">
+      <dt className="crew-review__block-name">
+        <span>
+          {s.label ?? positionLabel(s.key!, ctx.language)}
+          {s.attrs.required && <span className="crew-review__required">{t.fieldRequired}</span>}
+        </span>
+        <WholePoints section={s} language={ctx.language} />
+        <Modified section={s} ctx={ctx} />
+      </dt>
+      <dd className="crew-review__block-text" {...pointAttrs(s, ctx.active)}>
+        {value(s)}
+      </dd>
     </div>
   );
 }

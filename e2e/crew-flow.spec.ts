@@ -17,10 +17,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 // 交件全文中第一個有內容的行（不是 @@ 標頭行），去掉重點標記 〔N〕〔/N〕
-const firstFieldText = (body: string) =>
+// 第一個有重點標記（〔N〕）的欄位內容：少看時沒標重點的欄位收起（#102），有重點的欄位照樣顯示
+const firstMarkedText = (body: string) =>
   body
     .split("\n")
-    .find((line) => line.trim() !== "" && !line.startsWith("@@"))!
+    .find((line) => !line.startsWith("@@") && /\u3014\d+\u3015/.test(line))!
     .replace(/\u3014\/?\d+\u3015/g, "")
     .trim();
 
@@ -48,11 +49,14 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
       await expect(points).toBeVisible();
       await expect(checks).toBeVisible();
       await expect(body).toBeVisible();
-      // 重點與自動檢查在交件本身之上（#72）；交件依區塊呈現，第一個有內容的欄位直接看得到
+      // 重點與自動檢查在交件本身之上（#72）；交件依區塊呈現，有重點的欄位直接看得到，沒標重點的欄位收起（少看，#102）
       const bodyTop = (await body.boundingBox())!.y;
       expect((await points.boundingBox())!.y).toBeLessThan(bodyTop);
       expect((await checks.boundingBox())!.y).toBeLessThan(bodyTop);
-      await expect(body.getByText(firstFieldText(firstReplyBody("linden", "knowledge")), { exact: true })).toBeVisible();
+      const marked = body.locator(".crew-review__mark").first();
+      await expect(marked).toBeVisible();
+      await expect(marked).toContainText(firstMarkedText(firstReplyBody("linden", "knowledge")));
+      await expect(body.locator(".crew-collapsed__toggle")).toHaveAttribute("aria-expanded", "false");
     },
   });
 

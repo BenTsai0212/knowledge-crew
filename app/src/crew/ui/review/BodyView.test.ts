@@ -87,10 +87,23 @@ describe("交件本身", () => {
     }
   });
 
-  it("少看：變更收成一行", () => {
-    const out = view(STRUCTURED, { mode: "summary", count: 3 } as never);
-    expect(out).toContain(fill(t.changesSummary, { count: 3 }, language));
+  it("少看：變更收成一行，「逐項列出」預設收起", () => {
+    const items = [
+      { path: "reply/p2", summary: "Week" },
+      { path: "reply/greeting", summary: "Tone" },
+    ];
+    const raw = STRUCTURED;
+    const out = html(createElement(BodyView, { name: "Reply", body: parseWorkBody(raw, 2), raw, changes: { mode: "summary", count: 2 }, changeItems: items, language }));
+    expect(out).toContain(fill(t.changesSummary, { count: 2, places: ["Week", "Tone"].join(t.listSeparator) }, language));
     expect(out).not.toContain(fill(t.modified, { summary: "Week" }));
+    expect(out).toContain(`aria-expanded="false" aria-controls="crew-review-changes">${t.changesList}</button>`);
+    expect(out).toMatch(/<ul id="crew-review-changes" class="crew-review__changes-items" hidden="">/);
+    expect(out.match(/<li>/g)).toHaveLength(2);
+  });
+
+  it("少看但沒有變更：不顯示變更的那一行", () => {
+    const out = view(STRUCTURED, { mode: "summary", count: 0 } as never);
+    expect(out).not.toContain("crew-review__changes-line");
   });
 });
 
