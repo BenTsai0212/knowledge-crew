@@ -5,6 +5,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredWork } from "../db/store";
 import { demoText } from "../demo/texts";
+import { readFlowbackPassage } from "../knowledge/origin";
 import { parseWorkBody, type ParsedBody } from "../work/body";
 import { sourceLabel } from "./refs";
 import { deliverableOf, type Deliverable } from "./review/conclusion";
@@ -58,6 +59,8 @@ export interface ReviewPanel {
   body: ParsedBody;
   /** 交件的種類，由工作類型決定；其他工作類型是 null */
   deliverable: Deliverable | null;
+  /** 最新一輪已回流知識庫時，回流文件的第一段（#92；沒有回流或看不到時是 null） */
+  knowledgePassage: string | null;
 }
 
 const EMPTY: WorkList = { awaiting: [], recent: [] };
@@ -165,6 +168,7 @@ export async function readReviewPanel(
     canDecide: canReview && current.review === null,
     body: parseWorkBody(current.body, current.points.length),
     deliverable: deliverableOf(item.workTypeId),
+    knowledgePassage: current.review?.verdict === "accepted" ? await readFlowbackPassage(db, identity, current.id) : null,
   };
 }
 

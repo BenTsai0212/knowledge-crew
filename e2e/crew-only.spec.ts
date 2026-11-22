@@ -4,8 +4,9 @@
 // 部署的是 assets-only（wrangler.crew-demo.jsonc），沒有 /api/*：這裡讓 /api/* 一被呼叫就失敗並記錄下來。
 import { expect, test, type Page } from "@playwright/test";
 import { blockModelDownload, chooseAccount, EVALS_PATH, gotoView, s, signInPanel, switchIdentity, userCard } from "./support/app";
-import { access } from "./support/client";
-import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo, homeToday, openCrew } from "./support/crew";
+import { access, language, readClientJson } from "./support/client";
+import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel } from "./support/crew";
+import { toFlowbackDocument } from "../app/src/crew/knowledge/flowback";
 import type { Cy } from "./support/graph";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（crew-only 不生效）");
@@ -147,6 +148,26 @@ test.describe("桌機", () => {
     await expect(page.locator(".home")).toBeVisible();
     await expect(crewSections(page)).toHaveCount(0);
     await expect(navViews(page)).toHaveCount(VIEWS.length);
+  });
+
+  // 回流知識庫（#92 PR 3）：驗收、寫入文件與段落、原文的來源都在瀏覽器內完成，不呼叫 /api/*（afterEach）
+  test("驗收 k13 後「已收進知識庫」，打開原文看到來源，點來源回到 k13", async ({ page }) => {
+    const k13 = readClientJson<{ assignments: { id: string; title: Record<string, string>; works: { body: Record<string, string> }[] }[] }>("crew/demo.json").assignments.find((a) => a.id === "k13");
+    const entry = k13 ? toFlowbackDocument(k13.works[0].body[language]) : null;
+    test.skip(k13 === undefined || entry === null, "沒有待驗收的知識庫條目 k13");
+    const title = k13!.title[language];
+    await enter(page);
+    await gotoCrewSection(page, ct.common.sectionWorks);
+    await page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").filter({ hasText: title }).click();
+    const panel = reviewPanel(page, title);
+    await panel.getByRole("button", { name: ct.review.accept, exact: true }).click();
+    await expect(panel.getByText(ct.review.knowledgeFlowed, { exact: true })).toBeVisible();
+    await panel.getByRole("button", { name: ct.review.knowledgeOpen, exact: true }).click();
+    const source = page.locator("aside.source");
+    await expect(source.getByRole("heading", { level: 2 })).toHaveText(entry!.title);
+    await source.getByRole("button").filter({ hasText: title }).click();
+    await expect(source).toHaveCount(0);
+    await expect(reviewPanel(page, title)).toBeVisible();
   });
 
   for (const path of [EVALS_PATH, "/?mode=presentation"]) {

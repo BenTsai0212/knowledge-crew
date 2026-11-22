@@ -35,9 +35,13 @@ interface PanelProps {
   saving: boolean;
   saveFailed: boolean;
   decide: Decide;
+  /** 剛才的「通過」因為沒有上傳權限而沒有收進知識庫（#92 的 `## 決定` 4） */
+  noUpload?: boolean;
+  /** 打開回流文件的原文；沒有時不顯示「打開原文」 */
+  onOpenSource?: (passageId: string) => void;
 }
 
-export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide }: PanelProps) {
+export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, onOpenSource }: PanelProps) {
   const t = crewStrings("review", language);
   const { item, focus, current, earlier, body, deliverable } = panel;
   // 選中的重點只存在元件 state；換一筆工作時（key 改變）重設
@@ -74,6 +78,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
             </span>
           </p>
         )}
+        <KnowledgeStatus passage={panel.knowledgePassage} noUpload={noUpload} onOpenSource={onOpenSource} t={t} />
         {conclusion && (
           <ConclusionRow
             tone={conclusion.tone}
@@ -161,6 +166,30 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
         </p>
       )}
     </article>
+  );
+}
+
+/** 回流知識庫的狀態（#92）：已收進知識庫（可打開原文），或剛才的通過因為沒有上傳權限而沒有收進；其他情況不顯示 */
+function KnowledgeStatus({ passage, noUpload, onOpenSource, t }: { passage: string | null; noUpload: boolean; onOpenSource?: (passageId: string) => void; t: Texts }) {
+  if (passage !== null) {
+    return (
+      <p className="crew-review__knowledge">
+        <span className="badge" data-knowledge="flowed">
+          {t.knowledgeFlowed}
+        </span>{" "}
+        {onOpenSource && (
+          <button type="button" className="chip" onClick={() => onOpenSource(passage)}>
+            {t.knowledgeOpen}
+          </button>
+        )}
+      </p>
+    );
+  }
+  if (!noUpload) return null;
+  return (
+    <p className="crew-review__notice" role="note">
+      {t.knowledgeNoUpload}
+    </p>
   );
 }
 

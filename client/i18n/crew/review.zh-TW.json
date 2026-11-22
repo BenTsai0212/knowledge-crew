@@ -88,5 +88,8 @@
   "fileAdded": "新增",
   "fileModified": "修改",
   "codeDiff": "到 GitHub 看差異：{ref}",
-  "mergeNote": "通過只記錄驗收；合併在 GitHub 進行"
+  "mergeNote": "通過只記錄驗收；合併在 GitHub 進行",
+  "knowledgeFlowed": "已收進知識庫",
+  "knowledgeOpen": "打開原文",
+  "knowledgeNoUpload": "沒有上傳權限，未收進知識庫"
 }

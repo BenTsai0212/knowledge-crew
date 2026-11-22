@@ -1,4 +1,6 @@
 // 「工作與驗收」的資料整理（#39）：以匯入虛構資料後的資料庫，檢查三種身分的清單與面板、換語言、寫入後讀回。
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientConfig } from "../../client/load";
 import { openDatabase, type Database } from "../../db/database";
@@ -10,6 +12,8 @@ import type { DemoFile } from "../demo/types";
 import { parseWorkBody } from "../work/body";
 import { initialSelection, readReviewPanel, readWorkList, RECENT_LIMIT } from "./review";
 import { canReviewOf } from "./today";
+import { ReviewPanel } from "./review/ReviewPanel";
+import { crewStrings } from "../i18n";
 
 const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
@@ -233,6 +237,44 @@ describe("寫入後讀回", { timeout: DB_TIMEOUT }, () => {
         await expect(createReview(own, identity, { workId: "s14-w1", verdict: "accepted" })).rejects.toThrow();
       }
       expect(await list(own, "manager")).toEqual(before);
+    } finally {
+      await own.close();
+    }
+  });
+});
+
+// 回流知識庫的狀態（#92 PR 3）：已通過且回流的知識庫條目顯示「已收進知識庫」與「打開原文」
+describe("驗收面板：回流知識庫的狀態", () => {
+  const t = crewStrings("review", lang);
+  const render = (p: NonNullable<Awaited<ReturnType<typeof panel>>>, extra: { noUpload?: boolean; onOpenSource?: (id: string) => void } = {}) =>
+    renderToStaticMarkup(
+      createElement(ReviewPanel, { anchor: { current: null }, panel: p, language: lang, saving: false, saveFailed: false, decide: async () => {}, ...extra }),
+    );
+
+  it("seed 時回流的 k12：knowledgePassage 是回流文件的第一段；面板有「已收進知識庫」，有 onOpenSource 時才有「打開原文」", async () => {
+    const k12 = (await panel(db, "manager", "k12"))!;
+    expect(k12.knowledgePassage).toBe("crew-k12-w1-1");
+    expect(render(k12)).toContain(t.knowledgeFlowed);
+    expect(render(k12)).not.toContain(t.knowledgeOpen);
+    expect(render(k12, { onOpenSource: () => {} })).toContain(t.knowledgeOpen);
+  });
+
+  it("待驗收的 k13、其他已通過的工作：沒有回流；沒有上傳權限時才註明原因", async () => {
+    const [k13, c10] = [(await panel(db, "manager", "k13"))!, (await panel(db, "manager", "c10"))!];
+    expect(k13.knowledgePassage).toBeNull();
+    expect(c10.knowledgePassage).toBeNull();
+    for (const html of [render(k13), render(c10)]) {
+      expect(html).not.toContain(t.knowledgeFlowed);
+      expect(html).not.toContain(t.knowledgeNoUpload);
+    }
+    expect(render(c10, { noUpload: true })).toContain(t.knowledgeNoUpload);
+  });
+
+  it("主管通過 k13 之後讀回：knowledgePassage 是回流文件的第一段", async () => {
+    const own = await open();
+    try {
+      expect(await createReview(own, "manager", { workId: "k13-w1", verdict: "accepted" })).toMatchObject({ flowback: "flowed" });
+      expect((await panel(own, "manager", "k13"))!.knowledgePassage).toBe("crew-k13-w1-1");
     } finally {
       await own.close();
     }
