@@ -103,7 +103,7 @@ export async function readTrust(
   const rows: TrustRow[] = [];
   for (const { employeeId, workTypeId } of sorted) {
     const { reviews, decisions } = await getTrustInputs(db, identity, employeeId, workTypeId);
-    // 建議只給能驗收的身分（只有他們能同意少看），與「今天」一致
+    // 建議只給能驗收的身分（只有他們能同意少看），與首頁的今天的工作一致
     const suggestion = canReview ? relaxSuggestion(reviews, decisions, params) : null;
     const level = reviewLevel(reviews, decisions);
     const timeline = trustTimeline(reviews, decisions, params);

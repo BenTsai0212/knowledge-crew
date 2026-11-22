@@ -2,17 +2,15 @@
 // H～K 掛上畫面時：新增 <畫面>View.tsx／.css，在 SCREENS 插入一行 import 與一行登錄。
 import { useEffect, useState } from "react";
 import { crewStrings } from "../i18n";
-import { CREW_SECTIONS, type CrewScreen, type CrewScreenProps, type CrewSection, type CrewTarget } from "./sections";
+import { CREW_SECTIONS, DEFAULT_CREW_SECTION, type CrewScreen, type CrewScreenProps, type CrewSection, type CrewTarget } from "./sections";
 import { AssignView } from "./AssignView";
 import { EmployeesView } from "./EmployeesView";
 import { LedgerView } from "./LedgerView";
 import { ReviewView } from "./ReviewView";
-import { TodayView } from "./TodayView";
 import { TrustView } from "./TrustView";
 import "./CrewPage.css";
 
 const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
-  today: TodayView,
   employees: EmployeesView,
   assignments: AssignView,
   works: ReviewView,
@@ -28,7 +26,7 @@ interface Props extends Omit<CrewScreenProps, "navigate" | "employeeId" | "assig
 export function CrewPage({ request = null, ...props }: Props) {
   const t = crewStrings("common", props.language);
   // 目前位置（與交辦頁預選的員工）只存在元件 state，不寫瀏覽器儲存
-  const [target, setTarget] = useState<CrewTarget>(() => request?.target ?? { section: "today" });
+  const [target, setTarget] = useState<CrewTarget>(() => request?.target ?? { section: DEFAULT_CREW_SECTION });
   useEffect(() => {
     if (request !== null) setTarget(request.target);
   }, [request?.n]);

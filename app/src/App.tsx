@@ -163,7 +163,7 @@ export function App() {
   // 輸入框的文字（「接著問」填進來），與「在圖譜中查看」要選取的實體
   const [draft, setDraft] = useState("");
   const [graphFocus, setGraphFocus] = useState<string | null>(null);
-  // knowledge-crew：從 crew 頁之外切到 crew 的某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；離開 crew 頁時清除，從導覽進來時是「今天」
+  // knowledge-crew：從 crew 頁之外切到 crew 的某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；離開 crew 頁時清除，從導覽進來時是「工作與驗收」（#100）
   const [crewRequest, setCrewRequest] = useState<{ target: CrewTarget; n: number } | null>(null);
   useEffect(() => {
     if (view !== "crew") setCrewRequest(null);

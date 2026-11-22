@@ -6,7 +6,7 @@ import { DEMO_RAW } from "../demo/load";
 import { CREW_TRANSLATIONS } from "../i18n";
 import { visibleViews, type View } from "../../ui/online-demo";
 import { CREW_ONLY_ACCESS_CODE, CREW_ONLY_KIT_VIEWS, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, crewTabLabel, entryPoints, hasCrewDemo, withCrew } from "./entry";
-import { CREW_SECTIONS } from "./sections";
+import { CREW_SECTIONS, DEFAULT_CREW_SECTION } from "./sections";
 
 const off = { enabled: false };
 
@@ -160,10 +160,25 @@ describe("頁籤與子導覽的名稱", () => {
     expect(crewTabLabel("xx")).toBe("");
   });
 
-  it("子導覽六個位置依序排列，每個都有名稱的鍵", () => {
-    expect(CREW_SECTIONS.map((s) => s.id)).toEqual(["today", "employees", "assignments", "works", "trust", "ledger"]);
+  it("子導覽五個位置依序排列，每個都有名稱的鍵；沒有「今天」（#100）", () => {
+    expect(CREW_SECTIONS.map((s) => s.id)).toEqual(["employees", "assignments", "works", "trust", "ledger"]);
     for (const language of clientConfig.client.languages) {
       for (const s of CREW_SECTIONS) expect(CREW_TRANSLATIONS.common[language][s.label], `${language}.${s.label}`).toBeTruthy();
     }
+  });
+
+  it("點進 AI 員工時預設停在「工作與驗收」（#100）", () => {
+    expect(DEFAULT_CREW_SECTION).toBe("works");
+    expect(CREW_SECTIONS.map((s) => s.id)).toContain(DEFAULT_CREW_SECTION);
+  });
+
+  it("CrewPage 沒有收到 request 時，子導覽的目前位置是「工作與驗收」", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { CrewPage } = await import("./CrewPage");
+    const language = clientConfig.client.defaultLanguage;
+    const html = renderToStaticMarkup(createElement(CrewPage, { db: {} as never, identity: "manager", language }));
+    const current = [...html.matchAll(/<button[^>]*aria-current="page"[^>]*>([^<]*)<\/button>/g)].map((m) => m[1]);
+    expect(current).toEqual([CREW_TRANSLATIONS.common[language].sectionWorks]);
   });
 });

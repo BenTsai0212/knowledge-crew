@@ -55,7 +55,7 @@ export const crewDefaultView = (base: View, only: boolean): View => (only ? "hom
 
 /**
  * 一開始的身分：crew-only 時是第一個能驗收的身分（主管，client/access.json 的 canReview；#86 的修正要求 2），
- * 讓「直接體驗」後的「今天」就有待驗收的工作與少看建議；身分仍可切換。沒有能驗收的身分或其他情況是第一個身分。
+ * 讓「直接體驗」後首頁的今天的工作就有待驗收的工作與少看建議；身分仍可切換。沒有能驗收的身分或其他情況是第一個身分。
  */
 export function crewStartIdentity(access: Pick<AccessFile, "roles">, only: boolean): string {
   const first = access.roles[0].id;

@@ -7,7 +7,7 @@ import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { crewStrings } from "../i18n";
-import { EmployeeName, withEmployee } from "./components";
+import { withEmployee } from "./components";
 import { DECIDE_TARGET, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget, type HomeToday } from "./home-today";
 import { workTypeLabel } from "./labels";
 import { assignmentRef } from "./refs";
@@ -82,7 +82,10 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
             {a.title}
           </strong>
           <span className="home__sub crew-home__meta">
-            <EmployeeName name={a.employee.displayName} language={language} />
+            {/* 員工名稱後是工作類型（#100：原本 AI 員工的「今天」子頁才有） */}
+            <span className="crew-home__employee">
+              {withEmployee(t.employeeWorkType, { workType: workTypeLabel(a.workTypeId, language) }, a.employee.displayName, language)}
+            </span>
             <span>{assignmentRef(a, language)}</span>
             <span className="crew-home__status">{rowStatus(a, awaiting, language)}</span>
           </span>

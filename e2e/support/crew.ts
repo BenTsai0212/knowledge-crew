@@ -13,7 +13,6 @@ import { gotoView } from "./app";
 // crew 的介面文字（client/i18n/crew/<畫面>.<語言>.json），只讀預設語言；沒有 crew 的客戶不讀（測試整個略過）
 type CrewFiles = {
   common: typeof import("@client/i18n/crew/common.zh-TW.json");
-  today: typeof import("@client/i18n/crew/today.zh-TW.json");
   home: typeof import("@client/i18n/crew/home.zh-TW.json");
   employees: typeof import("@client/i18n/crew/employees.zh-TW.json");
   assign: typeof import("@client/i18n/crew/assign.zh-TW.json");
@@ -25,7 +24,6 @@ const crewJson = <S extends keyof CrewFiles>(screen: S): CrewFiles[S] =>
   hasCrewDemo ? readClientJson<CrewFiles[S]>(`i18n/crew/${screen}.${language}.json`) : ({} as CrewFiles[S]);
 export const ct = {
   common: crewJson("common"),
-  today: crewJson("today"),
   home: crewJson("home"),
   employees: crewJson("employees"),
   assign: crewJson("assign"),

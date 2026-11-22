@@ -10,8 +10,8 @@ const screens = Object.keys(CREW_TRANSLATIONS) as CrewScreen[];
 const params = (text: string) => [...new Set([...text.matchAll(/\{([A-Za-z]+)(?:\}|, plural,)/g)].map((m) => m[1]))].sort();
 
 describe("crew 的翻譯檔（client/i18n/crew/）", () => {
-  it("至少有「今天」畫面", () => {
-    expect(screens).toContain("today");
+  it("至少有首頁的「今天的工作」", () => {
+    expect(screens).toContain("home");
   });
 
   it("每個畫面的語言與 client.json 的 languages 一致", () => {
@@ -57,13 +57,13 @@ describe("crewStrings", () => {
     for (const screen of screens) {
       for (const language of languages) expect(crewStrings(screen, language)).toBe(CREW_TRANSLATIONS[screen][language]);
     }
-    expect(crewStrings("today", "zh-TW").inProgress).toBe("進行中");
-    expect(crewStrings("today", "en").inProgress).toBe("In progress");
+    expect(crewStrings("home", "zh-TW").groupInProgress).toBe("進行中");
+    expect(crewStrings("home", "en").groupInProgress).toBe("In progress");
   });
 
   it("沒有的畫面或語言拋錯（與 knowledge-kit 的 strings() 相同）", () => {
-    expect(() => crewStrings("today", "ja")).toThrow("No crew UI strings for screen today in language: ja");
-    expect(() => crewStrings("today", "toString")).toThrow("No crew UI strings");
+    expect(() => crewStrings("home", "ja")).toThrow("No crew UI strings for screen home in language: ja");
+    expect(() => crewStrings("home", "toString")).toThrow("No crew UI strings");
     expect(() => crewStrings("nope" as CrewScreen, "en")).toThrow("No crew UI strings for screen: nope");
     expect(() => crewStrings("toString" as CrewScreen, "en")).toThrow("No crew UI strings for screen: toString");
   });

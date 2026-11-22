@@ -3,7 +3,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gotoView, openApp, s, switchIdentity } from "./support/app";
 import { access } from "./support/client";
-import { ct, crewSections, hasCrewDemo, homeToday, reviewPanel } from "./support/crew";
+import { crewFill, ct, crewSections, employeeName, hasCrewDemo, homeToday, reviewPanel, workTypeName } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 AI 員工）");
 
@@ -21,6 +21,14 @@ async function openHomeAs(page: Page, identity: string): Promise<void> {
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const group = (page: Page, title: string) => homeToday(page).getByRole("region", { name: title, exact: true });
 const reviewButtons = (page: Page) => homeToday(page).getByRole("button", { name: new RegExp(`^${ct.home.actionReview}`) });
+// 每列的員工後面是工作類型（#100）：Rowan 的客戶回覆在虛構資料中待驗收；工作類型的列數與待驗收、進行中的列數相同
+async function expectWorkTypes(page: Page, rows: number): Promise<void> {
+  const meta = homeToday(page).locator(".crew-home__employee");
+  await expect(meta).toHaveCount(rows);
+  await expect(meta.filter({ hasText: employeeName("rowan") }).first()).toContainText(
+    crewFill(ct.home.employeeWorkType, { employee: employeeName("rowan"), workType: workTypeName("support") }),
+  );
+}
 const crewBadge = (page: Page) => page.locator(':is(.primary-tabs, .mobile-tabbar, .nav-rail, .more-list) [data-view="crew"] .crew-tab-count');
 
 test.describe("桌機 1280", () => {
@@ -40,6 +48,7 @@ test.describe("桌機 1280", () => {
     await expect(crewBadge(page).locator('[aria-hidden="true"]')).toHaveText(String(awaiting));
     // 每列有 AI 標記＋員工
     await expect(homeToday(page).locator(".home__row .crew-ai-mark").first()).toBeVisible();
+    await expectWorkTypes(page, awaiting);
     // 問候下方的總結；knowledge-kit 首頁的提問框與等你處理不變
     await expect(page.locator(".home__top .crew-home__summary")).toBeVisible();
     await expect(page.locator(".home__waiting")).toBeVisible();
@@ -58,10 +67,11 @@ test.describe("桌機 1280", () => {
     expect(await gotoView(page, "home")).toBe(true);
     await group(page, ct.home.groupDecide).getByRole("button").first().click();
     await expect(crewSections(page).getByRole("button", { name: ct.common.sectionTrust, exact: true })).toHaveAttribute("aria-current", "page");
-    // 從導覽切到 AI 員工時回到「今天」
+    // 從導覽切到 AI 員工時是「工作與驗收」（#100：子導覽沒有「今天」）
     expect(await gotoView(page, "home")).toBe(true);
     expect(await gotoView(page, "crew")).toBe(true);
-    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionToday, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(crewSections(page).getByRole("button")).toHaveCount(5);
   });
 
   test("一般員工：只有看得到的工作、沒有驗收的按鈕與少看建議，側欄沒有待驗收件數", async ({ page }) => {
@@ -93,6 +103,7 @@ test.describe("手機 390", () => {
     await expect(homeToday(page)).toBeVisible();
     const awaiting = await reviewButtons(page).count();
     expect(awaiting).toBeGreaterThan(0);
+    await expectWorkTypes(page, awaiting);
     expect(await noHorizontalScroll(page)).toBe(true);
     await page.locator('.mobile-tabbar [data-view="more"]').click();
     await expect(page.locator('dialog.more-sheet [data-view="crew"] .crew-tab-count [aria-hidden="true"]')).toHaveText(String(awaiting));

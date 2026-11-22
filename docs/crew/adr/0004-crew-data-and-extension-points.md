@@ -26,7 +26,7 @@
 - **介面文字**：選項 B。翻譯檔放 `client/i18n/crew/<畫面>.<語言>.json`，一個畫面一份；knowledge-kit 的 `client/i18n/<語言>.json` 不改。
 - **虛構資料**：`client/crew/demo.json`，經 `@client` 讀取；畫面標示為虛構資料。
 - **信任規則**：純函式放在 `app/src/crew/trust/`；`demo-params.ts` 只放示範用的虛構數值，實際參數放私人 repo（RFC 0001）。
-- **畫面入口**：在 knowledge-kit 的頁籤加「AI 員工」（view `crew`），內有自己的子導覽（今天、員工、交辦、工作與驗收、信任，以及工作帳本）。展示模式不顯示；沒有 `client/crew/demo.json` 的客戶不顯示。這是產品頁籤，不是營運開關。
+- **畫面入口**：在 knowledge-kit 的頁籤加「AI 員工」（view `crew`），內有自己的子導覽（員工、交辦、工作與驗收、信任，以及工作帳本；原本的「今天」已併入首頁的今天的工作，點進來預設是「工作與驗收」，2026-11-22，#100）。展示模式不顯示；沒有 `client/crew/demo.json` 的客戶不顯示。這是產品頁籤，不是營運開關。
 - **會改的 knowledge-kit 檔案**限於：`app/src/db/database.ts`（`crew` schema 與 `migrations` 選項）、`app/src/App.tsx`、`app/src/ui/online-demo.ts`、`app/src/ui/Sidebar.tsx`、`app/src/ui/layout.ts`、`vitest.config.ts`、`app/src/client/i18n.test.ts`（允許清單一行）、`docs/structure.md`（新增 crew 的小節）。其他 knowledge-kit 檔案需要修改時先問人；相關 Issue 加 `area:upstream`。
 
 ## 後果

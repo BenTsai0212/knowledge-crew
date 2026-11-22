@@ -17,6 +17,7 @@
   "statusCheckPass": "{check}通過",
   "statusCheckFail": "{check}未通過",
   "statusCheckPending": "{check}檢查中",
+  "employeeWorkType": "{employee}・{workType}",
   "statusSeparator": "・",
   "statusNoChecks": "沒有自動檢查",
   "statusNotSubmitted": "還沒交件",

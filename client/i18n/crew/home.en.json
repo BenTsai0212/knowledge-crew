@@ -17,6 +17,7 @@
   "statusCheckPass": "{check} passed",
   "statusCheckFail": "{check} failed",
   "statusCheckPending": "{check} running",
+  "employeeWorkType": "{employee} · {workType}",
   "statusSeparator": " · ",
   "statusNoChecks": "No automated checks",
   "statusNotSubmitted": "Not submitted yet",
