@@ -99,10 +99,13 @@ export async function assignSimulateReturn(
   const { title, employee, workType, reason, beforeReturn } = input;
   await gotoCrewSection(page, ct.common.sectionAssignments);
   const form = page.getByRole("form", { name: ct.assign.formTitle });
-  await form.getByRole("textbox").fill(title);
-  await form.getByLabel(new RegExp(`^${ct.assign.fieldSource}`)).selectOption(sourceOf(employee, workType).id);
-  await form.getByLabel(new RegExp(`^${ct.assign.fieldEmployee}`)).selectOption(employee);
-  await form.getByLabel(new RegExp(`^${ct.assign.fieldWorkType}`)).selectOption(workType);
+  await form.getByRole("textbox", { name: ct.assign.fieldTitle, exact: true }).fill(title);
+  // 交給誰是單選卡（#76）：選了員工後帶入他平常的來源（可改）與工作類型（唯讀）
+  await form.getByRole("group", { name: ct.assign.fieldEmployee }).getByRole("radio", { name: new RegExp(employeeName(employee)) }).check();
+  const source = form.getByLabel(new RegExp(`^${ct.assign.fieldSource}`));
+  await source.selectOption(sourceOf(employee, workType).id);
+  await expect(source).toHaveValue(sourceOf(employee, workType).id);
+  await expect(form.getByLabel(new RegExp(`^${ct.assign.fieldWorkType}`))).toHaveValue(workTypeName(workType));
   await form.getByRole("button", { name: ct.assign.submit, exact: true }).click();
 
   const item = page.getByRole("region", { name: ct.assign.listTitle }).getByRole("listitem").filter({ hasText: title });

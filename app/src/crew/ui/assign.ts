@@ -4,6 +4,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import {
   createAssignment,
+  getTrustInputs,
   listAssignments,
   listEmployees,
   listSources,
@@ -16,8 +17,11 @@ import {
 import { DEMO } from "../demo/load";
 import { pickReply, simulateSubmission } from "../demo/simulate";
 import { demoText } from "../demo/texts";
+import { reviewLevel } from "../trust/rules";
+import type { ReviewLevel } from "../trust/types";
 import { sourceLabel } from "./refs";
 import type { DemoFile } from "../demo/types";
+import { deliverableOf } from "./review/conclusion";
 import type { TodayEmployee } from "./today";
 
 /** 還沒交件／待驗收／退回後等下一輪／已通過 */
@@ -34,16 +38,26 @@ export interface AssignItem {
   externalRef: string | null;
   workTypeId: string;
   employee: TodayEmployee;
+  assignedAt: string;
   status: AssignStatus;
   latestRound: number | null;
   simulate: SimulateState;
 }
 
+/** 表單的員工（#76）：平常的來源與工作類型從看得到的交辦紀錄推得，層級是該工作類型目前的層級。 */
+export type AssignEmployee = TodayEmployee & {
+  /** 沒有交辦紀錄，或平常的來源看不到時是 null */
+  usualSourceId: string | null;
+  /** 沒有交辦紀錄時是 null（表單不能交辦給他） */
+  workTypeId: string | null;
+  level: ReviewLevel;
+};
+
 export interface AssignData {
   canReview: boolean;
   /** `label` 是目前語言的顯示名稱（sourceLabel()） */
   sources: (StoredSource & { label: string })[];
-  employees: TodayEmployee[];
+  employees: AssignEmployee[];
   workTypes: string[];
   /** 新到舊 */
   assignments: AssignItem[];
@@ -66,6 +80,37 @@ export function simulateState(
   if (!demo) return "noReply";
   return pickReply(demo, a.employeeId, a.workTypeId, (a.latestRound ?? 0) + 1) ? "available" : "noReply";
 }
+
+/** 清單（新到舊）中出現最多次的值；次數相同時取較新的。沒有時是 null。 */
+function mostCommon(values: readonly string[]): string | null {
+  const counts = new Map<string, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  let best: string | null = null;
+  for (const [v, n] of counts) if (best === null || n > counts.get(best)!) best = v;
+  return best;
+}
+
+/** 員工平常的來源與工作類型（#76）：該員工交辦紀錄（新到舊）中最常用的；沒有紀錄時都是 null。 */
+export function usualOf(
+  assignments: readonly Pick<AssignmentSummary, "employeeId" | "sourceId" | "workTypeId">[],
+  employeeId: string,
+): { sourceId: string | null; workTypeId: string | null } {
+  const own = assignments.filter((a) => a.employeeId === employeeId);
+  return { sourceId: mostCommon(own.map((a) => a.sourceId)), workTypeId: mostCommon(own.map((a) => a.workTypeId)) };
+}
+
+/** 結果說明的文字鍵（assign 翻譯檔的 result*）：交件的稱呼依工作類型。 */
+export function resultKey(workTypeId: string): "resultReply" | "resultPost" | "resultKb" | "resultCode" | "resultOther" {
+  const d = deliverableOf(workTypeId);
+  return d === "reply" ? "resultReply" : d === "post" ? "resultPost" : d === "kb" ? "resultKb" : d === "code" ? "resultCode" : "resultOther";
+}
+
+/** 交辦清單預設顯示的件數（設計規格 v3 第 6.6 節：最近 4 件） */
+export const RECENT_COUNT = 4;
+
+/** 交辦清單要顯示的件數：預設最近 RECENT_COUNT 件，showAll 時全部。 */
+export const visibleAssignments = <T>(items: readonly T[], showAll: boolean): readonly T[] =>
+  showAll ? items : items.slice(0, RECENT_COUNT);
 
 /** 工作類型的 id（store.ts 沒有這個讀取）；員工與工作類型有身分就看得到。 */
 export function listWorkTypes(db: Database, identity: string | null): Promise<string[]> {
@@ -91,8 +136,16 @@ export async function readAssign(
     listWorkTypes(db, identity),
     listAssignments(db, identity),
   ]);
-  const employees = stored.map((e) => toEmployee(e, language));
-  const byId = new Map(employees.map((e) => [e.id, e]));
+  const visible = new Set(sources.map((s) => s.id));
+  const employees: AssignEmployee[] = await Promise.all(
+    stored.map(async (e) => {
+      const usual = usualOf(assignments, e.id);
+      const level = usual.workTypeId === null ? "item" : await levelOf(db, identity, e.id, usual.workTypeId);
+      const usualSourceId = usual.sourceId !== null && visible.has(usual.sourceId) ? usual.sourceId : null;
+      return { ...toEmployee(e, language), usualSourceId, workTypeId: usual.workTypeId, level };
+    }),
+  );
+  const byId = new Map(employees.map(({ id, displayName, roleNote }) => [id, { id, displayName, roleNote }]));
   return {
     canReview,
     sources: sources.map((s) => ({ ...s, label: sourceLabel(s.id, s.name, language) })),
@@ -106,6 +159,7 @@ export async function readAssign(
       externalRef: a.externalRef,
       workTypeId: a.workTypeId,
       employee: byId.get(a.employeeId) ?? { id: a.employeeId, displayName: a.employeeId, roleNote: null },
+      assignedAt: a.assignedAt,
       status: assignStatus(a),
       latestRound: a.latestRound,
       simulate: simulateState(canReview, a, demo),
@@ -133,6 +187,11 @@ export function simulateAssignment(
   language: LanguageCode,
 ): Promise<{ workId: string; round: number }> {
   return simulateSubmission(db, identity, assignmentId, demo, language);
+}
+
+async function levelOf(db: Database, identity: string, employeeId: string, workTypeId: string): Promise<ReviewLevel> {
+  const { reviews, decisions } = await getTrustInputs(db, identity, employeeId, workTypeId);
+  return reviewLevel(reviews, decisions);
 }
 
 // today.ts 的 toEmployee 沒有匯出（不修改 today.ts）

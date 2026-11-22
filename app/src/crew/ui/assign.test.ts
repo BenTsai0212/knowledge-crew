@@ -8,7 +8,7 @@ import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import { pickReply } from "../demo/simulate";
 import type { DemoFile } from "../demo/types";
-import { assignStatus, readAssign, simulateAssignment, submitAssignment } from "./assign";
+import { assignStatus, readAssign, RECENT_COUNT, resultKey, simulateAssignment, submitAssignment, usualOf, visibleAssignments } from "./assign";
 import { canReviewOf, readToday } from "./today";
 
 const demo = DEMO_RAW as DemoFile;
@@ -40,7 +40,61 @@ describe("assignStatus", () => {
   });
 });
 
+describe("usualOf：員工平常的來源與工作類型（#76）", () => {
+  const a = (employeeId: string, sourceId: string, workTypeId = "support") => ({ employeeId, sourceId, workTypeId });
+  it("取該員工交辦紀錄中最常用的；其他員工的不算", () => {
+    const list = [a("rowan", "x"), a("rowan", "y"), a("rowan", "y"), a("sorrel", "x"), a("sorrel", "x"), a("sorrel", "x")];
+    expect(usualOf(list, "rowan")).toEqual({ sourceId: "y", workTypeId: "support" });
+    expect(usualOf(list, "sorrel")).toEqual({ sourceId: "x", workTypeId: "support" });
+  });
+  it("次數相同時取較新的（清單是新到舊）", () => {
+    expect(usualOf([a("rowan", "new", "content"), a("rowan", "old", "support")], "rowan")).toEqual({ sourceId: "new", workTypeId: "content" });
+  });
+  it("沒有交辦紀錄時都是 null", () => {
+    expect(usualOf([a("rowan", "x")], "juniper")).toEqual({ sourceId: null, workTypeId: null });
+    expect(usualOf([], "rowan")).toEqual({ sourceId: null, workTypeId: null });
+  });
+});
+
+describe("resultKey 與 visibleAssignments（#76）", () => {
+  it("交件的稱呼依工作類型；不認得的工作類型用 resultOther", () => {
+    expect(["support", "content", "knowledge", "dev", "other"].map(resultKey)).toEqual([
+      "resultReply",
+      "resultPost",
+      "resultKb",
+      "resultCode",
+      "resultOther",
+    ]);
+  });
+  it("交辦清單預設最近 4 件，showAll 時全部", () => {
+    const items = Array.from({ length: 6 }, (_, i) => i);
+    expect(RECENT_COUNT).toBe(4);
+    expect(visibleAssignments(items, false)).toEqual([0, 1, 2, 3]);
+    expect(visibleAssignments(items, true)).toEqual(items);
+    expect(visibleAssignments([0, 1], false)).toEqual([0, 1]);
+  });
+});
+
 describe("readAssign：匯入虛構資料後（寫入之前）", () => {
+  it("manager：每位員工依交辦紀錄帶入平常的來源、工作類型與目前層級", async () => {
+    const data = await read("manager");
+    const brief = data.employees.map(({ id, usualSourceId, workTypeId, level }) => ({ id, usualSourceId, workTypeId, level }));
+    expect(brief).toEqual([
+      { id: "juniper", usualSourceId: "company-site", workTypeId: "dev", level: "item" },
+      { id: "linden", usualSourceId: "company-kb", workTypeId: "knowledge", level: "light" },
+      { id: "rowan", usualSourceId: "support-inbox", workTypeId: "support", level: "item" },
+      { id: "sorrel", usualSourceId: "social-account", workTypeId: "content", level: "item" },
+    ]);
+    expect(data.assignments.every((a) => !Number.isNaN(Date.parse(a.assignedAt)))).toBe(true);
+  });
+
+  it("staff：看不到交辦紀錄的員工沒有平常的來源與工作類型", async () => {
+    const data = await read("staff");
+    const linden = data.employees.find((e) => e.id === "linden")!;
+    expect(linden).toMatchObject({ usualSourceId: null, workTypeId: null, level: "item" });
+    expect(data.employees.find((e) => e.id === "rowan")).toMatchObject({ usualSourceId: "support-inbox", workTypeId: "support" });
+  });
+
   it("manager：來源 4、員工 4、工作類型 4；交辦 44 件新到舊，s14、c11、k13、j06 待驗收，其餘已通過，沒有可模擬的", async () => {
     const data = await read("manager");
     expect(data.canReview).toBe(true);

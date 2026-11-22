@@ -1,4 +1,4 @@
-/* 「交辦」畫面（#38）：交辦表單與交辦清單。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
+/* 「交辦」畫面（#38、#76）：交辦表單與交辦清單。顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
 .crew-assign {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -16,32 +16,104 @@
   gap: 0.5rem;
 }
 
-/* 表單：寬螢幕三欄（repo、員工、工作類型），一句話占滿一列；窄螢幕單欄 */
+/* 表單（#76，設計規格 v3 第 6.6 節）：由上到下一句話、交給誰（單選卡）、工作來源與工作類型（寬螢幕兩欄）、結果說明、交辦 */
 .crew-assign__form {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 1.25rem;
 }
 
-.crew-assign__form h3,
-.crew-assign__field--wide,
-.crew-assign__actions {
-  grid-column: 1 / -1;
+.crew-assign__label {
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .crew-assign__field {
   display: grid;
-  gap: 0.25rem;
+  align-content: start;
+  gap: 0.4rem;
   min-width: 0;
 }
 
 .crew-assign__field select,
 .crew-assign__field input {
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
+  min-height: 44px;
+}
+
+.crew-assign__readonly {
+  border-color: var(--color-surfaceRaised);
+  background: var(--color-surfaceRaised);
+  color: var(--color-text);
 }
 
 .crew-assign__hint {
   font-size: 0.9rem;
+}
+
+.crew-assign__employees {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.crew-assign__employees legend {
+  margin-bottom: 0.6rem;
+  padding: 0;
+}
+
+.crew-assign__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 0.6rem;
+}
+
+.crew-assign__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  padding: 0.85rem;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.crew-assign__card[data-selected] {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.crew-assign__card input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0.2rem 0 0;
+  accent-color: var(--color-primary);
+}
+
+.crew-assign__card-text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crew-assign__pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+
+.crew-assign__result {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.8;
 }
 
 .crew-assign__actions {
@@ -51,10 +123,22 @@
   gap: 0.5rem 0.75rem;
 }
 
-@media (max-width: 640px) {
-  .crew-assign__form {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.crew-assign__actions button {
+  min-height: 48px;
+  padding: 0 1.75rem;
+}
+
+/* 交辦清單：每列標題、AI 員工・交辦日期、狀態徽章；寬螢幕同一列，窄螢幕換行 */
+.crew-assign__list-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+}
+
+.crew-assign__more {
+  justify-self: start;
+  min-height: 44px;
 }
 
 .crew-assign__list {
@@ -66,21 +150,18 @@
 }
 
 .crew-assign__item {
-  display: grid;
-  gap: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1rem;
   border-top: 1px solid var(--color-border);
   padding-top: 0.5rem;
   overflow-wrap: anywhere;
 }
 
-.crew-assign__item-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.5rem;
-}
-
 .crew-assign__item-title {
+  flex: 1 1 260px;
+  min-width: 0;
   font-weight: 700;
 }
 
