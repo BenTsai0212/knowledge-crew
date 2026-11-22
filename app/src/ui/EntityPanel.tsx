@@ -16,8 +16,8 @@ interface Props {
   onSelect(entityId: string): void;
   // 只看它：從它重新開始展開
   onShowOnly(entityId: string): void;
-  // 在問答中問：填進問答頁的輸入框，不送出
-  onAskAbout(entityId: string): void;
+  // 在問答中問：填進問答頁的輸入框，不送出；省略時（沒有問答頁籤，#91）不顯示
+  onAskAbout?(entityId: string): void;
   onOpenSource(passageId: string): void;
   // 經審核進來、目前身分可以撤回的文件（ADR 0007；沒有 canReview 時為空）
   retractions: DocumentRetraction[];
@@ -121,9 +121,11 @@ export function EntityPanel({ graph, entityId, language, onSelect, onShowOnly, o
         )}
       </p>
       <div className="entity-actions">
-        <button type="button" onClick={() => onAskAbout(entityId)}>
-          {s.graphAskAbout}
-        </button>
+        {onAskAbout && (
+          <button type="button" onClick={() => onAskAbout(entityId)}>
+            {s.graphAskAbout}
+          </button>
+        )}
         <button type="button" className="secondary" onClick={() => onShowOnly(entityId)}>
           {s.graphShowOnly}
         </button>

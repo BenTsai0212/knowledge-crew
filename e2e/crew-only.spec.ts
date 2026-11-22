@@ -1,10 +1,12 @@
 // 只展示 AI 員工的 build（VITE_CREW_ONLY=1，#84，crew ADR 0005）：只在這個 build 執行（playwright.config.ts）。
-// 不要求邀請碼、「直接體驗」以主管進入 AI 員工的「今天」、左側欄只有 AI 員工、身分可切換，整個流程沒有任何 /api/* 請求。
+// 不要求邀請碼、「直接體驗」以主管進入 AI 員工的「今天」、左側欄是首頁、圖譜、時間軸與 AI 員工（#91，RFC 0001 的 2026-11-22 修訂）、
+// 首頁與圖譜沒有提問的入口、身分可切換，整個流程沒有任何 /api/* 請求。
 // 部署的是 assets-only（wrangler.crew-demo.jsonc），沒有 /api/*：這裡讓 /api/* 一被呼叫就失敗並記錄下來。
 import { expect, test, type Page } from "@playwright/test";
-import { blockModelDownload, chooseAccount, EVALS_PATH, s, signInPanel, switchIdentity, userCard } from "./support/app";
+import { blockModelDownload, chooseAccount, EVALS_PATH, gotoView, s, signInPanel, switchIdentity, userCard } from "./support/app";
 import { access } from "./support/client";
 import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo } from "./support/crew";
+import type { Cy } from "./support/graph";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（crew-only 不生效）");
 
@@ -25,6 +27,52 @@ test.afterEach(() => {
 
 const directEntry = (page: Page) => signInPanel(page).getByRole("button", { name: ct.common.directEntry, exact: true });
 const navViews = (page: Page) => page.locator(":is(.primary-tabs, .mobile-tabbar, .nav-rail) [data-view]");
+// 左側欄（手機是底部分頁列）的頁籤：knowledge-kit 的首頁、圖譜、時間軸，AI 員工接在後面（#91）
+const VIEWS = ["home", "graph", "timeline", "crew"];
+
+async function expectViews(page: Page): Promise<void> {
+  await expect(navViews(page)).toHaveCount(VIEWS.length);
+  for (const [i, view] of VIEWS.entries()) await expect(navViews(page).nth(i)).toHaveAttribute("data-view", view);
+  for (const label of [s.tabQa, s.tabUpload, s.tabReview, s.tabEvals]) {
+    await expect(page.getByRole("navigation", { name: s.views }).getByRole("button", { name: new RegExp(`^${label}`) })).toHaveCount(0);
+  }
+}
+
+// 沒有橫向捲動（不破版）
+async function expectNoOverflow(page: Page): Promise<void> {
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+}
+
+// 首頁：沒有提問框、預設問題與「問過的問題」，提問框的位置是一行說明
+async function expectHomeWithoutAsk(page: Page): Promise<void> {
+  await expect(page.locator(".home")).toBeVisible();
+  await expect(page.getByText(ct.common.noAsk, { exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: s.questionLabel })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: s.home.commonQuestions })).toHaveCount(0);
+  await expect(page.locator(".home__asked, .home__waiting, .home__updates")).toHaveCount(0);
+  await expect(page.locator(".home__documents")).toBeVisible();
+}
+
+// 圖譜：畫布有節點；回傳一個名稱不重複的節點名稱（沒有時是 null）
+async function openGraph(page: Page): Promise<string | null> {
+  await gotoView(page, "graph");
+  const canvas = ".graph-page .graph-canvas";
+  let labels: string[] = [];
+  await expect(async () => {
+    labels = await page.evaluate((selector) => {
+      const cy = document.querySelector<HTMLElement & { _cyreg?: { cy?: Cy } }>(selector)?._cyreg?.cy;
+      return cy === undefined ? [] : cy.nodes().map((n) => String(n.data("label")));
+    }, canvas);
+    expect(labels.length).toBeGreaterThan(0);
+  }).toPass();
+  return labels.find((name) => labels.filter((x) => x === name).length === 1) ?? null;
+}
+
+async function expectTimeline(page: Page): Promise<void> {
+  await gotoView(page, "timeline");
+  await expect(page.locator("ol.timeline > li").first()).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+}
 
 // 「直接體驗」進入：資料庫載入完成後是 AI 員工的「今天」
 async function enter(page: Page, path = "/"): Promise<void> {
@@ -49,14 +97,12 @@ test.describe("桌機", () => {
     await expect(page.getByText(s.demoPermissions, { exact: true }).first()).toBeVisible();
   });
 
-  test("直接體驗：以主管進入「今天」，有待驗收的工作；左側欄只有 AI 員工，沒有「更換邀請碼」", async ({ page }) => {
+  test("直接體驗：以主管進入「今天」，有待驗收的工作；左側欄是首頁、圖譜、時間軸、AI 員工，沒有「更換邀請碼」", async ({ page }) => {
     await enter(page);
     await expect(page.getByRole("heading", { name: ct.today.awaitingReview, exact: true })).toBeVisible();
-    await expect(navViews(page)).toHaveCount(1);
-    await expect(navViews(page).first()).toHaveAttribute("data-view", "crew");
-    for (const label of [s.tabQa, s.tabUpload, s.tabReview, s.tabEvals]) {
-      await expect(page.getByRole("navigation", { name: s.views }).getByRole("button", { name: new RegExp(`^${label}`) })).toHaveCount(0);
-    }
+    await expect(navViews(page)).toHaveCount(VIEWS.length);
+    await expect(navViews(page).last()).toHaveAttribute("data-view", "crew");
+    await expectViews(page);
     await expect(userCard(page).getByRole("button", { name: s.changeAccessCode, exact: true })).toHaveCount(0);
     await expect(page.getByText(s.fictionalData, { exact: false }).first()).toBeVisible();
   });
@@ -84,7 +130,10 @@ test.describe("桌機", () => {
     await expect(page.getByRole("heading", { name: ct.today.awaitingReview, exact: true })).toBeVisible();
     await switchIdentity(page, guest!.id);
     await expect(page.getByText(ct.today.allEmpty, { exact: true })).toBeVisible();
-    await expect(navViews(page)).toHaveCount(1);
+    await expect(navViews(page)).toHaveCount(VIEWS.length);
+    // 訪客的首頁同樣沒有提問與「有更新」的入口
+    await gotoView(page, "home");
+    await expectHomeWithoutAsk(page);
   });
 
   test("帳號登入：沒有邀請碼欄，按「登入」就進入 AI 員工", async ({ page }) => {
@@ -93,16 +142,48 @@ test.describe("桌機", () => {
     await chooseAccount(panel, access.roles[0].id);
     await panel.getByRole("button", { name: s.signInSubmit, exact: true }).click();
     await expect(crewSections(page)).toBeVisible();
-    await expect(navViews(page)).toHaveCount(1);
+    await expect(navViews(page)).toHaveCount(VIEWS.length);
   });
 
   for (const path of [EVALS_PATH, "/?mode=presentation"]) {
-    test(`網址 ${path} 不改變畫面：仍只有 AI 員工`, async ({ page }) => {
+    test(`網址 ${path} 不改變畫面：頁籤仍是首頁、圖譜、時間軸、AI 員工`, async ({ page }) => {
       await enter(page, path);
-      await expect(navViews(page)).toHaveCount(1);
-      await expect(navViews(page).first()).toHaveAttribute("data-view", "crew");
+      await expect(navViews(page)).toHaveCount(VIEWS.length);
+      await expect(navViews(page).last()).toHaveAttribute("data-view", "crew");
+      await expectViews(page);
     });
   }
+});
+
+test.describe("桌機 1280：首頁、圖譜、時間軸（#91）", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("三個頁都能開，沒有提問的入口，不破版", async ({ page }) => {
+    await enter(page);
+    await expectViews(page);
+
+    await gotoView(page, "home");
+    await expectHomeWithoutAsk(page);
+    await expectNoOverflow(page);
+
+    const name = await openGraph(page);
+    await expectNoOverflow(page);
+    if (name !== null) {
+      await page.getByRole("combobox", { name: s.graphSearch, exact: true }).fill(name);
+      await page.getByRole("option", { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} `) }).click();
+      const panel = page.getByRole("region", { name });
+      await expect(panel.getByRole("button", { name: s.graphShowOnly })).toBeVisible();
+      await expect(panel.getByRole("button", { name: s.graphAskAbout })).toHaveCount(0);
+      // A 鍵（在問答中問）不切到問答
+      await page.keyboard.press("a");
+      await expect(page.locator(".graph-page")).toBeVisible();
+    }
+    await expect(page.getByRole("button", { name: s.graphAskAbout })).toHaveCount(0);
+
+    await expectTimeline(page);
+    await expectNoOverflow(page);
+    await expect(page.getByRole("textbox", { name: s.questionLabel })).toHaveCount(0);
+  });
 });
 
 test.describe("手機", () => {
@@ -111,5 +192,26 @@ test.describe("手機", () => {
   test("直接體驗後是 AI 員工的「今天」", async ({ page }) => {
     await enter(page);
     await expect(crewContent(page).first()).toBeVisible();
+  });
+});
+
+test.describe("手機 390：首頁、圖譜、時間軸（#91）", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("底部分頁列是首頁、圖譜、時間軸、AI 員工；三個頁都能開，沒有提問的入口，不破版", async ({ page }) => {
+    await enter(page);
+    await expectViews(page);
+    await expect(page.locator('.mobile-tabbar [data-view="more"]')).toHaveCount(0);
+
+    await gotoView(page, "home");
+    await expectHomeWithoutAsk(page);
+    await expectNoOverflow(page);
+
+    await openGraph(page);
+    await expect(page.getByRole("button", { name: s.graphAskAbout })).toHaveCount(0);
+    await expectNoOverflow(page);
+
+    await expectTimeline(page);
+    await expectNoOverflow(page);
   });
 });

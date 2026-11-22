@@ -49,8 +49,9 @@ interface Props {
   identity: string;
   language: string;
   onOpenSource(passageId: string): void;
-  // 在問答中問（#199）：把問句填進問答頁的輸入框並切到問答頁，不送出
-  onAskAbout(question: string): void;
+  // 在問答中問（#199）：把問句填進問答頁的輸入框並切到問答頁，不送出。沒有問答頁籤時（crew-only，#91）省略：
+  // 實體面板沒有「在問答中問」、A 鍵不動作、按鍵表不列 A
+  onAskAbout?(question: string): void;
   // 能審核的身分可以從實體面板撤回文件的核准（ADR 0007）；撤回後通知 App 更新待審筆數
   canReview: boolean;
   onRetracted(): void;
@@ -342,7 +343,7 @@ export function GraphPage({ db, identity, language, onOpenSource, onAskAbout, ca
       setKeyboardCurrent(at);
       announcer.say(fill(next.on ? k.onlyOn : k.onlyOff, { name: nameOf(at) }));
     } else if (action === "ask") {
-      onAskAbout(fill(s.askAboutEntity, { name: nameOf(at) }));
+      onAskAbout?.(fill(s.askAboutEntity, { name: nameOf(at) }));
     } else if (expansion.length > 0) {
       // Esc：回到全部，目前的實體保留在鍵盤的「目前」
       setKeyboardCurrent(at);
@@ -430,7 +431,7 @@ export function GraphPage({ db, identity, language, onOpenSource, onAskAbout, ca
       language={language}
       onSelect={onExpand}
       onShowOnly={(id) => setExpansion(only(id), true)}
-      onAskAbout={(id) => onAskAbout(fill(s.askAboutEntity, { name: nameOf(id) }))}
+      onAskAbout={onAskAbout && ((id) => onAskAbout(fill(s.askAboutEntity, { name: nameOf(id) })))}
       onOpenSource={onOpenSource}
       retractions={canReview && retractions?.entityId === selected ? retractions.list : []}
       wide={desktop || stage}
@@ -614,7 +615,7 @@ export function GraphPage({ db, identity, language, onOpenSource, onAskAbout, ca
       >
         <h2 id="graph-help-title">{k.helpTitle}</h2>
         <dl>
-          {KEY_HELP.map((h) => (
+          {KEY_HELP.filter((h) => onAskAbout !== undefined || h.text !== "helpAsk").map((h) => (
             <div key={h.text}>
               <dt>
                 {h.keys.map((key) => (

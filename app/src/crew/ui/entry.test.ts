@@ -5,7 +5,7 @@ import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { CREW_TRANSLATIONS } from "../i18n";
 import { visibleViews, type View } from "../../ui/online-demo";
-import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewOnlyMode, crewSeed, crewStartIdentity, crewTabLabel, hasCrewDemo, withCrew } from "./entry";
+import { CREW_ONLY_ACCESS_CODE, CREW_ONLY_KIT_VIEWS, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, crewTabLabel, entryPoints, hasCrewDemo, withCrew } from "./entry";
 import { CREW_SECTIONS } from "./sections";
 
 const off = { enabled: false };
@@ -38,12 +38,34 @@ describe("withCrew：crew 頁籤顯示的條件", () => {
 });
 
 describe("crew-only（VITE_CREW_ONLY=1，#84）", () => {
-  it("只有 AI 員工的頁籤：身分（canReview）、線上 demo、展示模式都不影響", () => {
+  it("首頁、圖譜、時間軸與 AI 員工（#91）：身分（canReview）、線上 demo、評測台都不影響；問答、上傳、待審、評測台不顯示", () => {
     for (const canReview of [true, false])
       for (const enabled of [true, false])
-        for (const presentation of [true, false]) {
-          expect(withCrew(visibleViews(canReview, { enabled }, presentation, true), true, presentation, true)).toEqual(["crew"]);
+        for (const evals of [true, false]) {
+          const views = withCrew(visibleViews(canReview, { enabled }, false, evals), true, false, true);
+          expect(views).toEqual(["home", "graph", "timeline", "crew"]);
+          for (const hidden of ["qa", "upload", "review", "evals"] satisfies View[]) expect(views).not.toContain(hidden);
         }
+  });
+
+  it("knowledge-kit 的頁籤順序沿用 visibleViews()，AI 員工接在後面", () => {
+    expect(CREW_ONLY_KIT_VIEWS).toEqual(["home", "graph", "timeline"]);
+    expect(withCrew(["timeline", "qa", "graph", "home"] satisfies View[], true, false, true)).toEqual(["timeline", "graph", "home", "crew"]);
+    // 展示模式在 crew-only 時一律關閉（online-demo.ts）；即使傳入展示模式的頁籤，也只留看得到的 knowledge-kit 頁籤
+    expect(withCrew(visibleViews(true, off, true, false), true, true, true)).toEqual(["graph", "crew"]);
+  });
+
+  it("入口：crew-only 沒有問答、待審、上傳的入口，一般 build 與含問答的線上 demo 不變", () => {
+    for (const canReview of [true, false]) {
+      expect(entryPoints(withCrew(visibleViews(canReview, off, false, false), true, false, true))).toEqual({ ask: false, review: false, upload: false });
+      expect(entryPoints(withCrew(visibleViews(canReview, off, false, false), true, false))).toEqual({ ask: true, review: canReview, upload: true });
+      expect(entryPoints(withCrew(visibleViews(canReview, { enabled: true }, false, false), true, false))).toEqual({ ask: true, review: canReview, upload: true });
+    }
+  });
+
+  it("首頁沒有提問框時的一行說明：每個語言都有；沒有翻譯時是空字串，不拋錯", () => {
+    for (const language of clientConfig.client.languages) expect(crewNoAskNote(language)).not.toBe("");
+    expect(crewNoAskNote("xx")).toBe("");
   });
 
   it("沒有 demo.json 的客戶不生效，沿用 knowledge-kit 的頁籤", () => {

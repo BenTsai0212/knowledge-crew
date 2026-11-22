@@ -12,21 +12,45 @@ export const hasCrewDemo: boolean = DEMO_RAW !== null;
 
 /**
  * 只展示 AI 員工的 build（VITE_CREW_ONLY=1，#84）且客戶有 demo.json 時開啟。
- * 沒有 demo.json 的客戶不能只留 AI 員工（畫面會是空的），開關不生效。
+ * 沒有 demo.json 的客戶沒有 AI 員工可以展示，開關不生效。
  */
 export const crewOnlyMode: boolean = crewOnly && hasCrewDemo;
+
+/** crew-only 時留下的 knowledge-kit 頁籤（RFC 0001 的 2026-11-22 修訂，#91）：不呼叫模型的首頁、圖譜、時間軸。 */
+export const CREW_ONLY_KIT_VIEWS: readonly View[] = ["home", "graph", "timeline"];
 
 /**
  * 在 knowledge-kit 的頁籤（visibleViews() 的結果）之後接上 crew。沒有 demo.json 或展示模式時不加；
  * 身分不影響（內容由 RLS 決定），線上 demo 照常顯示（#34 的 `## 決定` 2）。
- * crew-only（#84 的 `## 決定` 3）：只有 AI 員工，knowledge-kit 的頁籤全部不顯示。
+ * crew-only（#84 的 `## 決定` 3，#91 調整）：knowledge-kit 的頁籤只留首頁、圖譜、時間軸（順序沿用 knowledge-kit），AI 員工接在後面；
+ * 問答、上傳、待審、評測台不顯示。
  */
 export function withCrew(views: readonly View[], hasDemo: boolean, presentation: boolean, only = false): View[] {
-  if (hasDemo && only) return ["crew"];
+  if (hasDemo && only) return [...views.filter((v) => CREW_ONLY_KIT_VIEWS.includes(v)), "crew"];
   return hasDemo && !presentation ? [...views, "crew"] : [...views];
 }
 
-/** 登入後的預設頁：crew-only 時是 AI 員工（CrewPage 的預設是「今天」），其他情況沿用 knowledge-kit 的預設頁。 */
+/**
+ * 首頁與圖譜上會切到其他頁籤的入口（#91）：目標頁籤不在 views 中時不顯示。一般 build 與含問答的線上 demo 的頁籤都有問答與上傳，
+ * 待審只給 canReview 的身分（visibleViews()），所以行為不變；crew-only 時沒有問答（提問框、預設問題、「再問一次」、圖譜的「在問答中問」）、
+ * 上傳（「有更新」）與待審（「等你處理」）的入口，提問框換成 noAskNote 的一行說明。
+ */
+export interface EntryPoints {
+  ask: boolean;
+  review: boolean;
+  upload: boolean;
+}
+
+export function entryPoints(views: readonly View[]): EntryPoints {
+  return { ask: views.includes("qa"), review: views.includes("review"), upload: views.includes("upload") };
+}
+
+/** 沒有問答時首頁提問框位置的一行說明（crew-only）；客戶沒有 crew 的翻譯檔時是空字串。 */
+export function crewNoAskNote(language: LanguageCode): string {
+  return CREW_TRANSLATIONS.common?.[language]?.noAsk ?? "";
+}
+
+/** 登入後的預設頁：crew-only 時是 AI 員工（CrewPage 的預設是「今天」；首頁加入今天的工作後再改），其他情況沿用 knowledge-kit 的預設頁。 */
 export const crewDefaultView = (base: View, only: boolean): View => (only ? "crew" : base);
 
 /**
@@ -40,7 +64,7 @@ export function crewStartIdentity(access: Pick<AccessFile, "roles">, only: boole
 
 /**
  * crew-only 時登入用的固定值：App 以「邀請碼不是 null」代表已登入，沿用既有的登入、身分切換流程。
- * 不是 secret，也不會送出：crew-only 沒有任何會呼叫 /api/* 的頁面。
+ * 不是 secret，也不會送出：crew-only 的頁面（首頁、圖譜、時間軸、AI 員工）都沒有會呼叫 /api/* 的入口。
  */
 export const CREW_ONLY_ACCESS_CODE = "crew-only";
 
