@@ -145,7 +145,8 @@ export function withCrewFlowback(graph: Graph, role: RoleId): Graph {
   const demo = readClientJson<DemoFile>("crew/demo.json");
   const rank = new Map(access.visibilityLevels.map((l) => [l.id, l.rank]));
   const uploaders = new Set(access.roles.filter((x) => x.canUpload).map((x) => x.id));
-  const keysOf = (names: string[]) => nameKeys(OWNER_ENTITY_TYPE, names, knowledgeModel.entityTypes);
+  // nameKeys() 只讀 aliasRules；檔案的型別（icon 可省略）與 app 的型別不同，所以轉型
+  const keysOf = (names: string[]) => nameKeys(OWNER_ENTITY_TYPE, names, knowledgeModel.entityTypes as Parameters<typeof nameKeys>[2]);
   const added: Graph["entities"] = [];
   for (const a of demo.assignments) {
     const source = demo.sources.find((x) => x.id === a.source)!;

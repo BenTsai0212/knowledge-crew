@@ -1,10 +1,11 @@
 // 大量節點時的圖譜（#254，docs/design.md「大量節點時的圖譜」）：E2E 只用客戶自己的資料（參考情境）驗證
 // 「門檻以下維持現行（全部節點＋標籤）」與清單模式的分群（#254 決定 4）；門檻以上的三層導覽以單元測試與 app/tests/fixtures/large-graph.ts 驗證。
-// 期望值以 oracle（e2e/support/dataset.ts 的 visibleGraph()）算出每個身分看得到的圖，再套用與 app 相同的 scaleMode()／clusterGraph()（#247）。
+// 期望值以 oracle（e2e/support/dataset.ts 的 visibleGraph()）算出每個身分看得到的圖（有 crew demo 時加上 seed 回流的部門，#92），再套用與 app 相同的 scaleMode()／clusterGraph()（#247）。
 import { expect, test, type Page } from "@playwright/test";
 import { clusterGraph, OTHER_CLUSTER, scaleMode } from "../app/src/graph/clusters";
 import { openApp, openTab, s, switchIdentity } from "./support/app";
 import { access, knowledgeModel, language } from "./support/client";
+import { withCrewFlowback } from "./support/crew";
 import { entityNames, visibleGraph } from "./support/dataset";
 import { waitForGraphIdle, type Cy } from "./support/graph";
 
@@ -26,7 +27,7 @@ test("門檻以下維持現行：畫出看得到的全部節點，沒有層級�
   await openTab(page, s.tabGraph);
   for (const role of access.roles) {
     await switchIdentity(page, role.id);
-    const graph = visibleGraph(role.id);
+    const graph = withCrewFlowback(visibleGraph(role.id), role.id);
     if (!(await graphShown(page, graph.entities.length))) continue;
     const crumbs = page.getByRole("navigation", { name: z.breadcrumb });
     if (scaleMode(graph.entities.length, mobile(page)) === "all") {
@@ -54,7 +55,7 @@ test("清單模式的群組是分群（容器類型／社群偵測／其他）�
   let checked = 0;
   for (const role of access.roles) {
     await switchIdentity(page, role.id);
-    const graph = visibleGraph(role.id);
+    const graph = withCrewFlowback(visibleGraph(role.id), role.id);
     if (!(await graphShown(page, graph.entities.length))) continue;
     const { clusters } = clusterGraph(graph, knowledgeModel);
     const nameOf = (id: string) => {
