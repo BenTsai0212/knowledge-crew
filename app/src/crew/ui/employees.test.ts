@@ -60,7 +60,7 @@ describe("readEmployees：匯入虛構資料後", () => {
 });
 
 describe("readEmployees：員工卡（#83）", () => {
-  it("manager：交件來源、待驗收件數、最近 10 次圓點與一句說明（Sorrel 有少看建議、Rowan 做錯了、Linden 同意少看）", async () => {
+  it("manager：交件來源、待驗收件數、最近 10 次圓點與一句說明（Sorrel 有少看建議、Rowan 做錯了、Linden 同意少看、Juniper 收回少看）", async () => {
     const list = await readEmployees(db, "manager", lang, true);
     const work = (id: string) => list.find((e) => e.id === id)!.workTypes[0];
     expect(work("rowan").source).toEqual({ label: sourceLabel("support-inbox", "Support inbox", lang), kind: "mailbox" });
@@ -68,11 +68,11 @@ describe("readEmployees：員工卡（#83）", () => {
     expect(list.map((e) => e.workTypes[0].awaiting)).toEqual([1, 1, 1, 1]);
     expect(work("rowan").dots).toHaveLength(10);
     expect(work("rowan").dots.filter((d) => d === "wrong")).toHaveLength(1);
-    expect(work("juniper").dots).toHaveLength(7);
+    expect(work("juniper").dots).toHaveLength(10);
     expect(work("sorrel").note).toEqual({ kind: "suggestion" });
     expect(work("rowan").note).toMatchObject({ kind: "event", event: { kind: "reset" } });
     expect(work("linden").note).toMatchObject({ kind: "event", event: { kind: "relax" } });
-    expect(work("juniper").note).toBeNull();
+    expect(work("juniper").note).toEqual({ kind: "event", event: { kind: "revoke", at: "2026-10-24T02:00:00.000Z" } });
   });
 
   it("不能驗收時沒有少看建議", async () => {
@@ -116,7 +116,7 @@ describe("groupEmployees", () => {
 
   it("來源是同一工作類型最常用的；待驗收只算已交件、還沒驗收的；有建議時說明是建議", () => {
     const list = [assignment("a", 1, null), assignment("b", null, null), assignment("b", 2, "accepted"), assignment("c", 1, null, "other")];
-    const [{ workTypes }] = groupEmployees({ employees: [basil], rows: [{ ...docs, suggestion: { count: 10, basisReviewId: "r" } }] }, list, lang);
+    const [{ workTypes }] = groupEmployees({ employees: [basil], rows: [{ ...docs, suggestion: { count: 10, basisReviewId: "r", basisReviewIds: ["r"] } }] }, list, lang);
     expect(workTypes[0].source).toEqual({ label: "b", kind: "mailbox" });
     expect(workTypes[0].awaiting).toBe(1);
     expect(workTypes[0].note).toEqual({ kind: "suggestion" });

@@ -20,6 +20,8 @@ export interface TrustSuggestion {
   count: number;
   /** 依據中最新一筆驗收（同意少看時寫入 basis_review_id） */
   basisReviewId: string;
+  /** 依據的驗收 id，依時間排序（#125：信任頁列出這幾次） */
+  basisReviewIds: string[];
 }
 
 export interface TrustRow {
@@ -114,7 +116,9 @@ export async function readTrust(
       level,
       reviewCount: reviews.length,
       lastReset: autoResets(reviews, decisions).at(-1)?.at ?? null,
-      suggestion: suggestion ? { count: suggestion.basis.length, basisReviewId: suggestion.basis.at(-1)!.id } : null,
+      suggestion: suggestion
+        ? { count: suggestion.basis.length, basisReviewId: suggestion.basis.at(-1)!.id, basisReviewIds: suggestion.basis.map((r) => r.id) }
+        : null,
       timeline,
       note: trustNote(reviews, decisions, level, suggestion !== null, params),
     });

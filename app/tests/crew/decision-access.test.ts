@@ -27,8 +27,8 @@ const decisionIds = (identity: string | null) =>
   );
 
 describe("少看的決定：同一員工 × 同一工作類型才看得到", () => {
-  it("manager 看得到既有的 d01、d02 與 Rowan × knowledge 的新決定", async () => {
-    expect(await decisionIds("manager")).toEqual(["d01", "d02", rowanKnowledge].sort());
+  it("manager 看得到既有的 d01～d04 與 Rowan × knowledge 的新決定", async () => {
+    expect(await decisionIds("manager")).toEqual(["d01", "d02", "d03", "d04", rowanKnowledge].sort());
     expect((await getTrustInputs(db, "manager", "rowan", "knowledge")).decisions).toHaveLength(1);
   });
 

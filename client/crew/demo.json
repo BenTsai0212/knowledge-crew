@@ -744,6 +744,21 @@
       ]
     },
     {
+      "id": "j07", "source": "company-site", "externalRef": "27", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "商品頁的庫存提示", "en": "Stock notice on product pages" }, "assignedBy": "manager", "assignedAt": "2026-09-10T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "39", "submittedAt": "2026-09-10T11:00:00+08:00",
+          "summary": { "zh-TW": "庫存少於五件時顯示「僅剩少量」", "en": "Show \"Only a few left\" when fewer than five are in stock" },
+          "body": { "zh-TW": "庫存少於五件時顯示「僅剩少量」。請看「要看的重點」。", "en": "Show \"Only a few left\" when fewer than five are in stock. See the points to review." },
+          "points": [{ "zh-TW": "庫存為零時的文字", "en": "Text when out of stock" }],
+          "changes": [{ "path": "src/product/StockNotice.tsx", "summary": { "zh-TW": "新增提示", "en": "Add the notice" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-10T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-10T11:20:00+08:00" }],
+          "review": { "id": "j07-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-10T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
       "id": "j02", "source": "company-site", "externalRef": "22", "workType": "dev", "employee": "juniper",
       "title": { "zh-TW": "商品頁的規格表", "en": "Specification table on product pages" }, "assignedBy": "manager", "assignedAt": "2026-09-16T09:00:00+08:00",
       "works": [
@@ -768,6 +783,21 @@
       ]
     },
     {
+      "id": "j08", "source": "company-site", "externalRef": "28", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "結帳頁的運費說明", "en": "Shipping note on the checkout page" }, "assignedBy": "manager", "assignedAt": "2026-09-22T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "40", "submittedAt": "2026-09-22T11:00:00+08:00",
+          "summary": { "zh-TW": "結帳頁顯示免運門檻與差額", "en": "Show the free shipping threshold and the remaining amount at checkout" },
+          "body": { "zh-TW": "結帳頁顯示免運門檻與差額。請看「要看的重點」。", "en": "Show the free shipping threshold and the remaining amount at checkout. See the points to review." },
+          "points": [{ "zh-TW": "已達免運時的文字", "en": "Text once free shipping applies" }],
+          "changes": [{ "path": "src/checkout/ShippingNote.tsx", "summary": { "zh-TW": "新增運費說明", "en": "Add the shipping note" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-22T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-22T11:20:00+08:00" }],
+          "review": { "id": "j08-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-22T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
       "id": "j03", "source": "company-site", "externalRef": "23", "workType": "dev", "employee": "juniper",
       "title": { "zh-TW": "門市地圖頁的載入速度", "en": "Load time of the store map page" }, "assignedBy": "manager", "assignedAt": "2026-09-28T09:00:00+08:00",
       "works": [
@@ -779,6 +809,21 @@
           "changes": [{ "path": "src/stores/StoreMap.tsx", "summary": { "zh-TW": "延後載入地圖", "en": "Lazy-load the map" } }],
           "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-09-28T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-09-28T11:20:00+08:00" }],
           "review": { "id": "j03-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-28T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j09", "source": "company-site", "externalRef": "29", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "門市頁的營業時間", "en": "Opening hours on the store pages" }, "assignedBy": "manager", "assignedAt": "2026-10-04T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "41", "submittedAt": "2026-10-04T11:00:00+08:00",
+          "summary": { "zh-TW": "門市頁改從設定檔讀取營業時間", "en": "Read store opening hours from config" },
+          "body": { "zh-TW": "門市頁改從設定檔讀取營業時間。請看「要看的重點」。", "en": "Read store opening hours from config. See the points to review." },
+          "points": [{ "zh-TW": "公休日的顯示", "en": "Display on closing days" }],
+          "changes": [{ "path": "src/stores/OpeningHours.tsx", "summary": { "zh-TW": "改讀設定檔", "en": "Read from config" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-04T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-04T11:20:00+08:00" }],
+          "review": { "id": "j09-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-04T15:00:00+08:00" }
         }
       ]
     },
@@ -803,6 +848,21 @@
           "changes": [{ "path": "src/admin/OrderExport.tsx", "summary": { "zh-TW": "依確認的欄位修改", "en": "Use the confirmed columns" } }],
           "checks": [{ "name": "ci", "status": "pass", "checkedAt": "2026-10-11T10:20:00+08:00" }],
           "review": { "id": "j04-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-11T14:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j10", "source": "company-site", "externalRef": "30", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "官網的訂閱電子報表單", "en": "Newsletter sign-up form on the site" }, "assignedBy": "manager", "assignedAt": "2026-10-16T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "42", "submittedAt": "2026-10-16T11:00:00+08:00",
+          "summary": { "zh-TW": "頁尾加入訂閱電子報的表單", "en": "Add a newsletter sign-up form to the footer" },
+          "body": { "zh-TW": "頁尾加入訂閱電子報的表單。請看「要看的重點」。", "en": "Add a newsletter sign-up form to the footer. See the points to review." },
+          "points": [{ "zh-TW": "email 格式錯誤時的提示", "en": "Message for an invalid email address" }],
+          "changes": [{ "path": "src/layout/NewsletterForm.tsx", "summary": { "zh-TW": "新增表單", "en": "Add the form" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-16T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-16T11:20:00+08:00" }],
+          "review": { "id": "j10-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-16T15:00:00+08:00" }
         }
       ]
     },
@@ -853,7 +913,9 @@
   ],
   "levelDecisions": [
     { "id": "d01", "employee": "rowan", "workType": "support", "decision": "relax", "basisReview": "s10-1", "decidedBy": "manager", "decidedAt": "2026-10-09T10:00:00+08:00" },
-    { "id": "d02", "employee": "linden", "workType": "knowledge", "decision": "relax", "basisReview": "k09-1", "decidedBy": "manager", "decidedAt": "2026-10-13T10:00:00+08:00" }
+    { "id": "d02", "employee": "linden", "workType": "knowledge", "decision": "relax", "basisReview": "k09-1", "decidedBy": "manager", "decidedAt": "2026-10-13T10:00:00+08:00" },
+    { "id": "d03", "employee": "juniper", "workType": "dev", "decision": "relax", "basisReview": "j10-1", "decidedBy": "manager", "decidedAt": "2026-10-19T10:00:00+08:00" },
+    { "id": "d04", "employee": "juniper", "workType": "dev", "decision": "revoke", "decidedBy": "manager", "decidedAt": "2026-10-24T10:00:00+08:00" }
   ],
   "simulations": [
     {

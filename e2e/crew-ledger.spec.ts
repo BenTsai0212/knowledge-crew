@@ -42,7 +42,16 @@ test.describe("桌機 1280", () => {
     await filter(page, ct.ledger.filterEvent).selectOption({ label: ct.ledger.eventLevel });
     await expect(rows(page)).not.toHaveCount(0);
     const n = await rows(page).count();
-    for (let i = 0; i < n; i++) await expect(rows(page).nth(i)).toHaveAttribute("data-tone", "level");
+    // 提出少看建議也在這個篩選（#125），它不改變層級，不是灰底；經手是「依規則自動」
+    for (let i = 0; i < n; i++) {
+      const row = rows(page).nth(i);
+      if ((await row.getAttribute("data-kind")) === "proposed") await expect(row).not.toHaveAttribute("data-tone", /./);
+      else await expect(row).toHaveAttribute("data-tone", "level");
+    }
+    const proposed = rows(page).filter({ hasText: ct.ledger.kindProposed });
+    await expect(proposed).not.toHaveCount(0);
+    await expect(proposed.first().locator("td").last()).toHaveText(ct.ledger.actorRule);
+    await expect(rows(page).filter({ hasText: ct.ledger.kindRevoke })).not.toHaveCount(0);
     await expect(rows(page).filter({ hasText: ct.ledger.kindAutoReset })).toHaveCount(1);
     await expect(rows(page).filter({ hasText: ct.ledger.kindRelax })).not.toHaveCount(0);
     await expect(rows(page).first().locator(".crew-ledger__kind")).toHaveCSS("font-weight", "700");

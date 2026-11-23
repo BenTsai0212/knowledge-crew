@@ -55,7 +55,7 @@ describe("讀取（匯入 demo.json 後）", () => {
 
   it("listAssignments：新到舊，含最新輪次與結果；等待驗收的 latestVerdict 為 null", async () => {
     const list = await listAssignments(db, "manager");
-    expect(list).toHaveLength(44);
+    expect(list).toHaveLength(48);
     const times = list.map((a) => Date.parse(a.assignedAt));
     expect(times).toEqual([...times].sort((x, y) => y - x));
     const byId = Object.fromEntries(list.map((a) => [a.id, a]));
@@ -84,7 +84,7 @@ describe("讀取（匯入 demo.json 後）", () => {
 
   it("listReviews：依時間排序，可只取某交辦", async () => {
     const all = await listReviews(db, "manager");
-    expect(all).toHaveLength(48);
+    expect(all).toHaveLength(52);
     const times = all.map((r) => Date.parse(r.decidedAt));
     expect(times).toEqual([...times].sort((x, y) => x - y));
     expect((await listReviews(db, "manager", { assignmentId: "k07" })).map((r) => [r.id, r.reason])).toEqual([
@@ -127,9 +127,10 @@ describe("讀取（匯入 demo.json 後）", () => {
     expect(t.suggestion!.basis.map((r) => r.id)).not.toContain("c01-2");
   });
 
-  it("Juniper × dev：item，驗收不足 min 次沒有建議", async () => {
+  it("Juniper × dev：同意少看後又收回，item；收回之後還沒有驗收，沒有建議", async () => {
     const t = await trust(db, "manager", "juniper", "dev");
-    expect(t.reviews).toHaveLength(7);
+    expect(t.reviews).toHaveLength(11);
+    expect((await getTrustInputs(db, "manager", "juniper", "dev")).decisions.map((d) => d.decision)).toEqual(["relax", "revoke"]);
     expect(t.level).toBe("item");
     expect(t.suggestion).toBeNull();
   });
@@ -160,7 +161,7 @@ describe("寫入", () => {
   it("manager：交辦、交件、驗收、少看的決定，寫入後讀回一致；身分與時間由資料庫填入", async () => {
     const before = Date.now();
     const a = await createAssignment(db, "manager", { sourceId: "company-site", title: "New card", workTypeId: "dev", employeeId: "juniper" });
-    expect(a.externalRef).toBe("27");
+    expect(a.externalRef).toBe("31");
     const summary = (await listAssignments(db, "manager")).find((x) => x.id === a.id)!;
     expect(summary).toMatchObject({ title: "New card", assignedBy: "manager", latestRound: null, latestVerdict: null });
     expect(Date.parse(summary.assignedAt)).toBeGreaterThanOrEqual(before - 1000);
@@ -228,7 +229,7 @@ describe("外部編號（#57）", () => {
   });
 
   it("repo 類：交辦產生下一個 Issue 編號、交件產生下一個 PR 編號", async () => {
-    expect(await nextExternalRef(db, "manager", "company-site")).toBe("39");
+    expect(await nextExternalRef(db, "manager", "company-site")).toBe("43");
     // 看不到的來源沒有編號
     expect(await nextExternalRef(db, "staff", "company-site")).toBeNull();
   });

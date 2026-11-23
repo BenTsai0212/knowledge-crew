@@ -51,7 +51,7 @@ interface DemoSource {
 interface Demo {
   sources: DemoSource[];
   employees: { id: string; displayName: string }[];
-  assignments: { employee: string; workType: string; source: string }[];
+  assignments: { id: string; employee: string; workType: string; source: string; title: Record<string, string> }[];
   simulations: { employee: string; workType: string; replies: { body: Record<string, string> }[] }[];
 }
 export const demo: Demo = hasCrewDemo
@@ -67,6 +67,8 @@ export const sourceOf = (employee: string, workType: string) => {
   const id = demo.assignments.find((a) => a.employee === employee && a.workType === workType)!.source;
   return demo.sources.find((s) => s.id === id)!;
 };
+// 交辦的標題（目前語言）
+export const assignmentTitle = (id: string) => demo.assignments.find((a) => a.id === id)!.title[language];
 // 模擬交件第一輪的全文
 export const firstReplyBody = (employee: string, workType: string) =>
   demo.simulations.find((x) => x.employee === employee && x.workType === workType)!.replies[0].body[language];
