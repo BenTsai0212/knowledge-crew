@@ -1,0 +1,51 @@
+{
+  "issue": {
+    "number": 7,
+    "state": "closed",
+    "state_reason": "completed",
+    "labels": [{ "name": "type:feat" }],
+    "created_at": "2026-01-05T01:00:00Z",
+    "closed_at": "2026-01-05T06:00:00Z"
+  },
+  "timeline": [
+    { "id": 101, "event": "labeled", "created_at": "2026-01-05T01:00:00Z", "label": { "name": "type:feat" } },
+    { "id": 102, "event": "labeled", "created_at": "2026-01-05T01:01:00Z", "label": { "name": "agent:ready" } },
+    { "id": 103, "event": "labeled", "created_at": "2026-01-05T01:02:00Z", "label": { "name": "agent:working" } },
+    { "id": 104, "event": "unlabeled", "created_at": "2026-01-05T01:02:00Z", "label": { "name": "agent:ready" } },
+    { "id": 105, "event": "cross-referenced", "created_at": "2026-01-05T02:00:00Z" },
+    { "id": 106, "event": "unlabeled", "created_at": "2026-01-05T02:01:00Z", "label": { "name": "agent:working" } },
+    { "id": 107, "event": "closed", "created_at": "2026-01-05T06:00:00Z", "state_reason": "completed" }
+  ],
+  "comments": [
+    {
+      "id": 201,
+      "body": "## 開工（#7）\n\n- session：cse_example0001",
+      "created_at": "2026-01-05T01:02:30Z",
+      "user": { "login": "example-owner" },
+      "author_association": "OWNER"
+    }
+  ],
+  "pulls": [
+    {
+      "pull": {
+        "number": 8,
+        "state": "closed",
+        "body": "## 為什麼\n\n虛構的示範。\n\nCloses #7",
+        "created_at": "2026-01-05T02:00:00Z",
+        "closed_at": "2026-01-05T06:00:00Z",
+        "merged_at": "2026-01-05T06:00:00Z",
+        "labels": [],
+        "head": { "sha": "0000000000000000000000000000000000000008" }
+      },
+      "timeline": [
+        { "id": 301, "event": "labeled", "created_at": "2026-01-05T03:00:00Z", "label": { "name": "changes-requested" } },
+        { "id": 302, "event": "unlabeled", "created_at": "2026-01-05T04:00:00Z", "label": { "name": "changes-requested" } }
+      ],
+      "checkRuns": [
+        { "id": 401, "name": "checks", "status": "completed", "conclusion": "failure" },
+        { "id": 402, "name": "checks", "status": "completed", "conclusion": "success" },
+        { "id": 403, "name": "e2e", "status": "completed", "conclusion": "skipped" }
+      ]
+    }
+  ]
+}
