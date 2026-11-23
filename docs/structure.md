@@ -242,6 +242,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `demo/texts.ts`：`demoText()`：虛構資料的文字換成目前語言
 - `demo/types.ts`：`demo.json` 的結構
 - `demo/validate.ts`：`demo.json` 的驗證
+- `github/issue.ts`：交辦 → GitHub Issue 的轉換純函式（#111）：`assignmentToIssue()`（`{ title, body, labels }`，本文沿用 `.github/ISSUE_TEMPLATE/feature.md` 的標題，標籤不含 `agent:ready`）、`planFirstOption()`（高風險一律先提計畫、不能取消）、`dispatchSteps()`（建立 → 讀回比對 → 單獨加 `agent:ready`）、`assignmentIdOf()`；工作類型的對照表由呼叫的一方傳入
+- `github/post-check.ts`：平台寫進 GitHub 前的檢查純函式（#111）：email、個人路徑、禁用名稱（規則與 `tools/workflow/check-sensitive.mjs` 一致，清單由呼叫的一方傳入，沒有時拒絕），留言不得以 `## 決定`、`## 修正要求` 開頭；只回報欄位、行號與種類（測試在 `post-check.test.ts`，與 `tools/workflow/` 共用案例）
+- `github/types.ts`：平台與 GitHub 之間共用的型別
 - `i18n.ts`：crew 介面文字唯一的讀取模組（`crewStrings()`；一個畫面一份翻譯檔，`CrewScreenKeys` 一行一個畫面）
 - `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題、段落與 `#owner` 的部門名稱，不是一個知識庫條目時是 null）、`flowbackDocumentId()`、`flowbackOwnerPendingId()`（測試在 `flowback.test.ts`）
 - `knowledge/origin.ts`：回流文件的來源：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、哪一次驗收）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）
@@ -416,6 +419,7 @@ workflow 工具（Node，自帶 `package.json`；各工具的參數見 `tools/wo
 - `personal-paths.test.mjs`：檢查開發流程工具的檔案沒有 `/Users/<名稱>`、`/home/<名稱>` 形式的個人路徑（#96，fork 後要改的地方見 `docs/workflow/fork.md`）
 - `read-trusted.mjs`：讀取 Issue 與 PR，只輸出可信身分的內容（#127）
 - `runner/`：自動化模組的 runner（ADR 0003，指令見 `AGENTS.md` 第 2 節）
+- `testdata/post-check-cases.json`：貼出前檢查的共用測試案例，`post-check-cases.test.mjs` 與 `app/src/crew/github/post-check.test.ts` 都讀（#111）
 
 ### `.claude/`
 

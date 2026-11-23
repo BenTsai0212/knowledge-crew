@@ -1,0 +1,16 @@
+{
+  "_說明": "貼出前檢查的共用測試案例（#111）：tools/workflow/check-sensitive.mjs 的 scanText() 與 app/src/crew/github/post-check.ts 讀同一份，結果必須相同。本檔也在 repo 的掃描範圍內，所以會命中的片段以佔位寫成：{AT} 換成 @，{USERS} 換成 /Users，{HOME} 換成 /home。names 是虛構的禁用名稱；expect 的 kind 是 email、personalPath、deniedName。",
+  "cases": [
+    { "name": "沒有問題", "text": "## 計畫\n\n一般內容，沒有 email 或路徑", "names": ["Zorblax"], "expect": [] },
+    { "name": "個人 email", "text": "聯絡 alice{AT}mail.co", "names": ["Zorblax"], "expect": [{ "line": 1, "kind": "email" }] },
+    { "name": "放行的 email", "text": "user{AT}example.com\nnoreply{AT}anthropic.com\n12345+someone{AT}users.noreply.github.com\ngit{AT}github.com:owner/repo.git\nuser{AT}host.test\nuser{AT}domain.tld", "names": ["Zorblax"], "expect": [] },
+    { "name": "看起來像放行、其實不是的 email", "text": "user{AT}notexample.com\nuser{AT}example.com.evil.co\nnoreply2{AT}corp.co", "names": ["Zorblax"], "expect": [{ "line": 1, "kind": "email" }, { "line": 2, "kind": "email" }, { "line": 3, "kind": "email" }] },
+    { "name": "套件版本不是 email", "text": "npm i pkg{AT}1.2.3\n{AT}scope/pkg{AT}2.0.0", "names": ["Zorblax"], "expect": [] },
+    { "name": "個人路徑", "text": "第一行\n{USERS}/alice/Projects\n`{HOME}/bob`", "names": ["Zorblax"], "expect": [{ "line": 2, "kind": "personalPath" }, { "line": 3, "kind": "personalPath" }] },
+    { "name": "不算個人路徑", "text": "{USERS}/<名稱>/Projects\n{HOME}/runner/work/repo\n~/.agent-runner\n/usr/local/bin", "names": ["Zorblax"], "expect": [] },
+    { "name": "runner 開頭的其他名稱照常比對", "text": "{HOME}/runner2\n{HOME}/runner.x", "names": ["Zorblax"], "expect": [{ "line": 1, "kind": "personalPath" }, { "line": 2, "kind": "personalPath" }] },
+    { "name": "禁用名稱不分大小寫、以子字串比對", "text": "沒有\nthe zorblaxian app\nQUUX LABS 合作\nquux-labs 不算", "names": ["Zorblax", "quux labs"], "expect": [{ "line": 2, "kind": "deniedName" }, { "line": 3, "kind": "deniedName" }] },
+    { "name": "同一行可同時命中三種", "text": "ok\n{USERS}/alice ZORBLAX x{AT}y.co", "names": ["Zorblax"], "expect": [{ "line": 2, "kind": "email" }, { "line": 2, "kind": "personalPath" }, { "line": 2, "kind": "deniedName" }] },
+    { "name": "程式碼區塊也檢查；CRLF 換行", "text": "```bash\r\ncd {USERS}/alice\r\n```", "names": ["Zorblax"], "expect": [{ "line": 2, "kind": "personalPath" }] }
+  ]
+}
