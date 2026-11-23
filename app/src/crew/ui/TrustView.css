@@ -201,3 +201,162 @@
     font-size: 0;
   }
 }
+
+/* 總覽報表（#121）：桌機是表格，一列一個「員工 × 工作類型」，整列可以點；手機改成每列一張卡片，不橫向捲動 */
+.crew-trust-report {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.crew-trust-report__heading {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.crew-trust-report__heading h3,
+.crew-trust-report__heading p {
+  margin: 0;
+}
+
+.crew-trust-report__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.crew-trust-report__table th,
+.crew-trust-report__table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.crew-trust-report__table thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  vertical-align: bottom;
+}
+
+.crew-trust-report__table .crew-trust-report__num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.crew-trust-report__reason {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.crew-trust-report__row {
+  cursor: pointer;
+}
+
+.crew-trust-report__row:hover {
+  background: var(--color-surface);
+}
+
+.crew-trust-report__name {
+  min-width: 10rem;
+  font-weight: 600;
+}
+
+/* 層級徽章與比例不換行（桌機 1280 時「逐項看」曾在徽章內換行） */
+.crew-trust-report__table .crew-level-badge,
+.crew-trust-report__table .crew-trust-report__num {
+  white-space: nowrap;
+}
+
+.crew-trust-report__table thead .crew-trust-report__num {
+  white-space: normal;
+}
+
+.crew-trust-report__name button.link {
+  color: var(--color-text);
+  font-weight: inherit;
+}
+
+.crew-trust-report__count {
+  min-width: 1.5rem;
+  text-align: end;
+}
+
+.crew-trust-report__changes {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.crew-trust-report__changes .muted {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .crew-trust-report__table,
+  .crew-trust-report__table tbody,
+  .crew-trust-report__table tr,
+  .crew-trust-report__table th,
+  .crew-trust-report__table td {
+    display: block;
+  }
+
+  /* 欄名改由每格的 data-label 顯示；表頭只給螢幕閱讀器 */
+  .crew-trust-report__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .crew-trust-report__table tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .crew-trust-report__row {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+  }
+
+  .crew-trust-report__table .crew-trust-report__name {
+    padding: 0.25rem 0 0.5rem;
+  }
+
+  .crew-trust-report__table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .crew-trust-report__table tr > :last-child {
+    border-bottom: none;
+  }
+
+  .crew-trust-report__table td::before {
+    content: attr(data-label);
+    color: var(--color-textMuted);
+    font-size: 0.85rem;
+    text-align: start;
+  }
+
+  .crew-trust-report__table td.crew-trust-report__num {
+    text-align: end;
+  }
+
+  .crew-trust-report__changes {
+    justify-items: end;
+    text-align: end;
+  }
+
+  .crew-trust-report__count {
+    min-height: 44px;
+  }
+}

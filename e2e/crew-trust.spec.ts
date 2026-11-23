@@ -1,8 +1,9 @@
 // 「信任」時間軸（#75，設計規格 v3 第 6.4 節）：四位員工 demo 開始時的狀態、staff 看到的文字，與手機 390 不破版。
+// 最上方的總覽報表（#121）：欄位、點一列或退回的數字追到工作帳本並套用篩選、清除篩選，與三種身分、手機 390 的卡片。
 // 每個 test 重新開頁，資料庫在瀏覽器記憶體中從 migration 與虛構資料重建。只在有 crew/demo.json 的客戶執行。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
-import { crewFill, ct, gotoCrewSection, hasCrewDemo, openCrew, trustRow } from "./support/crew";
+import { crewContent, crewFill, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, trustRow, workTypeName } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -89,4 +90,111 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   for (const band of await page.locator(".crew-trust__band").all()) {
     expect(await band.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
   }
+});
+
+// ---- 總覽報表（#121） ----
+const report = (page: Page) => page.getByRole("table", { name: ct.trust.reportLabel });
+const reportRows = (page: Page) => report(page).locator("tbody").getByRole("row");
+const reportRow = (page: Page, employee: string, workType: string) =>
+  report(page).locator(`tbody tr[data-employee="${employee}"][data-work-type="${workType}"]`);
+const ledgerRows = (page: Page) => page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row");
+const rowMeta = (employee: string, workType: string) => crewFill(ct.ledger.eventMeta, { employee: employeeName(employee), workType: workTypeName(workType) });
+// 工作帳本頂端的「目前的篩選」
+const activeFilter = (page: Page) => crewContent(page).locator(".crew-ledger__active");
+const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+test.describe("總覽報表（主管，桌機 1280）", () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+  test.beforeEach(async ({ page }) => openTrustAs(page, "manager"));
+
+  test("在時間軸上方；欄位與 Rowan 的數字（三種退回原因分開）", async ({ page }) => {
+    const headers = [
+      ct.trust.reportColumnRow,
+      ct.trust.reportColumnReviews,
+      ct.trust.reportColumnFirstPass,
+      ct.trust.reportColumnWrong,
+      ct.trust.reportColumnDifferent,
+      ct.trust.reportColumnProcess,
+      ct.trust.reportColumnLevel,
+      ct.trust.reportColumnChanges,
+    ];
+    // 退回原因的欄名前有圓點（做錯了是 ×），所以比對包含
+    await expect(report(page).locator("thead th")).toContainText(headers);
+    await expect(report(page).locator("thead th")).toHaveCount(headers.length);
+    await expect(reportRows(page)).toHaveCount(4);
+    const reportBox = (await report(page).boundingBox())!;
+    const firstCard = (await trustRow(page, "rowan", "support").boundingBox())!;
+    expect(reportBox.y).toBeLessThan(firstCard.y);
+    const rowan = reportRow(page, "rowan", "support");
+    await expect(rowan.getByRole("cell")).toHaveText([
+      "15",
+      crewFill(ct.trust.reportFirstPass, { percent: 85, passed: 11, total: 13 }),
+      "1",
+      "1",
+      "0",
+      ct.trust.levelItem,
+      /.+/,
+    ]);
+    await expect(rowan).toContainText(crewFill(ct.trust.reportLastChange, { date: "10/15", change: ct.trust.reportChangeAutoReset }));
+    expect(await noHorizontalScroll(page)).toBe(true);
+  });
+
+  test("點一列 → 工作帳本篩選成該員工＋該工作類型；清除後回到全部", async ({ page }) => {
+    await reportRow(page, "rowan", "support").getByRole("cell").first().click();
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionLedger, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(activeFilter(page)).toContainText(ct.ledger.activeFilter);
+    await expect(activeFilter(page)).toContainText(employeeName("rowan"));
+    await expect(activeFilter(page)).toContainText(workTypeName("support"));
+    await expect(ledgerRows(page).first()).toBeVisible();
+    const n = await ledgerRows(page).count();
+    for (let i = 0; i < n; i++) await expect(ledgerRows(page).nth(i)).toContainText(rowMeta("rowan", "support"));
+    await crewContent(page).getByRole("button", { name: ct.ledger.clearFilter, exact: true }).click();
+    await expect(activeFilter(page)).toHaveCount(0);
+    await expect(ledgerRows(page).filter({ hasNotText: rowMeta("rowan", "support") }).first()).toBeVisible();
+  });
+
+  test("點退回的數字 → 只看該員工＋該工作類型的退回，筆數與報表相同", async ({ page }) => {
+    const sorrel = reportRow(page, "sorrel", "content");
+    const wrong = sorrel.getByRole("cell").nth(2);
+    const process = sorrel.getByRole("cell").nth(4);
+    const total = Number(await wrong.innerText()) + Number(await process.innerText()) + Number(await sorrel.getByRole("cell").nth(3).innerText());
+    await wrong.getByRole("button").click();
+    await expect(activeFilter(page)).toContainText(ct.ledger.eventReturned);
+    await expect(ledgerRows(page)).toHaveCount(total);
+    for (let i = 0; i < total; i++) {
+      await expect(ledgerRows(page).nth(i)).toHaveAttribute("data-kind", "returned");
+      await expect(ledgerRows(page).nth(i)).toContainText(rowMeta("sorrel", "content"));
+    }
+  });
+});
+
+test("總覽報表：staff 只有自己專案的兩列", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTrustAs(page, "staff");
+  await expect(reportRows(page)).toHaveCount(2);
+  await expect(reportRow(page, "rowan", "support")).toBeVisible();
+  await expect(reportRow(page, "sorrel", "content")).toBeVisible();
+});
+
+test("總覽報表：guest 是空狀態，沒有報表", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTrustAs(page, "guest");
+  await expect(page.getByText(ct.trust.empty, { exact: true })).toBeVisible();
+  await expect(report(page)).toHaveCount(0);
+});
+
+test("總覽報表：手機 390 每列一張卡片，沒有水平捲動；點卡片追到工作帳本", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTrustAs(page, "manager");
+  await expect(reportRows(page)).toHaveCount(4);
+  expect(await noHorizontalScroll(page)).toBe(true);
+  const table = (await report(page).boundingBox())!;
+  for (const row of await reportRows(page).all()) {
+    const box = (await row.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(table.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(table.x + table.width + 0.5);
+  }
+  await reportRow(page, "linden", "knowledge").getByRole("cell").first().click();
+  await expect(ledgerRows(page).first()).toContainText(rowMeta("linden", "knowledge"));
+  expect(await noHorizontalScroll(page)).toBe(true);
 });

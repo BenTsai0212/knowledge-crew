@@ -1,5 +1,7 @@
 # GitHub 狀態對照
 
+> 本文件是參考用：連 GitHub 與連線後的畫面不在本 repo 實作，由另外的專案負責（[RFC 0001](rfcs/0001-project-charter.md) 2026-11-23 修訂）。
+
 平台從 GitHub 讀回一張交辦（一張 Issue）的狀態時，用的資料格式與對照規則（#110；決定見 #108 的第 5、8 點與 D6、D11）。程式是 `app/src/crew/github/state.ts` 的 `deriveGithubState()`，本文件與它的單元測試（`state.test.ts`）一致；改其中一方時另一方一起改。
 
 - **GitHub 為準**：平台不自己記狀態的變化，每次讀回都從 GitHub 的現況與時間軸**重新推出**（不累加差異，D6）。

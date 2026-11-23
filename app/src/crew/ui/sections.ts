@@ -5,6 +5,7 @@ import type { ComponentType } from "react";
 import type { Database } from "../../db/database";
 import type { LanguageCode } from "../../client/types";
 import type { CrewScreenKeys } from "../i18n";
+import type { LedgerFilter } from "./ledger";
 
 export const CREW_SECTIONS = [
   { id: "employees", label: "sectionEmployees" },
@@ -24,6 +25,8 @@ export interface CrewTarget {
   section: CrewSection;
   employeeId?: string;
   assignmentId?: string;
+  /** 「工作帳本」的篩選（#121：信任頁的總覽報表點一列或退回的數字） */
+  ledgerFilter?: LedgerFilter;
 }
 
 /** 每個畫面元件收到的 props；identity 與 App.tsx 的身分相同（目前一定有值）。 */
@@ -37,6 +40,8 @@ export interface CrewScreenProps {
   employeeId?: string;
   /** 「工作與驗收」選取的交辦（#92：原文的「來自 AI 員工 ○○」；#96：首頁的今天的工作） */
   assignmentId?: string;
+  /** 「工作帳本」一開始的篩選（#121） */
+  ledgerFilter?: LedgerFilter;
   /** 打開知識庫的原文（#92：回流的「已收進知識庫」；App 提供，沒有時不顯示「打開原文」） */
   onOpenSource?: (passageId: string) => void;
   /** 寫入後通知 App 重新讀取首頁與側欄的待驗收件數（#96；單獨使用畫面時沒有） */

@@ -31,5 +31,7 @@
   "actorRule": "Automatic, by rule",
   "eventMeta": "{employee} · {workType}",
   "noAssignment": "—",
-  "loadMore": "Load earlier records"
+  "loadMore": "Load earlier records",
+  "activeFilter": "Current filter",
+  "clearFilter": "Clear filter"
 }
