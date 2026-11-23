@@ -60,19 +60,18 @@ function kindText(event: LedgerEvent, t: CrewTexts<"ledger">, language: Language
   }
 }
 
-export function LedgerView({ db, identity, language }: CrewScreenProps) {
+export function LedgerView({ db, identity, language, ledgerFilter }: CrewScreenProps) {
   const t = crewStrings("ledger", language);
   const [state, setState] = useState<State>({ kind: "loading" });
-  // 篩選與顯示筆數只存在元件 state，不寫瀏覽器儲存
-  const [employeeId, setEmployeeId] = useState<string | null>(null);
-  const [eventFilter, setEventFilter] = useState<LedgerEventFilter>("all");
+  // 篩選與顯示筆數只存在元件 state，不寫瀏覽器儲存；一開始的篩選來自信任頁的總覽報表（#121）
+  const [employeeId, setEmployeeId] = useState<string | null>(ledgerFilter?.employeeId ?? null);
+  const [workTypeId, setWorkTypeId] = useState<string | null>(ledgerFilter?.workTypeId ?? null);
+  const [eventFilter, setEventFilter] = useState<LedgerEventFilter>(ledgerFilter?.event ?? "all");
   const [limit, setLimit] = useState(LEDGER_PAGE_SIZE);
 
   useEffect(() => {
     let current = true;
     setState({ kind: "loading" });
-    setEmployeeId(null);
-    setEventFilter("all");
     setLimit(LEDGER_PAGE_SIZE);
     readLedger(db, identity, language).then(
       (events) => current && setState({ kind: "ready", events }),
@@ -113,12 +112,25 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
     );
   }
 
-  const filtered = filterLedger(events, { employeeId, event: eventFilter });
+  const filtered = filterLedger(events, { employeeId, workTypeId, event: eventFilter });
   const shown = filtered.slice(0, limit);
   const changeFilter = (apply: () => void) => {
     apply();
     setLimit(LEDGER_PAGE_SIZE);
   };
+  const filterEmployee = employeeId === null ? undefined : options.employees.find((e) => e.id === employeeId);
+  const eventKey = EVENT_FILTERS.find((f) => f.value === eventFilter)?.key;
+  const active: ReactNode[] = [
+    ...(employeeId === null ? [] : [<EmployeeName key="employee" name={filterEmployee?.displayName ?? employeeId} language={language} />]),
+    ...(workTypeId === null ? [] : [workTypeLabel(workTypeId, language)]),
+    ...(eventFilter === "all" || eventKey === undefined ? [] : [t[eventKey]]),
+  ];
+  const clearFilters = () =>
+    changeFilter(() => {
+      setEmployeeId(null);
+      setWorkTypeId(null);
+      setEventFilter("all");
+    });
   const actorCell = (e: LedgerEvent): ReactNode => {
     const actor = actorName(clientConfig.access, options.employees, e.actor, language);
     if (actor === null) return t.actorRule;
@@ -150,6 +162,21 @@ export function LedgerView({ db, identity, language }: CrewScreenProps) {
           </select>
         </label>
       </div>
+      {active.length > 0 && (
+        <div className="crew-ledger__active">
+          <p className="crew-ledger__active-text">
+            <span className="muted">{t.activeFilter}</span>
+            {active.map((item, i) => (
+              <span key={i} className="badge crew-ledger__active-item">
+                {item}
+              </span>
+            ))}
+          </p>
+          <button type="button" className="secondary" onClick={clearFilters}>
+            {t.clearFilter}
+          </button>
+        </div>
+      )}
       {filtered.length === 0 ? (
         <section className="empty-state">
           <p className="empty-state__title">{t.emptyFiltered}</p>

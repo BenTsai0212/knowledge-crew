@@ -31,5 +31,7 @@
   "actorRule": "依規則自動",
   "eventMeta": "{employee}・{workType}",
   "noAssignment": "—",
-  "loadMore": "載入更早的紀錄"
+  "loadMore": "載入更早的紀錄",
+  "activeFilter": "目前的篩選",
+  "clearFilter": "清除篩選"
 }

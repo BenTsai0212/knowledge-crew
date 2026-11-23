@@ -1,5 +1,6 @@
 // 「信任」畫面（#37；#75 改為時間軸，設計規格 v3 第 6.4 節）：每個看得到的「員工 × 工作類型」一張卡，
 // 時間軸是事件、圓點與日期、當時的層級三列。資料整理與寫入在 trust.ts；按鈕只給能驗收的身分，寫入後重新讀取。
+// 最上方是總覽報表（#121，TrustReport.tsx）：計數來自工作帳本的事件，點一列切到工作帳本並套用篩選。
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
@@ -10,7 +11,10 @@ import { crewStrings, type CrewTexts } from "../i18n";
 import { DotMark, dotsSummary, LevelBadge, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
+import { readLedger } from "./ledger";
 import { canReviewOf } from "./today";
+import { TrustReport } from "./TrustReport";
+import { trustReport, type TrustReportRow } from "./trust-report";
 import {
   agreeRelax,
   isSameDay,
@@ -25,11 +29,12 @@ import {
 } from "./trust";
 import "./TrustView.css";
 
-type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; trust: Trust };
+type Loaded = { trust: Trust; report: TrustReportRow[] };
+type State = { kind: "loading" } | { kind: "failed" } | ({ kind: "ready" } & Loaded);
 
 const rowKey = (r: TrustRow) => `${r.employee.id}/${r.workTypeId}`;
 
-export function TrustView({ db, identity, language, onChanged }: CrewScreenProps) {
+export function TrustView({ db, identity, language, onChanged, navigate }: CrewScreenProps) {
   const t = crewStrings("trust", language);
   const canReview = canReviewOf(clientConfig.access, identity);
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -37,17 +42,17 @@ export function TrustView({ db, identity, language, onChanged }: CrewScreenProps
   const [saving, setSaving] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
-  const load = useCallback(
-    () => readTrust(db, identity, language, canReview),
-    [db, identity, language, canReview],
-  );
+  const load = useCallback(async (): Promise<Loaded> => {
+    const [trust, events] = await Promise.all([readTrust(db, identity, language, canReview), readLedger(db, identity, language)]);
+    return { trust, report: trustReport(trust.rows, events) };
+  }, [db, identity, language, canReview]);
 
   useEffect(() => {
     let current = true;
     setState({ kind: "loading" });
     setFailed(null);
     load().then(
-      (trust) => current && setState({ kind: "ready", trust }),
+      (loaded) => current && setState({ kind: "ready", ...loaded }),
       () => current && setState({ kind: "failed" }),
     );
     return () => {
@@ -68,7 +73,7 @@ export function TrustView({ db, identity, language, onChanged }: CrewScreenProps
     }
     // 成功或失敗都重新讀取，畫面與資料庫一致
     try {
-      setState({ kind: "ready", trust: await load() });
+      setState({ kind: "ready", ...(await load()) });
     } catch {
       setState({ kind: "failed" });
     } finally {
@@ -78,7 +83,7 @@ export function TrustView({ db, identity, language, onChanged }: CrewScreenProps
 
   if (state.kind === "loading") return <p className="muted">{t.loading}</p>;
   if (state.kind === "failed") return <p className="error" role="alert">{t.loadFailed}</p>;
-  const { trust } = state;
+  const { trust, report } = state;
   if (trust.rows.length === 0) {
     return (
       <section className="empty-state">
@@ -100,6 +105,7 @@ export function TrustView({ db, identity, language, onChanged }: CrewScreenProps
           <li><DotMark dot="neutral" className="crew-trust__dot" />{t.legendNeutral}</li>
         </ul>
       </header>
+      <TrustReport rows={report} language={language} openLedger={navigate && ((ledgerFilter) => navigate({ section: "ledger", ledgerFilter }))} />
       <p className="crew-trust__rules">{t.rules}</p>
       {trust.rows.map((row) => {
         const key = rowKey(row);

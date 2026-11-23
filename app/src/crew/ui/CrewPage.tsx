@@ -22,10 +22,13 @@ const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
   ledger: LedgerView,
 };
 
-interface Props extends Omit<CrewScreenProps, "navigate" | "employeeId" | "assignmentId"> {
+interface Props extends Omit<CrewScreenProps, "navigate" | "employeeId" | "assignmentId" | "ledgerFilter"> {
   /** 從 crew 頁之外切到某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；n 每次要求都不同，同一個位置也重新切換 */
   request?: { target: CrewTarget; n: number } | null;
 }
+
+// 帳本的篩選不同時重新掛上畫面（#121），一開始的篩選才會套用
+const filterKey = (f: CrewTarget["ledgerFilter"]) => (f ? `${f.employeeId ?? ""}/${f.workTypeId ?? ""}/${f.event ?? "all"}` : "");
 
 export function CrewPage({ request = null, ...props }: Props) {
   const t = crewStrings("common", props.language);
@@ -91,12 +94,13 @@ export function CrewPage({ request = null, ...props }: Props) {
       </nav>
       {Screen ? (
         <Screen
-          key={`${section}/${target.employeeId ?? ""}/${target.assignmentId ?? ""}`}
+          key={`${section}/${target.employeeId ?? ""}/${target.assignmentId ?? ""}/${filterKey(target.ledgerFilter)}`}
           {...props}
           onChanged={onChanged}
           navigate={setTarget}
           employeeId={target.employeeId}
           assignmentId={target.assignmentId}
+          ledgerFilter={target.ledgerFilter}
         />
       ) : (
         <section className="empty-state">

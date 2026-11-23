@@ -270,8 +270,8 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/HomeToday.tsx`：首頁的接入點（#96）：`useCrewToday()`（App 讀一次，首頁與側欄共用）、`HomeTodaySummary`、`HomeTodayCard`（不能驗收的身分沒有可看的事時不顯示）、`CrewTabCount`（側欄與手機導覽「AI 員工」的待驗收件數）
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
 - `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看，依時間新到舊；`filterLedger()`：依員工、工作類型與事件篩選；`ledgerTone()`：層級改變與退回（做錯了）的樣式；測試在 `ledger.test.ts`）
-- `ui/LedgerView.css`：「工作帳本」畫面的篩選與表格（窄螢幕時表格在框內橫向捲動）
-- `ui/LedgerView.tsx`：「工作帳本」畫面：只負責呈現 `ledger.ts` 的結果（載入中、讀取失敗、空狀態、依員工與事件篩選的表格、「載入更早的紀錄」；只讀）
+- `ui/LedgerView.css`：「工作帳本」畫面的篩選、目前的篩選與表格（窄螢幕時表格在框內橫向捲動）
+- `ui/LedgerView.tsx`：「工作帳本」畫面：只負責呈現 `ledger.ts` 的結果（載入中、讀取失敗、空狀態、依員工與事件篩選的表格、「載入更早的紀錄」；只讀）；一開始的篩選來自信任頁的總覽報表（`ledgerFilter`），頂端顯示目前的篩選並可清除（#121）
 - `ui/refs.ts`：工作來源與外部編號的顯示（`assignmentRef()`、`workRef()`：repo 類是 `<repo>#<Issue>`、`PR #<編號>`，其他類型是來源名稱與編號，沒有編號時只有來源名稱；文字在 `common` 的 `ref*`）
 - `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果與交件的種類；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）
@@ -284,12 +284,14 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上；手機的決定列固定在底部分頁列之上，#103）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆（從原文的來源或首頁的今天的工作切過來時選那一件，#92、#96）；已回流的工作顯示「已收進知識庫」與「打開原文」，沒有上傳權限而沒有回流時註明原因；「通過」「退回」只給能驗收的身分，寫入後重新讀取（並通知 App 更新首頁與側欄的待驗收件數，#96）
 - `ui/section-counts.ts`：子導覽的數字（`sectionCounts()`：待驗收件數與待決定的少看建議數，只給能驗收的身分）與目前子頁的橫向捲動量（`scrollDelta()`；測試在 `section-counts.test.ts`，#103）
-- `ui/sections.ts`：子導覽的位置與名稱的鍵（員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：工作與驗收，#100）、畫面元件的 props
+- `ui/sections.ts`：子導覽的位置與名稱的鍵（員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：工作與驗收，#100）、畫面元件的 props（`ledgerFilter`：切到工作帳本時的篩選，#121）
 - `ui/SourceOrigin.tsx`：原文的接入點：回流的文件在原文面板（`ui/SourcePanel.tsx`、`ui/SourceSheet.tsx` 的 `origin`）顯示「來自 AI 員工 ○○・驗收「○○」（日期）」，點了切到「工作與驗收」的那一件（`App.tsx` 經 `CrewPage` 的 `request`；測試在 `SourceOrigin.test.ts`）
 - `ui/today.ts`：今天的工作的資料整理（`readToday()`：待驗收、進行中、建議少看；首頁的「今天的工作」使用，AI 員工頁籤內沒有「今天」子頁（#100）；測試在 `today.test.ts`）
+- `ui/trust-report.ts`：信任頁的總覽報表（#121）：`trustReport()` 以 `readTrust()` 的列與工作帳本的事件整理每個「員工 × 工作類型」的驗收次數、第一次就通過、三種退回原因、目前層級與層級變化（純函式；測試在 `trust-report.test.ts`）
 - `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`trustTimeline()`／`trustNote()`：信任頁的時間軸（每次驗收當時的層級與層級事件）與說明；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
-- `ui/TrustView.css`：「信任」畫面的頁首、卡片與時間軸（事件、圓點與日期、層級帶三列共用欄數；三種結果以符號與文字區分）
-- `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：呈現 `trust.ts` 的結果；「同意少看」「收回少看」只給能驗收的身分，寫入後重新讀取（並通知 crew 頁與 App 更新子導覽的數字與首頁，#103）
+- `ui/TrustReport.tsx`：信任頁最上方的總覽報表：點一列切到工作帳本並篩選成該員工＋該工作類型，點退回的數字再篩選成退回（#121）
+- `ui/TrustView.css`：「信任」畫面的頁首、總覽報表（手機時每列一張卡片）、卡片與時間軸（事件、圓點與日期、層級帶三列共用欄數；三種結果以符號與文字區分）
+- `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：最上方是總覽報表（`TrustReport.tsx`），下方呈現 `trust.ts` 的結果；「同意少看」「收回少看」只給能驗收的身分，寫入後重新讀取（並通知 crew 頁與 App 更新子導覽的數字與首頁，#103）
 - `work/body.ts`：交件全文的結構與「要看的重點」標記：`parseWorkBody()`、`toPlainText()`（格式見 `docs/crew/work-body-format.md`；測試在 `body.test.ts`）
 
 ### `app/src/db/`
