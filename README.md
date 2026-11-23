@@ -28,6 +28,7 @@ AI 員工（虛構的 Rowan、Sorrel、Linden、Juniper）各負責一種工作�
 - **工作帳本**：誰在什麼時候做了什麼、為什麼，可依員工與事件篩選，層級改變的紀錄另外標出（第 6.7 節）。
 - **回流知識庫**：驗收通過的知識庫條目成為知識庫的內容，問答可以引用；原文顯示它來自哪位 AI 員工、哪一次驗收，條目的負責部門成為圖譜中的部門（[RFC 0001](docs/crew/rfcs/0001-project-charter.md) 2026-11-22 修訂、[ADR 0004](docs/crew/adr/0004-crew-data-and-extension-points.md) 2026-11-22 修訂）。
 - **手機版**：子頁改為可橫向滑動的按鈕列，驗收面板的決定列固定在底部分頁列之上（第 5 節）。
+- **第一次來的導覽**：首頁「今天的工作」上方的小卡「第一次來？90 秒看懂」，5 步走過今天的工作、驗收面板、退回原因、信任與回流知識庫；不自動彈出，關掉後可以重新看（#122）。
 
 ![首頁今天的工作（主管）](docs/crew/images/home-today.png)
 
@@ -36,6 +37,23 @@ AI 員工（虛構的 Rowan、Sorrel、Linden、Juniper）各負責一種工作�
 ![信任時間軸](docs/crew/images/trust.png)
 
 <img src="docs/crew/images/mobile-review.png" alt="手機的驗收面板：決定列固定在底部" width="390">
+
+## 設計與決策過程
+
+- **怎麼做決定**：方向寫在 RFC（專案章程 [RFC 0001](docs/crew/rfcs/0001-project-charter.md)），難以反悔或曾經猶豫的選擇寫成 [ADR](docs/crew/adr/README.md)，畫面依[設計規格 v3](docs/crew/design/v3/knowledge-crew-design-v3.md)。每件工作是一張 Issue，寫明驗收條件；coding agent 實作時遇到不清楚或要取捨的地方就停下來回報，由決定者以 `## 決定` 留言回覆，agent 只依決定繼續（[agent 的工作流程](docs/workflow/agent-workflow.md)、[憲法](docs/workflow/constitution.md)）。
+
+代表性的取捨：
+
+- **「少看」一定要人同意，可以隨時收回**：信任建議錯了（讓人少看了該看的東西）是最嚴重的後果，所以平台只提出建議，放不放手由人決定；這是 [RFC 0001](docs/crew/rfcs/0001-project-charter.md)「必要功能」的一項，不能拿掉。
+- **一次「做錯了」就改回逐項看**：出過錯的工作寧可多看幾次。退回原因分三種，只有「做錯了」影響信任，「我想要不一樣的做法」這類偏好不算錯（[RFC 0001](docs/crew/rfcs/0001-project-charter.md)「必要功能」、設計規格第 6.2、6.4 節）。
+- **建立在 knowledge-kit 之上**：知識庫、問答、圖譜與 CI 直接沿用，以 merge commit 持續同步上游；AI 員工的程式放在自己的目錄，減少同步時的衝突（[ADR 0002](docs/crew/adr/0002-knowledge-kit-upstream.md)）。
+- **線上 demo 不呼叫模型**：AI 員工全部在瀏覽器內以虛構資料執行，不需要 Worker、secret 與邀請碼，任何人都能直接體驗（[ADR 0005](docs/crew/adr/0005-crew-only-demo.md)）。
+
+品質怎麼把關：
+
+- **測試**：單元測試（Vitest）與 Playwright 端對端測試；端對端測試對參考情境與兩個虛構客戶共三個 client 各跑一次，另外跑線上 demo 與只展示 AI 員工的 build（[docs/testing.md](docs/testing.md#playwright)「Playwright」）。
+- **敏感資料檢查**：每個 PR 檢查客戶名稱、個人路徑與 secret（[docs/testing.md](docs/testing.md#敏感資料檢查)「敏感資料檢查」）。
+- **審查**：每個 PR 都經人審查才合併；agent 不能合併、也不能推送 `main`（[AGENTS.md](AGENTS.md) 第 5 節）。
 
 ## 從 knowledge-kit 繼承的功能
 

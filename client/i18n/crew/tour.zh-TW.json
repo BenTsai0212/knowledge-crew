@@ -1,0 +1,23 @@
+{
+  "cardTitle": "第一次來？90 秒看懂",
+  "cardBody": "跟著 5 步走過交辦、驗收、退回、信任變化與回流知識庫。",
+  "start": "開始導覽",
+  "dismiss": "關閉導覽卡",
+  "replay": "重新看導覽",
+  "dialogLabel": "導覽",
+  "progress": "第 {current} 步，共 {total} 步",
+  "next": "下一步",
+  "finish": "完成",
+  "end": "結束導覽",
+  "escHint": "按 Esc 可以隨時結束。",
+  "todayTitle": "今天的工作",
+  "todayBody": "AI 員工交的件在這裡等你驗收；有檢查沒通過的排在前面。",
+  "reviewTitle": "驗收面板",
+  "reviewBody": "員工標出要看的重點，加上自動檢查；你決定通過或退回。",
+  "returnTitle": "退回的原因",
+  "returnBody": "退回時從三種原因擇一：「做錯了」會讓這類工作改回逐項看，其他兩種不影響信任。",
+  "trustTitle": "信任",
+  "trustBody": "信任隨驗收長出來；「少看」要你同意，可以隨時收回。",
+  "flowbackTitle": "回流知識庫",
+  "flowbackBody": "驗收通過的知識庫條目進入知識庫與圖譜，並標出來源。"
+}

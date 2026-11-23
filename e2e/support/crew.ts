@@ -19,6 +19,7 @@ type CrewFiles = {
   review: typeof import("@client/i18n/crew/review.zh-TW.json");
   trust: typeof import("@client/i18n/crew/trust.zh-TW.json");
   ledger: typeof import("@client/i18n/crew/ledger.zh-TW.json");
+  tour: typeof import("@client/i18n/crew/tour.zh-TW.json");
 };
 const crewJson = <S extends keyof CrewFiles>(screen: S): CrewFiles[S] =>
   hasCrewDemo ? readClientJson<CrewFiles[S]>(`i18n/crew/${screen}.${language}.json`) : ({} as CrewFiles[S]);
@@ -30,6 +31,7 @@ export const ct = {
   review: crewJson("review"),
   trust: crewJson("trust"),
   ledger: crewJson("ledger"),
+  tour: crewJson("tour"),
 };
 
 // 代入 {key}（只用於沒有單複數寫法的文字）
@@ -127,6 +129,66 @@ export async function assignSimulateReturn(
 
 // 首頁的「今天的工作」（#96）
 export const homeToday = (page: Page) => page.getByRole("region", { name: ct.home.title, exact: true });
+
+// ---- 第一次來的導覽（#122）：首頁的入口小卡與導覽對話框；walkTour() 走完 5 步，每一步確認切到的畫面與標出的區塊 ----
+export const tourCard = (page: Page) => page.getByRole("region", { name: ct.tour.cardTitle, exact: true });
+export const tourDialog = (page: Page) => page.getByRole("dialog").filter({ has: page.locator(".crew-tour__title") });
+export const tourReplay = (page: Page) => page.getByRole("button", { name: ct.tour.replay, exact: true });
+
+// 每一步：標題、應在的畫面（首頁或 crew 的子頁）、標出的區塊
+const TOUR = [
+  { title: () => ct.tour.todayTitle, section: null, target: ".crew-home" },
+  { title: () => ct.tour.reviewTitle, section: () => ct.common.sectionWorks, target: ".crew-review__pair" },
+  { title: () => ct.tour.returnTitle, section: () => ct.common.sectionWorks, target: ".crew-review__decision" },
+  { title: () => ct.tour.trustTitle, section: () => ct.common.sectionTrust, target: ".crew-trust__row" },
+  { title: () => ct.tour.flowbackTitle, section: () => ct.common.sectionWorks, target: ".crew-review__knowledge" },
+] as const;
+
+// 外框包住目標，對話框在畫面內（不被裁掉），沒有橫向捲動
+async function expectSpotOn(page: Page, target: string): Promise<void> {
+  const spot = page.locator(".crew-tour__spot");
+  await expect(spot).toBeVisible();
+  await expect
+    .poll(async () => {
+      const [a, b] = [await spot.boundingBox(), await page.locator(target).first().boundingBox()];
+      return a !== null && b !== null && a.x <= b.x && a.y <= b.y && a.x + a.width >= b.x + b.width && a.y + a.height >= b.y + b.height;
+    })
+    .toBe(true);
+  const box = (await tourDialog(page).boundingBox())!;
+  const viewport = page.viewportSize()!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+// 從首頁的入口開始走完 5 步；keyboard 時以 Enter 按「下一步」（開始時焦點在「下一步」）。結束後回到首頁不必要：停在最後一步的畫面
+export async function walkTour(page: Page, opts: { keyboard?: boolean } = {}): Promise<void> {
+  await (await tourStart(page)).click();
+  for (const [i, step] of TOUR.entries()) {
+    const dialog = tourDialog(page);
+    await expect(dialog.getByRole("heading", { level: 2 })).toHaveText(step.title());
+    await expect(dialog).toContainText(crewFill(ct.tour.progress, { current: i + 1, total: TOUR.length }));
+    if (step.section === null) await expect(page.locator('[data-view="home"][aria-current="page"]').first()).toBeVisible();
+    else await expect(crewSections(page).getByRole("button", { name: step.section(), exact: true })).toHaveAttribute("aria-current", "page");
+    await expectSpotOn(page, step.target);
+    const last = i === TOUR.length - 1;
+    const button = dialog.getByRole("button", { name: last ? ct.tour.finish : ct.tour.next, exact: true });
+    if (opts.keyboard) {
+      await expect(button).toBeFocused();
+      await page.keyboard.press("Enter");
+    } else await button.click();
+  }
+  await expect(tourDialog(page)).toHaveCount(0);
+  await expect(page.locator(".crew-tour__spot")).toHaveCount(0);
+}
+
+// 首頁的「開始導覽」（沒看過）或「重新看導覽」（看過）
+async function tourStart(page: Page): Promise<Locator> {
+  const start = tourCard(page).getByRole("button", { name: ct.tour.start, exact: true });
+  return (await start.count()) > 0 ? start : tourReplay(page);
+}
 
 // 「工作與驗收」的驗收面板（名稱是工作的標題）
 export const reviewPanel = (page: Page, title: string) => page.getByRole("article", { name: title });

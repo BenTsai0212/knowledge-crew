@@ -37,12 +37,14 @@ describe("邀請碼的保存", () => {
 });
 
 describe("邀請碼不放 localStorage", () => {
-  // 唯一的例外是圖譜的「圖譜｜清單」選擇（#289，docs/design.md：選擇記在這個瀏覽器），只存這一個值
-  it("app/src/ 的程式只有 graph-list.ts 使用 localStorage，且不碰邀請碼", () => {
+  // 例外是圖譜的「圖譜｜清單」選擇（#289，docs/design.md：選擇記在這個瀏覽器），只存這一個值；
+  // knowledge-crew：第一次來的導覽看過了沒（crew #122，crew/ui/tour.ts），同樣只存這一個值
+  it("app/src/ 的程式只有 graph-list.ts 與 crew/ui/tour.ts 使用 localStorage，且不碰邀請碼", () => {
     const sources = import.meta.glob<string>("../**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true });
     const files = Object.entries(sources).filter(([path]) => !path.endsWith(".test.ts"));
     expect(files.length).toBeGreaterThan(10);
-    expect(files.filter(([, text]) => /\blocalStorage\b/.test(text)).map(([path]) => path)).toEqual(["./graph-list.ts"]);
+    expect(files.filter(([, text]) => /\blocalStorage\b/.test(text)).map(([path]) => path)).toEqual(["../crew/ui/tour.ts", "./graph-list.ts"]);
     expect(sources["./graph-list.ts"]).not.toMatch(/access-?code|kk\.accessCode/i);
+    expect(sources["../crew/ui/tour.ts"]).not.toMatch(/access-?code|kk\.accessCode/i);
   });
 });
