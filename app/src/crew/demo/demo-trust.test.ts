@@ -70,14 +70,20 @@ describe("demo 開始時的信任狀態（#60）", () => {
     expect(after.some((r) => r.reason === "wrong")).toBe(false);
   });
 
-  it("Juniper × 網站與工具開發：逐項看；驗收次數未達門檻，沒有建議（其他退回只是灰點）", async () => {
+  it("Juniper × 網站與工具開發：同意少看 → 少看驗收一次 → 收回，逐項看；收回後要重新累積，沒有建議（#125）", async () => {
     const t = await trust("juniper", "dev");
-    expect(t.reviews).toHaveLength(7);
-    expect(t.reviews.length).toBeLessThan(DEMO_PARAMS.min);
-    expect(t.decisions).toEqual([]);
-    expect(t.dots).toEqual(["ok", "neutral", "ok", "ok", "neutral", "ok", "ok"]);
+    expect(t.reviews).toHaveLength(11);
+    expect(t.decisions.map((d) => d.decision)).toEqual(["relax", "revoke"]);
+    expect(t.dots).toEqual(["ok", "neutral", "ok", "ok", "ok", "ok", "neutral", "ok", "ok", "ok"]);
     expect(t.level).toBe("item");
     expect(t.suggestion).toBeNull();
     expect(t.resets).toEqual([]);
+    // 同意之前已累積 DEMO_PARAMS.min 次、沒有做錯；同意與收回之間有一次驗收（以少看進行）；收回之後沒有驗收
+    const [relax, revoke] = t.decisions.map((d) => Date.parse(d.decidedAt));
+    const before = t.reviews.filter((r) => Date.parse(r.decidedAt) < relax);
+    expect(before.length).toBeGreaterThanOrEqual(DEMO_PARAMS.min);
+    expect(before.some((r) => r.reason === "wrong")).toBe(false);
+    expect(t.reviews.filter((r) => Date.parse(r.decidedAt) > relax && Date.parse(r.decidedAt) < revoke)).toHaveLength(1);
+    expect(t.reviews.filter((r) => Date.parse(r.decidedAt) > revoke)).toEqual([]);
   });
 });

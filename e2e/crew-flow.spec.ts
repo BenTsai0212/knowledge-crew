@@ -63,7 +63,11 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
   // 5：最後一個圓點是做錯了，層級改回逐項看，「收回」消失
   await gotoCrewSection(page, ct.common.sectionTrust);
   const row = trustRow(page, "linden", "knowledge");
-  await expect(row.getByRole("listitem").last()).toHaveAttribute("aria-label", crewFill(ct.trust.dotCell, { result: ct.trust.dotWrong, date: ct.trust.today }));
+  // 圓點的清單（卡片內還有「建議的經過」的清單，#125）
+  await expect(row.locator(".crew-trust__dots").getByRole("listitem").last()).toHaveAttribute(
+    "aria-label",
+    crewFill(ct.trust.dotCell, { result: ct.trust.dotWrong, date: ct.trust.today }),
+  );
   await expectLevel(page, "linden", "knowledge", ct.trust.levelItem);
   await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toHaveCount(0);
 
@@ -90,7 +94,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
 test("對照：退回選「我想要不一樣的做法」時，Linden 的「知識庫整理」維持少看", async ({ page }) => {
   await assignSimulateReturn(page, { title: TITLE, employee: "linden", workType: "knowledge", reason: ct.review.reasonDifferentApproach });
   await gotoCrewSection(page, ct.common.sectionTrust);
-  await expect(trustRow(page, "linden", "knowledge").getByRole("listitem").last()).toHaveAttribute(
+  await expect(trustRow(page, "linden", "knowledge").locator(".crew-trust__dots").getByRole("listitem").last()).toHaveAttribute(
     "aria-label",
     crewFill(ct.trust.dotCell, { result: ct.trust.dotNeutral, date: ct.trust.today }),
   );

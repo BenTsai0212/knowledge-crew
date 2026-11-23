@@ -46,7 +46,8 @@ describe("trustReport：匯入虛構資料後", () => {
       const pair = { employeeId: row.employee.id, workTypeId: row.workTypeId };
       const all = filterLedger(events, pair);
       const returned = filterLedger(events, { ...pair, event: "returned" });
-      const level = filterLedger(events, { ...pair, event: "level" });
+      // 「只看層級改變」也含提出少看建議（#125），層級變化不算它
+      const level = filterLedger(events, { ...pair, event: "level" }).filter((e) => e.kind !== "proposed");
       expect(row.reviews).toBe(all.filter((e) => e.kind === "accepted" || e.kind === "returned").length);
       expect(row.reviews).toBe(trust.rows.find((r) => r.employee.id === pair.employeeId && r.workTypeId === pair.workTypeId)!.reviewCount);
       for (const reason of REASONS) expect(row.returns[reason]).toBe(returned.filter((e) => e.reason === reason).length);
@@ -67,13 +68,18 @@ describe("trustReport：匯入虛構資料後", () => {
     expect(firstPassPercent(row.firstPass)).toBe(85);
   });
 
-  it("manager：Linden 是少看、最近一次是同意少看；Sorrel 與 Juniper 沒有層級變化；三種退回原因分開計數", async () => {
+  it("manager：Linden 是少看、最近一次是同意少看；Sorrel 沒有層級變化、Juniper 同意後收回；三種退回原因分開計數", async () => {
     const { report } = await read("manager");
     const linden = find(report, "linden", "knowledge");
     expect(linden.level).toBe("light");
     expect(linden.lastChange).toEqual({ kind: "relax", at: "2026-10-13T02:00:00.000Z" });
     expect(find(report, "sorrel", "content")).toMatchObject({ reviews: 12, levelChanges: 0, lastChange: null, returns: { wrong: 1, different_approach: 0, process: 1 } });
-    expect(find(report, "juniper", "dev")).toMatchObject({ reviews: 7, levelChanges: 0, returns: { wrong: 0, different_approach: 1, process: 1 } });
+    expect(find(report, "juniper", "dev")).toMatchObject({
+      reviews: 11,
+      levelChanges: 2,
+      lastChange: { kind: "revoke", at: "2026-10-24T02:00:00.000Z" },
+      returns: { wrong: 0, different_approach: 1, process: 1 },
+    });
   });
 
   it("staff：只有自己專案看得到的兩列，數字與主管看到的相同", async () => {

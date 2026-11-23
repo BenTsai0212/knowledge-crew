@@ -72,15 +72,16 @@ describe("readTrust：匯入虛構資料後", () => {
     expect(r.reviewCount).toBeGreaterThanOrEqual(10);
     const { reviews, decisions } = await getTrustInputs(db, "manager", "sorrel", "content");
     const basis = relaxSuggestion(reviews, decisions, DEMO_PARAMS)!.basis;
-    expect(r.suggestion).toEqual({ count: 10, basisReviewId: basis.at(-1)!.id });
+    expect(r.suggestion).toEqual({ count: 10, basisReviewId: basis.at(-1)!.id, basisReviewIds: basis.map((b) => b.id) });
     expect(r.suggestion!.basisReviewId).toBe(reviews.at(-1)!.id);
   });
 
-  it("manager：Juniper × 網站與工具開發是逐項看、沒有建議", async () => {
+  it("manager：Juniper × 網站與工具開發是逐項看、沒有建議（收回後還沒有驗收）", async () => {
     const r = row(await read(db, "manager"), "juniper", "dev");
     expect(r.level).toBe("item");
     expect(r.suggestion).toBeNull();
-    expect(r.dots.length).toBe(r.reviewCount);
+    expect(r.reviewCount).toBe(11);
+    expect(r.dots.length).toBe(DEMO_PARAMS.dots);
   });
 
   it("staff：只看到青翼專案的組合（Rowan × 客戶回覆、Sorrel × 貼文與商品介紹），沒有建議", async () => {
@@ -204,11 +205,13 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
     expect(r.note).toBe("light");
   });
 
-  it("Juniper：7 格與 3 個空格，說明是驗收不足", async () => {
+  it("Juniper：10 格沒有空格，同意少看與收回都在最後一格（少看驗收一次），說明是剛收回（#125）", async () => {
     const r = row(await read(db, "manager"), "juniper", "dev");
-    expect(r.timeline.cells).toHaveLength(7);
-    expect(r.timeline.empty).toBe(DEMO_PARAMS.dots - 7);
-    expect(r.note).toBe("tooFew");
+    expect(r.timeline.cells).toHaveLength(DEMO_PARAMS.dots);
+    expect(r.timeline.empty).toBe(0);
+    expect(levels(r)).toEqual([...Array(9).fill("item"), "light"]);
+    expect(kinds(r)).toEqual([[9, ["relax", "revoke"]]]);
+    expect(r.note).toBe("revoked");
   });
 
   it("Sorrel 同意少看後：事件在最後一格；收回後說明是 revoked", { timeout: DB_TIMEOUT }, async () => {

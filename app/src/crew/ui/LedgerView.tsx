@@ -51,6 +51,8 @@ function kindText(event: LedgerEvent, t: CrewTexts<"ledger">, language: Language
     case "returned":
       // 退回一定有原因（crew.reviews 的 CHECK）
       return fill(t.kindReturned, { reason: event.reason === null ? "" : t[REASON_KEYS[event.reason]] }, language);
+    case "proposed":
+      return t.kindProposed;
     case "relax":
       return t.kindRelax;
     case "revoke":

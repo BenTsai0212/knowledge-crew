@@ -179,6 +179,78 @@
 }
 
 /* 窄螢幕：事件文字用整列寬（日期寫在文字裡），層級帶縮小內距 */
+/* 建議的經過與依據（#125）：時間軸下方的小字清單，窄螢幕時文字換行、不橫向捲動 */
+.crew-trust__history {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-surfaceRaised);
+}
+
+.crew-trust__history-title {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.crew-trust__history-list,
+.crew-trust__basis-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.crew-trust__history-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.crew-trust__history-list li[data-kind="relax"],
+.crew-trust__history-list li[data-kind="revoke"],
+.crew-trust__history-list li[data-kind="autoReset"] {
+  font-weight: 600;
+}
+
+.crew-trust__basis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.crew-trust__basis details {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.crew-trust__basis summary {
+  cursor: pointer;
+}
+
+.crew-trust__basis-list {
+  margin-top: 0.5rem;
+}
+
+.crew-trust__basis-list li {
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.crew-trust__basis-date {
+  flex: none;
+  color: var(--color-textMuted);
+  font-family: var(--font-mono);
+}
+
 @media (max-width: 640px) {
   .crew-trust__event,
   .crew-trust__event[data-align="end"] {

@@ -3,7 +3,20 @@
 // 每個 test 重新開頁，資料庫在瀏覽器記憶體中從 migration 與虛構資料重建。只在有 crew/demo.json 的客戶執行。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
-import { crewContent, crewFill, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, trustRow, workTypeName } from "./support/crew";
+import { access, language } from "./support/client";
+import {
+  assignmentTitle,
+  crewContent,
+  crewFill,
+  crewSections,
+  ct,
+  employeeName,
+  gotoCrewSection,
+  hasCrewDemo,
+  openCrew,
+  trustRow,
+  workTypeName,
+} from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -16,6 +29,10 @@ async function openTrustAs(page: Page, identity: string): Promise<void> {
 
 // 圓點的清單（aria-label 是摘要，例如「通過 9、做錯了 1」）
 const dots = (row: Locator) => row.getByRole("list").filter({ has: row.page().locator(".crew-trust__dot") });
+// 「建議的經過」的每一步（#125）
+const historySteps = (row: Locator) => row.getByRole("region", { name: ct.trust.historyTitle }).getByRole("listitem");
+// 經手的身分名稱（client/access.json）
+const roleName = (id: string) => access.roles.find((r) => r.id === id)!.label[language];
 const badge = (level: string) => crewFill(ct.trust.levelBadge, { level });
 const summary = (parts: [string, number][]) => parts.map(([key, count]) => crewFill(key, { count })).join(ct.trust.dotsAriaSeparator);
 
@@ -39,17 +56,25 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(dots(row)).toHaveAttribute("aria-label", summary([[ct.trust.dotsAriaOk, 9], [ct.trust.dotsAriaWrong, 1]]));
     await expect(row.getByText(crewFill(ct.trust.eventReset, { date: "10/15" }), { exact: false })).toBeVisible();
     await expect(row.getByText(ct.trust.noteReset, { exact: true })).toBeVisible();
-    await expect(row.getByRole("button")).toHaveCount(0);
+    // 沒有同意或收回的按鈕（「建議的經過」裡打開那一件的按鈕不算，#125）
+    await expect(row.getByRole("button", { name: ct.trust.agreeRelax, exact: true })).toHaveCount(0);
+    await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toHaveCount(0);
   });
 
   test("Sorrel：同意少看 → 事件「今天」與「收回少看」→ 收回後說明下一份起改回逐項看", async ({ page }) => {
     const row = trustRow(page, "sorrel", "content");
+    // 建議的經過跟著更新（#125）：提出 → 同意 → 收回
+    await expect(historySteps(row)).toHaveCount(1);
     await row.getByRole("button", { name: ct.trust.agreeRelax, exact: true }).click();
     await expect(row.getByText(badge(ct.trust.levelLight), { exact: true })).toBeVisible();
     await expect(row.getByText(crewFill(ct.trust.eventRelax, { date: ct.trust.today }), { exact: true })).toBeVisible();
+    await expect(historySteps(row)).toHaveCount(2);
+    await expect(historySteps(row).last()).toHaveText(crewFill(ct.trust.historyRelax, { date: ct.trust.today, actor: roleName("manager") }));
     await row.getByRole("button", { name: ct.trust.revoke, exact: true }).click();
     await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
     await expect(row.getByText(ct.trust.noteRevoked, { exact: true })).toBeVisible();
+    await expect(historySteps(row)).toHaveCount(3);
+    await expect(historySteps(row).last()).toHaveText(crewFill(ct.trust.historyRevoke, { date: ct.trust.today, actor: roleName("manager") }));
   });
 
   test("Linden：少看中，事件 10/13，有「收回少看」", async ({ page }) => {
@@ -60,11 +85,54 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
   });
 
-  test("Juniper：7 個圓點與空格「還沒有更多驗收」，不提出建議", async ({ page }) => {
+  test("Rowan：建議的經過是提出 → 同意 → 生效 → 做錯了自動改回（#125）", async ({ page }) => {
+    const steps = historySteps(trustRow(page, "rowan", "support"));
+    await expect(steps).toHaveCount(4);
+    await expect(steps.nth(0)).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/03", count: 10, from: "09/01", to: "10/03" }));
+    await expect(steps.nth(1)).toHaveText(crewFill(ct.trust.historyRelax, { date: "10/09", actor: roleName("manager") }));
+    await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/15" }));
+    await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyReset, { date: "10/15", title: assignmentTitle("s12") }));
+  });
+
+  test("Juniper：不用操作就有完整一輪：提出 → 同意 → 生效 → 收回；點生效的那件到「工作與驗收」（#125）", async ({ page }) => {
     const row = trustRow(page, "juniper", "dev");
-    await expect(dots(row).getByRole("listitem")).toHaveCount(7);
-    await expect(row.getByText(ct.trust.bandEmpty, { exact: true })).toBeVisible();
-    await expect(row.getByRole("button")).toHaveCount(0);
+    await expect(dots(row).getByRole("listitem")).toHaveCount(10);
+    await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
+    await expect(row.getByText(crewFill(ct.trust.eventRelax, { date: "10/19" }) + ct.trust.eventSeparator + crewFill(ct.trust.eventRevoke, { date: "10/24" }), { exact: true })).toBeVisible();
+    await expect(row.getByText(ct.trust.noteRevoked, { exact: true })).toBeVisible();
+    const steps = historySteps(row);
+    await expect(steps).toHaveCount(4);
+    await expect(steps.nth(0)).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/16", count: 10, from: "09/04", to: "10/16" }));
+    await expect(steps.nth(1)).toHaveText(crewFill(ct.trust.historyRelax, { date: "10/19", actor: roleName("manager") }));
+    await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/22" }));
+    await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyRevoke, { date: "10/24", actor: roleName("manager") }));
+    // 沒有少看建議（收回後要重新累積），只有打開那一件的按鈕
+    await expect(row.getByRole("button", { name: ct.trust.agreeRelax, exact: true })).toHaveCount(0);
+    await steps.nth(2).getByRole("button", { name: crewFill(ct.trust.historyOpenWork, { title: assignmentTitle("j05") }), exact: true }).click();
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(crewContent(page).locator('[aria-current="true"]')).toContainText(assignmentTitle("j05"));
+  });
+
+  test("Sorrel：少看建議列出依據的 10 次驗收；「在工作帳本看這幾次」篩選成 Sorrel 的「貼文與商品介紹」（#125）", async ({ page }) => {
+    const row = trustRow(page, "sorrel", "content");
+    const summary = row.getByText(crewFill(ct.trust.basisSummary, { count: 10, from: "09/09", to: "10/27" }), { exact: true });
+    await expect(summary).toBeVisible();
+    await summary.click();
+    const basis = row.getByRole("list", { name: ct.trust.basisLabel }).getByRole("listitem");
+    await expect(basis).toHaveCount(10);
+    await expect(basis.first()).toContainText(assignmentTitle("c02"));
+    await expect(basis.last()).toContainText(assignmentTitle("c10"));
+    await expect(historySteps(row)).toHaveCount(1);
+    await expect(historySteps(row).first()).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/21", count: 10, from: "09/04", to: "10/21" }));
+    await row.getByRole("button", { name: ct.trust.basisOpenLedger, exact: true }).click();
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionLedger, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(activeFilter(page)).toContainText(employeeName("sorrel"));
+    await expect(activeFilter(page)).toContainText(workTypeName("content"));
+    await expect(ledgerRows(page).first()).toBeVisible();
+    const n = await ledgerRows(page).count();
+    for (let i = 0; i < n; i++) await expect(ledgerRows(page).nth(i)).toContainText(rowMeta("sorrel", "content"));
+    for (const id of ["c10", "c09"]) await expect(ledgerRows(page).filter({ hasText: assignmentTitle(id) }).first()).toBeVisible();
+    await expect(ledgerRows(page).filter({ hasText: ct.ledger.kindProposed })).toHaveCount(1);
   });
 });
 
@@ -75,6 +143,11 @@ test("staff：看得到時間軸，沒有按鈕，說明只能查看", async ({ 
   await expect(dots(row).getByRole("listitem")).toHaveCount(10);
   await expect(row.getByText(ct.trust.noteViewOnly, { exact: true })).toBeVisible();
   await expect(row.getByRole("button")).toHaveCount(0);
+  // 建議的經過照樣看得到（#125）；依據與「在工作帳本看這幾次」只跟著能同意的建議出現
+  await expect(historySteps(row)).toHaveCount(1);
+  await expect(row.getByRole("list", { name: ct.trust.basisLabel })).toHaveCount(0);
+  await expect(historySteps(trustRow(page, "rowan", "support"))).toHaveCount(4);
+  await expect(trustRow(page, "juniper", "dev")).toHaveCount(0);
 });
 
 test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page }) => {
@@ -90,6 +163,16 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   for (const band of await page.locator(".crew-trust__band").all()) {
     expect(await band.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
   }
+  // 建議的經過與依據在卡片內（#125）
+  for (const [employee, workType] of [["juniper", "dev"], ["sorrel", "content"]]) {
+    const r = trustRow(page, employee, workType);
+    const box = (await r.boundingBox())!;
+    const history = (await r.getByRole("region", { name: ct.trust.historyTitle }).boundingBox())!;
+    expect(history.x + history.width).toBeLessThanOrEqual(box.x + box.width);
+  }
+  await trustRow(page, "sorrel", "content").getByText(crewFill(ct.trust.basisSummary, { count: 10, from: "09/09", to: "10/27" }), { exact: true }).click();
+  await expect(trustRow(page, "sorrel", "content").getByRole("list", { name: ct.trust.basisLabel })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 // ---- 總覽報表（#121） ----

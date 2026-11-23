@@ -114,13 +114,13 @@ describe("readAssign：匯入虛構資料後（寫入之前）", () => {
     expect(data.employees.find((e) => e.id === "rowan")).toMatchObject({ usualSourceId: "support-inbox", workTypeId: "support" });
   });
 
-  it("manager：來源 4、員工 4、工作類型 4；交辦 44 件新到舊，s14、c11、k13、j06 待驗收，其餘已通過，沒有可模擬的", async () => {
+  it("manager：來源 4、員工 4、工作類型 4；交辦 48 件新到舊，s14、c11、k13、j06 待驗收，其餘已通過，沒有可模擬的", async () => {
     const data = await read("manager");
     expect(data.canReview).toBe(true);
     expect(data.sources.map((r) => r.id).sort()).toEqual(["company-kb", "company-site", "social-account", "support-inbox"]);
     expect(data.employees.map((e) => e.id)).toEqual(["juniper", "linden", "rowan", "sorrel"]);
     expect(data.workTypes).toEqual(["content", "dev", "knowledge", "support"]);
-    expect(data.assignments).toHaveLength(44);
+    expect(data.assignments).toHaveLength(48);
     expect(data.assignments.map((a) => a.id)).toEqual((await listAssignments(db, "manager")).map((a) => a.id));
     const awaiting = data.assignments.filter((a) => a.status === "awaitingReview").map((a) => a.id).sort();
     expect(awaiting).toEqual(["c11", "j06", "k13", "s14"]);
@@ -191,11 +191,11 @@ describe("交辦與模擬交件的寫入（manager）", () => {
   it("交辦給 Juniper（網站與工具開發）→ 模擬交件 → 待驗收、「今天」多一筆 → 退回 → 再模擬用第 2 則回覆", async () => {
     const awaitingBefore = (await readToday(db, "manager", lang, true)).awaitingReview.length;
     const a = await submitAssignment(db, "manager", { sourceId: "company-site", title: "新增標籤篩選", workTypeId: "dev", employeeId: "juniper" });
-    expect(a.externalRef).toBe("27");
+    expect(a.externalRef).toBe("31");
 
     const data = await read("manager");
     expect(data.assignments[0]).toMatchObject({
-      id: a.id, title: "新增標籤篩選", sourceName: "example-org/company-site", externalRef: "27",
+      id: a.id, title: "新增標籤篩選", sourceName: "example-org/company-site", externalRef: "31",
       status: "notSubmitted", latestRound: null, simulate: "available",
     });
 

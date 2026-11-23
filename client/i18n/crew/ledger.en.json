@@ -25,6 +25,7 @@
   "reasonWrong": "wrong",
   "reasonDifferentApproach": "a different approach wanted",
   "reasonProcess": "minor process issue",
+  "kindProposed": "Lighter review suggested",
   "kindRelax": "Lighter review agreed",
   "kindRevoke": "Lighter review revoked",
   "kindAutoReset": "Back to item-by-item review after a mistake",

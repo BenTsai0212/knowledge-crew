@@ -37,10 +37,10 @@ describe("demoSeed", () => {
     expect(DEMO_RAW).not.toBeNull();
   });
 
-  it("匯入後的筆數與 demo.json 一致（交辦 44、工作 52、驗收 48、少看的決定 2）", async () => {
+  it("匯入後的筆數與 demo.json 一致（交辦 48、工作 56、驗收 52、少看的決定 4）", async () => {
     const works = demo.assignments.flatMap((a) => a.works);
     const expected = {
-      sources: 4, employees: 4, work_types: 4, assignments: 44, works: 52, reviews: 48, level_decisions: 2,
+      sources: 4, employees: 4, work_types: 4, assignments: 48, works: 56, reviews: 52, level_decisions: 4,
       work_points: works.reduce((n, w) => n + w.points.length, 0),
       work_changes: works.reduce((n, w) => n + w.changes.length, 0),
       work_checks: works.reduce((n, w) => n + w.checks.length, 0),

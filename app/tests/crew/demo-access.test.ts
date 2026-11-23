@@ -36,15 +36,15 @@ const read = (identity: string | null) =>
   });
 
 describe("虛構資料的讀取範圍", () => {
-  it("manager：四個來源、44 筆交辦", async () => {
+  it("manager：四個來源、48 筆交辦", async () => {
     expect(await read("manager")).toEqual({
       sources: ["Company KB", "Social account", "Support inbox", "example-org/company-site"],
       employees: ["juniper", "linden", "rowan", "sorrel"],
-      assignments: { "juniper/dev": 6, "linden/knowledge": 13, "rowan/support": 14, "sorrel/content": 11 },
-      total: 44,
-      works: 52,
-      reviews: 48,
-      levelDecisions: ["d01", "d02"],
+      assignments: { "juniper/dev": 10, "linden/knowledge": 13, "rowan/support": 14, "sorrel/content": 11 },
+      total: 48,
+      works: 56,
+      reviews: 52,
+      levelDecisions: ["d01", "d02", "d03", "d04"],
     });
   });
 

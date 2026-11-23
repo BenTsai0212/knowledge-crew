@@ -8,7 +8,7 @@ import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import { simulateSubmission } from "../demo/simulate";
 import type { DemoFile } from "../demo/types";
-import { actorName, filterLedger, isLevelChange, ledgerOptions, ledgerTone, mergeLedger, readLedger, type LedgerEvent, type LedgerKind } from "./ledger";
+import { actorName, filterLedger, inLevelFilter, isLevelChange, ledgerOptions, ledgerTone, mergeLedger, readLedger, type LedgerEvent, type LedgerKind } from "./ledger";
 
 const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
@@ -73,6 +73,16 @@ describe("mergeLedger：排序", () => {
     expect(events[3]).toMatchObject({ round: 1, actor: "basil" });
   });
 
+  it("提出少看建議（#125）：依規則自動、帶依據，在觸發它的驗收上方；看不到的驗收不列出", () => {
+    const accepted = { ...sources, reviews: [{ ...sources.reviews[0], verdict: "accepted" as const, reason: null }], decisions: [], resets: [] };
+    const events = mergeLedger({ ...accepted, proposals: [{ reviewId: "rv1", at: T2, basis: ["rv1"] }] }, lang);
+    expect(events.map((e) => e.kind)).toEqual(["proposed", "accepted", "submitted", "assigned"]);
+    expect(events[0]).toMatchObject({ id: "proposed:rv1", actor: null, assignment: { id: "a1" }, basis: ["rv1"], round: null, reason: null });
+    expect(mergeLedger({ ...accepted, proposals: [{ reviewId: "unknown", at: T2, basis: [] }] }, lang).some((e) => e.kind === "proposed")).toBe(false);
+    // 省略 proposals 時沒有這種事件
+    expect(mergeLedger(accepted, lang).some((e) => e.kind === "proposed")).toBe(false);
+  });
+
   it("層級決定只列出看得到該員工 × 該工作類型交辦的", () => {
     const hidden = { ...sources, decisions: [{ ...sources.decisions[0], workTypeId: "ui" }] };
     expect(mergeLedger(hidden, lang).some((e) => e.kind === "relax")).toBe(false);
@@ -102,11 +112,13 @@ describe("filterLedger 與 ledgerOptions", () => {
       event("d", "accepted", "2026-10-03T00:00:00.000Z"),
       event("e", "revoke", "2026-10-02T00:00:00.000Z"),
       event("f", "submitted", "2026-10-01T00:00:00.000Z"),
+      event("g", "proposed", "2026-09-30T00:00:00.000Z"),
     ];
-    expect(filterLedger(mixed, { event: "level" }).map((e) => e.id)).toEqual(["a", "c", "e"]);
+    // 提出少看建議也在「只看層級改變」（#125）
+    expect(filterLedger(mixed, { event: "level" }).map((e) => e.id)).toEqual(["a", "c", "e", "g"]);
     expect(filterLedger(mixed, { event: "returned" }).map((e) => e.id)).toEqual(["b"]);
-    expect(filterLedger(mixed, { event: "all" })).toHaveLength(6);
-    expect(filterLedger(mixed, { employeeId: "basil", event: "level" }).map((e) => e.id)).toEqual(["a", "e"]);
+    expect(filterLedger(mixed, { event: "all" })).toHaveLength(7);
+    expect(filterLedger(mixed, { employeeId: "basil", event: "level" }).map((e) => e.id)).toEqual(["a", "e", "g"]);
   });
 
   it("選項只來自目前的事件", () => {
@@ -125,6 +137,12 @@ describe("isLevelChange 與 ledgerTone（#77）", () => {
     expect(ledgerTone({ kind: "returned", reason: "different_approach" })).toBeNull();
     expect(ledgerTone({ kind: "returned", reason: "process" })).toBeNull();
     expect(ledgerTone({ kind: "accepted", reason: null })).toBeNull();
+    // 提出少看建議不改變層級：不是灰底，但在「只看層級改變」的篩選裡（#125）
+    expect(isLevelChange("proposed")).toBe(false);
+    expect(ledgerTone({ kind: "proposed", reason: null })).toBeNull();
+    expect(inLevelFilter("proposed")).toBe(true);
+    expect((["relax", "revoke", "autoReset"] as LedgerKind[]).every(inLevelFilter)).toBe(true);
+    expect((["assigned", "submitted", "accepted", "returned"] as LedgerKind[]).some(inLevelFilter)).toBe(false);
   });
 });
 
@@ -141,17 +159,19 @@ describe("actorName", () => {
 });
 
 describe("readLedger：匯入虛構資料後", () => {
-  it("manager：四個來源的全部事件，含 Rowan、Linden 的同意少看與 Rowan 的改回逐項看", async () => {
+  it("manager：四個來源的全部事件，含 Rowan、Linden、Juniper 的同意少看、Juniper 的收回、Rowan 的改回逐項看與提出少看建議", async () => {
     const events = await readLedger(db, "manager", lang);
-    expect(countKinds(events)).toEqual({ assigned: 44, submitted: 52, accepted: 40, returned: 8, relax: 2, autoReset: 1 });
-    expect(events).toHaveLength(147);
+    expect(countKinds(events)).toEqual({ assigned: 48, submitted: 56, accepted: 44, returned: 8, proposed: 4, relax: 3, revoke: 1, autoReset: 1 });
+    expect(events).toHaveLength(165);
     expect(new Set(events.map((e) => e.assignment?.sourceName).filter((n) => n !== undefined))).toEqual(new Set(SOURCE_NAMES));
     const relax = events.filter((e) => e.kind === "relax");
     expect(relax.map((e) => [e.employee.id, e.workTypeId, e.actor])).toEqual([
+      ["juniper", "dev", "manager"],
       ["linden", "knowledge", "manager"],
       ["rowan", "support", "manager"],
     ]);
-    expect(relax[1]).toMatchObject({ employee: { id: "rowan", displayName: "Rowan" } });
+    expect(events.filter((e) => e.kind === "revoke").map((e) => [e.employee.id, e.workTypeId, e.actor])).toEqual([["juniper", "dev", "manager"]]);
+    expect(relax[2]).toMatchObject({ employee: { id: "rowan", displayName: "Rowan" } });
     expect(events.filter((e) => e.kind === "autoReset")).toMatchObject([{ id: "autoReset:s12-1", employee: { id: "rowan" }, workTypeId: "support", actor: null }]);
     for (let i = 1; i < events.length; i++) expect(events[i - 1].at >= events[i].at).toBe(true);
     // 驗收帶著交件的輪次（「驗收通過（第 2 輪）」）
@@ -162,9 +182,10 @@ describe("readLedger：匯入虛構資料後", () => {
 
   it("staff：只看到青翼專案（客服信箱、官方社群帳號）的事件", async () => {
     const events = await readLedger(db, "staff", lang);
-    expect(events).toHaveLength(83);
-    expect(countKinds(events)).toEqual({ assigned: 25, submitted: 29, accepted: 23, returned: 4, relax: 1, autoReset: 1 });
+    expect(events).toHaveLength(85);
+    expect(countKinds(events)).toEqual({ assigned: 25, submitted: 29, accepted: 23, returned: 4, proposed: 2, relax: 1, autoReset: 1 });
     expect(events.filter((e) => e.kind === "relax").map((e) => e.employee.id)).toEqual(["rowan"]);
+    expect(events.filter((e) => e.kind === "proposed").map((e) => e.id)).toEqual(["proposed:c09-1", "proposed:s09-1"]);
     const bluewing = [label("support-inbox"), label("social-account")];
     for (const e of events) expect(bluewing).toContain(e.assignment?.sourceName ?? bluewing[0]);
   });

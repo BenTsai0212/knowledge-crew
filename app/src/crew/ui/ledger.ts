@@ -1,5 +1,6 @@
 // 「工作帳本」的資料整理（#40 計畫第 1～3 節；#77 加上事件篩選與列的樣式）：交辦、交件、驗收、同意少看與收回、因做錯了改回逐項看，
 // 依時間新到舊列出。一律經 withIdentity() 讀取，可見範圍由 RLS 決定；改回逐項看由 autoResets() 推得，不另存。
+// #125 加上「提出少看建議」：由 relaxProposals()（suggestion-history.ts）推得，同樣不另存。
 import type { Transaction } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
@@ -7,9 +8,11 @@ import { getTrustInputs, listAssignments, listEmployees, listReviews, type Assig
 import { demoText } from "../demo/texts";
 import { sourceLabel } from "./refs";
 import { autoResets } from "../trust/rules";
-import type { LevelDecisionKind, ReturnReason } from "../trust/types";
+import { relaxProposals } from "./suggestion-history";
+import { DEMO_PARAMS } from "../trust/demo-params";
+import type { LevelDecisionKind, ReturnReason, TrustParams } from "../trust/types";
 
-export type LedgerKind = "assigned" | "submitted" | "accepted" | "returned" | "relax" | "revoke" | "autoReset";
+export type LedgerKind = "assigned" | "submitted" | "accepted" | "returned" | "proposed" | "relax" | "revoke" | "autoReset";
 
 export interface LedgerAssignment {
   id: string;
@@ -30,12 +33,14 @@ export interface LedgerEvent {
   workTypeId: string;
   /** 相關的交辦；層級決定沒有依據的驗收時是 null */
   assignment: LedgerAssignment | null;
-  /** 誰做的：身分的 id；依規則自動發生（autoReset）時是 null */
+  /** 誰做的：身分的 id；依規則自動發生（proposed、autoReset）時是 null */
   actor: string | null;
   /** 交件與驗收的輪次；其他種類是 null */
   round: number | null;
   /** 退回原因；其他種類是 null */
   reason: ReturnReason | null;
+  /** 提出少看建議（proposed）的依據：驗收 id，依時間排序；其他種類沒有 */
+  basis?: string[];
 }
 
 /** 事件的篩選（設計規格 v3 第 6.7 節）：全部／只看層級改變／只看退回 */
@@ -54,6 +59,9 @@ const LEVEL_KINDS: ReadonlySet<LedgerKind> = new Set(["relax", "revoke", "autoRe
 
 /** 層級改變的紀錄：同意少看、收回少看、因做錯了改回逐項看（畫面以灰底標出）。 */
 export const isLevelChange = (kind: LedgerKind): boolean => LEVEL_KINDS.has(kind);
+
+/** 「只看層級改變」的篩選：層級改變，加上提出少看建議（#125；建議不改變層級，不以灰底標出）。 */
+export const inLevelFilter = (kind: LedgerKind): boolean => isLevelChange(kind) || kind === "proposed";
 
 /** 事件文字的樣式：層級改變是粗體灰底列，退回（做錯了）是 danger 粗體，其他沒有。 */
 export function ledgerTone(event: Pick<LedgerEvent, "kind" | "reason">): "level" | "wrong" | null {
@@ -87,6 +95,8 @@ export interface LedgerSources {
   decisions: DecisionRow[];
   /** 改回逐項看：造成它的驗收 id 與時間 */
   resets: { reviewId: string; at: string }[];
+  /** 提出少看建議（#125）：觸發的驗收 id、時間與依據的驗收 id；省略時沒有 */
+  proposals?: { reviewId: string; at: string; basis: string[] }[];
 }
 
 const iso = (value: Date | string): string => new Date(value).toISOString();
@@ -122,6 +132,8 @@ const pairKey = (employeeId: string, workTypeId: string) => `${employeeId}\u0000
 /** 同一時間時，新到舊列表中由上到下的順序：改回逐項看在造成它的退回上方；同時間的決定先於驗收發生，列在驗收下方。 */
 const TIE_ORDER: Record<LedgerKind, number> = {
   autoReset: 0,
+  // 提出少看建議在觸發它的驗收上方（同一次驗收不會同時改回逐項看）
+  proposed: 0,
   accepted: 1,
   returned: 1,
   relax: 2,
@@ -205,11 +217,16 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
     if (!a) continue;
     events.push({ ...base(a), id: `autoReset:${reset.reviewId}`, kind: "autoReset", at: reset.at, actor: null });
   }
+  for (const p of sources.proposals ?? []) {
+    const a = assignmentOfReview(p.reviewId);
+    if (!a) continue;
+    events.push({ ...base(a), id: `proposed:${p.reviewId}`, kind: "proposed", at: p.at, actor: null, basis: [...p.basis] });
+  }
   return events.sort(compareLedger);
 }
 
 const matchesEvent = (kind: LedgerKind, event: LedgerEventFilter = "all"): boolean =>
-  event === "all" || (event === "level" ? isLevelChange(kind) : kind === "returned");
+  event === "all" || (event === "level" ? inLevelFilter(kind) : kind === "returned");
 
 /** 依員工、工作類型與事件篩選；沒有指定（null、省略或 "all"）的條件不篩選。 */
 export function filterLedger(events: readonly LedgerEvent[], filter: LedgerFilter): LedgerEvent[] {
@@ -245,19 +262,23 @@ export function actorName(
   return employees.find((e) => e.id === actor)?.displayName ?? actor;
 }
 
-export async function readLedgerSources(db: Database, identity: string | null): Promise<LedgerSources> {
+export async function readLedgerSources(db: Database, identity: string | null, params: TrustParams = DEMO_PARAMS): Promise<LedgerSources> {
   // 沒有身分時比照 guest：不讀取（同 today.ts）
-  if (identity === null) return { assignments: [], employees: [], works: [], reviews: [], decisions: [], resets: [] };
+  if (identity === null) return { assignments: [], employees: [], works: [], reviews: [], decisions: [], resets: [], proposals: [] };
   const assignments = await listAssignments(db, identity);
   const employees = await listEmployees(db, identity);
   const works = await readWorks(db, identity);
   const reviews = await listReviews(db, identity);
   const decisions = await readDecisions(db, identity);
   const resets: LedgerSources["resets"] = [];
+  const proposals: NonNullable<LedgerSources["proposals"]> = [];
   const pairs = new Map(assignments.map((a) => [pairKey(a.employeeId, a.workTypeId), a]));
   for (const { employeeId, workTypeId } of pairs.values()) {
     const inputs = await getTrustInputs(db, identity, employeeId, workTypeId);
     for (const r of autoResets(inputs.reviews, inputs.decisions)) resets.push({ reviewId: r.review.id, at: r.at });
+    for (const p of relaxProposals(inputs.reviews, inputs.decisions, params)) {
+      proposals.push({ reviewId: p.review.id, at: p.at, basis: p.basis.map((r) => r.id) });
+    }
   }
   return {
     assignments,
@@ -266,6 +287,7 @@ export async function readLedgerSources(db: Database, identity: string | null): 
     reviews: reviews.map(({ id, workId, verdict, reason, decidedBy, decidedAt }) => ({ id, workId, verdict, reason, decidedBy, decidedAt })),
     decisions,
     resets,
+    proposals,
   };
 }
 
