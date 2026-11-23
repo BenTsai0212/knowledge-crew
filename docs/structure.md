@@ -242,10 +242,12 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `demo/texts.ts`：`demoText()`：虛構資料的文字換成目前語言
 - `demo/types.ts`：`demo.json` 的結構
 - `demo/validate.ts`：`demo.json` 的驗證
+- `github/fixtures/`：測試用的假 GitHub 回應（形狀同 REST API，內容全部虛構；`lifecycle.json` 是完整的一輪，`build.ts` 組出其他情況）
 - `github/issue.ts`：交辦 → GitHub Issue 的轉換純函式（#111）：`assignmentToIssue()`（`{ title, body, labels }`，本文沿用 `.github/ISSUE_TEMPLATE/feature.md` 的標題，標籤不含 `agent:ready`）、`planFirstOption()`（高風險一律先提計畫、不能取消）、`dispatchSteps()`（建立 → 讀回比對 → 單獨加 `agent:ready`）、`assignmentIdOf()`；工作類型的對照表由呼叫的一方傳入
 - `github/post-check.ts`：平台寫進 GitHub 前的檢查純函式（#111）：email、個人路徑、禁用名稱（規則與 `tools/workflow/check-sensitive.mjs` 一致，清單由呼叫的一方傳入，沒有時拒絕），留言不得以 `## 決定`、`## 修正要求` 開頭；只回報欄位、行號與種類（測試在 `post-check.test.ts`，與 `tools/workflow/` 共用案例）
 - `github/pr.ts`：PR 描述 → 交件（#112）：`parseManualTodos()`（「人工待辦」→ 要看的重點，讀不到與沒有重點分開）、`prToWork()`（交件全文、重點與變更；格式見 `docs/crew/work-body-format.md`「PR 描述轉成的交件」；測試在 `pr.test.ts`）
-- `github/types.ts`：平台與 GitHub 之間共用的型別（GitHub 回應的形狀，例如 `GitHubPrFile`；貼出前檢查的結果等）
+- `github/state.ts`：GitHub 的現況與時間軸 → 平台狀態、轉換序列與已知狀況（`deriveGithubState()`、`linkOf()`；格式見 `docs/crew/github-state.md`，測試在 `state.test.ts`，#110）
+- `github/types.ts`：平台與 GitHub 之間共用的型別（GitHub REST API 回應的形狀，只列用到的欄位，例如 `GitHubPrFile`、狀態讀回的 `GhIssue`、`GhTimelineEvent`；貼出前檢查的結果等）
 - `i18n.ts`：crew 介面文字唯一的讀取模組（`crewStrings()`；一個畫面一份翻譯檔，`CrewScreenKeys` 一行一個畫面）
 - `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題、段落與 `#owner` 的部門名稱，不是一個知識庫條目時是 null）、`flowbackDocumentId()`、`flowbackOwnerPendingId()`（測試在 `flowback.test.ts`）
 - `knowledge/origin.ts`：回流文件的來源：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、哪一次驗收）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）
