@@ -26,6 +26,10 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(page.getByRole("heading", { name: ct.trust.title, exact: true })).toBeVisible();
     await expect(page.getByRole("list", { name: ct.trust.legendLabel })).toContainText(ct.trust.legendWrong);
     await expect(page.getByText(ct.trust.rules, { exact: true })).toBeVisible();
+    // 開頭的說明一行放得下，最後兩個字不再單獨換行（#106）
+    const intro = page.locator(".crew-trust__heading p");
+    const lines = await intro.evaluate((p) => Math.round(p.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(p).lineHeight)));
+    expect(lines).toBe(1);
   });
 
   test("Rowan：做錯了依規則自動改回，說明要重新累積，沒有按鈕", async ({ page }) => {
@@ -81,4 +85,8 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   const card = (await row.boundingBox())!;
   const list = (await dots(row).boundingBox())!;
   expect(list.x + list.width).toBeLessThanOrEqual(card.x + card.width);
+  // 層級帶的名稱不截斷：兩格以上的換行顯示，一格的只留框（#106）
+  for (const band of await page.locator(".crew-trust__band").all()) {
+    expect(await band.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
+  }
 });

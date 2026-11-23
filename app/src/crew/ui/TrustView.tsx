@@ -232,12 +232,12 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
       </ol>
       <div className="crew-trust__grid crew-trust__bands">
         {bands(cells.map((c) => c.level)).map((b, i) => (
-          <span key={i} className="crew-trust__band" data-level={b.level} style={{ gridColumn: `span ${b.span}` }}>
+          <span key={i} className="crew-trust__band" data-level={b.level} data-span={b.span} style={{ gridColumn: `span ${b.span}` }}>
             {levelText(b.level, t)}
           </span>
         ))}
         {empty > 0 && (
-          <span className="crew-trust__band" data-level="none" style={{ gridColumn: `span ${empty}` }}>
+          <span className="crew-trust__band" data-level="none" data-span={empty} style={{ gridColumn: `span ${empty}` }}>
             {t.bandEmpty}
           </span>
         )}

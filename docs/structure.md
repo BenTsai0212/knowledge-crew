@@ -253,7 +253,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/AssignView.tsx`：「交辦」畫面：交辦表單（依員工帶入來源與工作類型、結果說明）、交辦清單（最近 4 件，可看全部）與「模擬交件」（只呈現 `assign.ts` 的結果；表單與按鈕只給能驗收的身分）
 - `ui/components.tsx`：AI 員工畫面共用的元件（AI 標記、層級徽章、圓點 `DotMark`／`DotRow`／`dotsSummary()`（信任頁與員工卡共用）、結論列、自動檢查列、收起的區塊；樣式在 `components.css`，測試在 `components.test.ts`）
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數；手機是可橫向滑動的按鈕列，#103）
-- `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」；畫面以 `navigate` 切換位置（交辦頁可預選員工）；「工作與驗收」「信任」帶數字（`section-counts.ts`，只給能驗收的身分），目前的子頁捲進按鈕列（#103）
+- `ui/CrewPage.tsx`：crew 頁：頁首、子導覽五個位置（員工、交辦、工作與驗收、信任、工作帳本；#100 拿掉「今天」）；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」；畫面以 `navigate` 切換位置（交辦頁可預選員工）；「工作與驗收」「信任」帶數字（`section-counts.ts`，只給能驗收的身分），目前的子頁捲進按鈕列（#103）
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
 - `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數、待驗收件數、平常的工作來源、最近的圓點與一句說明；測試在 `employees.test.ts`）
 - `ui/EmployeesView.css`：「員工」畫面的員工卡（桌機兩欄、窄螢幕一欄；職務圖示的方框）
