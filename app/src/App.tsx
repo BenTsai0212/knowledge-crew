@@ -83,6 +83,7 @@ import { CrewPage } from "./crew/ui/CrewPage";
 import { CrewTabCount, HomeTodayCard, HomeTodaySummary, useCrewToday } from "./crew/ui/HomeToday";
 import type { CrewTarget } from "./crew/ui/sections";
 import { SourceOrigin } from "./crew/ui/SourceOrigin";
+import { CrewTour, CrewTourCard, useCrewTour } from "./crew/ui/Tour";
 import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
@@ -225,6 +226,8 @@ export function App() {
   const [crewVersion, setCrewVersion] = useState(0);
   const crewToday = useCrewToday(db, identity, language, views(canReview).includes("crew"), `${view}/${crewVersion}`);
   const crewAwaiting = crewToday?.identity === identity ? crewToday.awaiting : null;
+  // knowledge-crew 的第一次來的導覽（#122）：不自動彈出；首頁的入口小卡開始，每一步切到首頁或 crew 頁的某個位置
+  const crewTour = useCrewTour();
   const [reviewVersion, setReviewVersion] = useState(0);
   // 首頁的「等你處理」用同一次讀取的結果（#283），導覽列的數字是其中的 total（與 pendingCount() 相同）
   const [pending, setPending] = useState<{ identity: string; count: number; summary: WaitingSummary } | null>(null);
@@ -1050,7 +1053,10 @@ export function App() {
             onOpenEntity={(id) => (setGraphFocus(id), setView("graph"))}
             todaySummary={<HomeTodaySummary state={crewToday} identity={identity} language={language} />}
             todayCard={
-              <HomeTodayCard state={crewToday} identity={identity} language={language} phone={phone} onOpen={openCrew} />
+              <>
+                <CrewTourCard enabled={views(canReview).includes("crew")} seen={crewTour.seen} language={language} onStart={crewTour.start} onDismiss={crewTour.dismiss} />
+                <HomeTodayCard state={crewToday} identity={identity} language={language} phone={phone} onOpen={openCrew} />
+              </>
             }
           />
         </main>
@@ -1173,6 +1179,17 @@ export function App() {
       {/* 手機的原文與實體面板是底部面板（#256），平板是滑出面板（#255）：原生 <dialog> 在 top layer，放在 main 之外 */}
       {overlay && sourceSheet()}
       {overlay && view === "qa" && mentionSheet()}
+      {db !== null && crewTour.step !== null && views(canReview).includes("crew") && (
+        <CrewTour
+          db={db}
+          identity={identity}
+          language={language}
+          step={crewTour.step}
+          go={(to) => (to.kind === "home" ? setView("home") : openCrew(to.target))}
+          onNext={crewTour.next}
+          onEnd={crewTour.end}
+        />
+      )}
     </div>
   );
 }

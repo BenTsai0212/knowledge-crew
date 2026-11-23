@@ -5,7 +5,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { blockModelDownload, chooseAccount, EVALS_PATH, gotoView, s, signInPanel, switchIdentity, userCard } from "./support/app";
 import { access, language, readClientJson } from "./support/client";
-import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel } from "./support/crew";
+import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel, tourCard, tourDialog, walkTour } from "./support/crew";
 import { toFlowbackDocument } from "../app/src/crew/knowledge/flowback";
 import type { Cy } from "./support/graph";
 
@@ -108,6 +108,14 @@ test.describe("桌機", () => {
     await expectViews(page);
     await expect(userCard(page).getByRole("button", { name: s.changeAccessCode, exact: true })).toHaveCount(0);
     await expect(page.getByText(s.fictionalData, { exact: false }).first()).toBeVisible();
+    // 第一次來的導覽（#122）：不自動彈出，只有首頁的入口小卡
+    await expect(tourCard(page)).toBeVisible();
+    await expect(tourDialog(page)).toHaveCount(0);
+  });
+
+  test("第一次來的導覽：5 步走完，沒有 /api/* 請求（afterEach）", async ({ page }) => {
+    await enter(page);
+    await walkTour(page);
   });
 
   test("五個子畫面都能開啟，沒有錯誤", async ({ page }) => {

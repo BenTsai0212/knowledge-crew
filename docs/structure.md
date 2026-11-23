@@ -230,7 +230,7 @@
 
 ### `app/src/crew/`
 
-knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew 的功能只放這裡。介面文字只經 `i18n.ts` 讀 `client/i18n/crew/`；knowledge-kit 檔案的接入點只限 ADR 0004 的清單（`App.tsx`、`ui/online-demo.ts`、`ui/Sidebar.tsx`、`ui/layout.ts`、`vitest.config.ts`、本文件，以及 ADR 0004 修訂加入的 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`、`e2e/tablet.spec.ts`，與 crew ADR 0005 加入的 `ui/SignInPanel.tsx`、`ui/sign-in.ts`，以及 ADR 0004 的 2026-11-22 修訂加入的原文元件 `ui/SourcePanel.tsx`、`ui/SourceSheet.tsx`，與 #96 加入的 `ui/HomePage.tsx`、`ui/app.css`（`.crew-tab-count`））。
+knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew 的功能只放這裡。介面文字只經 `i18n.ts` 讀 `client/i18n/crew/`；knowledge-kit 檔案的接入點只限 ADR 0004 的清單（`App.tsx`、`ui/online-demo.ts`、`ui/Sidebar.tsx`、`ui/layout.ts`、`vitest.config.ts`、本文件，以及 ADR 0004 修訂加入的 `e2e/mobile.spec.ts`、`e2e/mobile-pages.spec.ts`、`e2e/tablet.spec.ts`，與 crew ADR 0005 加入的 `ui/SignInPanel.tsx`、`ui/sign-in.ts`，以及 ADR 0004 的 2026-11-22 修訂加入的原文元件 `ui/SourcePanel.tsx`、`ui/SourceSheet.tsx`，與 #96 加入的 `ui/HomePage.tsx`、`ui/app.css`（`.crew-tab-count`），與 #122 加入的 `ui/access-code.test.ts`（`localStorage` 的例外加上 `crew/ui/tour.ts`））。
 
 - `db/constraints.test.ts`：crew migration 的 CHECK 與 UNIQUE
 - `db/migrate.ts`：crew 的 migration 清單（版本加 `crew/` 前綴，由 `openDatabase()` 的 `migrations` 選項套用；測試在 `migrate.test.ts`）
@@ -287,6 +287,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/sections.ts`：子導覽的位置與名稱的鍵（員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：工作與驗收，#100）、畫面元件的 props（`ledgerFilter`：切到工作帳本時的篩選，#121）
 - `ui/SourceOrigin.tsx`：原文的接入點：回流的文件在原文面板（`ui/SourcePanel.tsx`、`ui/SourceSheet.tsx` 的 `origin`）顯示「來自 AI 員工 ○○・驗收「○○」（日期）」，點了切到「工作與驗收」的那一件（`App.tsx` 經 `CrewPage` 的 `request`；測試在 `SourceOrigin.test.ts`）
 - `ui/today.ts`：今天的工作的資料整理（`readToday()`：待驗收、進行中、建議少看；首頁的「今天的工作」使用，AI 員工頁籤內沒有「今天」子頁（#100）；測試在 `today.test.ts`）
+- `ui/Tour.css`：第一次來的導覽的入口小卡、「重新看導覽」、導覽對話框與標出區塊的外框（只用 theme 的 CSS 變數）
+- `ui/tour.ts`：第一次來的導覽（#122）的步驟與目標區塊、看過的紀錄（`localStorage`，讀寫包在 try/catch，讀不到時當成沒看過）、對話框的位置、回流那一步的工作（`readTourFlowback()`；測試在 `tour.test.ts`）
+- `ui/Tour.tsx`：第一次來的導覽：首頁 `todayCard` 插槽的入口小卡（`CrewTourCard`，不自動彈出）與逐步切到首頁或 crew 頁、標出區塊的對話框（`CrewTour`，`App.tsx` 提供切換畫面；`Esc` 結束）
 - `ui/trust-report.ts`：信任頁的總覽報表（#121）：`trustReport()` 以 `readTrust()` 的列與工作帳本的事件整理每個「員工 × 工作類型」的驗收次數、第一次就通過、三種退回原因、目前層級與層級變化（純函式；測試在 `trust-report.test.ts`）
 - `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`trustTimeline()`／`trustNote()`：信任頁的時間軸（每次驗收當時的層級與層級事件）與說明；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
 - `ui/TrustReport.tsx`：信任頁最上方的總覽報表：點一列切到工作帳本並篩選成該員工＋該工作類型，點退回的數字再篩選成退回（#121）
@@ -341,6 +344,7 @@ Playwright 的端對端測試（`*.spec.ts`）；設定在根目錄的 `playwrig
 
 - `access.spec.ts`：越權
 - `compare.spec.ts`：展示模式的身分對照，只在 `VITE_DEMO_COMPARE=1` 的 build 執行畫面的測試（比對文字只出現在一個答案段落的檢查不需要開關）
+- `crew-tour.spec.ts`：第一次來的導覽（#122）：入口小卡、5 步、鍵盤與 `Esc`（1280 與 390）；只在有 `crew/demo.json` 的客戶執行
 - `demo.spec.ts`：線上 demo 的設定，只在 `VITE_ONLINE_DEMO=1` 的 build 執行
 - `entry-touch.spec.ts`：入口（手機與平板）與觸控目標（#255 PR 4）
 - `evals-desktop.spec.ts`：桌機的評測台與品質報告（1440×900，#347）

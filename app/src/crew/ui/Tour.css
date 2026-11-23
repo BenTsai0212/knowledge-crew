@@ -1,0 +1,171 @@
+/* 第一次來的導覽（#122）：首頁的入口小卡、「重新看導覽」、導覽對話框與標出區塊的外框。
+   顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts） */
+
+/* 入口小卡：在「今天的工作」上方，桌機兩欄時橫跨兩欄 */
+.home__cards > .crew-tour-card,
+.home__cards > .crew-tour-replay {
+  grid-column: 1 / -1;
+}
+
+.crew-tour-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--color-primary);
+}
+
+.crew-tour-card__text {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.crew-tour-card__title {
+  margin: 0;
+  font-size: 15px;
+}
+
+.crew-tour-card__body {
+  margin: 4px 0 0;
+  color: var(--color-textMuted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.crew-tour-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crew-tour-card__start {
+  min-height: 44px;
+  padding: 0 16px;
+  font-weight: 600;
+}
+
+/* 關掉：44px 的觸控範圍、不搶眼 */
+.crew-tour-card__close {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  color: var(--color-textMuted);
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* 重新看導覽：一行不顯眼的連結 */
+.crew-tour-replay {
+  margin: 0;
+  font-size: 13px;
+}
+
+.crew-tour-replay__button {
+  min-height: 32px;
+  color: var(--color-textMuted);
+}
+
+/* 標出的區塊：蓋在目標上的外框，不擋點擊 */
+.crew-tour__spot {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  border: 3px solid var(--color-focus);
+  border-radius: var(--radius-medium);
+  box-shadow: 0 0 0 4px var(--color-surface);
+  transition: top var(--motion-fast, 120ms) ease, left var(--motion-fast, 120ms) ease, width var(--motion-fast, 120ms) ease,
+    height var(--motion-fast, 120ms) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crew-tour__spot {
+    transition: none;
+  }
+}
+
+/* 導覽對話框：不是 modal，固定在目標的另一半（tour.ts 的 dialogPlace） */
+.crew-tour {
+  position: fixed;
+  z-index: 41;
+  right: 24px;
+  width: min(400px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 16px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 8px 28px var(--color-overlay);
+}
+
+.crew-tour[data-place="bottom"] {
+  bottom: 24px;
+}
+
+.crew-tour[data-place="top"] {
+  top: 24px;
+}
+
+.crew-tour__progress {
+  margin: 0;
+  font-size: 12px;
+}
+
+.crew-tour__title {
+  margin: 4px 0 6px;
+  font-size: 17px;
+}
+
+.crew-tour__body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.crew-tour__hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.crew-tour__buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.crew-tour__buttons button {
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.crew-tour__next {
+  font-weight: 600;
+}
+
+/* 手機與平板：左右各留 16px；下方讓出底部分頁列，上方讓出頂端列 */
+@media (max-width: 1024px) {
+  .crew-tour {
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .crew-tour[data-place="bottom"] {
+    bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  .crew-tour[data-place="top"] {
+    top: 76px;
+  }
+
+  .crew-tour__hint {
+    display: none;
+  }
+}

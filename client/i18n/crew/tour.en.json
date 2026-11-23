@@ -1,0 +1,23 @@
+{
+  "cardTitle": "First time here? A 90-second tour",
+  "cardBody": "Five steps through assigning, reviewing, returning, how trust changes, and the flow back into the knowledge base.",
+  "start": "Start the tour",
+  "dismiss": "Close the tour card",
+  "replay": "Watch the tour again",
+  "dialogLabel": "Tour",
+  "progress": "Step {current} of {total}",
+  "next": "Next",
+  "finish": "Done",
+  "end": "End the tour",
+  "escHint": "Press Esc to end it at any time.",
+  "todayTitle": "Today's work",
+  "todayBody": "Work handed in by AI employees waits here for your review; items with failing checks come first.",
+  "reviewTitle": "Review panel",
+  "reviewBody": "The employee marks the points to check, plus automated checks; you decide to accept or return.",
+  "returnTitle": "Reasons for returning",
+  "returnBody": "When you return work, pick one of three reasons: \"It is wrong\" sends this kind of work back to \"Review every item\"; the other two do not affect trust.",
+  "trustTitle": "Trust",
+  "trustBody": "Trust grows with reviews; a lighter review needs your consent and you can take it back at any time.",
+  "flowbackTitle": "Back into the knowledge base",
+  "flowbackBody": "Accepted knowledge base entries go into the knowledge base and the graph, marked with where they came from."
+}
