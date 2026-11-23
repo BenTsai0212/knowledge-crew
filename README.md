@@ -8,6 +8,8 @@ knowledge-crew 是**有知識庫的 AI 員工工作平台**（[RFC 0001](docs/cr
 
 AI 員工的工作成果驗收通過後會回流到知識庫與圖譜。
 
+本 repo **以公開展示為主**：以虛構資料展示概念、畫面與做法，真實運作（資料庫、登入、連 GitHub 的寫入、真實紀錄）由另外的專案負責（[RFC 0001](docs/crew/rfcs/0001-project-charter.md) 2026-11-23 修訂）。
+
 - **建立在 knowledge-kit 之上**：本 repo 以 [knowledge-kit](https://github.com/BenTsai0212/knowledge-kit) 為上游，連同 git 歷史匯入，保留它的全部功能與 CI，之後持續同步（[ADR 0002](docs/crew/adr/0002-knowledge-kit-upstream.md)）。
 - **與 CrewAI 框架無關**：名稱中的 crew 指「帶領一群 AI 員工」，本 repo 不使用、也不衍生自 CrewAI。
 - **線上 demo**：只展示 AI 員工（虛構資料，不呼叫模型、不需要邀請碼）；網址：<https://knowledge-crew-demo.bentsai0212.workers.dev>，部署方式見 [docs/deploy.md](docs/deploy.md#只展示-ai-員工的線上-demo)「只展示 AI 員工的線上 demo」。
