@@ -9,8 +9,10 @@ import { readFlowbackPassage } from "../knowledge/origin";
 import { parseWorkBody, type ParsedBody } from "../work/body";
 import { sourceLabel } from "./refs";
 import { deliverableOf, type Deliverable } from "./review/conclusion";
+import { lightReason, type LightReason } from "./review/light";
+import { DEMO_PARAMS } from "../trust/demo-params";
 import { reviewFocus, reviewLevel } from "../trust/rules";
-import type { ReturnReason, ReviewFocus, Verdict } from "../trust/types";
+import type { ReturnReason, ReviewFocus, Verdict, WorkChange } from "../trust/types";
 
 /** 「最近驗收過」最多幾筆（#39 的 `## 決定` 2） */
 export const RECENT_LIMIT = 10;
@@ -61,6 +63,10 @@ export interface ReviewPanel {
   deliverable: Deliverable | null;
   /** 最新一輪已回流知識庫時，回流文件的第一段（#92；沒有回流或看不到時是 null） */
   knowledgePassage: string | null;
+  /** 少看時「為什麼是少看」的依據（#102）；逐項看時是 null */
+  light: LightReason | null;
+  /** 最新一輪的變更（目前語言）：少看時收成一行，「逐項列出」展開時用 */
+  changeItems: WorkChange[];
 }
 
 const EMPTY: WorkList = { awaiting: [], recent: [] };
@@ -154,9 +160,10 @@ export async function readReviewPanel(
   const current = works.at(-1);
   if (!current) return null;
   const { reviews, decisions } = await getTrustInputs(db, identity, item.employee.id, item.workTypeId);
+  const level = reviewLevel(reviews, decisions);
   return {
     item,
-    focus: reviewFocus(current, reviewLevel(reviews, decisions)),
+    focus: reviewFocus(current, level),
     current: { id: current.id, round: current.round, externalRef: current.externalRef, summary: current.summary, submittedAt: current.submittedAt },
     earlier: works.slice(0, -1).map((w) => ({
       round: w.round,
@@ -169,6 +176,8 @@ export async function readReviewPanel(
     body: parseWorkBody(current.body, current.points.length),
     deliverable: deliverableOf(item.workTypeId),
     knowledgePassage: current.review?.verdict === "accepted" ? await readFlowbackPassage(db, identity, current.id) : null,
+    light: level === "light" ? lightReason(reviews, decisions, DEMO_PARAMS.window) : null,
+    changeItems: current.changes,
   };
 }
 

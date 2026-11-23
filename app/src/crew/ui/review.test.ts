@@ -108,10 +108,14 @@ describe("readReviewPanel：匯入虛構資料後", () => {
     expect(p.current).toMatchObject({ id: "k13-w1", round: 1, externalRef: null });
     expect(p.earlier).toEqual([]);
     expect(p.canDecide).toBe(true);
+    // 為什麼是少看（#102）：10/13 同意少看（d02），最近 10 次沒有做錯；變更的內容給「逐項列出」用
+    expect(p.light).toEqual({ relaxedAt: new Date("2026-10-13T10:00:00+08:00").toISOString(), recent: 10 });
+    expect(p.changeItems.map((c) => c.path)).toEqual(["kb/pre-orders", "kb/pre-orders#owner"]);
   });
 
   it("manager 打開 c11（Sorrel × 貼文與商品介紹，逐項看）：變更逐項列出", async () => {
     const p = (await panel(db, "manager", "c11"))!;
+    expect(p.light).toBeNull();
     expect(p.focus.level).toBe("item");
     expect(p.focus.changes.mode).toBe("items");
     expect(p.focus.changes.mode === "items" && p.focus.changes.items).toHaveLength(3);

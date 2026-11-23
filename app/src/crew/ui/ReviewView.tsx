@@ -18,7 +18,7 @@ type Texts = CrewTexts<"review">;
 type Data = { list: WorkList; selected: string | null; panel: PanelData | null };
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: Data };
 
-export function ReviewView({ db, identity, language, assignmentId, onOpenSource, onChanged }: CrewScreenProps) {
+export function ReviewView({ db, identity, language, assignmentId, navigate, onOpenSource, onChanged }: CrewScreenProps) {
   const t = crewStrings("review", language);
   const canReview = canReviewOf(clientConfig.access, identity);
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -125,6 +125,7 @@ export function ReviewView({ db, identity, language, assignmentId, onOpenSource,
           decide={decide}
           noUpload={noUpload}
           onOpenSource={onOpenSource}
+          onOpenTrust={navigate && (() => navigate({ section: "trust" }))}
         />
       ) : (
         <p className="muted crew-review__hint">{t.selectHint}</p>

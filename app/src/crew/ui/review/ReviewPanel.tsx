@@ -8,9 +8,11 @@ import type { ReturnReason } from "../../trust/types";
 import { crewStrings, type CrewTexts } from "../../i18n";
 import { CheckRow, ConclusionRow, LevelBadge, withEmployee } from "../components";
 import type { ReviewPanel as PanelData, WorkListItem } from "../review";
+import { workTypeLabel } from "../labels";
 import { assignmentRef, workRef } from "../refs";
 import { BodyView, PointList, type ActivePoint } from "./BodyView";
 import { conclusionOf, decisionQuestion, deliverableName, type Audience } from "./conclusion";
+import type { LightReason } from "./light";
 
 type Texts = CrewTexts<"review">;
 export type Decide = (input: Parameters<typeof createReview>[2]) => Promise<void>;
@@ -39,9 +41,11 @@ interface PanelProps {
   noUpload?: boolean;
   /** 打開回流文件的原文；沒有時不顯示「打開原文」 */
   onOpenSource?: (passageId: string) => void;
+  /** 切到信任頁；沒有時不顯示「看信任紀錄」 */
+  onOpenTrust?: () => void;
 }
 
-export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, onOpenSource }: PanelProps) {
+export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, onOpenSource, onOpenTrust }: PanelProps) {
   const t = crewStrings("review", language);
   const { item, focus, current, earlier, body, deliverable } = panel;
   // 選中的重點只存在元件 state；換一筆工作時（key 改變）重設
@@ -87,8 +91,9 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
           />
         )}
       </header>
-      {/* 少看的說明（規格 6.3）由另一張 Issue 放在這裡 */}
-      {focus.level === "light" && <div className="crew-review__light-slot" />}
+      {focus.level === "light" && panel.light && (
+        <LightCard reason={panel.light} employee={item.employee.displayName} workType={workTypeLabel(item.workTypeId, language)} language={language} onOpenTrust={onOpenTrust} t={t} />
+      )}
 
       <div className="crew-review__pair">
         <section className="card crew-review__section">
@@ -124,6 +129,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
           body={body}
           raw={focus.body.text}
           changes={focus.changes}
+          changeItems={panel.changeItems}
           language={language}
           active={active}
           deliverable={deliverable}
@@ -166,6 +172,38 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
         </p>
       )}
     </article>
+  );
+}
+
+interface LightCardProps {
+  reason: LightReason;
+  employee: string;
+  workType: string;
+  language: LanguageCode;
+  onOpenTrust?: () => void;
+  t: Texts;
+}
+
+/** 為什麼是少看（規格 6.3）：success 1px 框、盾牌圖示；何時同意、最近幾次沒有做錯、收起什麼、一次做錯了就改回逐項看 */
+function LightCard({ reason, employee, workType, language, onOpenTrust, t }: LightCardProps) {
+  const since = withEmployee(t.lightSince, { date: formatDate(reason.relaxedAt, language), workType, count: reason.recent }, employee, language);
+  return (
+    <section className="crew-review__light" aria-labelledby="crew-review-light-title">
+      <svg className="crew-icon crew-review__light-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9c-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M9 12l2 2l4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <div className="crew-review__light-text">
+        <h4 id="crew-review-light-title">{t.lightTitle}</h4>
+        <p>{since}</p>
+        <p>{t.lightRule}</p>
+        {onOpenTrust && (
+          <button type="button" className="link" onClick={onOpenTrust}>
+            {t.lightTrust}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 

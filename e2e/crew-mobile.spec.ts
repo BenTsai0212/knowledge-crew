@@ -3,7 +3,8 @@
 // 只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
-import { ct, crewSections, gotoCrewSection, hasCrewDemo, openCrew } from "./support/crew";
+import { language, readClientJson } from "./support/client";
+import { ct, crewSections, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -15,6 +16,10 @@ const reviewList = (page: Page) => page.getByRole("navigation", { name: ct.revie
 const awaitingItems = (page: Page) => reviewList(page).locator("section").first().getByRole("listitem");
 const decisionBar = (page: Page) => page.locator(".crew-review__decision");
 const tabbar = (page: Page) => page.locator(".mobile-tabbar");
+// 少看的件（#102）：Linden 的 k13
+const k13Title = hasCrewDemo
+  ? readClientJson<{ assignments: { id: string; title: Record<string, string> }[] }>("crew/demo.json").assignments.find((a) => a.id === "k13")!.title[language]
+  : "";
 
 async function openCrewAs(page: Page, role: string): Promise<void> {
   await openApp(page);
@@ -101,6 +106,41 @@ test.describe("手機 390", () => {
     expect((await box(confirm)).y + (await box(confirm)).height).toBeLessThanOrEqual((await box(tabbar(page))).y);
     await confirm.click();
     await expect(reviewList(page).getByText(ct.review.verdictReturned, { exact: true }).first()).toBeVisible();
+    expect(await noHorizontalScroll(page)).toBe(true);
+  });
+
+  test("主管：少看的件（#102 的 k13）決定列仍固定在分頁列之上；展開收起的欄位與變更後，捲到最後決定列回到原位", async ({ page }) => {
+    await openCrewAs(page, "manager");
+    await reviewList(page).getByRole("button").filter({ hasText: k13Title }).click();
+    const panel = reviewPanel(page, k13Title);
+    await expect(panel.getByRole("region", { name: ct.review.lightTitle })).toBeVisible();
+    const bar = panel.locator(".crew-review__decision");
+    await expect(bar).toBeVisible();
+
+    // 面板的開頭：決定列貼在分頁列上緣
+    await panel.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 8));
+    const tabTop = Math.round((await box(tabbar(page))).y);
+    await expect.poll(async () => Math.round((await box(bar)).y + (await box(bar)).height)).toBe(tabTop);
+    expect(await bar.evaluate((el) => getComputedStyle(el).position)).toBe("sticky");
+
+    // 展開「其他 N 個欄位已收起」與「逐項列出」
+    const toggle = panel.locator(".crew-collapsed__toggle");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await panel.getByRole("button", { name: ct.review.changesList, exact: true }).click();
+    const items = panel.locator(".crew-review__changes-items li");
+    await expect(items.first()).toBeVisible();
+
+    // 捲到面板最後：決定列回到原位，展開的內容（最後一項變更、前一段）都在它上方，沒有被蓋住
+    await bar.evaluate((el) => {
+      const article = el.closest("article")!;
+      window.scrollBy(0, article.getBoundingClientRect().bottom - (window.innerHeight - 72 - 16));
+    });
+    const last = bar.locator("xpath=preceding-sibling::*[1]");
+    await expect.poll(async () => (await box(last)).y + (await box(last)).height <= (await box(bar)).y + 1).toBe(true);
+    const lastItem = items.last();
+    expect((await box(lastItem)).y + (await box(lastItem)).height).toBeLessThanOrEqual((await box(bar)).y + 1);
+    expect((await box(bar)).y + (await box(bar)).height).toBeLessThanOrEqual((await box(tabbar(page))).y + 1);
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 

@@ -23,7 +23,7 @@
   "checkPass": "Passed",
   "checkFail": "Failed",
   "checkPending": "Checking",
-  "changesSummary": "{count, plural, one {# other change is collapsed (lighter review)} other {# other changes are collapsed (lighter review)}}",
+  "changesSummary": "{count, plural, one {# change is collapsed (lighter review)} other {# changes are collapsed (lighter review)}}: {places}",
   "earlier": "Earlier rounds",
   "earlierRound": "Round {round} · {work}",
   "earlierRoundNoRef": "Round {round}",
@@ -91,5 +91,12 @@
   "mergeNote": "Accepting only records the review; merging happens on GitHub.",
   "knowledgeFlowed": "Added to the knowledge base",
   "knowledgeOpen": "Open the source",
-  "knowledgeNoUpload": "Not added to the knowledge base: no upload permission"
+  "knowledgeNoUpload": "Not added to the knowledge base: no upload permission",
+  "changesList": "List each change",
+  "changesHide": "Hide changes",
+  "changesItemSeparator": ": ",
+  "lightTitle": "Why this is a lighter review",
+  "lightSince": "You approved it on {date}; {employee} has made no mistakes in the last {count, plural, one {# review} other {# reviews}} of “{workType}”.",
+  "lightRule": "Only fields and changes without points are collapsed. Points, checks and empty fields are always shown; a single “It is wrong” switches back to reviewing each item.",
+  "lightTrust": "See the trust record"
 }
