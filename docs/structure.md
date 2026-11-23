@@ -242,6 +242,8 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `demo/texts.ts`：`demoText()`：虛構資料的文字換成目前語言
 - `demo/types.ts`：`demo.json` 的結構
 - `demo/validate.ts`：`demo.json` 的驗證
+- `github/pr.ts`：PR 描述 → 交件（#112）：`parseManualTodos()`（「人工待辦」→ 要看的重點，讀不到與沒有重點分開）、`prToWork()`（交件全文、重點與變更；格式見 `docs/crew/work-body-format.md`「PR 描述轉成的交件」；測試在 `pr.test.ts`）
+- `github/types.ts`：crew 與 GitHub 之間共用的型別（GitHub 回應的形狀，例如 `GitHubPrFile`）
 - `i18n.ts`：crew 介面文字唯一的讀取模組（`crewStrings()`；一個畫面一份翻譯檔，`CrewScreenKeys` 一行一個畫面）
 - `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題、段落與 `#owner` 的部門名稱，不是一個知識庫條目時是 null）、`flowbackDocumentId()`、`flowbackOwnerPendingId()`（測試在 `flowback.test.ts`）
 - `knowledge/origin.ts`：回流文件的來源：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、哪一次驗收）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）
