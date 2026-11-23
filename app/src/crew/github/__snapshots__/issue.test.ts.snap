@@ -1,0 +1,92 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`assignmentToIssue：四種工作類型的快照 > bugfix：沒有目標時，目標寫一句話交辦 1`] = `
+{
+  "body": "## 目標
+
+篩選後件數少一件
+
+## 驗收條件
+
+- [ ] 件數與清單一致
+
+---
+
+crew-assignment: as-0001; employee: 小開; by: 決定者
+",
+  "labels": [
+    "type:fix",
+  ],
+  "title": "fix: 篩選後件數少一件",
+}
+`;
+
+exports[`assignmentToIssue：四種工作類型的快照 > docs：使用者勾選先提計畫 1`] = `
+{
+  "body": "## 目標
+
+交辦多了以後，決定者想只看某位員工的交辦。
+
+## 驗收條件
+
+- [ ] 可以依員工篩選
+- [ ] 篩選後件數正確
+
+---
+
+crew-assignment: as-0001; employee: 小開; by: 決定者
+",
+  "labels": [
+    "type:docs",
+    "area:workflow",
+    "plan-first",
+  ],
+  "title": "docs: 說明篩選的用法",
+}
+`;
+
+exports[`assignmentToIssue：四種工作類型的快照 > feature：有目標與範圍 1`] = `
+{
+  "body": "## 目標
+
+交辦多了以後，決定者想只看某位員工的交辦。
+
+## 驗收條件
+
+- [ ] 可以依員工篩選
+- [ ] 篩選後件數正確
+
+---
+
+crew-assignment: as-0001; employee: 小開; by: 決定者
+",
+  "labels": [
+    "type:feat",
+    "area:crew",
+  ],
+  "title": "feat: 交辦清單加上篩選",
+}
+`;
+
+exports[`assignmentToIssue：四種工作類型的快照 > schema：高風險，一律先提計畫 1`] = `
+{
+  "body": "## 目標
+
+交辦多了以後，決定者想只看某位員工的交辦。
+
+## 驗收條件
+
+- [ ] 可以依員工篩選
+- [ ] 篩選後件數正確
+
+---
+
+crew-assignment: as-0001; employee: 小開; by: 決定者
+",
+  "labels": [
+    "type:feat",
+    "plan-first",
+  ],
+  "title": "feat: 交辦加上 part 欄位",
+}
+`;
