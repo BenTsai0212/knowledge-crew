@@ -14,9 +14,10 @@
   gap: 1rem 2rem;
 }
 
+/* 說明至少 40rem 寬：中文的說明一行放得下；放不下圖例時圖例換到下一行（#106：桌機 1280 時說明的最後兩個字曾單獨換行） */
 .crew-trust__heading {
   display: grid;
-  flex: 1 1 30rem;
+  flex: 1 1 40rem;
   gap: 0.25rem;
   min-width: 0;
 }
@@ -27,6 +28,11 @@
 .crew-trust__row h3,
 .crew-trust__row p {
   margin: 0;
+}
+
+/* 說明換成多行時（英文、窄螢幕）避免最後一行只剩一個字 */
+.crew-trust__heading p {
+  text-wrap: pretty;
 }
 
 .crew-trust__legend {
@@ -133,13 +139,13 @@
   box-sizing: border-box;
   min-width: 0;
   min-height: 1.6rem;
-  padding: 0 0.5rem;
+  padding: 0.15rem 0.5rem;
   border: 1px solid transparent;
   border-radius: var(--radius-small);
-  overflow: hidden;
   font-size: 0.75rem;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  line-height: 1.2;
+  /* 窄的層級帶（英文、手機）在字詞之間換行，不截斷（#106） */
+  overflow-wrap: break-word;
 }
 
 .crew-trust__band[data-level="item"] {
@@ -185,6 +191,13 @@
   }
 
   .crew-trust__band {
-    padding: 0 0.25rem;
+    padding: 0.15rem 0.2rem;
+    font-size: 0.7rem;
+  }
+
+  /* 只有一格寬的層級帶放不下任何一種語言的名稱：只留框與底色，文字仍在（螢幕閱讀器照樣讀到），
+     層級由「目前層級」與上方的事件說明（#106） */
+  .crew-trust__band[data-span="1"] {
+    font-size: 0;
   }
 }

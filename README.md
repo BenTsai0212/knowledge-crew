@@ -1,15 +1,43 @@
 # knowledge-crew
 
-knowledge-crew 是帶領 AI 員工的工作平台：交辦、驗收，信任隨驗收長出來。
+knowledge-crew 是**有知識庫的 AI 員工工作平台**（[RFC 0001](docs/crew/rfcs/0001-project-charter.md) 2026-11-22 修訂）。主軸是「交辦、驗收，信任隨驗收長出來」，同一個產品包含三部分：
+
+- **知識管理**：knowledge-kit 的首頁、問答、圖譜。AI 員工做事時查的知識在這裡。
+- **工作管理**：首頁的「今天的工作」，一眼看到今天要驗收、要決定的事。
+- **AI 派工**：交辦、驗收，信任隨驗收長出來。
+
+AI 員工的工作成果驗收通過後會回流到知識庫與圖譜。
 
 - **建立在 knowledge-kit 之上**：本 repo 以 [knowledge-kit](https://github.com/BenTsai0212/knowledge-kit) 為上游，連同 git 歷史匯入，保留它的全部功能與 CI，之後持續同步（[ADR 0002](docs/crew/adr/0002-knowledge-kit-upstream.md)）。
 - **與 CrewAI 框架無關**：名稱中的 crew 指「帶領一群 AI 員工」，本 repo 不使用、也不衍生自 CrewAI。
 - **線上 demo**：只展示 AI 員工（虛構資料，不呼叫模型、不需要邀請碼）；網址：<https://knowledge-crew-demo.bentsai0212.workers.dev>，部署方式見 [docs/deploy.md](docs/deploy.md#只展示-ai-員工的線上-demo)「只展示 AI 員工的線上 demo」。
 - 專案章程與決策紀錄：[docs/crew/rfcs/](docs/crew/rfcs/)、[docs/crew/adr/](docs/crew/adr/README.md)。knowledge-kit 的 [docs/rfcs/](docs/rfcs/)、[docs/adr/](docs/adr/README.md) 同樣有效，除非 knowledge-crew 的 ADR 另有決定。
 
-以下是從 knowledge-kit 繼承的功能。knowledge-kit 是用虛構資料、快速為一個組織建立「第二大腦」知識平台 demo 的範本：換一個組織只改設定（`client/` 或 `clients/<名稱>/`），不改程式。demo 是展示用的原型，不是正式系統。
+## AI 員工
 
-## Features
+AI 員工（虛構的 Rowan、Sorrel、Linden、Juniper）各負責一種工作：客戶回覆、貼文與商品介紹、知識庫整理、網站與工具開發。截圖使用參考情境（`client/`）的虛構資料，身分為主管，由腳本產生（[docs/testing.md](docs/testing.md#ai-員工的-readme-截圖)「AI 員工的 README 截圖」）。畫面的整體方向見[設計規格 v3](docs/crew/design/v3/knowledge-crew-design-v3.md)（以下的「第 N 節」都指這份規格）。
+
+- **首頁今天的工作**：首頁加入今天的工作，依「先處理（有檢查沒通過）、待驗收、等你決定、進行中」分組，點一列直接到該件或信任頁；側欄的 AI 員工顯示待驗收件數（第 6.1 節、[ADR 0004](docs/crew/adr/0004-crew-data-and-extension-points.md) 2026-11-22 修訂）。
+- **員工**：每位 AI 員工一張卡，列出負責的工作、工作來源、目前的層級與驗收紀錄；名字只是方便稱呼，放不放手看的是驗收紀錄（第 6.5 節）。
+- **交辦**：一句話交辦，選員工後帶入他平常的工作來源與工作類型；示範時以「模擬交件」產生交件，不會真的寄信、發文或開 Issue（第 6.6 節）。
+- **工作與驗收**：驗收面板由上到下是結論列、員工標的重點、自動檢查、交件本身與決定列。四種交件（回信、貼文、知識庫條目、程式修改）各以原本的樣子呈現；退回時從三種原因（做錯了、我想要不一樣的做法、流程上的小問題）擇一，只有「做錯了」影響信任（第 6.2 節、[交件全文的格式](docs/crew/work-body-format.md)）。
+- **少看與「為什麼是少看」**：連續驗收沒有做錯、且主管同意後，該類工作改為「少看」：重點、自動檢查與空白欄位照樣顯示，沒標重點的欄位與變更收起，面板上方說明為什麼是少看（第 6.3 節）。
+- **信任時間軸**：每類工作一條時間軸，顯示最近 10 次驗收、當時的層級與層級改變的事件；「少看」要主管同意才生效、可隨時收回，一次「做錯了」就依規則自動改回逐項看（第 6.4 節）。
+- **工作帳本**：誰在什麼時候做了什麼、為什麼，可依員工與事件篩選，層級改變的紀錄另外標出（第 6.7 節）。
+- **回流知識庫**：驗收通過的知識庫條目成為知識庫的內容，問答可以引用；原文顯示它來自哪位 AI 員工、哪一次驗收，條目的負責部門成為圖譜中的部門（[RFC 0001](docs/crew/rfcs/0001-project-charter.md) 2026-11-22 修訂、[ADR 0004](docs/crew/adr/0004-crew-data-and-extension-points.md) 2026-11-22 修訂）。
+- **手機版**：子頁改為可橫向滑動的按鈕列，驗收面板的決定列固定在底部分頁列之上（第 5 節）。
+
+![首頁今天的工作（主管）](docs/crew/images/home-today.png)
+
+![驗收面板：Rowan 的回信草稿](docs/crew/images/review.png)
+
+![信任時間軸](docs/crew/images/trust.png)
+
+<img src="docs/crew/images/mobile-review.png" alt="手機的驗收面板：決定列固定在底部" width="390">
+
+## 從 knowledge-kit 繼承的功能
+
+knowledge-kit 是用虛構資料、快速為一個組織建立「第二大腦」知識平台 demo 的範本：換一個組織只改設定（`client/` 或 `clients/<名稱>/`），不改程式。demo 是展示用的原型，不是正式系統。
 
 截圖使用虛構的參考情境（`client/`），身分為主管，由腳本產生（[docs/testing.md](docs/testing.md#readme-的截圖)「README 的截圖」）。
 

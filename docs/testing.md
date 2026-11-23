@@ -265,3 +265,20 @@ VITE_CREW_ONLY=1 npm run test:e2e
   ```
 
 畫面改版、或 README 的段落改變時重新產生；新增或刪除截圖時，兩份 README 一起改。
+
+### AI 員工的 README 截圖
+
+knowledge-crew 的 `README.md`「AI 員工」一節的截圖（`docs/crew/images/<名稱>.png`）由 `e2e/crew-readme-shots.spec.ts` 產生（#106）。它不是測試，預設不執行：`KC_README_SHOTS=1` 時 `playwright.config.ts` 只執行這個檔案，其他時候排除它。CI 不產生這組截圖。
+
+- 內容：參考情境（`client/`）的虛構資料、預設語言、主管身分。桌機 1440×900 是首頁今天的工作（`home-today`）、「工作與驗收」中 Rowan 的回信（`review`）與信任時間軸（`trust`）；手機 390×844 是同一件的驗收面板與固定在底部的決定列（`mobile-review`）。
+- 不需要 API 金鑰、不呼叫模型：`/api/ask` 是 `openApp()` 的假回應。
+- 只出現虛構資料：以邀請碼登入後才截圖，截圖中沒有登入頁與邀請碼；Light 模式（`colorScheme: "light"`）、減少動態效果。
+
+重新產生（本機）：
+
+```bash
+npm run build
+KC_README_SHOTS=1 npx playwright test
+```
+
+AI 員工的畫面改版、或 README 的「AI 員工」一節改變時重新產生，確認畫面再 commit。`README.zh-TW.md` 是 knowledge-kit 的檔案，不放這組截圖。

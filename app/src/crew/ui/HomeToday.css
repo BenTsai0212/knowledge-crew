@@ -36,8 +36,9 @@
   color: var(--color-text);
 }
 
-/* 少看建議的問句可以換行 */
-.home__name.crew-home__wrap {
+/* 少看建議的問句與說明可以換行（說明在英文手機版會被截斷，#106） */
+.home__name.crew-home__wrap,
+.home__sub.crew-home__wrap {
   white-space: normal;
 }
 

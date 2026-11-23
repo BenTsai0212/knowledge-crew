@@ -129,7 +129,7 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
                 <strong className="home__name crew-home__wrap">
                   {withEmployee(t.decideItem, { workType: workTypeLabel(d.workTypeId, language) }, d.employee.displayName, language)}
                 </strong>
-                <span className="home__sub">{fill(t.decideNote, { count: d.count }, language)}</span>
+                <span className="home__sub crew-home__wrap">{fill(t.decideNote, { count: d.count }, language)}</span>
               </Row>
             )),
           )}

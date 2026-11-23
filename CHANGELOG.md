@@ -88,7 +88,7 @@ The first release: phase 1 of [RFC 0001](docs/rfcs/0001-project-charter.md) and 
 - An evaluation page that scores a question bank for citations, key points, refusals, and leaks ([docs/evals.md](docs/evals.md)).
 - Multilingual interface and retrieval, theme colors, and dark mode, all from the client settings, so another organization needs only its own `client/` or `clients/<name>/` folder ([docs/client-config.md](docs/client-config.md)).
 
-See the [README](README.md#features) for the full feature list.
+See the [README](README.md#從-knowledge-kit-繼承的功能) for the full feature list.
 
 ### Online demo
 
