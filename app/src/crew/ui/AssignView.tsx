@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
+import { PRIORITIES, type Priority } from "../db/store";
 import { DEMO } from "../demo/load";
 import { crewStrings, type CrewTexts } from "../i18n";
 import {
@@ -20,7 +21,7 @@ import {
   type AssignItem,
   type AssignStatus,
 } from "./assign";
-import { EmployeeName, LevelBadge, withEmployee } from "./components";
+import { EmployeeName, LevelBadge, ScheduleLine, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import { assignmentRef } from "./refs";
 import type { CrewScreenProps } from "./sections";
@@ -125,7 +126,12 @@ interface FormInput {
   title: string;
   workTypeId: string;
   employeeId: string;
+  /** 沒有填時是 null（#133） */
+  dueAt: string | null;
+  priority: Priority;
 }
+
+const PRIORITY_KEY = { high: "priorityHigh", normal: "priorityNormal", low: "priorityLow" } as const satisfies Record<Priority, string>;
 
 function AssignForm({
   data,
@@ -145,6 +151,9 @@ function AssignForm({
   const [title, setTitle] = useState("");
   const [sourceId, setSourceId] = useState(initial.sourceId);
   const [employeeId, setEmployeeId] = useState(initial.employeeId);
+  // 到期日與優先順序（#133）：選填，沒填時與之前相同（沒有到期日、一般）
+  const [dueAt, setDueAt] = useState("");
+  const [priority, setPriority] = useState<Priority>("normal");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const employee = data.employees.find((e) => e.id === employeeId) ?? null;
@@ -164,10 +173,12 @@ function AssignForm({
     if (!ready || busy) return;
     setBusy(true);
     setFailed(false);
-    onSubmit({ sourceId, title, workTypeId, employeeId }).then(
+    onSubmit({ sourceId, title, workTypeId, employeeId, dueAt: dueAt === "" ? null : dueAt, priority }).then(
       () => {
         setBusy(false);
         setTitle("");
+        setDueAt("");
+        setPriority("normal");
       },
       () => {
         setBusy(false);
@@ -255,6 +266,26 @@ function AssignForm({
           </span>
         </div>
       </div>
+      <div className="crew-assign__pair">
+        <div className="crew-assign__field">
+          <label htmlFor="crew-assign-due" className="crew-assign__label">
+            {t.fieldDue}
+          </label>
+          <input id="crew-assign-due" type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+        </div>
+        <div className="crew-assign__field">
+          <label htmlFor="crew-assign-priority" className="crew-assign__label">
+            {t.fieldPriority}
+          </label>
+          <select id="crew-assign-priority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p}>
+                {t[PRIORITY_KEY[p]]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
       {employee !== null && workTypeId !== "" && (
         <p className="crew-assign__result" role="status">
           <strong>{withEmployee(t[resultKey(workTypeId)], {}, employee.displayName, language)}</strong>
@@ -315,6 +346,7 @@ function AssignRow({
         <span className="crew-assign__ref">{assignmentRef(item, language)}</span>
         <span>{workTypeLabel(item.workTypeId, language)}</span>
       </span>
+      <ScheduleLine item={item} language={language} />
       <span className="badge crew-assign__status">{t[STATUS_KEY[item.status]]}</span>
       {item.simulate === "available" && (
         <span className="crew-assign__item-actions">

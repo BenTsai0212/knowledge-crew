@@ -28,5 +28,9 @@
   "collapsedFieldsSeparator": ", ",
   "collapseFields": "Collapse fields without marked points",
   "directEntry": "Try it now",
-  "noAsk": "The online demo does not include Q&A. Explore the graph and timeline, or see the AI employees' work."
+  "noAsk": "The online demo does not include Q&A. Explore the graph and timeline, or see the AI employees' work.",
+  "dueOn": "Due {date}",
+  "dueOverdue": "Due {date} · overdue",
+  "dueSoon": "Due {date} · due soon",
+  "priorityHigh": "High priority"
 }

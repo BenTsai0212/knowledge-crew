@@ -40,8 +40,8 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
     for (const a of demo.assignments) {
       await insert(
         "assignments",
-        ["id", "source_id", "external_ref", "title", "work_type_id", "employee_id", "assigned_by", "assigned_at"],
-        [a.id, a.source, a.externalRef ?? null, a.title[language], a.workType, a.employee, a.assignedBy, a.assignedAt],
+        ["id", "source_id", "external_ref", "title", "work_type_id", "employee_id", "assigned_by", "assigned_at", "due_at", "priority"],
+        [a.id, a.source, a.externalRef ?? null, a.title[language], a.workType, a.employee, a.assignedBy, a.assignedAt, a.dueAt ?? null, a.priority ?? "normal"],
       );
       for (const w of a.works) {
         const workId = demoWorkId(a.id, w.round);

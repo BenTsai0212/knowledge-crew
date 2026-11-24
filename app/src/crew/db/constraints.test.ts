@@ -120,3 +120,25 @@ describe("crew 0005 的約束（#92）", () => {
     await expect(pg.exec("INSERT INTO crew.knowledge_flowbacks (review_id, document_id) VALUES ('r2', 'nowhere')")).rejects.toThrow(/foreign key/);
   });
 });
+
+describe("crew 0006 的約束（#133）", () => {
+  const insert = (id: string, extra: string, values: string) =>
+    `INSERT INTO crew.assignments (id, source_id, title, work_type_id, employee_id, assigned_by${extra}) VALUES ('${id}', 'lantern', 'X', 'ui', 'juniper', 'manager'${values})`;
+
+  it("既有的交辦：沒有到期日、優先順序是 normal", async () => {
+    const [a1] = (await pg.query<{ due_at: string | null; priority: string }>("SELECT due_at, priority FROM crew.assignments WHERE id = 'a1'")).rows;
+    expect(a1).toEqual({ due_at: null, priority: "normal" });
+  });
+
+  it("到期日可以為空；優先順序只允許 high、normal、low，不能是 NULL", async () => {
+    await pg.exec(insert("d1", ", due_at, priority", ", '2026-11-20', 'high'"));
+    await pg.exec(insert("d2", ", priority", ", 'low'"));
+    const rows = (await pg.query<{ id: string; due: string | null; priority: string }>(
+      "SELECT id, to_char(due_at, 'YYYY-MM-DD') AS due, priority FROM crew.assignments WHERE id IN ('d1', 'd2') ORDER BY id",
+    )).rows;
+    expect(rows).toEqual([{ id: "d1", due: "2026-11-20", priority: "high" }, { id: "d2", due: null, priority: "low" }]);
+    await expect(pg.exec(insert("d3", ", priority", ", 'urgent'"))).rejects.toThrow(/check constraint/);
+    await expect(pg.exec(insert("d4", ", priority", ", NULL"))).rejects.toThrow(/not-null|null value/);
+    await expect(pg.exec(insert("d5", ", due_at", ", '2026-02-30'"))).rejects.toThrow();
+  });
+});

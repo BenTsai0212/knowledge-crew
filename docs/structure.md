@@ -296,6 +296,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/TrustView.css`：「信任」畫面的頁首、總覽報表（手機時每列一張卡片）、卡片與時間軸（事件、圓點與日期、層級帶三列共用欄數；三種結果以符號與文字區分）
 - `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：最上方是總覽報表（`TrustReport.tsx`），下方呈現 `trust.ts` 的結果；「同意改看重點」「收回，改回逐項看」只給能驗收的身分，寫入後重新讀取（並通知 crew 頁與 App 更新子導覽的數字與首頁，#103）
 - `work/body.ts`：交件全文的結構與「要看的重點」標記：`parseWorkBody()`、`toPlainText()`（格式見 `docs/crew/work-body-format.md`；測試在 `body.test.ts`）
+- `work/due.ts`：交辦的到期狀態（#133）：`dueStatus()`（逾期／3 天內到期／還早／沒有到期日）、`shownDueStatus()`（已通過的不標逾期）、`crewToday()`（demo 的 `today` 固定，沒有時用目前的日期；測試在 `due.test.ts`）
 
 ### `app/src/db/`
 

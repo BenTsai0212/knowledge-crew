@@ -1,7 +1,7 @@
 // crew demo 的虛構資料 client/crew/demo.json 的結構（#29 計畫第 2 節）。
 // 資料表的文字欄位是單一語言，這裡的雙語文字由 seed 寫入預設語言、畫面以 texts.ts 換成目前語言（#29 的 `## 決定` 1）。
 import type { Id, LocalizedText } from "../../client/types";
-import type { SourceKind } from "../db/store";
+import type { Priority, SourceKind } from "../db/store";
 import type { CheckStatus, LevelDecisionKind, ReturnReason } from "../trust/types";
 
 /** 工作來源（RFC 0001 的 2026-11-21 修訂）。 */
@@ -65,6 +65,10 @@ export interface DemoAssignment {
   title: LocalizedText;
   assignedBy: Id;
   assignedAt: string;
+  /** 到期日（YYYY-MM-DD，#133）；省略時沒有到期日。日期不必合理，只用來展示逾期與即將到期 */
+  dueAt?: string;
+  /** 省略時是 normal（#133） */
+  priority?: Priority;
   works: DemoWork[];
 }
 
@@ -94,6 +98,8 @@ export interface DemoSimulation {
 }
 
 export interface DemoFile {
+  /** demo 的「今天」（YYYY-MM-DD，#133）：到期狀態以這一天計算，不隨真實日期改變；省略時用目前的日期 */
+  today?: string;
   sources: DemoSource[];
   employees: DemoEmployee[];
   workTypes: Id[];

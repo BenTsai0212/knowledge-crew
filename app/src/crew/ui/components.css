@@ -186,3 +186,31 @@
   align-items: center;
   gap: 0.25rem;
 }
+
+/* 到期日與優先順序（#133）：逾期 danger、即將到期 warning（不做底色）；優先只標「高」 */
+.crew-due {
+  color: var(--color-textMuted);
+}
+
+.crew-due[data-due="overdue"] {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.crew-due[data-due="soon"] {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.badge.crew-priority {
+  border-color: var(--color-text);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.crew-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}

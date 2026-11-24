@@ -6,7 +6,7 @@ import type { LanguageCode } from "../../../client/types";
 import type { createReview } from "../../db/store";
 import type { ReturnReason } from "../../trust/types";
 import { crewStrings, type CrewTexts } from "../../i18n";
-import { CheckRow, ConclusionRow, LevelBadge, withEmployee } from "../components";
+import { CheckRow, ConclusionRow, LevelBadge, ScheduleLine, withEmployee } from "../components";
 import type { ReviewPanel as PanelData, WorkListItem } from "../review";
 import { workTypeLabel } from "../labels";
 import { assignmentRef, workRef } from "../refs";
@@ -75,6 +75,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
         </div>
         <h3 id="crew-review-title">{item.title}</h3>
         <p className="muted">{meta}</p>
+        <ScheduleLine item={item} language={language} />
         {item.verdict !== null && (
           <p>
             <span className="badge" data-verdict={item.verdict}>

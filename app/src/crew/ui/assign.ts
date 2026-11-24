@@ -10,6 +10,7 @@ import {
   listSources,
   type AssignmentSummary,
   type NewAssignment,
+  type Priority,
   type SourceKind,
   type StoredEmployee,
   type StoredSource,
@@ -22,6 +23,7 @@ import type { ReviewLevel } from "../trust/types";
 import { sourceLabel } from "./refs";
 import type { DemoFile } from "../demo/types";
 import { deliverableOf } from "./review/conclusion";
+import { crewToday, isDateOnly, shownDueStatus, type DueStatus } from "../work/due";
 import type { TodayEmployee } from "./today";
 
 /** 還沒交件／待驗收／退回後等下一輪／已通過 */
@@ -39,6 +41,11 @@ export interface AssignItem {
   workTypeId: string;
   employee: TodayEmployee;
   assignedAt: string;
+  /** 到期日（YYYY-MM-DD，#133）；沒有時是 null */
+  dueAt: string | null;
+  priority: Priority;
+  /** 畫面標示的到期狀態（shownDueStatus()；已通過的不標逾期） */
+  due: DueStatus;
   status: AssignStatus;
   latestRound: number | null;
   simulate: SimulateState;
@@ -141,6 +148,8 @@ export async function readAssign(
   language: LanguageCode,
   canReview: boolean,
   demo: DemoFile | null = DEMO,
+  /** 到期狀態的「今天」（YYYY-MM-DD）；預設是 demo 的 today，沒有時是目前的日期 */
+  today: string = crewToday(demo),
 ): Promise<AssignData> {
   // 沒有身分時比照 readToday：不讀取
   if (identity === null) return EMPTY(false);
@@ -174,6 +183,9 @@ export async function readAssign(
       workTypeId: a.workTypeId,
       employee: byId.get(a.employeeId) ?? { id: a.employeeId, displayName: a.employeeId, roleNote: null },
       assignedAt: a.assignedAt,
+      dueAt: a.dueAt,
+      priority: a.priority,
+      due: shownDueStatus(a.dueAt, today, assignStatus(a) === "accepted"),
       status: assignStatus(a),
       latestRound: a.latestRound,
       simulate: simulateState(canReview, a, demo),
@@ -181,7 +193,7 @@ export async function readAssign(
   };
 }
 
-/** 交辦；標題去掉前後空白，空白時拋錯且不寫入。外部編號由 createAssignment() 決定。 */
+/** 交辦；標題去掉前後空白，空白時拋錯且不寫入。到期日有值時必須是 YYYY-MM-DD（#133）。外部編號由 createAssignment() 決定。 */
 export function submitAssignment(
   db: Database,
   identity: string | null,
@@ -189,6 +201,7 @@ export function submitAssignment(
 ): Promise<{ id: string; externalRef: string | null }> {
   const title = input.title.trim();
   if (title === "") return Promise.reject(new Error("submitAssignment: title is required"));
+  if (input.dueAt != null && !isDateOnly(input.dueAt)) return Promise.reject(new Error("submitAssignment: dueAt must be YYYY-MM-DD"));
   return createAssignment(db, identity, { ...input, title });
 }
 

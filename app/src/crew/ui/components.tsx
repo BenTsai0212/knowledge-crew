@@ -3,7 +3,9 @@
 import { Fragment, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
 import type { LanguageCode } from "../../client/types";
+import type { Priority } from "../db/store";
 import type { CheckStatus, Dot, ReviewLevel } from "../trust/types";
+import type { DueStatus } from "../work/due";
 import { crewStrings } from "../i18n";
 import { checkLabel, checkSentence } from "./glossary";
 import "./components.css";
@@ -68,6 +70,42 @@ export function LevelBadge({ level, children }: { level: ReviewLevel; children: 
   return (
     <span className="badge crew-level-badge" data-level={level}>
       {children}
+    </span>
+  );
+}
+
+const DUE_TEXT = { overdue: "dueOverdue", soon: "dueSoon", later: "dueOn" } as const satisfies Record<Exclude<DueStatus, "none">, string>;
+
+/** 到期日（YYYY-MM-DD）的月／日；以 UTC 解讀，不因時區差一天。 */
+export function formatDueDate(dueAt: string, language: LanguageCode): string {
+  const date = new Date(`${dueAt}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return dueAt;
+  return new Intl.DateTimeFormat(language, { month: "numeric", day: "numeric", timeZone: "UTC" }).format(date);
+}
+
+/** 到期日標籤（#133）：逾期是 danger、即將到期是 warning，其他只顯示日期；文字也寫出狀態，不只靠顏色。沒有到期日時不顯示。 */
+export function DueTag({ dueAt, due, language }: { dueAt: string | null; due: DueStatus; language: LanguageCode }) {
+  if (dueAt === null || due === "none") return null;
+  return (
+    <span className="crew-due" data-due={due}>
+      {fill(crewStrings("common", language)[DUE_TEXT[due]], { date: formatDueDate(dueAt, language) })}
+    </span>
+  );
+}
+
+/** 優先順序標籤（#133）：只標「高」，一般與低不顯示。 */
+export function PriorityTag({ priority, language }: { priority: Priority; language: LanguageCode }) {
+  if (priority !== "high") return null;
+  return <span className="badge crew-priority">{crewStrings("common", language).priorityHigh}</span>;
+}
+
+/** 到期日與「高」優先（#133）；兩者都沒有時不顯示。 */
+export function ScheduleLine({ item, language }: { item: { dueAt: string | null; due: DueStatus; priority: Priority }; language: LanguageCode }) {
+  if (item.priority !== "high" && (item.dueAt === null || item.due === "none")) return null;
+  return (
+    <span className="crew-schedule">
+      <PriorityTag priority={item.priority} language={language} />
+      <DueTag dueAt={item.dueAt} due={item.due} language={language} />
     </span>
   );
 }
