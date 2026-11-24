@@ -36,21 +36,23 @@ describe("homeToday：匯入虛構資料後", () => {
     const h = homeToday(t);
     // 設計規格 v3 第 6.1 節的例子：Rowan（報價核對）、Linden（必填欄位）先處理
     expect(h.failing.map((a) => a.id)).toEqual(["s14", "k13"]);
-    expect(h.awaiting.map((a) => a.id).sort()).toEqual(["c11", "j06"]);
+    // #134 加了待驗收的 c12、j11，與進行中的 k14、k15、s16、s15（還沒交件或退回後等下一輪，依交辦時間舊到新）
+    expect(h.awaiting.map((a) => a.id).sort()).toEqual(["c11", "c12", "j06", "j11"]);
     expect(h.decide.map((d) => d.employee.id)).toEqual(["sorrel"]);
-    expect(h.inProgress).toEqual([]);
-    expect(awaitingCount(t)).toBe(4);
-    expect(homeSummary(h, "zh-TW")).toBe("4 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定。");
-    expect(homeSummary(h, "en")).toBe("4 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision.");
+    expect(h.inProgress.map((a) => a.id)).toEqual(["k14", "k15", "s16", "s15"]);
+    expect(awaitingCount(t)).toBe(6);
+    expect(homeSummary(h, "zh-TW")).toBe("6 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定。");
+    expect(homeSummary(h, "en")).toBe("6 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision.");
   });
 
   it("staff：只看得到自己專案的待驗收，沒有看重點的建議與側欄件數，總結用中性說法", async () => {
     const t = await read("staff");
     const h = homeToday(t);
-    expect([...h.failing, ...h.awaiting].map((a) => a.id).sort()).toEqual(["c11", "s14"]);
+    // #134 加了青翼專案待驗收的 c12
+    expect([...h.failing, ...h.awaiting].map((a) => a.id).sort()).toEqual(["c11", "c12", "s14"]);
     expect(h.decide).toEqual([]);
     expect(awaitingCount(t)).toBeNull();
-    expect(homeSummary(h, "zh-TW")).toBe("2 件工作待驗收，其中 1 件有檢查沒通過。");
+    expect(homeSummary(h, "zh-TW")).toBe("3 件工作待驗收，其中 1 件有檢查沒通過。");
   });
 
   it("guest：四組都是空的，沒有總結", async () => {
@@ -114,10 +116,11 @@ describe("HomeTodayCard：每列的員工後面是工作類型（#100）", () =>
     const data = homeToday(await read("manager"));
     for (const phone of [false, true]) {
       const html = renderToStaticMarkup(
-        createElement(HomeTodayCard, { state: { identity: "manager", data, awaiting: 4 }, identity: "manager", language: "zh-TW", phone, onOpen: () => {} }),
+        createElement(HomeTodayCard, { state: { identity: "manager", data, awaiting: 6 }, identity: "manager", language: "zh-TW", phone, onOpen: () => {} }),
       );
       expect(html).toContain(`Rowan</span>・${workTypeLabel("support", "zh-TW")}`);
-      const rows = [...data.failing, ...data.awaiting];
+      // #134 之後 demo 有進行中的交辦，進行中的列同樣帶工作類型
+      const rows = [...data.failing, ...data.awaiting, ...data.inProgress];
       expect(html.match(/class="crew-home__employee"/g)).toHaveLength(rows.length);
       for (const a of rows) expect(html).toContain(`${a.employee.displayName}</span>・${workTypeLabel(a.workTypeId, "zh-TW")}`);
     }

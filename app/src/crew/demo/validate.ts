@@ -182,7 +182,8 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     day(a, "dueAt", p);
     if (a.priority !== undefined) oneOf(a, "priority", p, [...PRIORITIES]);
     let last = time(a, "assignedAt", p);
-    const works = objects(a, "works", p, 1);
+    // 沒有交件的交辦（待交件，#134）可以是空陣列
+    const works = objects(a, "works", p);
     works.forEach(([w, wp], i) => {
       if (w.round !== i + 1) err(`${wp}.round`, `must be ${i + 1} (rounds start at 1 and increase by 1)`);
       const pr = ref(w, "externalRef", wp, kind);
@@ -220,7 +221,7 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
       if (verdict === "returned") oneOf(r, "reason", rp, REASON);
       if (verdict === "accepted" && r.reason !== undefined) err(`${rp}.reason`, "must be omitted when accepted");
       if (verdict === "accepted" && !isLast) err(`${rp}.verdict`, "only the last round may be accepted");
-      if (verdict === "returned" && isLast) err(`${rp}.verdict`, "a returned work must be followed by another round");
+      // 最後一輪是退回：交辦在修正中（#134），下一輪還沒交件
       if (r.note !== undefined) str(r, "note", rp);
       last = time(r, "decidedAt", rp);
       ordered(latestCheck, last, `${rp}.decidedAt`, "must be after the work was submitted and checked");

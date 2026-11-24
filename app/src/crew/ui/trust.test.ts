@@ -47,11 +47,12 @@ describe("readTrust：匯入虛構資料後", () => {
     expect(pairs(trust)).toEqual([["juniper", "dev"], ["linden", "knowledge"], ["rowan", "support"], ["sorrel", "content"]]);
   });
 
-  it("manager：Linden × 知識庫整理是看重點，最近 10 次有 1 個其他退回、沒有做錯了，沒有建議", async () => {
+  // #134 加了 k15-1（不一樣的做法），其他退回從 1 個變 2 個
+  it("manager：Linden × 知識庫整理是看重點，最近 10 次有 2 個其他退回、沒有做錯了，沒有建議", async () => {
     const r = row(await read(db, "manager"), "linden", "knowledge");
     expect(r.level).toBe("light");
     expect(r.dots).toHaveLength(DEMO_PARAMS.dots);
-    expect(count(r.dots, "neutral")).toBe(1);
+    expect(count(r.dots, "neutral")).toBe(2);
     expect(count(r.dots, "wrong")).toBe(0);
     expect(r.lastReset).toBeNull();
     expect(r.suggestion).toBeNull();
@@ -180,13 +181,14 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
   const levels = (r: TrustRow) => r.timeline.cells.map((c) => c.level);
   const kinds = (r: TrustRow) => r.timeline.events.map((g) => [g.column, g.items.map((e) => e.kind)]);
 
-  it("Rowan：10 格，第 8 格是做錯了；層級帶逐項看 ×7／看重點 ×1／逐項看 ×2；同意改看重點與自動改回在同一格；說明是 reset", async () => {
+  // #134 加了 s16-1，時間軸往左移一格
+  it("Rowan：10 格，第 7 格是做錯了；層級帶逐項看 ×6／看重點 ×1／逐項看 ×3；同意改看重點與自動改回在同一格；說明是 reset", async () => {
     const r = row(await read(db, "manager"), "rowan", "support");
     expect(r.timeline.cells).toHaveLength(DEMO_PARAMS.dots);
     expect(r.timeline.empty).toBe(0);
-    expect(r.timeline.cells.map((c) => c.dot).indexOf("wrong")).toBe(7);
-    expect(levels(r)).toEqual([...Array(7).fill("item"), "light", "item", "item"]);
-    expect(kinds(r)).toEqual([[7, ["relax", "reset"]]]);
+    expect(r.timeline.cells.map((c) => c.dot).indexOf("wrong")).toBe(6);
+    expect(levels(r)).toEqual([...Array(6).fill("item"), "light", "item", "item", "item"]);
+    expect(kinds(r)).toEqual([[6, ["relax", "reset"]]]);
     expect(r.note).toBe("reset");
   });
 
@@ -198,10 +200,11 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
     expect(row(await read(db, "staff"), "sorrel", "content").note).toBeNull();
   });
 
-  it("Linden：層級帶逐項看 ×7／看重點 ×3，同意改看重點在第 8 格，說明是看重點中", async () => {
+  // #134 加了 k15-1，時間軸往左移一格
+  it("Linden：層級帶逐項看 ×6／看重點 ×4，同意改看重點在第 7 格，說明是看重點中", async () => {
     const r = row(await read(db, "manager"), "linden", "knowledge");
-    expect(levels(r)).toEqual([...Array(7).fill("item"), ...Array(3).fill("light")]);
-    expect(kinds(r)).toEqual([[7, ["relax"]]]);
+    expect(levels(r)).toEqual([...Array(6).fill("item"), ...Array(4).fill("light")]);
+    expect(kinds(r)).toEqual([[6, ["relax"]]]);
     expect(r.note).toBe("light");
   });
 

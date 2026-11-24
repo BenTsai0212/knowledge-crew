@@ -35,9 +35,10 @@ describe("demo 開始時的信任狀態（#60）", () => {
 
   it("Rowan × 客戶回覆：逐項看；最近 10 次內有做錯了，發生在看重點期間，帳本有一筆改回逐項看；沒有建議", async () => {
     const t = await trust("rowan", "support");
-    expect(t.reviews).toHaveLength(15);
+    // 16 次：#134 加了一筆「我想要不一樣的做法」的退回（s16-1，修正中），不是做錯了
+    expect(t.reviews).toHaveLength(16);
     expect(t.decisions.map((d) => d.decision)).toEqual(["relax"]);
-    expect(t.dots).toEqual(["ok", "ok", "ok", "ok", "ok", "ok", "ok", "wrong", "ok", "ok"]);
+    expect(t.dots).toEqual(["ok", "ok", "ok", "ok", "ok", "ok", "wrong", "ok", "ok", "neutral"]);
     expect(t.level).toBe("item");
     expect(t.suggestion).toBeNull();
     expect(t.resets.map((r) => r.review.id)).toEqual(["s12-1"]);
@@ -59,9 +60,10 @@ describe("demo 開始時的信任狀態（#60）", () => {
 
   it("Linden × 知識庫整理：看重點（有一筆同意改看重點，之後沒有做錯了）", async () => {
     const t = await trust("linden", "knowledge");
-    expect(t.reviews).toHaveLength(14);
+    // 15 次：#134 加了一筆「我想要不一樣的做法」的退回（k15-1，修正中），不是做錯了，仍是看重點
+    expect(t.reviews).toHaveLength(15);
     expect(t.decisions.map((d) => d.decision)).toEqual(["relax"]);
-    expect(t.dots).toEqual(["ok", "ok", "ok", "neutral", "ok", "ok", "ok", "ok", "ok", "ok"]);
+    expect(t.dots).toEqual(["ok", "ok", "neutral", "ok", "ok", "ok", "ok", "ok", "ok", "neutral"]);
     expect(t.level).toBe("light");
     expect(t.suggestion).toBeNull();
     expect(t.resets).toEqual([]);

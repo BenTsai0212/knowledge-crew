@@ -259,7 +259,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/AssignView.tsx`：「交辦」畫面：交辦表單（依員工帶入來源與工作類型、結果說明）、交辦清單（最近 4 件，可看全部）與「模擬交件」（只呈現 `assign.ts` 的結果；表單與按鈕只給能驗收的身分）
 - `ui/components.tsx`：AI 員工畫面共用的元件（AI 標記、層級徽章、圓點 `DotMark`／`DotRow`／`dotsSummary()`（信任頁與員工卡共用）、結論列、自動檢查列、收起的區塊；樣式在 `components.css`，測試在 `components.test.ts`）
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數；手機是可橫向滑動的按鈕列，#103）
-- `ui/CrewPage.tsx`：crew 頁：頁首、子導覽五個位置（員工、交辦、工作與驗收、信任、工作帳本；#100 拿掉「今天」）；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」；畫面以 `navigate` 切換位置（交辦頁可預選員工）；「工作與驗收」「信任」帶數字（`section-counts.ts`，只給能驗收的身分），目前的子頁捲進按鈕列（#103）
+- `ui/CrewPage.tsx`：crew 頁：頁首、子導覽六個位置（總覽、員工、交辦、工作與驗收、信任、工作帳本；#100 拿掉「今天」，#134 加上總覽）；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」；畫面以 `navigate` 切換位置（交辦頁可預選員工）；「工作與驗收」「信任」帶數字（`section-counts.ts`，只給能驗收的身分），目前的子頁捲進按鈕列（#103）
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
 - `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數、待驗收件數、平常的工作來源、最近的圓點與一句說明；測試在 `employees.test.ts`）
 - `ui/EmployeesView.css`：「員工」畫面的員工卡（桌機兩欄、窄螢幕一欄；職務圖示的方框）
@@ -272,6 +272,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看，依時間新到舊；`filterLedger()`：依員工、工作類型與事件篩選；`ledgerTone()`：層級改變與退回（做錯了）的樣式；測試在 `ledger.test.ts`）
 - `ui/LedgerView.css`：「工作帳本」畫面的篩選、目前的篩選與表格（窄螢幕時表格在框內橫向捲動）
 - `ui/LedgerView.tsx`：「工作帳本」畫面：只負責呈現 `ledger.ts` 的結果（載入中、讀取失敗、空狀態、依員工與事件篩選的表格、「載入更早的紀錄」；只讀）；一開始的篩選來自信任頁的總覽報表（`ledgerFilter`），頂端顯示目前的篩選並可清除（#121）
+- `ui/overview.ts`：「總覽」的資料整理（#134）：`readOverview()`（看得到的專案卡片與工作，狀態與需注意的標記由 `work/status.ts` 推算）、`filterItems()`、`boardColumns()`（四欄與各欄的排序）；測試在 `overview.test.ts`
+- `ui/OverviewView.css`：「總覽」畫面的專案卡片、篩選列與看板（手機是依狀態切換的清單）
+- `ui/OverviewView.tsx`：「總覽」畫面（#134，AI 員工頁的預設分頁）：專案卡片（點卡片篩選）、篩選列（專案、員工、工作類型、只看需注意；可清除）、四欄的工作看板（點工作到「工作與驗收」，待交件到「交辦」）；只讀，不呈現績效
 - `ui/refs.ts`：工作來源與外部編號的顯示（`assignmentRef()`、`workRef()`：repo 類是 `<repo>#<Issue>`、`PR #<編號>`，其他類型是來源名稱與編號，沒有編號時只有來源名稱；文字在 `common` 的 `ref*`）
 - `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果與交件的種類；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）
@@ -284,7 +287,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上；手機的決定列固定在底部分頁列之上，#103）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆（從原文的來源或首頁的今天的工作切過來時選那一件，#92、#96）；已回流的工作顯示「已收進知識庫」與「打開原文」，沒有上傳權限而沒有回流時註明原因；「通過」「退回」只給能驗收的身分，寫入後重新讀取（並通知 App 更新首頁與側欄的待驗收件數，#96）
 - `ui/section-counts.ts`：子導覽的數字（`sectionCounts()`：待驗收件數與待決定的看重點的建議數，只給能驗收的身分）與目前子頁的橫向捲動量（`scrollDelta()`；測試在 `section-counts.test.ts`，#103）
-- `ui/sections.ts`：子導覽的位置與名稱的鍵（員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：工作與驗收，#100）、畫面元件的 props（`ledgerFilter`：切到工作帳本時的篩選，#121）
+- `ui/sections.ts`：子導覽的位置與名稱的鍵（總覽、員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：總覽，#134；#100 時是工作與驗收）、畫面元件的 props（`ledgerFilter`：切到工作帳本時的篩選，#121）
 - `ui/SourceOrigin.tsx`：原文的接入點：回流的文件在原文面板（`ui/SourcePanel.tsx`、`ui/SourceSheet.tsx` 的 `origin`）顯示「來自 AI 員工 ○○・驗收「○○」（日期）」，點了切到「工作與驗收」的那一件（`App.tsx` 經 `CrewPage` 的 `request`；測試在 `SourceOrigin.test.ts`）
 - `ui/today.ts`：今天的工作的資料整理（`readToday()`：待驗收、進行中、建議改看重點；首頁的「今天的工作」使用，AI 員工頁籤內沒有「今天」子頁（#100）；測試在 `today.test.ts`）
 - `ui/tour-steps.ts`：第一次來的導覽（#122）的步驟與目標區塊、看過的紀錄（`localStorage`，讀寫包在 try/catch，讀不到時當成沒看過）、對話框的位置、回流那一步的工作（`readTourFlowback()`；測試在 `tour-steps.test.ts`）
@@ -297,6 +300,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：最上方是總覽報表（`TrustReport.tsx`），下方呈現 `trust.ts` 的結果；「同意改看重點」「收回，改回逐項看」只給能驗收的身分，寫入後重新讀取（並通知 crew 頁與 App 更新子導覽的數字與首頁，#103）
 - `work/body.ts`：交件全文的結構與「要看的重點」標記：`parseWorkBody()`、`toPlainText()`（格式見 `docs/crew/work-body-format.md`；測試在 `body.test.ts`）
 - `work/due.ts`：交辦的到期狀態（#133）：`dueStatus()`（逾期／3 天內到期／還早／沒有到期日）、`shownDueStatus()`（已通過的不標逾期）、`crewToday()`（demo 的 `today` 固定，沒有時用目前的日期；測試在 `due.test.ts`）
+- `work/status.ts`：工作狀態與需注意的標記（#134）：`workStatus()`（待交件／等驗收／修正中／已完成）、`stayDays()`、`attentionFlags()`（逾期、3 天內到期、停滯：停留超過 3 天）；測試在 `status.test.ts`
 
 ### `app/src/db/`
 
@@ -345,6 +349,7 @@ Playwright 的端對端測試（`*.spec.ts`）；設定在根目錄的 `playwrig
 
 - `access.spec.ts`：越權
 - `compare.spec.ts`：展示模式的身分對照，只在 `VITE_DEMO_COMPARE=1` 的 build 執行畫面的測試（比對文字只出現在一個答案段落的檢查不需要開關）
+- `crew-overview.spec.ts`：AI 員工頁的總覽（#134）：預設分頁、專案卡片與篩選、追到「工作與驗收」、員工與訪客的呈現（1280 與 390）；只在有 `crew/demo.json` 的客戶執行
 - `crew-tour.spec.ts`：第一次來的導覽（#122）：入口小卡、5 步、鍵盤與 `Esc`（1280 與 390）；只在有 `crew/demo.json` 的客戶執行
 - `demo.spec.ts`：線上 demo 的設定，只在 `VITE_ONLINE_DEMO=1` 的 build 執行
 - `entry-touch.spec.ts`：入口（手機與平板）與觸控目標（#255 PR 4）

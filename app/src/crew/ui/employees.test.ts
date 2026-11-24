@@ -65,7 +65,8 @@ describe("readEmployees：員工卡（#83）", () => {
     const work = (id: string) => list.find((e) => e.id === id)!.workTypes[0];
     expect(work("rowan").source).toEqual({ label: sourceLabel("support-inbox", "Support inbox", lang), kind: "mailbox" });
     expect(work("juniper").source?.kind).toBe("repo");
-    expect(list.map((e) => e.workTypes[0].awaiting)).toEqual([1, 1, 1, 1]);
+    // #134 加了待驗收的 j11（Juniper）、c12（Sorrel）
+    expect(list.map((e) => e.workTypes[0].awaiting)).toEqual([2, 1, 1, 2]);
     expect(work("rowan").dots).toHaveLength(10);
     expect(work("rowan").dots.filter((d) => d === "wrong")).toHaveLength(1);
     expect(work("juniper").dots).toHaveLength(10);

@@ -122,12 +122,23 @@ describe("validateDemo", () => {
     ["退回沒有原因", (d: any) => delete d.assignments[0].works[0].review.reason, "works[0].review.reason: must be one of"],
     ["通過卻有原因", (d: any) => (d.assignments[0].works[1].review.reason = "wrong"), "works[1].review.reason: must be omitted"],
     ["通過之後還有下一輪", (d: any) => (d.assignments[0].works[0].review = { ...d.assignments[0].works[0].review, verdict: "accepted", reason: undefined }), "works[0].review.verdict: only the last round"],
-    ["最後一輪是退回", (d: any) => (d.assignments[0].works[1].review = { ...d.assignments[0].works[1].review, verdict: "returned", reason: "process" }), "works[1].review.verdict: a returned work must be followed"],
     ["中間的輪次沒有驗收", (d: any) => delete d.assignments[0].works[0].review, "works[0].review: only the last round may be waiting"],
     ["輪次不連續", (d: any) => (d.assignments[0].works[1].round = 3), "works[1].round: must be 2"],
     ["檢查的狀態不在列舉中", (d: any) => (d.assignments[0].works[0].checks[0].status = "ok"), "checks[0].status: must be one of"],
   ])("輪次與驗收：%s", (_name, change, expected) => {
     expect(errorsAfter(change).join("\n")).toContain(expected);
+  });
+
+  // #134：修正中（最後一輪是退回、下一輪還沒交）與待交件（沒有交件）的交辦是合法的資料
+  it.each([
+    ["最後一輪是退回（修正中）", (d: any) => (d.assignments[0].works[1].review = { ...d.assignments[0].works[1].review, verdict: "returned", reason: "process" })],
+    ["沒有交件（待交件）", (d: any) => (d.assignments[1].works = [])],
+  ])("輪次與驗收：%s 不是錯誤", (_name, change) => {
+    expect(errorsAfter(change)).toEqual([]);
+  });
+
+  it("works 不是陣列仍是錯誤", () => {
+    expect(errorsAfter((d: any) => delete d.assignments[1].works).join("\n")).toContain("assignments[1].works: must be an array");
   });
 
   it.each([
@@ -235,8 +246,10 @@ describe("validateDemo", () => {
     expect(errorsAfter((d: any) => (d.simulations[0].replies[0].points = [t("一", "One"), t("二", "Two")]))).toEqual([]);
   });
 
-  it("demo.json：改寫的 16 份全文都有結構，其他交件維持一行摘要（#65 的 `## 決定` 3）", () => {
-    const rewritten = ["s14", "c11", "k13", "j06", "s13", "c10", "k12", "j05"];
+  it("demo.json：改寫的 16 份與 #134 新增的 3 份全文都有結構，其他交件維持一行摘要（#65 的 `## 決定` 3）", () => {
+    // #134 新增的 c12、j11（等驗收）與 k15（修正中）是有結構的全文；s16（修正中）是一行摘要
+    const added = ["c12", "j11", "k15"];
+    const rewritten = ["s14", "c11", "k13", "j06", "s13", "c10", "k12", "j05", ...added];
     const works = DEMO!.assignments.flatMap((a) => a.works.map((w) => ({ id: a.id, w })));
     const replies = DEMO!.simulations.flatMap((s) => s.replies);
     for (const language of clientConfig.client.languages) {
@@ -244,7 +257,7 @@ describe("validateDemo", () => {
       expect(works.filter(({ w }) => structured(w)).map(({ id }) => id).sort(), language).toEqual([...rewritten].sort());
       expect(replies.every(structured), language).toBe(true);
     }
-    expect(rewritten.length + replies.length).toBe(16);
+    expect(rewritten.length - added.length + replies.length).toBe(16);
   });
 
   it("來源的顯示名稱（label）可以省略；有的話雙語齊全即通過（#60）", () => {

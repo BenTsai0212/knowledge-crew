@@ -37,10 +37,10 @@ describe("demoSeed", () => {
     expect(DEMO_RAW).not.toBeNull();
   });
 
-  it("匯入後的筆數與 demo.json 一致（交辦 48、工作 56、驗收 52、看重點的決定 4）", async () => {
+  it("匯入後的筆數與 demo.json 一致（交辦 54、工作 60、驗收 54、看重點的決定 4；#134 加了 6 件交辦）", async () => {
     const works = demo.assignments.flatMap((a) => a.works);
     const expected = {
-      sources: 4, employees: 4, work_types: 4, assignments: 48, works: 56, reviews: 52, level_decisions: 4,
+      sources: 4, employees: 4, work_types: 4, assignments: 54, works: 60, reviews: 54, level_decisions: 4,
       work_points: works.reduce((n, w) => n + w.points.length, 0),
       work_changes: works.reduce((n, w) => n + w.changes.length, 0),
       work_checks: works.reduce((n, w) => n + w.checks.length, 0),
@@ -70,7 +70,8 @@ describe("demoSeed", () => {
         LEFT JOIN crew.reviews r ON r.work_id = w.id
         WHERE r.id IS NULL ORDER BY a.id`)).rows.map((r) => r.id),
     );
-    expect(pending).toEqual(["c11", "j06", "k13", "s14"]);
+    // #134 加了停滯的等驗收 c12、j11
+    expect(pending).toEqual(["c11", "c12", "j06", "j11", "k13", "s14"]);
   }, DB_TIMEOUT);
 
   it("同一檢查有多筆時依檔案順序寫入（同時間時 id 較大的是後寫的）", async () => {

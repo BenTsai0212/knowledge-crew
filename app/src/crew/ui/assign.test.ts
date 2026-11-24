@@ -114,28 +114,34 @@ describe("readAssign：匯入虛構資料後（寫入之前）", () => {
     expect(data.employees.find((e) => e.id === "rowan")).toMatchObject({ usualSourceId: "support-inbox", workTypeId: "support" });
   });
 
-  it("manager：來源 4、員工 4、工作類型 4；交辦 48 件新到舊，s14、c11、k13、j06 待驗收，其餘已通過，沒有可模擬的", async () => {
+  // #134 加了 s15、k14（還沒交件）、s16、k15（退回後等下一輪，可模擬下一輪）、c12、j11（待驗收）
+  it("manager：來源 4、員工 4、工作類型 4；交辦 54 件新到舊，c12、j11、s14、c11、k13、j06 待驗收，s15、k14 還沒交件，s16、k15 退回，其餘已通過；可模擬的只有還沒交件與退回的", async () => {
     const data = await read("manager");
     expect(data.canReview).toBe(true);
     expect(data.sources.map((r) => r.id).sort()).toEqual(["company-kb", "company-site", "social-account", "support-inbox"]);
     expect(data.employees.map((e) => e.id)).toEqual(["juniper", "linden", "rowan", "sorrel"]);
     expect(data.workTypes).toEqual(["content", "dev", "knowledge", "support"]);
-    expect(data.assignments).toHaveLength(48);
+    expect(data.assignments).toHaveLength(54);
     expect(data.assignments.map((a) => a.id)).toEqual((await listAssignments(db, "manager")).map((a) => a.id));
     const awaiting = data.assignments.filter((a) => a.status === "awaitingReview").map((a) => a.id).sort();
-    expect(awaiting).toEqual(["c11", "j06", "k13", "s14"]);
-    expect(data.assignments.filter((a) => a.status !== "awaitingReview").every((a) => a.status === "accepted")).toBe(true);
-    expect(data.assignments.every((a) => a.simulate === "none")).toBe(true);
+    expect(awaiting).toEqual(["c11", "c12", "j06", "j11", "k13", "s14"]);
+    const open = ["k14", "k15", "s15", "s16"];
+    expect(data.assignments.filter((a) => a.status === "notSubmitted").map((a) => a.id).sort()).toEqual(["k14", "s15"]);
+    expect(data.assignments.filter((a) => a.status === "returned").map((a) => a.id).sort()).toEqual(["k15", "s16"]);
+    expect(data.assignments.filter((a) => a.status !== "awaitingReview" && !open.includes(a.id)).every((a) => a.status === "accepted")).toBe(true);
+    expect(data.assignments.filter((a) => a.simulate !== "none").map((a) => a.id).sort()).toEqual(open);
+    expect(data.assignments.filter((a) => open.includes(a.id)).every((a) => a.simulate === "available")).toBe(true);
   });
 
-  it("staff：只有青翼專案（客服信箱、官方社群帳號）的 25 件，不能驗收、沒有可模擬的", async () => {
+  // #134 加了青翼專案的 s15、s16、c12
+  it("staff：只有青翼專案（客服信箱、官方社群帳號）的 28 件，不能驗收、沒有可模擬的", async () => {
     const data = await read("staff");
     expect(data.canReview).toBe(false);
     expect(data.sources.map((r) => r.id)).toEqual(["social-account", "support-inbox"]);
-    expect(data.assignments).toHaveLength(25);
+    expect(data.assignments).toHaveLength(28);
     expect(data.assignments.every((a) => [label("support-inbox"), label("social-account")].includes(a.sourceName))).toBe(true);
     const ids = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => `${prefix}${String(i + 1).padStart(2, "0")}`);
-    expect(data.assignments.map((a) => a.id).sort()).toEqual([...ids("c", 11), ...ids("s", 14)]);
+    expect(data.assignments.map((a) => a.id).sort()).toEqual([...ids("c", 12), ...ids("s", 16)]);
     expect(data.assignments.every((a) => a.simulate === "none")).toBe(true);
   });
 
@@ -191,11 +197,12 @@ describe("交辦與模擬交件的寫入（manager）", () => {
   it("交辦給 Juniper（網站與工具開發）→ 模擬交件 → 待驗收、「今天」多一筆 → 退回 → 再模擬用第 2 則回覆", async () => {
     const awaitingBefore = (await readToday(db, "manager", lang, true)).awaitingReview.length;
     const a = await submitAssignment(db, "manager", { sourceId: "company-site", title: "新增標籤篩選", workTypeId: "dev", employeeId: "juniper" });
-    expect(a.externalRef).toBe("31");
+    // #134 加了 j11（Issue 31）
+    expect(a.externalRef).toBe("32");
 
     const data = await read("manager");
     expect(data.assignments[0]).toMatchObject({
-      id: a.id, title: "新增標籤篩選", sourceName: "example-org/company-site", externalRef: "31",
+      id: a.id, title: "新增標籤篩選", sourceName: "example-org/company-site", externalRef: "32",
       status: "notSubmitted", latestRound: null, simulate: "available",
     });
 
