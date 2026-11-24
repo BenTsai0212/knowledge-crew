@@ -1,4 +1,4 @@
-// 少看建議的依據與經過（#125）：relaxProposals() 的推算、suggestionBasis() 與 suggestionHistory() 的整理，
+// 看重點的建議的依據與經過（#125）：relaxProposals() 的推算、suggestionBasis() 與 suggestionHistory() 的整理，
 // 以純函式的小例子，以及匯入虛構資料（demo.json）後的工作帳本比對。
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientConfig } from "../../client/load";
@@ -23,7 +23,7 @@ const relax = (n: number, hour = 12): LevelDecision => ({ decision: "relax", dec
 const revoke = (n: number, hour = 12): LevelDecision => ({ decision: "revoke", decidedAt: day(n, hour) });
 const ids = (reviews: readonly Review[]) => reviews.map((r) => r.id);
 
-describe("relaxProposals：提出少看建議的時間與依據", () => {
+describe("relaxProposals：提出看重點的建議的時間與依據", () => {
   it("沒有決定時：第一次符合條件的那次驗收；之後不再重複提出", () => {
     const proposals = relaxProposals([ok(1), ok(2), ok(3), ok(4), ok(5)], [], P);
     expect(proposals).toHaveLength(1);
@@ -46,12 +46,12 @@ describe("relaxProposals：提出少看建議的時間與依據", () => {
   it("同意、收回後重新累積才再提出：每筆決定之後各算一段", () => {
     const reviews = [ok(1), ok(2), ok(3), ok(5), ok(7), ok(8), ok(9)];
     const proposals = relaxProposals(reviews, [relax(4), revoke(6)], P);
-    // 少看期間（r5）不提出；收回後 r7、r8、r9 累積到 3 次才再提出
+    // 看重點期間（r5）不提出；收回後 r7、r8、r9 累積到 3 次才再提出
     expect(proposals.map((p) => p.review.id)).toEqual(["r3", "r9"]);
     expect(ids(proposals[1].basis)).toEqual(["r7", "r8", "r9"]);
   });
 
-  it("少看期間做錯了改回逐項看：同一段的驗收（含那次做錯了）離開最近 window 次後才提出", () => {
+  it("看重點期間做錯了改回逐項看：同一段的驗收（含那次做錯了）離開最近 window 次後才提出", () => {
     const reviews = [ok(1), ok(2), ok(3), wrong(5), ok(6), ok(7), ok(8), ok(9)];
     const proposals = relaxProposals(reviews, [relax(4)], P);
     expect(proposals.map((p) => p.review.id)).toEqual(["r3", "r8"]);
@@ -159,7 +159,7 @@ describe("匯入虛構資料後（demo.json）", () => {
     ]);
   });
 
-  it("帳本的提出少看建議與推算一致；manager 的經過：Juniper 完整一輪、Rowan 自動改回、Linden 少看中、Sorrel 等人決定", async () => {
+  it("帳本的提出看重點的建議與推算一致；manager 的經過：Juniper 完整一輪、Rowan 自動改回、Linden 看重點中、Sorrel 等人決定", async () => {
     const events = await readLedger(db, "manager", lang);
     const proposed = events.filter((e) => e.kind === "proposed");
     expect(proposed.map((e) => [e.id, e.actor, e.basis?.length])).toEqual([

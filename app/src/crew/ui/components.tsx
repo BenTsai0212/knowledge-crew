@@ -63,7 +63,7 @@ export function withEmployee(
   ));
 }
 
-/** 層級徽章：逐項看是 textMuted 框＋text 字，少看是 success 框＋字（不填滿）。文字由畫面給（全文或簡寫）。 */
+/** 層級徽章：逐項看是 textMuted 框＋text 字，看重點是 success 框＋字（不填滿）。文字由畫面給（全文或簡寫）。 */
 export function LevelBadge({ level, children }: { level: ReviewLevel; children: ReactNode }) {
   return (
     <span className="badge crew-level-badge" data-level={level}>

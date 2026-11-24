@@ -1,4 +1,4 @@
-// 今天的工作的資料整理（#34 計畫第 5 節）：待驗收、進行中、建議少看；首頁的「今天的工作」（#96，home-today.ts）使用。只用 store.ts 與 rules.ts，
+// 今天的工作的資料整理（#34 計畫第 5 節）：待驗收、進行中、建議改看重點；首頁的「今天的工作」（#96，home-today.ts）使用。只用 store.ts 與 rules.ts，
 // 可見範圍由 RLS 決定。資料庫的文字以 demoText() 換成目前語言，找不到時用資料庫的原文。
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
@@ -38,7 +38,7 @@ export interface TodaySuggestion {
 }
 
 export interface Today {
-  /** 能驗收的身分（client/access.json 的 canReview）才有「等你驗收」與建議少看 */
+  /** 能驗收的身分（client/access.json 的 canReview）才有「等你驗收」與建議改看重點 */
   canReview: boolean;
   awaitingReview: TodayAssignment[];
   inProgress: TodayAssignment[];
@@ -91,7 +91,7 @@ export async function readToday(
     awaitingReview: await Promise.all(oldestFirst.filter(isAwaiting).map(toItem).map(withChecks)),
     inProgress: oldestFirst.filter(isInProgress).map(toItem),
   };
-  // 建議少看只給能驗收的身分（只有他們能同意少看），其他身分不必計算
+  // 建議改看重點只給能驗收的身分（只有他們能同意改看重點），其他身分不必計算
   if (!canReview) return today;
   const pairs = new Map<string, { employeeId: string; workTypeId: string }>();
   for (const a of oldestFirst) pairs.set(`${a.employeeId}\u0000${a.workTypeId}`, { employeeId: a.employeeId, workTypeId: a.workTypeId });

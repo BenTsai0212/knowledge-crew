@@ -1,4 +1,4 @@
-// 「員工」「信任」的資料整理（#37）：以匯入虛構資料後的資料庫，檢查三種身分的結果、同意少看與收回的寫入。
+// 「員工」「信任」的資料整理（#37）：以匯入虛構資料後的資料庫，檢查三種身分的結果、同意改看重點與收回的寫入。
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
@@ -47,7 +47,7 @@ describe("readTrust：匯入虛構資料後", () => {
     expect(pairs(trust)).toEqual([["juniper", "dev"], ["linden", "knowledge"], ["rowan", "support"], ["sorrel", "content"]]);
   });
 
-  it("manager：Linden × 知識庫整理是少看，最近 10 次有 1 個其他退回、沒有做錯了，沒有建議", async () => {
+  it("manager：Linden × 知識庫整理是看重點，最近 10 次有 1 個其他退回、沒有做錯了，沒有建議", async () => {
     const r = row(await read(db, "manager"), "linden", "knowledge");
     expect(r.level).toBe("light");
     expect(r.dots).toHaveLength(DEMO_PARAMS.dots);
@@ -57,7 +57,7 @@ describe("readTrust：匯入虛構資料後", () => {
     expect(r.suggestion).toBeNull();
   });
 
-  it("manager：Rowan × 客戶回覆是逐項看，少看期間做錯了改回，lastReset 是 s12-1 的時間、沒有建議", async () => {
+  it("manager：Rowan × 客戶回覆是逐項看，看重點期間做錯了改回，lastReset 是 s12-1 的時間、沒有建議", async () => {
     const r = row(await read(db, "manager"), "rowan", "support");
     expect(r.level).toBe("item");
     expect(count(r.dots, "wrong")).toBe(1);
@@ -109,8 +109,8 @@ describe("readTrust：匯入虛構資料後", () => {
   });
 });
 
-describe("同意少看與收回（每個測試用自己的資料庫）", { timeout: DB_TIMEOUT }, () => {
-  it("manager 同意少看：Sorrel × 貼文與商品介紹變為少看、建議消失，basis_review_id 是依據中最新一筆", async () => {
+describe("同意改看重點與收回（每個測試用自己的資料庫）", { timeout: DB_TIMEOUT }, () => {
+  it("manager 同意改看重點：Sorrel × 貼文與商品介紹變為看重點、建議消失，basis_review_id 是依據中最新一筆", async () => {
     const own = await open();
     try {
       const before = row(await read(own, "manager"), "sorrel", "content");
@@ -158,7 +158,7 @@ describe("同意少看與收回（每個測試用自己的資料庫）", { timeo
     }
   });
 
-  it("少看期間做錯了：Linden × 知識庫整理改回逐項看，lastReset 是該次驗收的時間", async () => {
+  it("看重點期間做錯了：Linden × 知識庫整理改回逐項看，lastReset 是該次驗收的時間", async () => {
     const own = await open();
     try {
       const work = (await getAssignmentWorks(own, "manager", "k13")).at(-1)!;
@@ -180,7 +180,7 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
   const levels = (r: TrustRow) => r.timeline.cells.map((c) => c.level);
   const kinds = (r: TrustRow) => r.timeline.events.map((g) => [g.column, g.items.map((e) => e.kind)]);
 
-  it("Rowan：10 格，第 8 格是做錯了；層級帶逐項看 ×7／少看 ×1／逐項看 ×2；同意少看與自動改回在同一格；說明是 reset", async () => {
+  it("Rowan：10 格，第 8 格是做錯了；層級帶逐項看 ×7／看重點 ×1／逐項看 ×2；同意改看重點與自動改回在同一格；說明是 reset", async () => {
     const r = row(await read(db, "manager"), "rowan", "support");
     expect(r.timeline.cells).toHaveLength(DEMO_PARAMS.dots);
     expect(r.timeline.empty).toBe(0);
@@ -198,14 +198,14 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
     expect(row(await read(db, "staff"), "sorrel", "content").note).toBeNull();
   });
 
-  it("Linden：層級帶逐項看 ×7／少看 ×3，同意少看在第 8 格，說明是少看中", async () => {
+  it("Linden：層級帶逐項看 ×7／看重點 ×3，同意改看重點在第 8 格，說明是看重點中", async () => {
     const r = row(await read(db, "manager"), "linden", "knowledge");
     expect(levels(r)).toEqual([...Array(7).fill("item"), ...Array(3).fill("light")]);
     expect(kinds(r)).toEqual([[7, ["relax"]]]);
     expect(r.note).toBe("light");
   });
 
-  it("Juniper：10 格沒有空格，同意少看與收回都在最後一格（少看驗收一次），說明是剛收回（#125）", async () => {
+  it("Juniper：10 格沒有空格，同意改看重點與收回都在最後一格（看重點驗收一次），說明是剛收回（#125）", async () => {
     const r = row(await read(db, "manager"), "juniper", "dev");
     expect(r.timeline.cells).toHaveLength(DEMO_PARAMS.dots);
     expect(r.timeline.empty).toBe(0);
@@ -214,7 +214,7 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
     expect(r.note).toBe("revoked");
   });
 
-  it("Sorrel 同意少看後：事件在最後一格；收回後說明是 revoked", { timeout: DB_TIMEOUT }, async () => {
+  it("Sorrel 同意改看重點後：事件在最後一格；收回後說明是 revoked", { timeout: DB_TIMEOUT }, async () => {
     const own = await open();
     try {
       const before = row(await read(own, "manager"), "sorrel", "content");
@@ -245,7 +245,7 @@ describe("trustTimeline／trustNote（純函式）", () => {
     expect(t.events).toEqual([{ column: 0, items: [{ kind: "relax", at: at(3) }] }]);
   });
 
-  it("與驗收同時間的同意少看算在該次驗收之前；同時間的做錯了仍改回", () => {
+  it("與驗收同時間的同意改看重點算在該次驗收之前；同時間的做錯了仍改回", () => {
     const t = trustTimeline([ok("a", 1), wrong("b", 2), ok("c", 3)], [relax(2)], { dots: 5 });
     expect(t.cells.map((c) => c.level)).toEqual(["item", "light", "item"]);
     expect(t.events).toEqual([{ column: 1, items: [{ kind: "relax", at: at(2) }, { kind: "reset", at: at(2) }] }]);
@@ -256,7 +256,7 @@ describe("trustTimeline／trustNote（純函式）", () => {
     expect(trustTimeline([], [relax(1)], { dots: 3 })).toEqual({ cells: [], empty: 3, events: [] });
   });
 
-  it("說明的優先順序：之後再同意少看時不再是 reset；收回後有新驗收時不再是 revoked", () => {
+  it("說明的優先順序：之後再同意改看重點時不再是 reset；收回後有新驗收時不再是 revoked", () => {
     const reviews = [ok("a", 1), wrong("b", 3)];
     const min = { min: 2 };
     expect(trustNote(reviews, [relax(2)], "item", false, min)).toBe("reset");
@@ -289,7 +289,7 @@ describe("「信任」「員工」的文字", () => {
     expect(crewStrings("trust", "zh-TW").dotNeutral).toContain("不影響信任");
   });
 
-  it("兩個畫面的「逐項看／少看」文字一致", () => {
+  it("兩個畫面的「逐項看／看重點」文字一致", () => {
     for (const language of clientConfig.client.languages) {
       const e = crewStrings("employees", language);
       const t = crewStrings("trust", language);

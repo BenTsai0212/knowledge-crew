@@ -185,11 +185,11 @@ test("程式修改：檔案清單，PR 描述預設收起、點到其中的重�
   await expect(body.locator('[data-point~="2"]').first()).toHaveCSS("background-color", rgb(theme.colors.surfaceRaised));
 });
 
-test.describe("少看（#102）：Linden 的 k13", () => {
+test.describe("看重點（#102）：Linden 的 k13", () => {
   const label = (field: string) => demoLabel("k13", `kb/pre-orders#${field}`);
   const fieldName = (body: Locator, field: string) => body.locator("dt").filter({ hasText: label(field) });
 
-  test("「為什麼是少看」說明卡；有重點與空白的欄位照樣顯示，其他欄位可以展開與收回；變更收成一行可以逐項列出", async ({ page }) => {
+  test("「為什麼是看重點」說明卡；有重點與空白的欄位照樣顯示，其他欄位可以展開與收回；變更收成一行可以逐項列出", async ({ page }) => {
     const panel = await openWork(page, "k13");
     const card = panel.getByRole("region", { name: ct.review.lightTitle });
     await expect(card).toBeVisible();

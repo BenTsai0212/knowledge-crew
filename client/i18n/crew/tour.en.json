@@ -17,7 +17,7 @@
   "returnTitle": "Reasons for returning",
   "returnBody": "When you return work, pick one of three reasons: \"It is wrong\" sends this kind of work back to \"Review every item\"; the other two do not affect trust.",
   "trustTitle": "Trust",
-  "trustBody": "Trust grows with reviews; a lighter review needs your consent and you can take it back at any time.",
+  "trustBody": "Trust grows with reviews; reviewing key points needs your consent and you can take it back at any time.",
   "flowbackTitle": "Back into the knowledge base",
   "flowbackBody": "Accepted knowledge base entries go into the knowledge base and the graph, marked with where they came from."
 }

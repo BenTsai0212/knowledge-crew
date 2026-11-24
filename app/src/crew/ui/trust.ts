@@ -1,5 +1,5 @@
 // 「員工」與「信任」畫面共用的資料整理（#37 計畫第 1 節）：看得到的「員工 × 工作類型」各自的圓點、層級、
-// 驗收次數、最近一次改回逐項看與建議少看，以及信任頁的時間軸與說明（#75）。只用 store.ts 與 rules.ts，可見範圍由 RLS 決定。
+// 驗收次數、最近一次改回逐項看與建議改看重點，以及信任頁的時間軸與說明（#75）。只用 store.ts 與 rules.ts，可見範圍由 RLS 決定。
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { createLevelDecision, getTrustInputs, listAssignments, listEmployees, type StoredEmployee } from "../db/store";
@@ -18,7 +18,7 @@ export interface CrewEmployee {
 export interface TrustSuggestion {
   /** 依據的驗收次數 */
   count: number;
-  /** 依據中最新一筆驗收（同意少看時寫入 basis_review_id） */
+  /** 依據中最新一筆驗收（同意改看重點時寫入 basis_review_id） */
   basisReviewId: string;
   /** 依據的驗收 id，依時間排序（#125：信任頁列出這幾次） */
   basisReviewIds: string[];
@@ -49,7 +49,7 @@ export interface TimelineCell {
   level: ReviewLevel;
 }
 
-/** 層級改變的事件：同意少看、收回少看、因做錯了自動改回逐項看。 */
+/** 層級改變的事件：同意改看重點、收回看重點、因做錯了自動改回逐項看。 */
 export interface TimelineEvent {
   kind: "relax" | "revoke" | "reset";
   at: string;
@@ -64,11 +64,11 @@ export interface TrustTimeline {
   events: { column: number; items: TimelineEvent[] }[];
 }
 
-/** 卡片下方說明的種類，依優先順序：建議少看、少看中、剛收回、剛自動改回、驗收不足。 */
+/** 卡片下方說明的種類，依優先順序：建議改看重點、看重點中、剛收回、剛自動改回、驗收不足。 */
 export type TrustNote = "suggestion" | "light" | "revoked" | "reset" | "tooFew";
 
 export interface Trust {
-  /** 能驗收的身分（client/access.json 的 canReview）才有建議少看與按鈕 */
+  /** 能驗收的身分（client/access.json 的 canReview）才有建議改看重點與按鈕 */
   canReview: boolean;
   employees: CrewEmployee[];
   rows: TrustRow[];
@@ -105,7 +105,7 @@ export async function readTrust(
   const rows: TrustRow[] = [];
   for (const { employeeId, workTypeId } of sorted) {
     const { reviews, decisions } = await getTrustInputs(db, identity, employeeId, workTypeId);
-    // 建議只給能驗收的身分（只有他們能同意少看），與首頁的今天的工作一致
+    // 建議只給能驗收的身分（只有他們能同意改看重點），與首頁的今天的工作一致
     const suggestion = canReview ? relaxSuggestion(reviews, decisions, params) : null;
     const level = reviewLevel(reviews, decisions);
     const timeline = trustTimeline(reviews, decisions, params);
@@ -199,7 +199,7 @@ export const isSameDay = (iso: string, now: Date): boolean => new Date(iso).toIS
 
 type RowKey = Pick<TrustRow, "workTypeId"> & { employee: Pick<CrewEmployee, "id"> };
 
-/** 同意少看：以建議依據中最新一筆驗收寫入 relax。權限由 RLS 把關，不能驗收的身分由資料庫拋錯。 */
+/** 同意改看重點：以建議依據中最新一筆驗收寫入 relax。權限由 RLS 把關，不能驗收的身分由資料庫拋錯。 */
 export function agreeRelax(db: Database, identity: string | null, row: RowKey & { suggestion: TrustSuggestion }) {
   return createLevelDecision(db, identity, {
     employeeId: row.employee.id,
@@ -209,7 +209,7 @@ export function agreeRelax(db: Database, identity: string | null, row: RowKey & 
   });
 }
 
-/** 收回少看：寫入 revoke。權限同上。 */
+/** 收回看重點：寫入 revoke。權限同上。 */
 export function revokeRelax(db: Database, identity: string | null, row: RowKey) {
   return createLevelDecision(db, identity, { employeeId: row.employee.id, workTypeId: row.workTypeId, decision: "revoke" });
 }

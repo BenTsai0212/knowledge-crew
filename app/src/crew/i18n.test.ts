@@ -52,6 +52,33 @@ describe("crew 的翻譯檔（client/i18n/crew/）", () => {
   });
 });
 
+describe("審查程度的用詞（#128）", () => {
+  // 「少看」改稱「看重點」、「Lighter review」改稱「Review key points」；避免之後又寫回舊用詞
+  const old: Record<string, RegExp> = { "zh-TW": /少看/, en: /lighter/i };
+
+  it("zh-TW 不含「少看」、en 不含「lighter」（大小寫不分）", () => {
+    for (const [language, pattern] of Object.entries(old)) {
+      const hits = screens
+        .filter((screen) => CREW_TRANSLATIONS[screen][language])
+        .flatMap((screen) => Object.entries(CREW_TRANSLATIONS[screen][language]).filter(([, v]) => pattern.test(v)).map(([k]) => `${screen}.${k}`));
+      expect(hits, language).toEqual([]);
+    }
+  });
+
+  it("層級成對：看重點／逐項看、Review key points／Review every item", () => {
+    for (const screen of ["review", "trust", "employees", "assign"] as CrewScreen[]) {
+      if (CREW_TRANSLATIONS[screen]["zh-TW"]) {
+        expect(CREW_TRANSLATIONS[screen]["zh-TW"].levelLight, screen).toBe("看重點");
+        expect(CREW_TRANSLATIONS[screen]["zh-TW"].levelItem, screen).toBe("逐項看");
+      }
+      if (CREW_TRANSLATIONS[screen].en) {
+        expect(CREW_TRANSLATIONS[screen].en.levelLight, screen).toBe("Review key points");
+        expect(CREW_TRANSLATIONS[screen].en.levelItem, screen).toBe("Review every item");
+      }
+    }
+  });
+});
+
 describe("crewStrings", () => {
   it("每個畫面與語言都回傳該檔的文字", () => {
     for (const screen of screens) {

@@ -19,7 +19,7 @@ const suggestion: TodaySuggestion = { employee: { id: "e1", displayName: "Rowan"
 const today = (over: Partial<HomeToday>): HomeToday => ({ canReview: true, failing: [], awaiting: [], decide: [], inProgress: [], ...over });
 
 describe("sectionCounts", () => {
-  it("工作與驗收是待驗收件數（含有檢查沒通過的），信任是少看建議數", () => {
+  it("工作與驗收是待驗收件數（含有檢查沒通過的），信任是看重點的建議數", () => {
     expect(sectionCounts(today({ failing: [assignment("a")], awaiting: [assignment("b"), assignment("c")], decide: [suggestion] }))).toEqual({ works: 3, trust: 1 });
   });
 

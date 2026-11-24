@@ -105,7 +105,7 @@ describe("讀取（匯入 demo.json 後）", () => {
     expect(await getTrustInputs(db, "staff", "linden", "knowledge")).toEqual({ reviews: [], decisions: [] });
   });
 
-  it("Rowan × support：少看期間做錯了改回 item，autoResets 一筆（manager 與 staff 相同）", async () => {
+  it("Rowan × support：看重點期間做錯了改回 item，autoResets 一筆（manager 與 staff 相同）", async () => {
     for (const identity of ["manager", "staff"]) {
       const t = await trust(db, identity, "rowan", "support");
       expect(t.reviews).toHaveLength(15);
@@ -117,7 +117,7 @@ describe("讀取（匯入 demo.json 後）", () => {
     }
   });
 
-  it("Sorrel × content：item，有建議少看，依據是最近 10 次（不含 c01）", async () => {
+  it("Sorrel × content：item，有建議改看重點，依據是最近 10 次（不含 c01）", async () => {
     const t = await trust(db, "manager", "sorrel", "content");
     expect(t.reviews).toHaveLength(12);
     expect(t.level).toBe("item");
@@ -127,7 +127,7 @@ describe("讀取（匯入 demo.json 後）", () => {
     expect(t.suggestion!.basis.map((r) => r.id)).not.toContain("c01-2");
   });
 
-  it("Juniper × dev：同意少看後又收回，item；收回之後還沒有驗收，沒有建議", async () => {
+  it("Juniper × dev：同意改看重點後又收回，item；收回之後還沒有驗收，沒有建議", async () => {
     const t = await trust(db, "manager", "juniper", "dev");
     expect(t.reviews).toHaveLength(11);
     expect((await getTrustInputs(db, "manager", "juniper", "dev")).decisions.map((d) => d.decision)).toEqual(["relax", "revoke"]);
@@ -158,7 +158,7 @@ describe("寫入", () => {
   });
   afterAll(() => db.close());
 
-  it("manager：交辦、交件、驗收、少看的決定，寫入後讀回一致；身分與時間由資料庫填入", async () => {
+  it("manager：交辦、交件、驗收、看重點的決定，寫入後讀回一致；身分與時間由資料庫填入", async () => {
     const before = Date.now();
     const a = await createAssignment(db, "manager", { sourceId: "company-site", title: "New card", workTypeId: "dev", employeeId: "juniper" });
     expect(a.externalRef).toBe("31");

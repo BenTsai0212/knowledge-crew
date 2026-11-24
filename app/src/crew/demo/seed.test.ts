@@ -37,7 +37,7 @@ describe("demoSeed", () => {
     expect(DEMO_RAW).not.toBeNull();
   });
 
-  it("匯入後的筆數與 demo.json 一致（交辦 48、工作 56、驗收 52、少看的決定 4）", async () => {
+  it("匯入後的筆數與 demo.json 一致（交辦 48、工作 56、驗收 52、看重點的決定 4）", async () => {
     const works = demo.assignments.flatMap((a) => a.works);
     const expected = {
       sources: 4, employees: 4, work_types: 4, assignments: 48, works: 56, reviews: 52, level_decisions: 4,

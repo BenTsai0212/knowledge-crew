@@ -3,7 +3,7 @@
 import type { HomeToday } from "./home-today";
 import type { CrewSection } from "./sections";
 
-/** 「工作與驗收」是待驗收件數，「信任」是待決定的少看建議數；只給能驗收的身分，0 不顯示 */
+/** 「工作與驗收」是待驗收件數，「信任」是待決定的看重點的建議數；只給能驗收的身分，0 不顯示 */
 export function sectionCounts(today: HomeToday): Partial<Record<CrewSection, number>> {
   if (!today.canReview) return {};
   const counts: Partial<Record<CrewSection, number>> = {};

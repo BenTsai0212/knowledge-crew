@@ -184,7 +184,7 @@ interface LightCardProps {
   t: Texts;
 }
 
-/** 為什麼是少看（規格 6.3）：success 1px 框、盾牌圖示；何時同意、最近幾次沒有做錯、收起什麼、一次做錯了就改回逐項看 */
+/** 為什麼是看重點（規格 6.3）：success 1px 框、盾牌圖示；何時同意、最近幾次沒有做錯、收起什麼、一次做錯了就改回逐項看 */
 function LightCard({ reason, employee, workType, language, onOpenTrust, t }: LightCardProps) {
   const since = withEmployee(t.lightSince, { date: formatDate(reason.relaxedAt, language), workType, count: reason.recent }, employee, language);
   return (

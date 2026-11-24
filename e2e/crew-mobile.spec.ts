@@ -16,7 +16,7 @@ const reviewList = (page: Page) => page.getByRole("navigation", { name: ct.revie
 const awaitingItems = (page: Page) => reviewList(page).locator("section").first().getByRole("listitem");
 const decisionBar = (page: Page) => page.locator(".crew-review__decision");
 const tabbar = (page: Page) => page.locator(".mobile-tabbar");
-// 少看的件（#102）：Linden 的 k13
+// 看重點的件（#102）：Linden 的 k13
 const k13Title = hasCrewDemo
   ? readClientJson<{ assignments: { id: string; title: Record<string, string> }[] }>("crew/demo.json").assignments.find((a) => a.id === "k13")!.title[language]
   : "";
@@ -32,7 +32,7 @@ const box = async (locator: Locator) => (await locator.boundingBox())!;
 test.describe("手機 390", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("主管：子頁按鈕列可以橫向滑動、目前的子頁捲進畫面，數字是待驗收件數與少看建議數", async ({ page }) => {
+  test("主管：子頁按鈕列可以橫向滑動、目前的子頁捲進畫面，數字是待驗收件數與看重點的建議數", async ({ page }) => {
     await openCrewAs(page, "manager");
     const nav = crewSections(page);
     expect(await nav.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
@@ -46,7 +46,7 @@ test.describe("手機 390", () => {
     await expect(countOf(works)).toHaveText(String(awaiting));
     await expect(works).toHaveAccessibleDescription(new RegExp(String(awaiting)));
 
-    // 信任的數字與「同意少看」的按鈕數相同
+    // 信任的數字與「同意改看重點」的按鈕數相同
     const trust = sectionButton(page, ct.common.sectionTrust);
     await gotoCrewSection(page, ct.common.sectionTrust);
     const suggestions = await page.getByRole("button", { name: ct.trust.agreeRelax, exact: true }).count();
@@ -109,7 +109,7 @@ test.describe("手機 390", () => {
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 
-  test("主管：少看的件（#102 的 k13）決定列仍固定在分頁列之上；展開收起的欄位與變更後，捲到最後決定列回到原位", async ({ page }) => {
+  test("主管：看重點的件（#102 的 k13）決定列仍固定在分頁列之上；展開收起的欄位與變更後，捲到最後決定列回到原位", async ({ page }) => {
     await openCrewAs(page, "manager");
     await reviewList(page).getByRole("button").filter({ hasText: k13Title }).click();
     const panel = reviewPanel(page, k13Title);

@@ -1,6 +1,6 @@
-// 「工作帳本」的資料整理（#40 計畫第 1～3 節；#77 加上事件篩選與列的樣式）：交辦、交件、驗收、同意少看與收回、因做錯了改回逐項看，
+// 「工作帳本」的資料整理（#40 計畫第 1～3 節；#77 加上事件篩選與列的樣式）：交辦、交件、驗收、同意改看重點與收回、因做錯了改回逐項看，
 // 依時間新到舊列出。一律經 withIdentity() 讀取，可見範圍由 RLS 決定；改回逐項看由 autoResets() 推得，不另存。
-// #125 加上「提出少看建議」：由 relaxProposals()（suggestion-history.ts）推得，同樣不另存。
+// #125 加上「提出看重點的建議」：由 relaxProposals()（suggestion-history.ts）推得，同樣不另存。
 import type { Transaction } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
@@ -39,7 +39,7 @@ export interface LedgerEvent {
   round: number | null;
   /** 退回原因；其他種類是 null */
   reason: ReturnReason | null;
-  /** 提出少看建議（proposed）的依據：驗收 id，依時間排序；其他種類沒有 */
+  /** 提出看重點的建議（proposed）的依據：驗收 id，依時間排序；其他種類沒有 */
   basis?: string[];
 }
 
@@ -57,10 +57,10 @@ export const LEDGER_PAGE_SIZE = 20;
 
 const LEVEL_KINDS: ReadonlySet<LedgerKind> = new Set(["relax", "revoke", "autoReset"]);
 
-/** 層級改變的紀錄：同意少看、收回少看、因做錯了改回逐項看（畫面以灰底標出）。 */
+/** 層級改變的紀錄：同意改看重點、收回看重點、因做錯了改回逐項看（畫面以灰底標出）。 */
 export const isLevelChange = (kind: LedgerKind): boolean => LEVEL_KINDS.has(kind);
 
-/** 「只看層級改變」的篩選：層級改變，加上提出少看建議（#125；建議不改變層級，不以灰底標出）。 */
+/** 「只看層級改變」的篩選：層級改變，加上提出看重點的建議（#125；建議不改變層級，不以灰底標出）。 */
 export const inLevelFilter = (kind: LedgerKind): boolean => isLevelChange(kind) || kind === "proposed";
 
 /** 事件文字的樣式：層級改變是粗體灰底列，退回（做錯了）是 danger 粗體，其他沒有。 */
@@ -95,7 +95,7 @@ export interface LedgerSources {
   decisions: DecisionRow[];
   /** 改回逐項看：造成它的驗收 id 與時間 */
   resets: { reviewId: string; at: string }[];
-  /** 提出少看建議（#125）：觸發的驗收 id、時間與依據的驗收 id；省略時沒有 */
+  /** 提出看重點的建議（#125）：觸發的驗收 id、時間與依據的驗收 id；省略時沒有 */
   proposals?: { reviewId: string; at: string; basis: string[] }[];
 }
 
@@ -132,7 +132,7 @@ const pairKey = (employeeId: string, workTypeId: string) => `${employeeId}\u0000
 /** 同一時間時，新到舊列表中由上到下的順序：改回逐項看在造成它的退回上方；同時間的決定先於驗收發生，列在驗收下方。 */
 const TIE_ORDER: Record<LedgerKind, number> = {
   autoReset: 0,
-  // 提出少看建議在觸發它的驗收上方（同一次驗收不會同時改回逐項看）
+  // 提出看重點的建議在觸發它的驗收上方（同一次驗收不會同時改回逐項看）
   proposed: 0,
   accepted: 1,
   returned: 1,

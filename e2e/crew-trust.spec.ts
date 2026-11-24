@@ -61,7 +61,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toHaveCount(0);
   });
 
-  test("Sorrel：同意少看 → 事件「今天」與「收回少看」→ 收回後說明下一份起改回逐項看", async ({ page }) => {
+  test("Sorrel：同意改看重點 → 事件「今天」與「收回，改回逐項看」→ 收回後說明下一份起改回逐項看", async ({ page }) => {
     const row = trustRow(page, "sorrel", "content");
     // 建議的經過跟著更新（#125）：提出 → 同意 → 收回
     await expect(historySteps(row)).toHaveCount(1);
@@ -77,7 +77,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(historySteps(row).last()).toHaveText(crewFill(ct.trust.historyRevoke, { date: ct.trust.today, actor: roleName("manager") }));
   });
 
-  test("Linden：少看中，事件 10/13，有「收回少看」", async ({ page }) => {
+  test("Linden：看重點中，事件 10/13，有「收回，改回逐項看」", async ({ page }) => {
     const row = trustRow(page, "linden", "knowledge");
     await expect(row.getByText(badge(ct.trust.levelLight), { exact: true })).toBeVisible();
     await expect(row.getByText(crewFill(ct.trust.eventRelax, { date: "10/13" }), { exact: true })).toBeVisible();
@@ -106,14 +106,14 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(steps.nth(1)).toHaveText(crewFill(ct.trust.historyRelax, { date: "10/19", actor: roleName("manager") }));
     await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/22" }));
     await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyRevoke, { date: "10/24", actor: roleName("manager") }));
-    // 沒有少看建議（收回後要重新累積），只有打開那一件的按鈕
+    // 沒有看重點的建議（收回後要重新累積），只有打開那一件的按鈕
     await expect(row.getByRole("button", { name: ct.trust.agreeRelax, exact: true })).toHaveCount(0);
     await steps.nth(2).getByRole("button", { name: crewFill(ct.trust.historyOpenWork, { title: assignmentTitle("j05") }), exact: true }).click();
     await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(crewContent(page).locator('[aria-current="true"]')).toContainText(assignmentTitle("j05"));
   });
 
-  test("Sorrel：少看建議列出依據的 10 次驗收；「在工作帳本看這幾次」篩選成 Sorrel 的「貼文與商品介紹」（#125）", async ({ page }) => {
+  test("Sorrel：看重點的建議列出依據的 10 次驗收；「在工作帳本看這幾次」篩選成 Sorrel 的「貼文與商品介紹」（#125）", async ({ page }) => {
     const row = trustRow(page, "sorrel", "content");
     const summary = row.getByText(crewFill(ct.trust.basisSummary, { count: 10, from: "09/09", to: "10/27" }), { exact: true });
     await expect(summary).toBeVisible();

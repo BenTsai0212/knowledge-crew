@@ -1,7 +1,7 @@
 // 「信任」畫面（#37；#75 改為時間軸，設計規格 v3 第 6.4 節）：每個看得到的「員工 × 工作類型」一張卡，
 // 時間軸是事件、圓點與日期、當時的層級三列。資料整理與寫入在 trust.ts；按鈕只給能驗收的身分，寫入後重新讀取。
 // 最上方是總覽報表（#121，TrustReport.tsx）：計數來自工作帳本的事件，點一列切到工作帳本並套用篩選。
-// 少看建議的依據與「建議的經過」（#125）：同樣由工作帳本的事件整理（suggestion-history.ts）。
+// 看重點的建議的依據與「建議的經過」（#125）：同樣由工作帳本的事件整理（suggestion-history.ts）。
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
@@ -68,7 +68,7 @@ export function TrustView({ db, identity, language, onChanged, navigate }: CrewS
     setFailed(null);
     try {
       await action();
-      // 子導覽的少看建議數與首頁的「等你決定」跟著更新（#103）
+      // 子導覽的看重點的建議數與首頁的「等你決定」跟著更新（#103）
       onChanged?.();
     } catch {
       setFailed(key);
@@ -271,7 +271,7 @@ const range = (items: readonly { at: string }[], date: (iso: string) => string) 
   to: items.length > 0 ? date(items[items.length - 1].at) : "",
 });
 
-/** 少看建議的依據（#125）：那幾次驗收的日期與工作標題，預設收起；可以切到工作帳本看這幾次。 */
+/** 看重點的建議的依據（#125）：那幾次驗收的日期與工作標題，預設收起；可以切到工作帳本看這幾次。 */
 function Basis({
   items,
   openLedger,

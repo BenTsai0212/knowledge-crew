@@ -291,7 +291,7 @@ button.crew-review__point[aria-pressed="true"] {
   font-size: 14px;
 }
 
-/* 少看的變更（#102）：收成一行，「逐項列出」展開清單 */
+/* 看重點的變更（#102）：收成一行，「逐項列出」展開清單 */
 .crew-review__changes-collapsed .crew-review__changes-line {
   margin-bottom: 0;
 }
@@ -303,7 +303,7 @@ button.crew-review__point[aria-pressed="true"] {
   overflow-wrap: anywhere;
 }
 
-/* 為什麼是少看（規格 6.3）：success 1px 框、盾牌圖示，不填滿 */
+/* 為什麼是看重點（規格 6.3）：success 1px 框、盾牌圖示，不填滿 */
 .crew-review__light {
   display: flex;
   align-items: flex-start;

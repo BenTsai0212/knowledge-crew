@@ -44,7 +44,7 @@ describe("AI 標記", () => {
 });
 
 describe("層級徽章", () => {
-  it("pill，逐項看 textMuted 框＋text 字；少看 success 框＋字、不填滿", () => {
+  it("pill，逐項看 textMuted 框＋text 字；看重點 success 框＋字、不填滿", () => {
     expect(html(createElement(LevelBadge, { level: "light", children: "L" }))).toContain('<span class="badge crew-level-badge" data-level="light">L</span>');
     expect(rule(".badge.crew-level-badge")).toContain("border-color: var(--color-textMuted)");
     expect(rule(".badge.crew-level-badge")).toContain("color: var(--color-text)");

@@ -5,7 +5,7 @@ import type { ReturnReason, ReviewLevel } from "../trust/types";
 import type { CrewEmployee, TrustRow } from "./trust";
 import type { LedgerEvent } from "./ledger";
 
-/** 層級變化：同意少看、收回少看、做錯了自動改回逐項看（帳本的種類）。 */
+/** 層級變化：同意改看重點、收回看重點、做錯了自動改回逐項看（帳本的種類）。 */
 export type LevelChangeKind = "relax" | "revoke" | "autoReset";
 
 export interface TrustReportRow {

@@ -174,7 +174,7 @@ export function listReviews(db: Database, identityId: string | null, filter: { a
   });
 }
 
-/** 某員工 × 某類工作的驗收與少看的決定（依時間排序），直接交給 rules.ts。只含目前身分看得到的驗收。 */
+/** 某員工 × 某類工作的驗收與看重點的決定（依時間排序），直接交給 rules.ts。只含目前身分看得到的驗收。 */
 export function getTrustInputs(db: Database, identityId: string | null, employeeId: string, workTypeId: string): Promise<TrustInputs> {
   return read(db, identityId, async (tx) => {
     const reviews = await rows<ReviewRow>(

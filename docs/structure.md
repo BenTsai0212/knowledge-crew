@@ -277,24 +277,24 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）
 - `ui/review/conclusion.ts`：驗收面板 v3 的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`conclusionOf()`：結論列；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
 - `ui/review/Deliverables.tsx`：驗收面板 v3 的四種交件（回信、貼文、知識庫條目、程式修改）依原本的樣子呈現（測試在 `Deliverables.test.ts`）
-- `ui/review/light.ts`：驗收面板的少看（#102，規格 6.3）：「為什麼是少看」的日期與次數（`lightReason()`，取自既有的驗收紀錄與層級決定）與收起的規則（`keptInLight()`、`splitFields()`：有重點與空白的欄位照樣顯示，其他欄位收起；測試在 `light.test.ts`）
+- `ui/review/light.ts`：驗收面板的看重點（#102，規格 6.3）：「為什麼是看重點」的日期與次數（`lightReason()`，取自既有的驗收紀錄與層級決定）與收起的規則（`keptInLight()`、`splitFields()`：有重點與空白的欄位照樣顯示，其他欄位收起；測試在 `light.test.ts`）
 - `ui/review/marked.ts`：驗收面板 v3 的重點標記（`segments()`：依標記切片段；`canMark()`：能不能在內容中標出重點；測試在 `marked.test.ts`）
 - `ui/review/parts.tsx`：驗收面板 v3 的交件內容共用的小元件（上標的重點編號、依標記切開的內容、區塊的名稱欄與內容；四種交件與一般的寫法共用）
-- `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列、重點＋自動檢查（並排，窄螢幕堆疊）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡；手機展開退回原因時取消固定並捲進畫面，#103）；少看時另有「為什麼是少看」說明卡（#102）
+- `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列、重點＋自動檢查（並排，窄螢幕堆疊）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡；手機展開退回原因時取消固定並捲進畫面，#103）；看重點時另有「為什麼是看重點」說明卡（#102）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上；手機的決定列固定在底部分頁列之上，#103）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆（從原文的來源或首頁的今天的工作切過來時選那一件，#92、#96）；已回流的工作顯示「已收進知識庫」與「打開原文」，沒有上傳權限而沒有回流時註明原因；「通過」「退回」只給能驗收的身分，寫入後重新讀取（並通知 App 更新首頁與側欄的待驗收件數，#96）
-- `ui/section-counts.ts`：子導覽的數字（`sectionCounts()`：待驗收件數與待決定的少看建議數，只給能驗收的身分）與目前子頁的橫向捲動量（`scrollDelta()`；測試在 `section-counts.test.ts`，#103）
+- `ui/section-counts.ts`：子導覽的數字（`sectionCounts()`：待驗收件數與待決定的看重點的建議數，只給能驗收的身分）與目前子頁的橫向捲動量（`scrollDelta()`；測試在 `section-counts.test.ts`，#103）
 - `ui/sections.ts`：子導覽的位置與名稱的鍵（員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：工作與驗收，#100）、畫面元件的 props（`ledgerFilter`：切到工作帳本時的篩選，#121）
 - `ui/SourceOrigin.tsx`：原文的接入點：回流的文件在原文面板（`ui/SourcePanel.tsx`、`ui/SourceSheet.tsx` 的 `origin`）顯示「來自 AI 員工 ○○・驗收「○○」（日期）」，點了切到「工作與驗收」的那一件（`App.tsx` 經 `CrewPage` 的 `request`；測試在 `SourceOrigin.test.ts`）
-- `ui/today.ts`：今天的工作的資料整理（`readToday()`：待驗收、進行中、建議少看；首頁的「今天的工作」使用，AI 員工頁籤內沒有「今天」子頁（#100）；測試在 `today.test.ts`）
+- `ui/today.ts`：今天的工作的資料整理（`readToday()`：待驗收、進行中、建議改看重點；首頁的「今天的工作」使用，AI 員工頁籤內沒有「今天」子頁（#100）；測試在 `today.test.ts`）
 - `ui/tour-steps.ts`：第一次來的導覽（#122）的步驟與目標區塊、看過的紀錄（`localStorage`，讀寫包在 try/catch，讀不到時當成沒看過）、對話框的位置、回流那一步的工作（`readTourFlowback()`；測試在 `tour-steps.test.ts`）
 - `ui/Tour.css`：第一次來的導覽的入口小卡、「重新看導覽」、導覽對話框與標出區塊的外框（只用 theme 的 CSS 變數）
 - `ui/Tour.tsx`：第一次來的導覽：首頁 `todayCard` 插槽的入口小卡（`CrewTourCard`，不自動彈出）與逐步切到首頁或 crew 頁、標出區塊的對話框（`CrewTour`，`App.tsx` 提供切換畫面；`Esc` 結束）
 - `ui/trust-report.ts`：信任頁的總覽報表（#121）：`trustReport()` 以 `readTrust()` 的列與工作帳本的事件整理每個「員工 × 工作類型」的驗收次數、第一次就通過、三種退回原因、目前層級與層級變化（純函式；測試在 `trust-report.test.ts`）
-- `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議少看；`trustTimeline()`／`trustNote()`：信任頁的時間軸（每次驗收當時的層級與層級事件）與說明；`agreeRelax()`／`revokeRelax()` 寫入少看的決定；測試在 `trust.test.ts`）
+- `ui/trust.ts`：「員工」「信任」共用的資料整理（`readTrust()`：每個「員工 × 工作類型」的圓點、層級、建議改看重點；`trustTimeline()`／`trustNote()`：信任頁的時間軸（每次驗收當時的層級與層級事件）與說明；`agreeRelax()`／`revokeRelax()` 寫入看重點的決定；測試在 `trust.test.ts`）
 - `ui/TrustReport.tsx`：信任頁最上方的總覽報表：點一列切到工作帳本並篩選成該員工＋該工作類型，點退回的數字再篩選成退回（#121）
 - `ui/TrustView.css`：「信任」畫面的頁首、總覽報表（手機時每列一張卡片）、卡片與時間軸（事件、圓點與日期、層級帶三列共用欄數；三種結果以符號與文字區分）
-- `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：最上方是總覽報表（`TrustReport.tsx`），下方呈現 `trust.ts` 的結果；「同意少看」「收回少看」只給能驗收的身分，寫入後重新讀取（並通知 crew 頁與 App 更新子導覽的數字與首頁，#103）
+- `ui/TrustView.tsx`：「信任」畫面（時間軸，設計規格 v3 第 6.4 節）：最上方是總覽報表（`TrustReport.tsx`），下方呈現 `trust.ts` 的結果；「同意改看重點」「收回，改回逐項看」只給能驗收的身分，寫入後重新讀取（並通知 crew 頁與 App 更新子導覽的數字與首頁，#103）
 - `work/body.ts`：交件全文的結構與「要看的重點」標記：`parseWorkBody()`、`toPlainText()`（格式見 `docs/crew/work-body-format.md`；測試在 `body.test.ts`）
 
 ### `app/src/db/`

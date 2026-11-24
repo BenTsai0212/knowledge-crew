@@ -87,7 +87,7 @@ describe("交件本身", () => {
     }
   });
 
-  it("少看：變更收成一行，「逐項列出」預設收起", () => {
+  it("看重點：變更收成一行，「逐項列出」預設收起", () => {
     const items = [
       { path: "reply/p2", summary: "Week" },
       { path: "reply/greeting", summary: "Tone" },
@@ -101,7 +101,7 @@ describe("交件本身", () => {
     expect(out.match(/<li>/g)).toHaveLength(2);
   });
 
-  it("少看但沒有變更：不顯示變更的那一行", () => {
+  it("看重點但沒有變更：不顯示變更的那一行", () => {
     const out = view(STRUCTURED, { mode: "summary", count: 0 } as never);
     expect(out).not.toContain("crew-review__changes-line");
   });

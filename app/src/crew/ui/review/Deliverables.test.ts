@@ -26,7 +26,7 @@ function view(deliverable: Deliverable, lines: string[], opts: ViewOpts = {}) {
     name: "Deliverable",
     body: parseWorkBody(raw, 2),
     raw,
-    // 少看（有標重點）時 reviewFocus() 把變更收成一筆摘要
+    // 看重點（有標重點）時 reviewFocus() 把變更收成一筆摘要
     changes: opts.light ? { mode: "summary", count: items.length } : { mode: "items", items },
     changeItems: items,
     language,
@@ -85,7 +85,7 @@ describe("知識庫條目", () => {
     expect(view("kb", lines, { active: 2 })).toMatch(/class="crew-review__kb-title" data-point="2" data-active="true"/);
   });
 
-  describe("少看（#102）", () => {
+  describe("看重點（#102）", () => {
     const light = [...lines, "@@ kb/pre-orders#payment | Payment", "Card", "@@ kb/pre-orders#arrival | Arrival", `In ${mark(2, "4 weeks")}`, "@@ kb/pre-orders#cancel | Cancel", "Free"];
     const shownPart = (out: string) => out.split('class="crew-collapsed"')[0];
     const foldPart = (out: string) => out.split('class="crew-collapsed__content"')[1] ?? "";
@@ -110,7 +110,7 @@ describe("知識庫條目", () => {
       expect(out.match(/<dt /g)).toHaveLength(6);
     });
 
-    it("回信、貼文、程式修改在少看時不收起段落（只收變更）", () => {
+    it("回信、貼文、程式修改在看重點時不收起段落（只收變更）", () => {
       const reply = ["@@ reply/to", "Ms. Lin", "@@ reply/greeting", "Hello", "@@ reply/p2", `Arrives ${mark(1, "next week")}.`];
       const post = ["@@ post/account", "shop", "@@ post/body", `New ${mark(1, "bottle")}`, "@@ post/hashtags", "#new"];
       const code = ["@@ src/a.tsx [added]", `Adds ${mark(1, "search")}`, "@@ src/b.tsx [modified]", "Wires it"];

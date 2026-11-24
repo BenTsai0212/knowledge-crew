@@ -90,7 +90,7 @@ interface KbFieldsProps {
   value: (s: WorkSection) => ReactNode;
 }
 
-/** 條目的欄位清單；少看時沒標重點、不是空白的欄位收進「其他 N 個欄位已收起」（規格 6.3），展開狀態只存在元件 state */
+/** 條目的欄位清單；看重點時沒標重點、不是空白的欄位收進「其他 N 個欄位已收起」（規格 6.3），展開狀態只存在元件 state */
 function KbFields({ id, fields, ctx, value }: KbFieldsProps) {
   const [expanded, setExpanded] = useState(false);
   const { shown, collapsed } = splitFields(fields, ctx.light === true);
