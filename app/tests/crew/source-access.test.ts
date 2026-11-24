@@ -117,8 +117,9 @@ describe("欄位層級的 INSERT 權限沿用到改名後的欄位", () => {
       ).rows.map((r) => `${r.table_name}.${r.column_name}`),
     );
     expect(columns).toEqual([
-      "assignments.assigned_by", "assignments.employee_id", "assignments.external_ref", "assignments.id",
-      "assignments.source_id", "assignments.title", "assignments.work_type_id",
+      // due_at、priority：0006 加入（#133）
+      "assignments.assigned_by", "assignments.due_at", "assignments.employee_id", "assignments.external_ref", "assignments.id",
+      "assignments.priority", "assignments.source_id", "assignments.title", "assignments.work_type_id",
       "works.assignment_id", "works.body", "works.external_ref", "works.id", "works.round", "works.summary",
     ]);
   });

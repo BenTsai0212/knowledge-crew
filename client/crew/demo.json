@@ -1,4 +1,5 @@
 {
+  "today": "2026-11-20",
   "sources": [
     { "id": "support-inbox", "kind": "mailbox", "name": "Support inbox", "label": { "zh-TW": "客服信箱", "en": "Support inbox" }, "project": "bluewing" },
     { "id": "social-account", "kind": "social", "name": "Social account", "label": { "zh-TW": "官方社群帳號", "en": "Social account" }, "project": "bluewing" },
@@ -233,7 +234,7 @@
       ]
     },
     {
-      "id": "s13", "source": "support-inbox", "externalRef": "1053", "workType": "support", "employee": "rowan",
+      "id": "s13", "source": "support-inbox", "externalRef": "1053", "workType": "support", "employee": "rowan", "dueAt": "2026-10-31", "priority": "low",
       "title": { "zh-TW": "詢問海外寄送", "en": "Question about overseas shipping" }, "assignedBy": "manager", "assignedAt": "2026-10-24T09:00:00+08:00",
       "works": [
         {
@@ -251,7 +252,7 @@
       ]
     },
     {
-      "id": "s14", "source": "support-inbox", "externalRef": "1054", "workType": "support", "employee": "rowan",
+      "id": "s14", "source": "support-inbox", "externalRef": "1054", "workType": "support", "employee": "rowan", "dueAt": "2026-11-18", "priority": "high",
       "title": { "zh-TW": "詢問預購商品的到貨日", "en": "Arrival date of a pre-order" }, "assignedBy": "manager", "assignedAt": "2026-11-17T09:00:00+08:00",
       "works": [
         {
@@ -472,7 +473,7 @@
       ]
     },
     {
-      "id": "c11", "source": "social-account", "workType": "content", "employee": "sorrel",
+      "id": "c11", "source": "social-account", "workType": "content", "employee": "sorrel", "dueAt": "2026-11-22", "priority": "normal",
       "title": { "zh-TW": "冬季限定組合的介紹", "en": "Post for the winter bundle" }, "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
       "works": [
         {
@@ -703,7 +704,7 @@
       ]
     },
     {
-      "id": "k13", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "id": "k13", "source": "company-kb", "workType": "knowledge", "employee": "linden", "dueAt": "2026-12-04", "priority": "low",
       "title": { "zh-TW": "整理預購商品的說明", "en": "Write up pre-orders" }, "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
       "works": [
         {
@@ -867,7 +868,7 @@
       ]
     },
     {
-      "id": "j05", "source": "company-site", "externalRef": "25", "workType": "dev", "employee": "juniper",
+      "id": "j05", "source": "company-site", "externalRef": "25", "workType": "dev", "employee": "juniper", "dueAt": "2026-10-30", "priority": "high",
       "title": { "zh-TW": "官網頁尾的客服時間", "en": "Support hours in the site footer" }, "assignedBy": "manager", "assignedAt": "2026-10-22T09:00:00+08:00",
       "works": [
         {
@@ -888,7 +889,7 @@
       ]
     },
     {
-      "id": "j06", "source": "company-site", "externalRef": "26", "workType": "dev", "employee": "juniper",
+      "id": "j06", "source": "company-site", "externalRef": "26", "workType": "dev", "employee": "juniper", "priority": "high",
       "title": { "zh-TW": "常見問題頁的搜尋", "en": "Search on the FAQ page" }, "assignedBy": "manager", "assignedAt": "2026-11-19T09:00:00+08:00",
       "works": [
         {

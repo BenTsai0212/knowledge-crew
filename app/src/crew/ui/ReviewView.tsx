@@ -6,7 +6,7 @@ import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { createReview } from "../db/store";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { withEmployee } from "./components";
+import { ScheduleLine, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import { initialSelection, readReviewPanel, readWorkList, type ReviewPanel as PanelData, type WorkList, type WorkListItem } from "./review";
 import { itemRef, ReviewPanel } from "./review/ReviewPanel";
@@ -165,6 +165,7 @@ function ListGroup({ title, count, empty, items, selected, select, t, language }
               >
                 <span className="crew-review__item-title">{item.title}</span>
                 <span className="muted crew-review__ref">{itemRef(item, t, language)}</span>
+                <ScheduleLine item={item} language={language} />
                 <span className="muted">{itemMeta(item, t, language)}</span>
                 {item.verdict && (
                   <span className="badge" data-verdict={item.verdict}>

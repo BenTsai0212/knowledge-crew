@@ -3,10 +3,12 @@
 // 層級只由 reviewLevel() 決定，面板只依 reviewFocus() 的結果呈現。
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredWork } from "../db/store";
+import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type Priority, type SourceKind, type StoredWork } from "../db/store";
+import { DEMO } from "../demo/load";
 import { demoText } from "../demo/texts";
 import { readFlowbackPassage } from "../knowledge/origin";
 import { parseWorkBody, type ParsedBody } from "../work/body";
+import { crewToday, shownDueStatus, type DueStatus } from "../work/due";
 import { sourceLabel } from "./refs";
 import { deliverableOf, type Deliverable } from "./review/conclusion";
 import { lightReason, type LightReason } from "./review/light";
@@ -32,6 +34,11 @@ export interface WorkListItem {
   round: number;
   /** 最新一輪的驗收；待驗收時為 null */
   verdict: Verdict | null;
+  /** 到期日（YYYY-MM-DD，#133）；沒有時是 null */
+  dueAt: string | null;
+  priority: Priority;
+  /** 畫面標示的到期狀態（shownDueStatus()；已通過的不標逾期） */
+  due: DueStatus;
 }
 
 export interface WorkList {
@@ -92,7 +99,7 @@ function readLatest(db: Database, identity: string): Promise<LatestRow[]> {
 
 type Sortable = WorkListItem & { decidedAt: number };
 
-async function readItems(db: Database, identity: string, language: LanguageCode): Promise<Sortable[]> {
+async function readItems(db: Database, identity: string, language: LanguageCode, today: string): Promise<Sortable[]> {
   const [assignments, employees, latest] = await Promise.all([
     listAssignments(db, identity),
     listEmployees(db, identity),
@@ -105,14 +112,14 @@ async function readItems(db: Database, identity: string, language: LanguageCode)
   for (const a of [...assignments].reverse()) {
     const l = byAssignment.get(a.id);
     if (a.latestRound === null || !l) continue;
-    items.push({ ...toItem(a, a.latestRound, l.workRef, names, language), decidedAt: l.decidedAt ? new Date(l.decidedAt).getTime() : 0 });
+    items.push({ ...toItem(a, a.latestRound, l.workRef, names, language, today), decidedAt: l.decidedAt ? new Date(l.decidedAt).getTime() : 0 });
   }
   return items;
 }
 
 type Names = Map<string, { displayName: string; roleNote: string | null }>;
 
-function toItem(a: AssignmentSummary, round: number, workRef: string | null, names: Names, language: LanguageCode): WorkListItem {
+function toItem(a: AssignmentSummary, round: number, workRef: string | null, names: Names, language: LanguageCode, today: string): WorkListItem {
   return {
     id: a.id,
     title: demoText("title", a.id, language) ?? a.title,
@@ -124,15 +131,19 @@ function toItem(a: AssignmentSummary, round: number, workRef: string | null, nam
     workTypeId: a.workTypeId,
     round,
     verdict: a.latestVerdict,
+    dueAt: a.dueAt,
+    priority: a.priority,
+    due: shownDueStatus(a.dueAt, today, a.latestVerdict === "accepted"),
   };
 }
 
 const strip = ({ decidedAt: _, ...item }: Sortable): WorkListItem => item;
 
-export async function readWorkList(db: Database, identity: string | null, language: LanguageCode): Promise<WorkList> {
+/** `today` 是到期狀態的「今天」（YYYY-MM-DD）：預設是 demo 的 today，沒有時是目前的日期（#133）。 */
+export async function readWorkList(db: Database, identity: string | null, language: LanguageCode, today: string = crewToday(DEMO)): Promise<WorkList> {
   // 沒有身分時比照 guest：不讀取（與 readToday() 相同）
   if (identity === null) return EMPTY;
-  const items = await readItems(db, identity, language);
+  const items = await readItems(db, identity, language, today);
   const recent = items
     .filter((i) => i.verdict !== null)
     .sort((x, y) => y.decidedAt - x.decidedAt || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
@@ -150,9 +161,10 @@ export async function readReviewPanel(
   language: LanguageCode,
   assignmentId: string,
   canReview: boolean,
+  today: string = crewToday(DEMO),
 ): Promise<ReviewPanel | null> {
   if (identity === null) return null;
-  const items = await readItems(db, identity, language);
+  const items = await readItems(db, identity, language, today);
   const found = items.find((i) => i.id === assignmentId);
   if (!found) return null;
   const item = strip(found);

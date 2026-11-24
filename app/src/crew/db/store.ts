@@ -14,6 +14,11 @@ export type SourceKind = "repo" | "mailbox" | "social" | "knowledge_base";
 
 export const SOURCE_KINDS: readonly SourceKind[] = ["repo", "mailbox", "social", "knowledge_base"];
 
+/** 交辦的優先順序（#133）；沒有指定時是 normal。 */
+export type Priority = "high" | "normal" | "low";
+
+export const PRIORITIES: readonly Priority[] = ["high", "normal", "low"];
+
 export interface StoredSource {
   id: string;
   kind: SourceKind;
@@ -39,6 +44,9 @@ export interface AssignmentSummary {
   employeeId: string;
   assignedBy: string;
   assignedAt: string;
+  /** 到期日（YYYY-MM-DD，#133）；沒有到期日時是 null */
+  dueAt: string | null;
+  priority: Priority;
   /** 沒有交件時為 null */
   latestRound: number | null;
   /** 最新一輪尚未驗收（或沒有交件）時為 null */
@@ -91,7 +99,7 @@ export function listAssignments(db: Database, identityId: string | null): Promis
       tx,
       `SELECT a.id, a.source_id AS "sourceId", s.kind AS "sourceKind", s.name AS "sourceName", a.external_ref AS "externalRef", a.title,
               a.work_type_id AS "workTypeId", a.employee_id AS "employeeId", a.assigned_by AS "assignedBy",
-              a.assigned_at AS "assignedAt", lw.round AS "latestRound", rv.verdict AS "latestVerdict"
+              a.assigned_at AS "assignedAt", to_char(a.due_at, 'YYYY-MM-DD') AS "dueAt", a.priority, lw.round AS "latestRound", rv.verdict AS "latestVerdict"
        FROM crew.assignments a
        JOIN crew.sources s ON s.id = a.source_id
        LEFT JOIN LATERAL (
@@ -230,6 +238,10 @@ export interface NewAssignment {
   title: string;
   workTypeId: string;
   employeeId: string;
+  /** 到期日（YYYY-MM-DD，#133）；省略或 null 時沒有到期日 */
+  dueAt?: string | null;
+  /** 省略時是 normal */
+  priority?: Priority;
 }
 
 /** 新增交辦；repo 類的外部編號（Issue 編號）取該來源目前最大值 ＋1，其他類型是 null。 */
@@ -250,8 +262,8 @@ export function createAssignment(
       externalRef = String(next);
     }
     await tx.query(
-      "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id) VALUES ($1, $2, $3, $4, $5, $6)",
-      [id, input.sourceId, externalRef, input.title, input.workTypeId, input.employeeId],
+      "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id, due_at, priority) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+      [id, input.sourceId, externalRef, input.title, input.workTypeId, input.employeeId, input.dueAt ?? null, input.priority ?? "normal"],
     );
     return { id, externalRef };
   });

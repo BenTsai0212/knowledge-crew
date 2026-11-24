@@ -52,7 +52,7 @@ describe("mergeLedger：排序", () => {
     assignments: [
       {
         id: "a1", sourceId: "r", sourceKind: "repo" as const, sourceName: "example-org/r", externalRef: "1", title: "A1", workTypeId: "docs",
-        employeeId: "basil", assignedBy: "manager", assignedAt: T1, latestRound: 1, latestVerdict: "returned" as const,
+        employeeId: "basil", assignedBy: "manager", assignedAt: T1, dueAt: null, priority: "normal" as const, latestRound: 1, latestVerdict: "returned" as const,
       },
     ],
     employees: [{ id: "basil", displayName: "Basil" }],

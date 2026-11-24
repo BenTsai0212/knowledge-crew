@@ -1,7 +1,8 @@
 // client/crew/demo.json 的驗證（#29 計畫第 2 節、`## 決定` 的補充）：回傳錯誤清單，空陣列表示通過。
 // seed 在匯入前呼叫，有錯就不寫入。check:client 不讀 client/crew/，所以形狀也在這裡檢查。
 import type { AccessFile, LanguageCode } from "../../client/types";
-import { SOURCE_KINDS } from "../db/store";
+import { PRIORITIES, SOURCE_KINDS } from "../db/store";
+import { isDateOnly } from "../work/due";
 import { parseWorkBody, type WorkSection } from "../work/body";
 import type { DemoFile } from "./types";
 
@@ -121,6 +122,12 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     if (!reviewers.has(str(o, k, path))) err(`${path}.${k}`, "must be an identity in access.json with canReview");
   };
 
+  // demo 的「今天」與交辦的到期日（#133）：日期不必早於現在（只用來展示）
+  const day = (o: Obj, k: string, path: string) => {
+    if (o[k] !== undefined && !isDateOnly(o[k])) err(`${path}.${k}`, "must be a date (YYYY-MM-DD)");
+  };
+  day(demo, "today", "demo");
+
   // 來源 id → 類型
   const sources = new Map<string, string>();
   const names = new Set<string>();
@@ -172,6 +179,8 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     refs(a, p);
     loc(a.title, `${p}.title`);
     reviewer(a, "assignedBy", p);
+    day(a, "dueAt", p);
+    if (a.priority !== undefined) oneOf(a, "priority", p, [...PRIORITIES]);
     let last = time(a, "assignedAt", p);
     const works = objects(a, "works", p, 1);
     works.forEach(([w, wp], i) => {

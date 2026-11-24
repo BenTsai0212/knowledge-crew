@@ -251,3 +251,33 @@ describe("staff、guest 不能寫入", () => {
     expect((await item(target.id)).status).toBe("notSubmitted");
   });
 });
+
+describe("到期日與優先順序（#133）", () => {
+  it("清單帶到期日、優先順序與畫面標示的到期狀態（demo 的今天固定）", async () => {
+    expect(await item("s14")).toMatchObject({ dueAt: "2026-11-18", priority: "high", due: "overdue" });
+    expect(await item("c11")).toMatchObject({ dueAt: "2026-11-22", priority: "normal", due: "soon" });
+    expect(await item("k13")).toMatchObject({ dueAt: "2026-12-04", priority: "low", due: "later" });
+    expect(await item("j06")).toMatchObject({ dueAt: null, priority: "high", due: "none" });
+    // 已通過的不標逾期
+    expect(await item("j05")).toMatchObject({ dueAt: "2026-10-30", priority: "high", due: "later", status: "accepted" });
+  });
+
+  it("交辦時填到期日與優先順序，讀回一致；沒填時沒有到期日、一般", async () => {
+    const before = await count();
+    const a = await submitAssignment(db, "manager", {
+      sourceId: "support-inbox", title: "With due", workTypeId: "support", employeeId: "rowan", dueAt: "2026-11-21", priority: "high",
+    });
+    const b = await submitAssignment(db, "manager", { sourceId: "support-inbox", title: "Plain", workTypeId: "support", employeeId: "rowan" });
+    expect(await count()).toBe(before + 2);
+    expect(await item(a.id)).toMatchObject({ dueAt: "2026-11-21", priority: "high", due: "soon", status: "notSubmitted" });
+    expect(await item(b.id)).toMatchObject({ dueAt: null, priority: "normal", due: "none" });
+  });
+
+  it("到期日不是 YYYY-MM-DD 時拋錯且不寫入", async () => {
+    const before = await count();
+    await expect(
+      submitAssignment(db, "manager", { sourceId: "support-inbox", title: "Bad due", workTypeId: "support", employeeId: "rowan", dueAt: "11/21" }),
+    ).rejects.toThrow(/dueAt/);
+    expect(await count()).toBe(before);
+  });
+});

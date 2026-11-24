@@ -192,6 +192,23 @@ describe("validateDemo", () => {
     expect(duplicated.join("\n")).toContain("assignments[1].externalRef: duplicate");
   });
 
+  it("今天、到期日與優先順序（#133）：可以省略；有值時是存在的日期與三種之一，到期日不必早於現在", () => {
+    expect(errorsAfter((d: any) => {
+      d.today = "2026-11-20";
+      d.assignments[0].dueAt = "2030-01-01";
+      d.assignments[0].priority = "high";
+      d.assignments[1].priority = "low";
+    })).toEqual([]);
+    const errors = errorsAfter((d: any) => {
+      d.today = "2026-11-31";
+      d.assignments[0].dueAt = "2026-11-20T00:00:00Z";
+      d.assignments[1].priority = "urgent";
+    }).join("\n");
+    expect(errors).toContain("demo.today: must be a date (YYYY-MM-DD)");
+    expect(errors).toContain("assignments[0].dueAt: must be a date (YYYY-MM-DD)");
+    expect(errors).toContain("assignments[1].priority: must be one of high, normal, low");
+  });
+
   const awaiting = (d: any) => d.assignments[1].works[0];
   it.each([
     ["等待驗收的交件是一行摘要", (d: any) => (awaiting(d).body = t("本文", "Body")), "works[0].body: must have sections while waiting for review"],

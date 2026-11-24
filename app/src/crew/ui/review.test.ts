@@ -47,6 +47,43 @@ beforeAll(async () => {
 });
 afterAll(() => db.close());
 
+describe("到期日與優先順序（#133）", () => {
+  it("demo 的今天固定：待驗收有逾期、3 天內到期、還早與沒有到期日，兩個專案都有", async () => {
+    expect(demo.today).toBe("2026-11-20");
+    const { awaiting, recent } = await list(db, "manager");
+    const brief = awaiting.map(({ id, dueAt, priority, due }) => ({ id, dueAt, priority, due }));
+    expect(brief).toEqual([
+      { id: "s14", dueAt: "2026-11-18", priority: "high", due: "overdue" },
+      { id: "c11", dueAt: "2026-11-22", priority: "normal", due: "soon" },
+      { id: "k13", dueAt: "2026-12-04", priority: "low", due: "later" },
+      { id: "j06", dueAt: null, priority: "high", due: "none" },
+    ]);
+    // 已通過的交辦只顯示日期，不標逾期
+    expect(recent.find((i) => i.id === "s13")).toMatchObject({ dueAt: "2026-10-31", priority: "low", due: "later" });
+  });
+
+  it("今天可以指定：換一天，狀態跟著換", async () => {
+    const { awaiting } = await readWorkList(db, "manager", lang, "2026-12-10");
+    expect(awaiting.map((i) => i.due)).toEqual(["overdue", "overdue", "overdue", "none"]);
+  });
+
+  it("面板的標題卡顯示到期日與「高」優先；逾期標成 overdue", async () => {
+    const t = crewStrings("common", lang);
+    const p = (await panel(db, "manager", "s14"))!;
+    expect(p.item).toMatchObject({ due: "overdue", priority: "high" });
+    const html = renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: p, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
+    expect(html).toContain('data-due="overdue"');
+    expect(html).toContain(t.priorityHigh);
+    // 一般與低不標優先順序；沒有到期日時不顯示日期
+    const k13 = renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: (await panel(db, "manager", "k13"))!, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
+    expect(k13).toContain('data-due="later"');
+    expect(k13).not.toContain(t.priorityHigh);
+    const j06 = renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: (await panel(db, "manager", "j06"))!, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
+    expect(j06).not.toContain("data-due");
+    expect(j06).toContain(t.priorityHigh);
+  });
+});
+
 describe("readWorkList：匯入虛構資料後", () => {
   it("manager：待驗收是 s14、c11、k13、j06；最近驗收過依驗收時間新到舊，最多 RECENT_LIMIT 筆", async () => {
     const { awaiting, recent } = await list(db, "manager");
@@ -66,6 +103,10 @@ describe("readWorkList：匯入虛構資料後", () => {
       workTypeId: "support",
       round: 1,
       verdict: null,
+      // #133：demo 的今天是 2026-11-20，s14 在 11-18 到期（逾期）、優先順序高
+      dueAt: "2026-11-18",
+      priority: "high",
+      due: "overdue",
     });
     expect(awaiting.find((a) => a.id === "j06")).toMatchObject({ sourceName: "example-org/company-site", externalRef: "26", workRef: "38", workTypeId: "dev" });
     expect(awaiting.find((a) => a.id === "c11")).toMatchObject({ sourceKind: "social", sourceName: label("social-account"), externalRef: null, workRef: null });

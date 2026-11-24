@@ -45,5 +45,10 @@
   "listShowAll": "看全部 {count} 件",
   "listShowRecent": "只看最近 {count} 件",
   "assignedOn": "{date} 交辦",
-  "metaSeparator": "・"
+  "metaSeparator": "・",
+  "fieldDue": "到期日（選填）",
+  "fieldPriority": "優先順序",
+  "priorityHigh": "高",
+  "priorityNormal": "一般",
+  "priorityLow": "低"
 }

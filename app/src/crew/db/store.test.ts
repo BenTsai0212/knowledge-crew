@@ -248,3 +248,54 @@ describe("外部編號（#57）", () => {
     expect((await createAssignment(db, "manager", { sourceId: "inbox", title: "Reply 2", workTypeId: "support", employeeId: "rowan" })).externalRef).toBeNull();
   });
 });
+
+describe("到期日與優先順序（#133）", () => {
+  let db: Database;
+  beforeAll(async () => {
+    db = await open();
+  });
+  afterAll(() => db.close());
+
+  it("匯入 demo.json：交辦帶到期日與優先順序，沒填的是 null 與 normal", async () => {
+    const byId = Object.fromEntries((await listAssignments(db, "manager")).map((a) => [a.id, a]));
+    expect(byId.s14).toMatchObject({ dueAt: "2026-11-18", priority: "high" });
+    expect(byId.c11).toMatchObject({ dueAt: "2026-11-22", priority: "normal" });
+    expect(byId.k13).toMatchObject({ dueAt: "2026-12-04", priority: "low" });
+    expect(byId.j06).toMatchObject({ dueAt: null, priority: "high" });
+    expect(byId.s01).toMatchObject({ dueAt: null, priority: "normal" });
+  });
+
+  it("RLS 不變：staff 只看到青翼專案的交辦與其到期日", async () => {
+    const staff = await listAssignments(db, "staff");
+    expect(staff.find((a) => a.id === "s14")).toMatchObject({ dueAt: "2026-11-18", priority: "high" });
+    expect(staff.find((a) => a.id === "k13")).toBeUndefined();
+    expect(staff.find((a) => a.id === "j06")).toBeUndefined();
+  });
+
+  it("manager：交辦時可以填到期日與優先順序；沒填時是 null 與 normal", async () => {
+    const a = await createAssignment(db, "manager", {
+      sourceId: "company-site", title: "Due card", workTypeId: "dev", employeeId: "juniper", dueAt: "2026-12-01", priority: "low",
+    });
+    const b = await createAssignment(db, "manager", { sourceId: "company-site", title: "Plain card", workTypeId: "dev", employeeId: "juniper" });
+    const list = await listAssignments(db, "manager");
+    expect(list.find((x) => x.id === a.id)).toMatchObject({ dueAt: "2026-12-01", priority: "low" });
+    expect(list.find((x) => x.id === b.id)).toMatchObject({ dueAt: null, priority: "normal" });
+  });
+
+  it("kk_app 只有 INSERT：不能改到期日與優先順序；不合法的優先順序被拒", async () => {
+    await expect(db.withIdentity("manager", (tx) => tx.query("UPDATE crew.assignments SET priority = 'high' WHERE id = 's01'"))).rejects.toThrow(/permission denied/);
+    await expect(db.withIdentity("manager", (tx) => tx.query("UPDATE crew.assignments SET due_at = '2026-01-01' WHERE id = 's01'"))).rejects.toThrow(/permission denied/);
+    await expect(
+      createAssignment(db, "manager", { sourceId: "company-site", title: "Bad", workTypeId: "dev", employeeId: "juniper", priority: "urgent" as "high" }),
+    ).rejects.toThrow(/check constraint/);
+    expect((await listAssignments(db, "manager")).find((x) => x.id === "s01")).toMatchObject({ dueAt: null, priority: "normal" });
+  });
+
+  it.each([["staff"], ["guest"], [null]])("%s：帶到期日的交辦同樣被拒", async (identity) => {
+    const before = await listAssignments(db, "manager");
+    await expect(
+      createAssignment(db, identity, { sourceId: "support-inbox", title: "X", workTypeId: "support", employeeId: "rowan", dueAt: "2026-12-01", priority: "high" }),
+    ).rejects.toThrow();
+    expect(await listAssignments(db, "manager")).toEqual(before);
+  });
+});

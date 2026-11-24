@@ -45,5 +45,10 @@
   "listShowAll": "Show all {count}",
   "listShowRecent": "Show the latest {count} only",
   "assignedOn": "assigned {date}",
-  "metaSeparator": " · "
+  "metaSeparator": " · ",
+  "fieldDue": "Due date (optional)",
+  "fieldPriority": "Priority",
+  "priorityHigh": "High",
+  "priorityNormal": "Normal",
+  "priorityLow": "Low"
 }
