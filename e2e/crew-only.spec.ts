@@ -144,6 +144,9 @@ test.describe("桌機", () => {
     await expectHomeWithoutAsk(page);
     await expect(navViews(page)).toHaveCount(VIEWS.length);
     await openCrew(page);
+    // 預設是「總覽」（#134）：訪客沒有資料時是空狀態；「工作與驗收」同樣是空狀態
+    await expect(crewContent(page).getByText(ct.overview.empty, { exact: true })).toBeVisible();
+    await gotoCrewSection(page, ct.common.sectionWorks);
     await expect(page.getByText(ct.review.empty, { exact: true })).toBeVisible();
   });
 
@@ -255,6 +258,9 @@ test.describe("手機 390：首頁、圖譜、時間軸（#91）", () => {
   test("AI 員工：子頁是按鈕列、帶待驗收件數，決定列固定在底部（#103）", async ({ page }) => {
     await enter(page);
     await openCrew(page);
+    // 預設是「總覽」（#134），明確切到「工作與驗收」
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionOverview, exact: true })).toHaveAttribute("aria-current", "page");
+    await gotoCrewSection(page, ct.common.sectionWorks);
     const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });
     await expect(works).toHaveAttribute("aria-current", "page");
     await expect(works.locator(".crew-page__count")).toBeVisible();
