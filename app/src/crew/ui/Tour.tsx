@@ -1,5 +1,5 @@
 // 第一次來的導覽（#122）：首頁「今天的工作」上方的入口小卡（todayCard 插槽），與逐步切換畫面、標出區塊的導覽對話框。
-// 步驟與判斷在 tour.ts；文字在 client/i18n/crew/tour.<語言>.json。不自動彈出：只有按「開始導覽」才開始（線上 demo 也一樣）。
+// 步驟與判斷在 tour-steps.ts；文字在 client/i18n/crew/tour.<語言>.json。不自動彈出：只有按「開始導覽」才開始（線上 demo 也一樣）。
 // 第三方套件不用；標出區塊是蓋在目標上的外框（不擋點擊），對話框不是 modal，可以隨時以「結束導覽」或 Esc 結束。
 import { useEffect, useRef, useState } from "react";
 import { fill } from "../../client/i18n";
@@ -7,7 +7,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { crewStrings } from "../i18n";
 import type { CrewTarget } from "./sections";
-import { dialogPlace, inView, pickTarget, readTourFlowback, readTourSeen, scrollBlock, TARGET_WAIT_MS, TOUR_STEPS, writeTourSeen } from "./tour";
+import { dialogPlace, inView, pickTarget, readTourFlowback, readTourSeen, scrollBlock, TARGET_WAIT_MS, TOUR_STEPS, writeTourSeen } from "./tour-steps";
 import "./Tour.css";
 
 /** 導覽的狀態：看過了沒（入口小卡或「重新看導覽」）、目前第幾步（沒有在導覽時是 null） */
