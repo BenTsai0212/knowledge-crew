@@ -163,6 +163,28 @@ async function expectSpotOn(page: Page, target: string): Promise<void> {
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  if (viewport.width <= 600) await expectTargetMostlyVisible(page, target);
+}
+
+// 手機（#131）：標出的區塊不被對話框、頂端列與底部分頁列蓋住的部分，至少是「放得下的高度」的九成
+// （放得下的高度：目標的高度與頂端列到分頁列之間扣掉對話框的空間，取較小者）
+async function expectTargetMostlyVisible(page: Page, target: string): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate((selector) => {
+        const box = (el: Element | null) => (el === null ? null : el.getBoundingClientRect());
+        const t = box(document.querySelector(selector))!;
+        const d = box(document.querySelector(".crew-tour"))!;
+        const top = box(document.querySelector(".mobile-topbar"))?.bottom ?? 0;
+        const bottom = box(document.querySelector(".mobile-tabbar"))?.top ?? window.innerHeight;
+        const span = (a: number, b: number) => Math.max(0, b - a);
+        const shown = span(Math.max(t.top, top), Math.min(t.bottom, bottom));
+        const covered = span(Math.max(t.top, top, d.top), Math.min(t.bottom, bottom, d.bottom));
+        const room = Math.min(t.height, bottom - top - d.height);
+        return (shown - covered) / room >= 0.9;
+      }, target),
+    )
+    .toBe(true);
 }
 
 // 從首頁的入口開始走完 5 步；keyboard 時以 Enter 按「下一步」（開始時焦點在「下一步」）。結束後回到首頁不必要：停在最後一步的畫面

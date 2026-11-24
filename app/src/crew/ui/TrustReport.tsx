@@ -13,10 +13,16 @@ import { firstPassPercent, type LevelChangeKind, type TrustReportRow } from "./t
 
 type T = CrewTexts<"trust">;
 
-const REASONS: { reason: ReturnReason; key: "reportColumnWrong" | "reportColumnDifferent" | "reportColumnProcess"; dot: "wrong" | "neutral" }[] = [
-  { reason: "wrong", key: "reportColumnWrong", dot: "wrong" },
-  { reason: "different_approach", key: "reportColumnDifferent", dot: "neutral" },
-  { reason: "process", key: "reportColumnProcess", dot: "neutral" },
+// 表頭用短名（桌機 1280 時表頭不超過兩行，#131）；完整的名稱是表頭的 title 與無障礙名稱，也是手機卡片的欄名
+const REASONS: {
+  reason: ReturnReason;
+  key: "reportColumnWrong" | "reportColumnDifferent" | "reportColumnProcess";
+  head: "reportHeadWrong" | "reportHeadDifferent" | "reportHeadProcess";
+  dot: "wrong" | "neutral";
+}[] = [
+  { reason: "wrong", key: "reportColumnWrong", head: "reportHeadWrong", dot: "wrong" },
+  { reason: "different_approach", key: "reportColumnDifferent", head: "reportHeadDifferent", dot: "neutral" },
+  { reason: "process", key: "reportColumnProcess", head: "reportHeadProcess", dot: "neutral" },
 ];
 
 const CHANGE_TEXT = {
@@ -40,18 +46,21 @@ export function TrustReport({ rows, language, openLedger }: Props) {
       <div className="crew-trust-report__heading">
         <h3 id="crew-trust-report-title">{t.reportTitle}</h3>
         <p className="muted">{t.reportIntro}</p>
+        <p className="muted crew-trust-report__note">{t.reportFirstPassNote}</p>
       </div>
       <table className="crew-trust-report__table" aria-label={t.reportLabel}>
         <thead>
           <tr>
             <th scope="col">{t.reportColumnRow}</th>
             <th scope="col" className="crew-trust-report__num">{t.reportColumnReviews}</th>
-            <th scope="col" className="crew-trust-report__num">{t.reportColumnFirstPass}</th>
+            <th scope="col" className="crew-trust-report__num" title={t.reportFirstPassNote}>
+              {t.reportColumnFirstPass}
+            </th>
             {REASONS.map((r) => (
-              <th key={r.reason} scope="col" className="crew-trust-report__num">
+              <th key={r.reason} scope="col" className="crew-trust-report__num" title={t[r.key]} aria-label={t[r.key]}>
                 <span className="crew-trust-report__reason">
                   <DotMark dot={r.dot} className="crew-trust__dot" />
-                  {t[r.key]}
+                  {t[r.head]}
                 </span>
               </th>
             ))}

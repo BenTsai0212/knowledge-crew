@@ -7,7 +7,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { crewStrings } from "../i18n";
 import type { CrewTarget } from "./sections";
-import { dialogPlace, inView, pickTarget, readTourFlowback, readTourSeen, scrollBlock, TARGET_WAIT_MS, TOUR_STEPS, writeTourSeen } from "./tour-steps";
+import { dialogPlace, inView, phoneTargetTop, pickTarget, readTourFlowback, readTourSeen, scrollBlock, TARGET_WAIT_MS, TOUR_STEPS, writeTourSeen } from "./tour-steps";
 import "./Tour.css";
 
 /** 導覽的狀態：看過了沒（入口小卡或「重新看導覽」）、目前第幾步（沒有在導覽時是 null） */
@@ -97,13 +97,17 @@ export function CrewTour({ db, identity, language, step, go, onNext, onEnd }: To
   const last = step === TOUR_STEPS.length - 1;
   const [target, setTarget] = useState<string | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
+  // 手機上目標捲到對話框上方時固定放下方（phoneScroll）；null 時依目標的位置決定（dialogPlace）
+  const [place, setPlace] = useState<"top" | "bottom" | null>(null);
   const primary = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLElement>(null);
 
   // 切畫面：回流那一步先找最近一件已回流的工作（找不到時是「工作與驗收」的預設選取）
   useEffect(() => {
     let alive = true;
     setTarget(null);
     setRect(null);
+    setPlace(null);
     const dest = current.go;
     if (dest.kind === "home") go(dest);
     else if (dest.kind === "crew") go(dest);
@@ -119,9 +123,10 @@ export function CrewTour({ db, identity, language, step, go, onNext, onEnd }: To
       const found = pickTarget(current.targets, (selector) => document.querySelector(selector) !== null, elapsed);
       if (found !== null) {
         window.clearInterval(timer);
-        const el = document.querySelector(found)!;
+        const el = document.querySelector<HTMLElement>(found)!;
         const box = rectOf(el);
-        if (!inView(box, window.innerHeight)) el.scrollIntoView?.({ block: scrollBlock(box, window.innerHeight) });
+        if (phoneScroll(el, dialog.current)) setPlace("bottom");
+        else if (!inView(box, window.innerHeight)) el.scrollIntoView?.({ block: scrollBlock(box, window.innerHeight) });
         setTarget(found);
       } else if (elapsed >= TARGET_WAIT_MS) window.clearInterval(timer);
     }, 100);
@@ -158,7 +163,7 @@ export function CrewTour({ db, identity, language, step, go, onNext, onEnd }: To
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const place = dialogPlace(rect, typeof window === "undefined" ? 0 : window.innerHeight);
+  const placed = place ?? dialogPlace(rect, typeof window === "undefined" ? 0 : window.innerHeight);
   const titleId = "crew-tour-title";
   const bodyId = "crew-tour-body";
   return (
@@ -171,7 +176,7 @@ export function CrewTour({ db, identity, language, step, go, onNext, onEnd }: To
           style={{ top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12 }}
         />
       )}
-      <section className="crew-tour" role="dialog" aria-modal="false" aria-labelledby={titleId} aria-describedby={bodyId} data-place={place} data-step={current.id}>
+      <section ref={dialog} className="crew-tour" role="dialog" aria-modal="false" aria-labelledby={titleId} aria-describedby={bodyId} data-place={placed} data-step={current.id}>
         <p className="muted crew-tour__progress">
           <span className="visually-hidden">{t.dialogLabel} </span>
           {fill(t.progress, { current: step + 1, total: TOUR_STEPS.length }, language)}
@@ -194,4 +199,23 @@ export function CrewTour({ db, identity, language, step, go, onNext, onEnd }: To
       </section>
     </>
   );
+}
+
+/**
+ * 手機（App 加上 .app--phone）：對話框橫跨整個寬度、放在下方，目標捲到頂端列與對話框之間（phoneTargetTop，#131）。
+ * 固定在畫面上的目標（例如 sticky 的決定列）捲不動，回傳 false，改用原本的位置判斷。
+ */
+function phoneScroll(el: HTMLElement, dialog: HTMLElement | null): boolean {
+  if (dialog === null || document.querySelector(".app--phone") === null) return false;
+  const position = getComputedStyle(el).position;
+  if (position === "sticky" || position === "fixed") return false;
+  const top = document.querySelector(".mobile-topbar")?.getBoundingClientRect().bottom ?? 0;
+  const bottom = document.querySelector(".mobile-tabbar")?.getBoundingClientRect().top ?? window.innerHeight;
+  const want = phoneTargetTop(el.getBoundingClientRect().height, { top, bottom }, dialog.getBoundingClientRect().height);
+  // scroll-margin-top 讓 scrollIntoView 停在 want（頁面本身捲動），之後還原
+  const saved = el.style.scrollMarginTop;
+  el.style.scrollMarginTop = `${want}px`;
+  el.scrollIntoView?.({ block: "start" });
+  el.style.scrollMarginTop = saved;
+  return true;
 }

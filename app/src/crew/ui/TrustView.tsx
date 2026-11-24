@@ -222,7 +222,15 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
             const place = { "--crew-trust-start": start, "--crew-trust-end": end } as CSSProperties;
             return (
               <li key={group.column} className="crew-trust__event" data-align={atEnd ? "end" : "start"} style={place}>
-                {group.items.map((e) => fill(t[EVENT_TEXT[e.kind]], { date: date(e.at) })).join(t.eventSeparator)}
+                {/* li 是 flex：事件與箭頭包在同一段文字裡，箭頭前後的空白才不會被去掉 */}
+                <span>
+                  {group.items.map((e, j) => (
+                    <Fragment key={j}>
+                      {j > 0 && t.eventSeparator}
+                      <span className="crew-trust__event-item">{fill(t[EVENT_TEXT[e.kind]], { date: date(e.at) })}</span>
+                    </Fragment>
+                  ))}
+                </span>
               </li>
             );
           })}
@@ -253,12 +261,16 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
       <div className="crew-trust__grid crew-trust__bands">
         {bands(cells.map((c) => c.level)).map((b, i) => (
           <span key={i} className="crew-trust__band" data-level={b.level} data-span={b.span} style={{ gridColumn: `span ${b.span}` }}>
-            {levelText(b.level, t)}
+            <span className="crew-trust__band-full">{levelText(b.level, t)}</span>
+            {/* 手機的一格寬層級帶改顯示短名（#131）；螢幕閱讀器讀完整的名稱 */}
+            <span className="crew-trust__band-short" aria-hidden="true">
+              {b.level === "light" ? t.levelLightShort : t.levelItemShort}
+            </span>
           </span>
         ))}
         {empty > 0 && (
           <span className="crew-trust__band" data-level="none" data-span={empty} style={{ gridColumn: `span ${empty}` }}>
-            {t.bandEmpty}
+            <span className="crew-trust__band-full">{t.bandEmpty}</span>
           </span>
         )}
       </div>

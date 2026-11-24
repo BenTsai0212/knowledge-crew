@@ -98,7 +98,12 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     const row = trustRow(page, "juniper", "dev");
     await expect(dots(row).getByRole("listitem")).toHaveCount(10);
     await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
-    await expect(row.getByText(crewFill(ct.trust.eventRelax, { date: "10/19" }) + ct.trust.eventSeparator + crewFill(ct.trust.eventRevoke, { date: "10/24" }), { exact: true })).toBeVisible();
+    const event = row.getByText(crewFill(ct.trust.eventRelax, { date: "10/19" }) + ct.trust.eventSeparator + crewFill(ct.trust.eventRevoke, { date: "10/24" }), { exact: true });
+    await expect(event).toBeVisible();
+    // 1280 時每個事件各自一行（不從「改回逐項看」的中間斷開，#131）
+    for (const item of await event.locator(".crew-trust__event-item").all()) {
+      expect(await item.evaluate((el) => Math.round(el.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(el).lineHeight)))).toBe(1);
+    }
     await expect(row.getByText(ct.trust.noteRevoked, { exact: true })).toBeVisible();
     const steps = historySteps(row);
     await expect(steps).toHaveCount(4);
@@ -159,10 +164,15 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   const card = (await row.boundingBox())!;
   const list = (await dots(row).boundingBox())!;
   expect(list.x + list.width).toBeLessThanOrEqual(card.x + card.width);
-  // 層級帶的名稱不截斷：兩格以上的換行顯示，一格的只留框（#106）
+  // 層級帶的名稱不截斷：兩格以上的換行顯示，一格的顯示短名（#106、#131）
   for (const band of await page.locator(".crew-trust__band").all()) {
     expect(await band.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
   }
+  // Juniper 的「看重點」只有一格：看得到短名，不是空框（#131）
+  const narrow = trustRow(page, "juniper", "dev").locator('.crew-trust__band[data-level="light"][data-span="1"]');
+  await expect(narrow.locator(".crew-trust__band-short")).toBeVisible();
+  await expect(narrow.locator(".crew-trust__band-short")).toHaveText(ct.trust.levelLightShort);
+  await expect(narrow).toContainText(ct.trust.levelLight);
   // 建議的經過與依據在卡片內（#125）
   for (const [employee, workType] of [["juniper", "dev"], ["sorrel", "content"]]) {
     const r = trustRow(page, employee, workType);
@@ -195,15 +205,32 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
       ct.trust.reportColumnRow,
       ct.trust.reportColumnReviews,
       ct.trust.reportColumnFirstPass,
-      ct.trust.reportColumnWrong,
-      ct.trust.reportColumnDifferent,
-      ct.trust.reportColumnProcess,
+      ct.trust.reportHeadWrong,
+      ct.trust.reportHeadDifferent,
+      ct.trust.reportHeadProcess,
       ct.trust.reportColumnLevel,
       ct.trust.reportColumnChanges,
     ];
-    // 退回原因的欄名前有圓點（做錯了是 ×），所以比對包含
+    // 退回原因的欄名前有圓點（做錯了是 ×），所以比對包含；表頭是短名，完整的名稱是無障礙名稱與 title（#131）
     await expect(report(page).locator("thead th")).toContainText(headers);
     await expect(report(page).locator("thead th")).toHaveCount(headers.length);
+    for (const full of [ct.trust.reportColumnWrong, ct.trust.reportColumnDifferent, ct.trust.reportColumnProcess]) {
+      await expect(report(page).getByRole("columnheader", { name: full, exact: true })).toHaveAttribute("title", full);
+    }
+    // 「第一次就通過」以交辦計：說明在報表上看得到，也是表頭的 title（#131）
+    await expect(report(page).locator("xpath=ancestor::section[1]").getByText(ct.trust.reportFirstPassNote, { exact: true })).toBeVisible();
+    await expect(report(page).getByRole("columnheader", { name: ct.trust.reportColumnFirstPass, exact: true })).toHaveAttribute("title", ct.trust.reportFirstPassNote);
+    // 1280 時表頭不超過兩行，員工・工作類型欄不超過兩行（#131）
+    const lines = (el: Locator) =>
+      el.evaluate((node) => {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const style = getComputedStyle(node as Element);
+        const line = Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.2;
+        return Math.round(range.getBoundingClientRect().height / line);
+      });
+    for (const th of await report(page).locator("thead th").all()) expect(await lines(th)).toBeLessThanOrEqual(2);
+    for (const name of await report(page).locator("tbody th").all()) expect(await lines(name)).toBeLessThanOrEqual(2);
     await expect(reportRows(page)).toHaveCount(4);
     const reportBox = (await report(page).boundingBox())!;
     const firstCard = (await trustRow(page, "rowan", "support").boundingBox())!;

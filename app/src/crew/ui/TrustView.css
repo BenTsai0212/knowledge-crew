@@ -108,6 +108,12 @@
   overflow-wrap: anywhere;
 }
 
+/* 同一欄的多個事件：先在事件之間（箭頭後）換行，不從一個事件的中間斷開；比整列還寬時才在事件內換行（#131） */
+.crew-trust__event-item {
+  display: inline-block;
+  max-width: 100%;
+}
+
 .crew-trust__event[data-align="end"] {
   justify-content: flex-end;
   padding-left: 0;
@@ -146,6 +152,11 @@
   line-height: 1.2;
   /* 窄的層級帶（英文、手機）在字詞之間換行，不截斷（#106） */
   overflow-wrap: break-word;
+}
+
+/* 短名只在手機的一格寬層級帶顯示（下方的 @media） */
+.crew-trust__band-short {
+  display: none;
 }
 
 .crew-trust__band[data-level="item"] {
@@ -267,10 +278,25 @@
     font-size: 0.7rem;
   }
 
-  /* 只有一格寬的層級帶放不下任何一種語言的名稱：只留框與底色，文字仍在（螢幕閱讀器照樣讀到），
-     層級由「目前層級」與上方的事件說明（#106） */
+  /* 只有一格寬的層級帶放不下完整的名稱：改顯示短名（例如「重點」），完整的名稱只給螢幕閱讀器（#106、#131） */
   .crew-trust__band[data-span="1"] {
-    font-size: 0;
+    position: relative;
+    justify-content: center;
+    padding: 0.15rem 0;
+  }
+
+  .crew-trust__band[data-span="1"] .crew-trust__band-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .crew-trust__band[data-span="1"] .crew-trust__band-short {
+    display: inline;
+    white-space: nowrap;
   }
 }
 
@@ -341,8 +367,15 @@
   white-space: nowrap;
 }
 
+/* 表頭（#131）：中文的詞不從中間斷開（「驗收次數」曾斷成「驗收次／數」），英文照樣在空白處換行 */
+.crew-trust-report__table thead th,
 .crew-trust-report__table thead .crew-trust-report__num {
   white-space: normal;
+  word-break: keep-all;
+}
+
+.crew-trust-report__note {
+  font-size: 0.8rem;
 }
 
 .crew-trust-report__name button.link {
