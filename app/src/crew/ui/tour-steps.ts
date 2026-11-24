@@ -80,6 +80,25 @@ export const dialogPlace = (target: Box | null, viewportHeight: number): "top" |
 /** 目標要捲動時的位置：放得下就置中，比畫面高就對齊上緣 */
 export const scrollBlock = (target: Box, viewportHeight: number): ScrollLogicalPosition => (target.height > viewportHeight * 0.6 ? "start" : "center");
 
+/** 手機（.app--phone）可用的範圍：頂端列的下緣到底部分頁列的上緣（視窗座標） */
+export interface Frame {
+  top: number;
+  bottom: number;
+}
+
+/** 手機的對話框與底部分頁列、對話框與目標之間的間隔（px）；對話框放下方時離畫面底部 = 分頁列 72px＋此值（Tour.css） */
+export const PHONE_GAP = 12;
+
+/**
+ * 手機：對話框橫跨整個寬度，所以放在下方，目標捲到對話框上方的空間（#131）。
+ * 回傳目標上緣應在的位置（視窗座標）：放得下就在空間內置中，比空間高就對齊空間的上緣（至少上半部可見）。
+ */
+export function phoneTargetTop(targetHeight: number, frame: Frame, dialogHeight: number, gap = PHONE_GAP): number {
+  const top = frame.top + gap;
+  const room = frame.bottom - gap - dialogHeight - gap - top;
+  return targetHeight >= room ? top : top + Math.floor((room - targetHeight) / 2);
+}
+
 /** 目標整個在畫面上（不必捲動） */
 export const inView = (target: Box, viewportHeight: number): boolean => target.top >= 0 && target.top + target.height <= viewportHeight;
 

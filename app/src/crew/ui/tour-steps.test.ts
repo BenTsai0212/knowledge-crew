@@ -10,6 +10,8 @@ import { readWorkList } from "./review";
 import {
   dialogPlace,
   inView,
+  phoneTargetTop,
+  PHONE_GAP,
   pickTarget,
   PRIMARY_WAIT_MS,
   readTourFlowback,
@@ -101,6 +103,28 @@ describe("對話框的位置與捲動", () => {
     expect(inView({ top: 10, height: 200 }, 800)).toBe(true);
     expect(inView({ top: 700, height: 200 }, 800)).toBe(false);
     expect(inView({ top: -5, height: 200 }, 800)).toBe(false);
+  });
+});
+
+describe("phoneTargetTop：手機的目標捲到對話框上方（#131）", () => {
+  // 頂端列到 91、底部分頁列從 772 開始、對話框高 191：可用空間是 103～557（454px）
+  const frame = { top: 91, bottom: 772 };
+  const space = { top: 91 + PHONE_GAP, bottom: 772 - PHONE_GAP - 191 - PHONE_GAP };
+
+  it("放得下時在對話框上方的空間置中，整個不被對話框蓋住", () => {
+    const top = phoneTargetTop(300, frame, 191);
+    expect(top).toBe(space.top + Math.floor((space.bottom - space.top - 300) / 2));
+    expect(top).toBeGreaterThanOrEqual(space.top);
+    expect(top + 300).toBeLessThanOrEqual(space.bottom);
+  });
+
+  it("比空間高時對齊空間的上緣：上緣不被頂端列蓋住，空間內全是目標", () => {
+    expect(phoneTargetTop(486, frame, 191)).toBe(space.top);
+    expect(phoneTargetTop(space.bottom - space.top, frame, 191)).toBe(space.top);
+  });
+
+  it("沒有頂端列與分頁列時以整個畫面計算", () => {
+    expect(phoneTargetTop(100, { top: 0, bottom: 800 }, 200)).toBe(PHONE_GAP + Math.floor((800 - 3 * PHONE_GAP - 200 - 100) / 2));
   });
 });
 
