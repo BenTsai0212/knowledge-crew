@@ -19,7 +19,7 @@ import {
   TOUR_STORAGE_KEY,
   writeTourSeen,
   type SeenStorage,
-} from "./tour";
+} from "./tour-steps";
 
 const lang = clientConfig.client.defaultLanguage;
 const DB_TIMEOUT = 20_000;

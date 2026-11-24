@@ -87,7 +87,7 @@
   }
 }
 
-/* 導覽對話框：不是 modal，固定在目標的另一半（tour.ts 的 dialogPlace） */
+/* 導覽對話框：不是 modal，固定在目標的另一半（tour-steps.ts 的 dialogPlace） */
 .crew-tour {
   position: fixed;
   z-index: 41;
