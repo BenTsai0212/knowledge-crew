@@ -26,7 +26,7 @@
   "simulateNoReply": "這個員工與工作類型沒有預先準備的交件內容，無法模擬。",
   "employeeCardMeta": "{workType}・{level}",
   "levelItem": "逐項看",
-  "levelLight": "少看",
+  "levelLight": "看重點",
   "sourceUsual": "依 {employee} 自動帶入，可以改。",
   "sourceChanged": "已改成不同於 {employee} 平常的來源。",
   "sourcePickEmployee": "選了員工後，自動帶入他平常的來源。",

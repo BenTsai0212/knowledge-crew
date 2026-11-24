@@ -1,12 +1,12 @@
-// 少看建議的依據與經過（#125，展示版第 3 階段）：純函式，不讀資料庫、不產生介面文字。
-// - relaxProposals()：由驗收紀錄與層級決定推算「提出少看建議」的時間與依據（不新增資料表或欄位）。
+// 看重點的建議的依據與經過（#125，展示版第 3 階段）：純函式，不讀資料庫、不產生介面文字。
+// - relaxProposals()：由驗收紀錄與層級決定推算「提出看重點的建議」的時間與依據（不新增資料表或欄位）。
 // - suggestionBasis()、suggestionHistory()：以工作帳本的事件（ledger.ts）整理信任頁的「依據」與「建議的經過」。
 // 規則一律呼叫 rules.ts 的 relaxSuggestion()，不另寫條件。
 import { relaxSuggestion } from "../trust/rules";
 import type { LevelDecision, Review, TrustParams } from "../trust/types";
 import type { LedgerAssignment, LedgerEvent } from "./ledger";
 
-/** 一次「提出少看建議」：觸發的那次驗收（時間相同）與當時的依據。 */
+/** 一次「提出看重點的建議」：觸發的那次驗收（時間相同）與當時的依據。 */
 export interface RelaxProposal {
   review: Review;
   at: string;
@@ -21,7 +21,7 @@ const byTime = <T extends { decidedAt: string }>(items: readonly T[]): T[] =>
   items.map((item, index) => ({ item, index })).sort((a, b) => time(a.item.decidedAt) - time(b.item.decidedAt) || a.index - b.index).map(({ item }) => item);
 
 /**
- * 提出少看建議的事件，依時間排序。以層級決定切成段（第一筆決定之前、每筆決定之後），
+ * 提出看重點的建議的事件，依時間排序。以層級決定切成段（第一筆決定之前、每筆決定之後），
  * 每一段只取「第一次符合建議條件的那次驗收」：當下的驗收與不晚於它的決定（同時間決定在先，與 rules.ts 一致）
  * 傳給 relaxSuggestion() 不是 null 的第一次。同一段之後的驗收不再重複提出。
  */
@@ -78,14 +78,14 @@ export function suggestionBasis(reviewIds: readonly string[], events: readonly L
 export type HistoryStep =
   | { kind: "proposed"; at: string; basis: BasisItem[] }
   | { kind: "relax"; at: string; actor: string | null }
-  /** 同意後的第一次驗收（以少看進行） */
+  /** 同意後的第一次驗收（以看重點進行） */
   | { kind: "effective"; at: string; assignment: LedgerAssignment | null }
   | { kind: "revoke"; at: string; actor: string | null }
-  /** 少看期間做錯了，依規則改回逐項看：造成它的那件工作 */
+  /** 看重點期間做錯了，依規則改回逐項看：造成它的那件工作 */
   | { kind: "autoReset"; at: string; assignment: LedgerAssignment | null };
 
 /**
- * 一個「員工 × 工作類型」的建議經過，舊到新：提出少看建議、同意少看、生效（同意後的第一次驗收）、收回少看、因做錯了改回逐項看。
+ * 一個「員工 × 工作類型」的建議經過，舊到新：提出看重點的建議、同意改看重點、生效（同意後的第一次驗收）、收回看重點、因做錯了改回逐項看。
  * events 是帳本的事件（新到舊，mergeLedger() 的順序）；同時間的先後沿用帳本的順序（決定先於同時間的驗收，改回在造成它的退回之後）。
  * 沒有任何經過時是空陣列。
  */

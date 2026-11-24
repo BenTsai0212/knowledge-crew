@@ -10,7 +10,7 @@
   "summaryAwaitingFailing": "{count, plural, one {# work item awaits your review} other {# work items await your review}}, {failing} with failed checks",
   "summaryAwaitingOthers": "{count, plural, one {# work item is awaiting review} other {# work items are awaiting review}}",
   "summaryAwaitingFailingOthers": "{count, plural, one {# work item is awaiting review} other {# work items are awaiting review}}, {failing} with failed checks",
-  "summaryDecide": "{count, plural, one {# lighter-review suggestion awaits your decision} other {# lighter-review suggestions await your decision}}",
+  "summaryDecide": "{count, plural, one {# key-points suggestion awaits your decision} other {# key-points suggestions await your decision}}",
   "summaryInProgress": "{count, plural, one {# assignment in progress} other {# assignments in progress}}",
   "summarySeparator": "; ",
   "summaryEnd": ".",

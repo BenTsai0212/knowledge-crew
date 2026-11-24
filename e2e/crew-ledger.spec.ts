@@ -42,7 +42,7 @@ test.describe("桌機 1280", () => {
     await filter(page, ct.ledger.filterEvent).selectOption({ label: ct.ledger.eventLevel });
     await expect(rows(page)).not.toHaveCount(0);
     const n = await rows(page).count();
-    // 提出少看建議也在這個篩選（#125），它不改變層級，不是灰底；經手是「依規則自動」
+    // 提出看重點的建議也在這個篩選（#125），它不改變層級，不是灰底；經手是「依規則自動」
     for (let i = 0; i < n; i++) {
       const row = rows(page).nth(i);
       if ((await row.getAttribute("data-kind")) === "proposed") await expect(row).not.toHaveAttribute("data-tone", /./);

@@ -14,7 +14,7 @@ export interface HomeToday {
   failing: TodayAssignment[];
   /** 2. 待驗收：其餘待驗收 */
   awaiting: TodayAssignment[];
-  /** 3. 等你決定：少看建議（只有能驗收的身分） */
+  /** 3. 等你決定：看重點的建議（只有能驗收的身分） */
   decide: TodaySuggestion[];
   /** 4. 進行中 */
   inProgress: TodayAssignment[];
@@ -38,7 +38,7 @@ export const isHomeTodayEmpty = (h: HomeToday) => h.failing.length + h.awaiting.
 /** 側欄「AI 員工」的待驗收件數（與「待審」分開）：只給能驗收的身分，其他身分是 null（不顯示） */
 export const awaitingCount = (today: Today): number | null => (today.canReview ? today.awaitingReview.length : null);
 
-/** 問候下方的一句總結；沒有待驗收、少看建議與進行中時是 null */
+/** 問候下方的一句總結；沒有待驗收、看重點的建議與進行中時是 null */
 export function homeSummary(h: HomeToday, language: LanguageCode): string | null {
   const t = crewStrings("home", language);
   const awaiting = h.failing.length + h.awaiting.length;
@@ -66,7 +66,7 @@ export function rowStatus(a: TodayAssignment, awaiting: boolean, language: Langu
   return checks.map((c) => fill(t[STATUS_KEY[c.status]], { check: checkLabel(c.name, language) }, language)).join(t.statusSeparator);
 }
 
-/** 點了到哪裡：待驗收與退回的到「工作與驗收」該件，還沒交件的到「交辦」，少看建議到「信任」 */
+/** 點了到哪裡：待驗收與退回的到「工作與驗收」該件，還沒交件的到「交辦」，看重點的建議到「信任」 */
 export const rowTarget = (a: TodayAssignment, awaiting: boolean): CrewTarget =>
   awaiting || a.returned ? { section: "works", assignmentId: a.id } : { section: "assignments" };
 export const DECIDE_TARGET: CrewTarget = { section: "trust" };

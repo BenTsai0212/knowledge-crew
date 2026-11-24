@@ -1,4 +1,4 @@
-// 「工作帳本」畫面（#40；#77 依設計規格 v3 第 6.7 節改成表格）：交辦、交件、驗收、同意少看與收回、因做錯了改回逐項看，
+// 「工作帳本」畫面（#40；#77 依設計規格 v3 第 6.7 節改成表格）：交辦、交件、驗收、同意改看重點與收回、因做錯了改回逐項看，
 // 依時間新到舊列出，可依員工與事件篩選。資料整理在 ledger.ts，這裡只負責呈現；本畫面只讀，沒有寫入按鈕。
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
@@ -30,7 +30,7 @@ const REASON_KEYS: Record<ReturnReason, "reasonWrong" | "reasonDifferentApproach
   process: "reasonProcess",
 };
 
-// 層級改變前的符號（設計稿：→ 同意少看、↺ 因做錯了改回逐項看）；只是裝飾，螢幕閱讀器不讀
+// 層級改變前的符號（設計稿：→ 同意改看重點、↺ 因做錯了改回逐項看）；只是裝飾，螢幕閱讀器不讀
 const KIND_SYMBOL: Partial<Record<LedgerKind, string>> = { relax: "→", autoReset: "↺" };
 
 const EVENT_FILTERS: { value: LedgerEventFilter; key: "filterAll" | "eventLevel" | "eventReturned" }[] = [

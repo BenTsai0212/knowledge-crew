@@ -30,7 +30,7 @@ beforeAll(async () => {
 afterAll(() => db.close());
 
 describe("readEmployees：匯入虛構資料後", () => {
-  it("manager：四位員工各一類工作（Linden 少看、其他逐項看），附名稱、說明與驗收次數", async () => {
+  it("manager：四位員工各一類工作（Linden 看重點、其他逐項看），附名稱、說明與驗收次數", async () => {
     const list = await readEmployees(db, "manager", lang);
     expect(shape(list)).toEqual([
       ["juniper", [["dev", "item"]]],
@@ -60,7 +60,7 @@ describe("readEmployees：匯入虛構資料後", () => {
 });
 
 describe("readEmployees：員工卡（#83）", () => {
-  it("manager：交件來源、待驗收件數、最近 10 次圓點與一句說明（Sorrel 有少看建議、Rowan 做錯了、Linden 同意少看、Juniper 收回少看）", async () => {
+  it("manager：交件來源、待驗收件數、最近 10 次圓點與一句說明（Sorrel 有看重點的建議、Rowan 做錯了、Linden 同意改看重點、Juniper 收回看重點）", async () => {
     const list = await readEmployees(db, "manager", lang, true);
     const work = (id: string) => list.find((e) => e.id === id)!.workTypes[0];
     expect(work("rowan").source).toEqual({ label: sourceLabel("support-inbox", "Support inbox", lang), kind: "mailbox" });
@@ -75,7 +75,7 @@ describe("readEmployees：員工卡（#83）", () => {
     expect(work("juniper").note).toEqual({ kind: "event", event: { kind: "revoke", at: "2026-10-24T02:00:00.000Z" } });
   });
 
-  it("不能驗收時沒有少看建議", async () => {
+  it("不能驗收時沒有看重點的建議", async () => {
     const list = await readEmployees(db, "manager", lang, false);
     expect(list.find((e) => e.id === "sorrel")!.workTypes[0].note).toBeNull();
   });

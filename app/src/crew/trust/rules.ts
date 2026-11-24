@@ -1,5 +1,5 @@
 // 信任規則的純函式（#19，#15 計畫第 6 節）：不讀資料庫、不讀檔案、不產生介面文字。
-// 輸入是某位員工 × 某類工作的驗收紀錄與少看的決定。
+// 輸入是某位員工 × 某類工作的驗收紀錄與看重點的決定。
 import type {
   AutoReset,
   Dot,
@@ -64,15 +64,15 @@ function replay(reviews: readonly Review[], decisions: readonly LevelDecision[])
 }
 
 /**
- * 逐項看（`item`）或少看（`light`）。只有最新的決定是 `relax`、之後沒有 `wrong` 時才是 `light`；
- * 一次 `wrong` 就回到 `item`，要再少看必須有一筆時間在該次 `wrong` 之後的 `relax`。
+ * 逐項看（`item`）或看重點（`light`）。只有最新的決定是 `relax`、之後沒有 `wrong` 時才是 `light`；
+ * 一次 `wrong` 就回到 `item`，要再看重點必須有一筆時間在該次 `wrong` 之後的 `relax`。
  */
 export function reviewLevel(reviews: readonly Review[], decisions: readonly LevelDecision[]): ReviewLevel {
   return replay(reviews, decisions).level;
 }
 
 /**
- * 建議少看：層級是 `item`、最近 `params.window` 次都沒有 `wrong`、驗收次數至少 `params.min` 時回傳，否則 `null`。
+ * 建議改看重點：層級是 `item`、最近 `params.window` 次都沒有 `wrong`、驗收次數至少 `params.min` 時回傳，否則 `null`。
  * 有人為決定時，只計算最新一筆決定之後的驗收：收回（`revoke`）後重新累積。
  * 建議只是資料，不改變層級。
  */
@@ -98,7 +98,7 @@ export function autoResets(reviews: readonly Review[], decisions: readonly Level
 /**
  * 驗收面板要顯示的內容。要看的重點與自動檢查不論層級都放最上面；
  * `item` 時變更清單逐項列出，`light` 時收成一筆摘要；全文一律預設收起。
- * 重點為空時標出 `noPoints`，變更清單照逐項列出：沒有標出重點不當作可以少看。
+ * 重點為空時標出 `noPoints`，變更清單照逐項列出：沒有標出重點不當作可以看重點。
  */
 export function reviewFocus(work: WorkForReview, level: ReviewLevel): ReviewFocus {
   const noPoints = work.points.length === 0;

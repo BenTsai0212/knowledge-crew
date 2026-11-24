@@ -12,16 +12,16 @@ export type Review =
   | { id: string; verdict: "accepted"; reason: null; decidedAt: string }
   | { id: string; verdict: "returned"; reason: ReturnReason; decidedAt: string };
 
-/** 人對「少看」的決定：`crew.level_decisions.decision`。 */
+/** 人對「看重點」的決定：`crew.level_decisions.decision`。 */
 export type LevelDecisionKind = "relax" | "revoke";
 
-/** 少看的同意（`relax`）或收回（`revoke`）（`crew.level_decisions` 的一列）。 */
+/** 看重點的同意（`relax`）或收回（`revoke`）（`crew.level_decisions` 的一列）。 */
 export interface LevelDecision {
   decision: LevelDecisionKind;
   decidedAt: string;
 }
 
-/** 驗收的層級：逐項看或少看。 */
+/** 驗收的層級：逐項看或看重點。 */
 export type ReviewLevel = "item" | "light";
 
 /** 信任頁的圓點：通過、做錯了、其他退回（不影響信任）。 */
@@ -31,13 +31,13 @@ export type Dot = "ok" | "wrong" | "neutral";
 export interface TrustParams {
   /** 信任頁顯示的圓點數 */
   dots: number;
-  /** 建議少看時，最近幾次都不能有 `wrong` */
+  /** 建議改看重點時，最近幾次都不能有 `wrong` */
   window: number;
-  /** 建議少看時，至少要有幾次驗收 */
+  /** 建議改看重點時，至少要有幾次驗收 */
   min: number;
 }
 
-/** 建議少看：只是資料，不改變層級；要人同意後寫入 `relax` 才生效。 */
+/** 建議改看重點：只是資料，不改變層級；要人同意後寫入 `relax` 才生效。 */
 export interface RelaxSuggestion {
   /** 依據的那幾次驗收（依時間排序） */
   basis: Review[];

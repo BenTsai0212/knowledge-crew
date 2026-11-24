@@ -32,7 +32,7 @@ describe("canReviewOf：依 client/access.json 的角色", () => {
 });
 
 describe("readToday：匯入虛構資料後", () => {
-  it("manager：待驗收 4（s14、c11、k13、j06）、進行中 0、建議少看 1（Sorrel × 貼文與商品介紹）", async () => {
+  it("manager：待驗收 4（s14、c11、k13、j06）、進行中 0、建議改看重點 1（Sorrel × 貼文與商品介紹）", async () => {
     const today = await read("manager");
     expect(today.canReview).toBe(true);
     expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "j06", "k13", "s14"]);
@@ -41,7 +41,7 @@ describe("readToday：匯入虛構資料後", () => {
     expect(today.suggestions[0].count).toBe(10);
   });
 
-  it("staff：只看到青翼專案，待驗收 2（c11、s14）、進行中 0、不計算建議少看", async () => {
+  it("staff：只看到青翼專案，待驗收 2（c11、s14）、進行中 0、不計算建議改看重點", async () => {
     const today = await read("staff");
     expect(today.canReview).toBe(false);
     expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "s14"]);

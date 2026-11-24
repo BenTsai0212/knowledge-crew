@@ -56,7 +56,7 @@ test.describe("桌機 1280", () => {
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 
-  test("主管：點「開始驗收」到「工作與驗收」該件；點少看建議到信任頁；回首頁件數仍在", async ({ page }) => {
+  test("主管：點「開始驗收」到「工作與驗收」該件；點看重點的建議到信任頁；回首頁件數仍在", async ({ page }) => {
     await openHomeAs(page, manager.id);
     const first = reviewButtons(page).first();
     const title = (await first.getAttribute("aria-label"))!.slice(`${ct.home.actionReview}${s.colon}`.length);
@@ -74,7 +74,7 @@ test.describe("桌機 1280", () => {
     await expect(crewSections(page).getByRole("button")).toHaveCount(5);
   });
 
-  test("一般員工：只有看得到的工作、沒有驗收的按鈕與少看建議，側欄沒有待驗收件數", async ({ page }) => {
+  test("一般員工：只有看得到的工作、沒有驗收的按鈕與看重點的建議，側欄沒有待驗收件數", async ({ page }) => {
     test.skip(staff === undefined, "沒有能上傳、不能審查的身分");
     await openHomeAs(page, staff!.id);
     await expect(homeToday(page)).toBeVisible();

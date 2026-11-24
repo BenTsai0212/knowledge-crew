@@ -63,9 +63,9 @@ export interface ReviewPanel {
   deliverable: Deliverable | null;
   /** 最新一輪已回流知識庫時，回流文件的第一段（#92；沒有回流或看不到時是 null） */
   knowledgePassage: string | null;
-  /** 少看時「為什麼是少看」的依據（#102）；逐項看時是 null */
+  /** 看重點時「為什麼是看重點」的依據（#102）；逐項看時是 null */
   light: LightReason | null;
-  /** 最新一輪的變更（目前語言）：少看時收成一行，「逐項列出」展開時用 */
+  /** 最新一輪的變更（目前語言）：看重點時收成一行，「逐項列出」展開時用 */
   changeItems: WorkChange[];
 }
 

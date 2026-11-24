@@ -73,7 +73,7 @@ describe("mergeLedger：排序", () => {
     expect(events[3]).toMatchObject({ round: 1, actor: "basil" });
   });
 
-  it("提出少看建議（#125）：依規則自動、帶依據，在觸發它的驗收上方；看不到的驗收不列出", () => {
+  it("提出看重點的建議（#125）：依規則自動、帶依據，在觸發它的驗收上方；看不到的驗收不列出", () => {
     const accepted = { ...sources, reviews: [{ ...sources.reviews[0], verdict: "accepted" as const, reason: null }], decisions: [], resets: [] };
     const events = mergeLedger({ ...accepted, proposals: [{ reviewId: "rv1", at: T2, basis: ["rv1"] }] }, lang);
     expect(events.map((e) => e.kind)).toEqual(["proposed", "accepted", "submitted", "assigned"]);
@@ -104,7 +104,7 @@ describe("filterLedger 與 ledgerOptions", () => {
     expect(filterLedger(events, { employeeId: null, workTypeId: null })).toHaveLength(3);
   });
 
-  it("依事件：只看層級改變（同意少看、收回少看、改回逐項看）、只看退回；all 與省略時全部（#77）", () => {
+  it("依事件：只看層級改變（同意改看重點、收回看重點、改回逐項看）、只看退回；all 與省略時全部（#77）", () => {
     const mixed = [
       event("a", "autoReset", "2026-10-05T00:00:00.000Z"),
       event("b", "returned", "2026-10-05T00:00:00.000Z"),
@@ -114,7 +114,7 @@ describe("filterLedger 與 ledgerOptions", () => {
       event("f", "submitted", "2026-10-01T00:00:00.000Z"),
       event("g", "proposed", "2026-09-30T00:00:00.000Z"),
     ];
-    // 提出少看建議也在「只看層級改變」（#125）
+    // 提出看重點的建議也在「只看層級改變」（#125）
     expect(filterLedger(mixed, { event: "level" }).map((e) => e.id)).toEqual(["a", "c", "e", "g"]);
     expect(filterLedger(mixed, { event: "returned" }).map((e) => e.id)).toEqual(["b"]);
     expect(filterLedger(mixed, { event: "all" })).toHaveLength(7);
@@ -137,7 +137,7 @@ describe("isLevelChange 與 ledgerTone（#77）", () => {
     expect(ledgerTone({ kind: "returned", reason: "different_approach" })).toBeNull();
     expect(ledgerTone({ kind: "returned", reason: "process" })).toBeNull();
     expect(ledgerTone({ kind: "accepted", reason: null })).toBeNull();
-    // 提出少看建議不改變層級：不是灰底，但在「只看層級改變」的篩選裡（#125）
+    // 提出看重點的建議不改變層級：不是灰底，但在「只看層級改變」的篩選裡（#125）
     expect(isLevelChange("proposed")).toBe(false);
     expect(ledgerTone({ kind: "proposed", reason: null })).toBeNull();
     expect(inLevelFilter("proposed")).toBe(true);
@@ -159,7 +159,7 @@ describe("actorName", () => {
 });
 
 describe("readLedger：匯入虛構資料後", () => {
-  it("manager：四個來源的全部事件，含 Rowan、Linden、Juniper 的同意少看、Juniper 的收回、Rowan 的改回逐項看與提出少看建議", async () => {
+  it("manager：四個來源的全部事件，含 Rowan、Linden、Juniper 的同意改看重點、Juniper 的收回、Rowan 的改回逐項看與提出看重點的建議", async () => {
     const events = await readLedger(db, "manager", lang);
     expect(countKinds(events)).toEqual({ assigned: 48, submitted: 56, accepted: 44, returned: 8, proposed: 4, relax: 3, revoke: 1, autoReset: 1 });
     expect(events).toHaveLength(165);
@@ -208,7 +208,7 @@ describe("readLedger：匯入虛構資料後", () => {
   });
 
   it("完整流程（交辦 → 交件 → 退回「做錯了」）後多四筆：改回逐項看、退回、交件、交辦", async () => {
-    // 青翼專案（staff 看得到）的組合先少看：Sorrel × 貼文與商品介紹
+    // 青翼專案（staff 看得到）的組合先看重點：Sorrel × 貼文與商品介紹
     await createLevelDecision(db, "manager", { employeeId: "sorrel", workTypeId: "content", decision: "relax" });
     const before = await readLedger(db, "manager", lang);
     const a = await createAssignment(db, "manager", { sourceId: "social-account", title: "Ledger flow", workTypeId: "content", employeeId: "sorrel" });
@@ -225,7 +225,7 @@ describe("readLedger：匯入虛構資料後", () => {
     expect((await readLedger(db, "staff", lang)).slice(0, 4).map((e) => e.id)).toEqual(after.slice(0, 4).map((e) => e.id));
   });
 
-  it("manager 對 Juniper × 網站與工具開發同意少看：manager 看得到，staff 看不到（#40 的 `## 決定` 1）", async () => {
+  it("manager 對 Juniper × 網站與工具開發同意改看重點：manager 看得到，staff 看不到（#40 的 `## 決定` 1）", async () => {
     const staffBefore = await readLedger(db, "staff", lang);
     const d = await createLevelDecision(db, "manager", { employeeId: "juniper", workTypeId: "dev", decision: "relax" });
     const manager = await readLedger(db, "manager", lang);

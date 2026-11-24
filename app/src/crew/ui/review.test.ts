@@ -96,7 +96,7 @@ describe("readWorkList：匯入虛構資料後", () => {
 });
 
 describe("readReviewPanel：匯入虛構資料後", () => {
-  it("manager 打開 k13（Linden × 知識庫整理，少看）：變更收成摘要、全文收起、可以驗收", async () => {
+  it("manager 打開 k13（Linden × 知識庫整理，看重點）：變更收成摘要、全文收起、可以驗收", async () => {
     const p = (await panel(db, "manager", "k13"))!;
     expect(p.focus.level).toBe("light");
     expect(p.focus.points).toHaveLength(2);
@@ -108,7 +108,7 @@ describe("readReviewPanel：匯入虛構資料後", () => {
     expect(p.current).toMatchObject({ id: "k13-w1", round: 1, externalRef: null });
     expect(p.earlier).toEqual([]);
     expect(p.canDecide).toBe(true);
-    // 為什麼是少看（#102）：10/13 同意少看（d02），最近 10 次沒有做錯；變更的內容給「逐項列出」用
+    // 為什麼是看重點（#102）：10/13 同意改看重點（d02），最近 10 次沒有做錯；變更的內容給「逐項列出」用
     expect(p.light).toEqual({ relaxedAt: new Date("2026-10-13T10:00:00+08:00").toISOString(), recent: 10 });
     expect(p.changeItems.map((c) => c.path)).toEqual(["kb/pre-orders", "kb/pre-orders#owner"]);
   });
@@ -182,7 +182,7 @@ describe("readReviewPanel：交件的種類與全文的結構", () => {
 });
 
 describe("寫入後讀回", { timeout: DB_TIMEOUT }, () => {
-  it("人新增的工作：找不到翻譯時顯示原文；沒有重點時即使少看也逐項列出", async () => {
+  it("人新增的工作：找不到翻譯時顯示原文；沒有重點時即使看重點也逐項列出", async () => {
     const own = await open();
     try {
       const { id } = await createAssignment(own, "manager", { sourceId: "company-kb", title: "Own task", workTypeId: "knowledge", employeeId: "linden" });

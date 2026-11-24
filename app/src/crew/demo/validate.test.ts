@@ -79,7 +79,7 @@ function errorsAfter(change: (d: DemoFile & Record<string, any>) => void): strin
 }
 
 describe("validateDemo", () => {
-  it("最小的虛構資料通過（含等待驗收的最後一輪與少看的決定）", () => {
+  it("最小的虛構資料通過（含等待驗收的最後一輪與看重點的決定）", () => {
     expect(validateDemo(fixture(), access, { now: NOW })).toEqual([]);
     expect(assertDemo(fixture(), access, { now: NOW }).assignments).toHaveLength(2);
   });
@@ -111,7 +111,7 @@ describe("validateDemo", () => {
     ["驗收早於檢查", (d: any) => (d.assignments[0].works[0].review.decidedAt = "2026-09-02T10:10:00+08:00"), "works[0].review.decidedAt: must be after"],
     ["檢查早於交件", (d: any) => (d.assignments[0].works[0].checks[0].checkedAt = "2026-09-02T09:00:00+08:00"), "checks[0].checkedAt: must not be before"],
     ["下一輪早於上一輪的驗收", (d: any) => (d.assignments[0].works[1].submittedAt = "2026-09-02T14:00:00+08:00"), "works[1].submittedAt: must be after"],
-    ["少看的決定早於依據的驗收", (d: any) => (d.levelDecisions[0].decidedAt = "2026-09-03T14:00:00+08:00"), "levelDecisions[0].decidedAt: must be after the basis review"],
+    ["看重點的決定早於依據的驗收", (d: any) => (d.levelDecisions[0].decidedAt = "2026-09-03T14:00:00+08:00"), "levelDecisions[0].decidedAt: must be after the basis review"],
     ["未來的時間", (d: any) => (d.assignments[1].works[0].submittedAt = "2026-12-01T00:00:00Z"), "must be in the past"],
     ["沒有時區的時間", (d: any) => (d.assignments[0].assignedAt = "2026-09-01T09:00:00"), "assignedAt: must be an ISO 8601 time with a time zone"],
   ])("時間順序：%s", (_name, change, expected) => {

@@ -1,4 +1,4 @@
-// 驗收面板的少看（#102）：「為什麼是少看」的日期與次數、收起的規則（哪些欄位收、哪些不收）
+// 驗收面板的看重點（#102）：「為什麼是看重點」的日期與次數、收起的規則（哪些欄位收、哪些不收）
 import { describe, expect, it } from "vitest";
 import type { LevelDecision, Review } from "../../trust/types";
 import { parseWorkBody } from "../../work/body";
@@ -11,7 +11,7 @@ const day = (n: number) => `2026-10-${String(n).padStart(2, "0")}T00:00:00.000Z`
 describe("lightReason", () => {
   const relax: LevelDecision = { decision: "relax", decidedAt: day(13) };
 
-  it("日期是最新一次同意少看；次數是最近連續沒有做錯的驗收，最多 window 次", () => {
+  it("日期是最新一次同意改看重點；次數是最近連續沒有做錯的驗收，最多 window 次", () => {
     const reviews = Array.from({ length: 12 }, (_, i) => ok(`r${i}`, day(i + 1)));
     const decisions: LevelDecision[] = [{ decision: "relax", decidedAt: day(2) }, { decision: "revoke", decidedAt: day(3) }, relax];
     expect(lightReason(reviews, decisions, 10)).toEqual({ relaxedAt: day(13), recent: 10 });
@@ -27,7 +27,7 @@ describe("lightReason", () => {
     expect(lightReason([ok("a", day(1)), other], [relax], 10)?.recent).toBe(2);
   });
 
-  it("沒有同意少看的紀錄時是 null", () => {
+  it("沒有同意改看重點的紀錄時是 null", () => {
     expect(lightReason([ok("a", day(1))], [], 10)).toBeNull();
     expect(lightReason([ok("a", day(1))], [{ decision: "revoke", decidedAt: day(2) }], 10)).toBeNull();
   });
@@ -65,7 +65,7 @@ describe("收起的規則", () => {
     expect(keys(collapsed)).toEqual(["kb/e#payment", "kb/e#cancel"]);
   });
 
-  it("不是少看時全部照樣顯示", () => {
+  it("不是看重點時全部照樣顯示", () => {
     const { shown, collapsed } = splitFields(fields, false);
     expect(keys(shown)).toEqual(keys(fields));
     expect(collapsed).toEqual([]);

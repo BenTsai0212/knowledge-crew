@@ -31,7 +31,7 @@ const item = (over: Partial<TodayAssignment>): TodayAssignment => ({
 const today = (over: Partial<Today>): Today => ({ canReview: true, awaitingReview: [], inProgress: [], suggestions: [], ...over });
 
 describe("homeToday：匯入虛構資料後", () => {
-  it("manager：有檢查沒通過的排在「先處理」，其餘待驗收、一個少看建議", async () => {
+  it("manager：有檢查沒通過的排在「先處理」，其餘待驗收、一個看重點的建議", async () => {
     const t = await read("manager");
     const h = homeToday(t);
     // 設計規格 v3 第 6.1 節的例子：Rowan（報價核對）、Linden（必填欄位）先處理
@@ -40,11 +40,11 @@ describe("homeToday：匯入虛構資料後", () => {
     expect(h.decide.map((d) => d.employee.id)).toEqual(["sorrel"]);
     expect(h.inProgress).toEqual([]);
     expect(awaitingCount(t)).toBe(4);
-    expect(homeSummary(h, "zh-TW")).toBe("4 件工作等你驗收，其中 2 件有檢查沒通過；1 個「少看」建議等你決定。");
-    expect(homeSummary(h, "en")).toBe("4 work items await your review, 2 with failed checks; 1 lighter-review suggestion awaits your decision.");
+    expect(homeSummary(h, "zh-TW")).toBe("4 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定。");
+    expect(homeSummary(h, "en")).toBe("4 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision.");
   });
 
-  it("staff：只看得到自己專案的待驗收，沒有少看建議與側欄件數，總結用中性說法", async () => {
+  it("staff：只看得到自己專案的待驗收，沒有看重點的建議與側欄件數，總結用中性說法", async () => {
     const t = await read("staff");
     const h = homeToday(t);
     expect([...h.failing, ...h.awaiting].map((a) => a.id).sort()).toEqual(["c11", "s14"]);
@@ -79,14 +79,14 @@ describe("rowStatus、rowTarget", () => {
     expect(rowStatus(item({ returned: true }), false, "zh-TW")).toBe("退回後等下一輪");
   });
 
-  it("待驗收與退回的到「工作與驗收」該件，還沒交件的到「交辦」，少看建議到「信任」", () => {
+  it("待驗收與退回的到「工作與驗收」該件，還沒交件的到「交辦」，看重點的建議到「信任」", () => {
     expect(rowTarget(item({ id: "x" }), true)).toEqual({ section: "works", assignmentId: "x" });
     expect(rowTarget(item({ id: "x", returned: true }), false)).toEqual({ section: "works", assignmentId: "x" });
     expect(rowTarget(item({}), false)).toEqual({ section: "assignments" });
     expect(DECIDE_TARGET).toEqual({ section: "trust" });
   });
 
-  it("總結：只有進行中時提一句；不能驗收的身分沒有少看建議", () => {
+  it("總結：只有進行中時提一句；不能驗收的身分沒有看重點的建議", () => {
     expect(homeSummary(homeToday(today({ inProgress: [item({})] })), "zh-TW")).toBe("1 件交辦進行中。");
     const others = homeToday(today({ canReview: false, suggestions: [{ employee: item({}).employee, workTypeId: "dev", count: 10 }] }));
     expect(others.decide).toEqual([]);

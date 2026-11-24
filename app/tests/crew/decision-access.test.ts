@@ -1,4 +1,4 @@
-// 少看的決定的讀取範圍（#49）：看得到同一員工 × 同一工作類型的交辦，才看得到這筆決定（crew/0003）。
+// 看重點的決定的讀取範圍（#49）：看得到同一員工 × 同一工作類型的交辦，才看得到這筆決定（crew/0003）。
 // 虛構資料中 Rowan × support 的交辦在客服信箱（青翼專案，staff 看得到）；測試另交辦 Rowan × knowledge 到公司知識庫
 // （長堤專案，staff 看不到）並加上決定，確認同一員工不同工作類型的決定 staff 看不到。
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -26,7 +26,7 @@ const decisionIds = (identity: string | null) =>
     (await tx.query<{ id: string }>("SELECT id FROM crew.level_decisions ORDER BY id")).rows.map((r) => r.id),
   );
 
-describe("少看的決定：同一員工 × 同一工作類型才看得到", () => {
+describe("看重點的決定：同一員工 × 同一工作類型才看得到", () => {
   it("manager 看得到既有的 d01～d04 與 Rowan × knowledge 的新決定", async () => {
     expect(await decisionIds("manager")).toEqual(["d01", "d02", "d03", "d04", rowanKnowledge].sort());
     expect((await getTrustInputs(db, "manager", "rowan", "knowledge")).decisions).toHaveLength(1);

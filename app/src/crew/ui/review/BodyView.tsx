@@ -93,7 +93,7 @@ interface BodyViewProps {
   deliverable?: Deliverable | null;
   /** 程式修改的來源與編號（差異的參照） */
   reference?: string | null;
-  /** 少看時收成一行的變更（「逐項列出」展開時列出）；沒有時只顯示件數 */
+  /** 看重點時收成一行的變更（「逐項列出」展開時列出）；沒有時只顯示件數 */
   changeItems?: readonly WorkChange[];
 }
 
@@ -103,7 +103,7 @@ export function BodyView({ name, body, raw, changes, language, active = null, de
     language,
     active,
     modified: new Map(changes.mode === "items" ? changes.items.map((c) => [c.path, c.summary]) : []),
-    // reviewFocus() 只在少看且有標重點時把變更收成一行；收起欄位用同一個條件（沒標重點時不收）
+    // reviewFocus() 只在看重點且有標重點時把變更收成一行；收起欄位用同一個條件（沒標重點時不收）
     light: changes.mode === "summary",
   };
   const sections = body.sections;
@@ -143,7 +143,7 @@ export function BodyView({ name, body, raw, changes, language, active = null, de
   );
 }
 
-/** 少看的變更：收成一行「變更 N 項已收起（少看）：…」＋「逐項列出」；展開狀態只存在元件 state */
+/** 看重點的變更：收成一行「變更 N 項已收起（看重點）：…」＋「逐項列出」；展開狀態只存在元件 state */
 function CollapsedChanges({ count, items, language }: { count: number; items: readonly WorkChange[]; language: LanguageCode }) {
   const t = crewStrings("review", language);
   const [expanded, setExpanded] = useState(false);

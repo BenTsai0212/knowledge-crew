@@ -16,7 +16,7 @@ export interface SectionContext {
   active: ActivePoint;
   /** 區塊的鍵 → 變更的說明（只有逐項看的變更） */
   modified: ReadonlyMap<string, string>;
-  /** 少看且有標重點（變更收成一行）時：收起沒標重點的欄位（#102，規則在 light.ts） */
+  /** 看重點且有標重點（變更收成一行）時：收起沒標重點的欄位（#102，規則在 light.ts） */
   light?: boolean;
 }
 

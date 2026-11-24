@@ -26,7 +26,7 @@
   "simulateNoReply": "No prepared submission exists for this employee and work type, so it cannot be simulated.",
   "employeeCardMeta": "{workType} · {level}",
   "levelItem": "Review every item",
-  "levelLight": "Lighter review",
+  "levelLight": "Review key points",
   "sourceUsual": "Filled in from {employee}'s usual source. You can change it.",
   "sourceChanged": "Changed to a source different from {employee}'s usual one.",
   "sourcePickEmployee": "Choose an employee to fill in their usual source.",

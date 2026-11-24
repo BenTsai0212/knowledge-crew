@@ -97,7 +97,7 @@ describe("讀取", () => {
   });
 });
 
-// 對某個交辦（與其工作）新增：交辦、交件（工作與其下三張表）、驗收、少看的決定
+// 對某個交辦（與其工作）新增：交辦、交件（工作與其下三張表）、驗收、看重點的決定
 const flow = (repo: string, n: number, type: string, employee: string) => [
   `INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id) VALUES ('a-new', '${repo}', ${n}, 'New', '${type}', '${employee}')`,
   "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('w-new', 'a-new', 1, 99, 'New')",
@@ -121,7 +121,7 @@ const EACH = [
 ] as const;
 
 describe("新增", () => {
-  it("manager 可以交辦、交件、驗收、少看的決定；寫入者與時間由預設值填入", async () => {
+  it("manager 可以交辦、交件、驗收、看重點的決定；寫入者與時間由預設值填入", async () => {
     const rows = await attempt(
       "manager",
       flow("harbor", 2, "docs", "basil"),
@@ -152,7 +152,7 @@ describe("新增", () => {
     ["變更", "INSERT INTO crew.work_changes (work_id, ordinal, path, summary) VALUES ('w-harbor', 2, 'x', '')"],
     ["檢查", "INSERT INTO crew.work_checks (work_id, name, status) VALUES ('w-harbor', 'x', 'pass')"],
     ["驗收", "INSERT INTO crew.reviews (id, work_id, verdict, reason) VALUES ('x', 'w-harbor', 'returned', 'process')"],
-    ["少看的決定", "INSERT INTO crew.level_decisions (id, employee_id, work_type_id, decision) VALUES ('x', 'basil', 'docs', 'relax')"],
+    ["看重點的決定", "INSERT INTO crew.level_decisions (id, employee_id, work_type_id, decision) VALUES ('x', 'basil', 'docs', 'relax')"],
   ] as const)("看不到的 repo 不能%s", async (_name, sql) => {
     await expect(attempt("lead", [sql])).rejects.toThrow("row-level security");
   });
@@ -165,7 +165,7 @@ describe("新增", () => {
     await expect(attempt("manager", sqls)).rejects.toThrow("row-level security");
   });
 
-  // juniper × docs 的驗收（r-x），用來測少看的決定的依據必須是同一員工 × 同一類工作
+  // juniper × docs 的驗收（r-x），用來測看重點的決定的依據必須是同一員工 × 同一類工作
   const juniperDocs = [
     "INSERT INTO crew.assignments (id, source_id, external_ref, title, work_type_id, employee_id) VALUES ('a-x', 'lantern', 3, 'X', 'docs', 'juniper')",
     "INSERT INTO crew.works (id, assignment_id, round, external_ref, summary) VALUES ('w-x', 'a-x', 1, 12, 'X')",
@@ -175,7 +175,7 @@ describe("新增", () => {
     ["同一員工 × 同一類工作可以", "juniper', 'docs", true],
     ["其他工作類型的驗收被拒", "juniper', 'ui", false],
     ["其他員工的驗收被拒", "basil', 'docs", false],
-  ])("少看的決定的依據：%s", async (_name, target, ok) => {
+  ])("看重點的決定的依據：%s", async (_name, target, ok) => {
     const run = attempt("manager", [...juniperDocs, `INSERT INTO crew.level_decisions (id, employee_id, work_type_id, decision, basis_review_id) VALUES ('ld-x', '${target}', 'relax', 'r-x')`]);
     if (ok) await expect(run).resolves.toBeUndefined();
     else await expect(run).rejects.toThrow("row-level security");

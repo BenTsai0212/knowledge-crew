@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 // 交件全文中第一個有內容的行（不是 @@ 標頭行），去掉重點標記 〔N〕〔/N〕
-// 第一個有重點標記（〔N〕）的欄位內容：少看時沒標重點的欄位收起（#102），有重點的欄位照樣顯示
+// 第一個有重點標記（〔N〕）的欄位內容：看重點時沒標重點的欄位收起（#102），有重點的欄位照樣顯示
 const firstMarkedText = (body: string) =>
   body
     .split("\n")
@@ -25,13 +25,13 @@ const firstMarkedText = (body: string) =>
     .replace(/\u3014\/?\d+\u3015/g, "")
     .trim();
 
-// 層級徽章（#75：時間軸的層級帶也有「逐項看／少看」，所以只看徽章）
+// 層級徽章（#75：時間軸的層級帶也有「逐項看／看重點」，所以只看徽章）
 async function expectLevel(page: Page, employee: string, workType: string, expected: string): Promise<void> {
   await expect(trustRow(page, employee, workType).getByText(crewFill(ct.trust.levelBadge, { level: expected }), { exact: true })).toBeVisible();
 }
 
 test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看 → 工作帳本記下四筆", async ({ page }) => {
-  // 開始前：Linden 的「知識庫整理」是少看，有「收回」
+  // 開始前：Linden 的「知識庫整理」是看重點，有「收回」
   await gotoCrewSection(page, ct.common.sectionTrust);
   await expectLevel(page, "linden", "knowledge", ct.trust.levelLight);
   await expect(trustRow(page, "linden", "knowledge").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
@@ -49,7 +49,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
       await expect(points).toBeVisible();
       await expect(checks).toBeVisible();
       await expect(body).toBeVisible();
-      // 重點與自動檢查在交件本身之上（#72）；交件依區塊呈現，有重點的欄位直接看得到，沒標重點的欄位收起（少看，#102）
+      // 重點與自動檢查在交件本身之上（#72）；交件依區塊呈現，有重點的欄位直接看得到，沒標重點的欄位收起（看重點，#102）
       const bodyTop = (await body.boundingBox())!.y;
       expect((await points.boundingBox())!.y).toBeLessThan(bodyTop);
       expect((await checks.boundingBox())!.y).toBeLessThan(bodyTop);
@@ -91,7 +91,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
   }
 });
 
-test("對照：退回選「我想要不一樣的做法」時，Linden 的「知識庫整理」維持少看", async ({ page }) => {
+test("對照：退回選「我想要不一樣的做法」時，Linden 的「知識庫整理」維持看重點", async ({ page }) => {
   await assignSimulateReturn(page, { title: TITLE, employee: "linden", workType: "knowledge", reason: ct.review.reasonDifferentApproach });
   await gotoCrewSection(page, ct.common.sectionTrust);
   await expect(trustRow(page, "linden", "knowledge").locator(".crew-trust__dots").getByRole("listitem").last()).toHaveAttribute(
@@ -102,7 +102,7 @@ test("對照：退回選「我想要不一樣的做法」時，Linden 的「知�
   await expect(trustRow(page, "linden", "knowledge").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
 });
 
-test("對照：Sorrel 的「貼文與商品介紹」同意少看 → 少看、出現「收回」→ 收回 → 逐項看（建議要重新累積，不馬上再出現）", async ({ page }) => {
+test("對照：Sorrel 的「貼文與商品介紹」同意改看重點 → 看重點、出現「收回」→ 收回 → 逐項看（建議要重新累積，不馬上再出現）", async ({ page }) => {
   await gotoCrewSection(page, ct.common.sectionTrust);
   const row = trustRow(page, "sorrel", "content");
   const agree = row.getByRole("button", { name: ct.trust.agreeRelax, exact: true });

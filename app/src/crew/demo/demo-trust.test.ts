@@ -33,7 +33,7 @@ describe("demo 開始時的信任狀態（#60）", () => {
     expect(DEMO_PARAMS).toMatchObject({ dots: 10, window: 10, min: 10 });
   });
 
-  it("Rowan × 客戶回覆：逐項看；最近 10 次內有做錯了，發生在少看期間，帳本有一筆改回逐項看；沒有建議", async () => {
+  it("Rowan × 客戶回覆：逐項看；最近 10 次內有做錯了，發生在看重點期間，帳本有一筆改回逐項看；沒有建議", async () => {
     const t = await trust("rowan", "support");
     expect(t.reviews).toHaveLength(15);
     expect(t.decisions.map((d) => d.decision)).toEqual(["relax"]);
@@ -41,11 +41,11 @@ describe("demo 開始時的信任狀態（#60）", () => {
     expect(t.level).toBe("item");
     expect(t.suggestion).toBeNull();
     expect(t.resets.map((r) => r.review.id)).toEqual(["s12-1"]);
-    // 做錯了在少看的決定之後
+    // 做錯了在看重點的決定之後
     expect(Date.parse(t.resets[0].at)).toBeGreaterThan(Date.parse(t.decisions[0].decidedAt));
   });
 
-  it("Sorrel × 貼文與商品介紹：逐項看；最近 10 次沒有做錯了、次數達門檻，有建議少看", async () => {
+  it("Sorrel × 貼文與商品介紹：逐項看；最近 10 次沒有做錯了、次數達門檻，有建議改看重點", async () => {
     const t = await trust("sorrel", "content");
     expect(t.reviews).toHaveLength(12);
     expect(t.decisions).toEqual([]);
@@ -57,7 +57,7 @@ describe("demo 開始時的信任狀態（#60）", () => {
     expect(t.resets).toEqual([]);
   });
 
-  it("Linden × 知識庫整理：少看（有一筆同意少看，之後沒有做錯了）", async () => {
+  it("Linden × 知識庫整理：看重點（有一筆同意改看重點，之後沒有做錯了）", async () => {
     const t = await trust("linden", "knowledge");
     expect(t.reviews).toHaveLength(14);
     expect(t.decisions.map((d) => d.decision)).toEqual(["relax"]);
@@ -70,7 +70,7 @@ describe("demo 開始時的信任狀態（#60）", () => {
     expect(after.some((r) => r.reason === "wrong")).toBe(false);
   });
 
-  it("Juniper × 網站與工具開發：同意少看 → 少看驗收一次 → 收回，逐項看；收回後要重新累積，沒有建議（#125）", async () => {
+  it("Juniper × 網站與工具開發：同意改看重點 → 看重點驗收一次 → 收回，逐項看；收回後要重新累積，沒有建議（#125）", async () => {
     const t = await trust("juniper", "dev");
     expect(t.reviews).toHaveLength(11);
     expect(t.decisions.map((d) => d.decision)).toEqual(["relax", "revoke"]);
@@ -78,7 +78,7 @@ describe("demo 開始時的信任狀態（#60）", () => {
     expect(t.level).toBe("item");
     expect(t.suggestion).toBeNull();
     expect(t.resets).toEqual([]);
-    // 同意之前已累積 DEMO_PARAMS.min 次、沒有做錯；同意與收回之間有一次驗收（以少看進行）；收回之後沒有驗收
+    // 同意之前已累積 DEMO_PARAMS.min 次、沒有做錯；同意與收回之間有一次驗收（以看重點進行）；收回之後沒有驗收
     const [relax, revoke] = t.decisions.map((d) => Date.parse(d.decidedAt));
     const before = t.reviews.filter((r) => Date.parse(r.decidedAt) < relax);
     expect(before.length).toBeGreaterThanOrEqual(DEMO_PARAMS.min);

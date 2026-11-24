@@ -46,7 +46,7 @@ describe("trustReport：匯入虛構資料後", () => {
       const pair = { employeeId: row.employee.id, workTypeId: row.workTypeId };
       const all = filterLedger(events, pair);
       const returned = filterLedger(events, { ...pair, event: "returned" });
-      // 「只看層級改變」也含提出少看建議（#125），層級變化不算它
+      // 「只看層級改變」也含提出看重點的建議（#125），層級變化不算它
       const level = filterLedger(events, { ...pair, event: "level" }).filter((e) => e.kind !== "proposed");
       expect(row.reviews).toBe(all.filter((e) => e.kind === "accepted" || e.kind === "returned").length);
       expect(row.reviews).toBe(trust.rows.find((r) => r.employee.id === pair.employeeId && r.workTypeId === pair.workTypeId)!.reviewCount);
@@ -68,7 +68,7 @@ describe("trustReport：匯入虛構資料後", () => {
     expect(firstPassPercent(row.firstPass)).toBe(85);
   });
 
-  it("manager：Linden 是少看、最近一次是同意少看；Sorrel 沒有層級變化、Juniper 同意後收回；三種退回原因分開計數", async () => {
+  it("manager：Linden 是看重點、最近一次是同意改看重點；Sorrel 沒有層級變化、Juniper 同意後收回；三種退回原因分開計數", async () => {
     const { report } = await read("manager");
     const linden = find(report, "linden", "knowledge");
     expect(linden.level).toBe("light");
