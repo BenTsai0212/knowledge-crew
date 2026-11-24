@@ -10,11 +10,13 @@ import { CREW_SECTIONS, DEFAULT_CREW_SECTION, type CrewScreen, type CrewScreenPr
 import { AssignView } from "./AssignView";
 import { EmployeesView } from "./EmployeesView";
 import { LedgerView } from "./LedgerView";
+import { OverviewView } from "./OverviewView";
 import { ReviewView } from "./ReviewView";
 import { TrustView } from "./TrustView";
 import "./CrewPage.css";
 
 const SCREENS: Partial<Record<CrewSection, CrewScreen>> = {
+  overview: OverviewView,
   employees: EmployeesView,
   assignments: AssignView,
   works: ReviewView,

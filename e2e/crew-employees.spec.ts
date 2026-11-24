@@ -38,7 +38,8 @@ test.describe("員工卡（主管，桌機 1280）", () => {
     const rowan = card(page, "rowan");
     await expect(rowan.getByText(ct.review.deliverableReply, { exact: true })).toBeVisible();
     await expect(rowan.getByText(sourceLabel(sourceOf("rowan", "support")), { exact: true })).toBeVisible();
-    await expect(dots(rowan)).toHaveAttribute("aria-label", summary([[ct.trust.dotsAriaOk, 9], [ct.trust.dotsAriaWrong, 1]]));
+    // #134：最近 10 次含 s16 的退回（其他退回）
+    await expect(dots(rowan)).toHaveAttribute("aria-label", summary([[ct.trust.dotsAriaOk, 8], [ct.trust.dotsAriaWrong, 1], [ct.trust.dotsAriaNeutral, 1]]));
     await expect(dots(rowan).locator(".crew-dot")).toHaveCount(10);
     await expect(rowan.getByText(crewFill(ct.employees.noteReset, { date: "10/15" }), { exact: true })).toBeVisible();
   });

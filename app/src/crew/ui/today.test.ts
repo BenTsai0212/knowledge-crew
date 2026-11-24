@@ -32,23 +32,25 @@ describe("canReviewOf：依 client/access.json 的角色", () => {
 });
 
 describe("readToday：匯入虛構資料後", () => {
-  it("manager：待驗收 4（s14、c11、k13、j06）、進行中 0、建議改看重點 1（Sorrel × 貼文與商品介紹）", async () => {
+  // #134 加了待驗收的 c12、j11，與進行中的 k14、s15（還沒交件）、k15、s16（退回後等下一輪）
+  it("manager：待驗收 6（c12、j11、s14、c11、k13、j06）、進行中 4（k14、k15、s16、s15）、建議改看重點 1（Sorrel × 貼文與商品介紹）", async () => {
     const today = await read("manager");
     expect(today.canReview).toBe(true);
-    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "j06", "k13", "s14"]);
-    expect(today.inProgress).toEqual([]);
+    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "c12", "j06", "j11", "k13", "s14"]);
+    expect(today.inProgress.map((a) => [a.id, a.returned])).toEqual([["k14", false], ["k15", true], ["s16", true], ["s15", false]]);
     expect(today.suggestions.map((s) => [s.employee.id, s.workTypeId])).toEqual([["sorrel", "content"]]);
     expect(today.suggestions[0].count).toBe(10);
   });
 
-  it("staff：只看到青翼專案，待驗收 2（c11、s14）、進行中 0、不計算建議改看重點", async () => {
+  // #134 加了青翼專案的 c12（待驗收）、s15、s16（進行中）
+  it("staff：只看到青翼專案，待驗收 3（c11、c12、s14）、進行中 2（s16、s15）、不計算建議改看重點", async () => {
     const today = await read("staff");
     expect(today.canReview).toBe(false);
-    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "s14"]);
+    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "c12", "s14"]);
     // 來源名稱是目前語言的顯示名稱（#60 的 `## 決定` 2）
     const inbox = demo.sources.find((x) => x.id === "support-inbox")!;
     expect(today.awaitingReview.find((a) => a.id === "s14")!.sourceName).toBe(inbox.label![lang]);
-    expect(today.inProgress).toEqual([]);
+    expect(today.inProgress.map((a) => [a.id, a.returned])).toEqual([["s16", true], ["s15", false]]);
     expect(today.suggestions).toEqual([]);
   });
 

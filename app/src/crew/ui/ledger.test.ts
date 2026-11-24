@@ -161,8 +161,9 @@ describe("actorName", () => {
 describe("readLedger：匯入虛構資料後", () => {
   it("manager：四個來源的全部事件，含 Rowan、Linden、Juniper 的同意改看重點、Juniper 的收回、Rowan 的改回逐項看與提出看重點的建議", async () => {
     const events = await readLedger(db, "manager", lang);
-    expect(countKinds(events)).toEqual({ assigned: 48, submitted: 56, accepted: 44, returned: 8, proposed: 4, relax: 3, revoke: 1, autoReset: 1 });
-    expect(events).toHaveLength(165);
+    // #134 加了交辦 6、交件 4、退回 2（s16-1、k15-1）
+    expect(countKinds(events)).toEqual({ assigned: 54, submitted: 60, accepted: 44, returned: 10, proposed: 4, relax: 3, revoke: 1, autoReset: 1 });
+    expect(events).toHaveLength(177);
     expect(new Set(events.map((e) => e.assignment?.sourceName).filter((n) => n !== undefined))).toEqual(new Set(SOURCE_NAMES));
     const relax = events.filter((e) => e.kind === "relax");
     expect(relax.map((e) => [e.employee.id, e.workTypeId, e.actor])).toEqual([
@@ -182,8 +183,9 @@ describe("readLedger：匯入虛構資料後", () => {
 
   it("staff：只看到青翼專案（客服信箱、官方社群帳號）的事件", async () => {
     const events = await readLedger(db, "staff", lang);
-    expect(events).toHaveLength(85);
-    expect(countKinds(events)).toEqual({ assigned: 25, submitted: 29, accepted: 23, returned: 4, proposed: 2, relax: 1, autoReset: 1 });
+    // #134 加了青翼專案的交辦 3（s15、s16、c12）、交件 2、退回 1（s16-1）
+    expect(events).toHaveLength(91);
+    expect(countKinds(events)).toEqual({ assigned: 28, submitted: 31, accepted: 23, returned: 5, proposed: 2, relax: 1, autoReset: 1 });
     expect(events.filter((e) => e.kind === "relax").map((e) => e.employee.id)).toEqual(["rowan"]);
     expect(events.filter((e) => e.kind === "proposed").map((e) => e.id)).toEqual(["proposed:c09-1", "proposed:s09-1"]);
     const bluewing = [label("support-inbox"), label("social-account")];

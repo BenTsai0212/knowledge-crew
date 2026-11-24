@@ -29,8 +29,8 @@ const label = (id: string, language = lang) => {
   const s = demo.sources.find((x) => x.id === id)!;
   return s.label?.[language] ?? s.name;
 };
-// 待驗收：依交件時間（s14 11-17、c11 與 k13 11-18、j06 11-19）
-const AWAITING = ["s14", "c11", "k13", "j06"];
+// 待驗收：依交件時間（c12 11-13、j11 11-14、s14 11-17、c11 與 k13 11-18、j06 11-19）；#134 加了 c12、j11
+const AWAITING = ["c12", "j11", "s14", "c11", "k13", "j06"];
 // k13 的檢查：format 先 pending 後 pass（同名只取最新一筆）、required-fields 是 fail；依名稱排序
 const K13_CHECKS = [
   { name: "duplicates", status: "pass" },
@@ -52,7 +52,10 @@ describe("到期日與優先順序（#133）", () => {
     expect(demo.today).toBe("2026-11-20");
     const { awaiting, recent } = await list(db, "manager");
     const brief = awaiting.map(({ id, dueAt, priority, due }) => ({ id, dueAt, priority, due }));
+    // #134 加了 c12（青翼專案、逾期）、j11（長堤專案、3 天內到期），依交件時間排在最前面
     expect(brief).toEqual([
+      { id: "c12", dueAt: "2026-11-17", priority: "high", due: "overdue" },
+      { id: "j11", dueAt: "2026-11-21", priority: "normal", due: "soon" },
       { id: "s14", dueAt: "2026-11-18", priority: "high", due: "overdue" },
       { id: "c11", dueAt: "2026-11-22", priority: "normal", due: "soon" },
       { id: "k13", dueAt: "2026-12-04", priority: "low", due: "later" },
@@ -64,7 +67,8 @@ describe("到期日與優先順序（#133）", () => {
 
   it("今天可以指定：換一天，狀態跟著換", async () => {
     const { awaiting } = await readWorkList(db, "manager", lang, "2026-12-10");
-    expect(awaiting.map((i) => i.due)).toEqual(["overdue", "overdue", "overdue", "none"]);
+    // #134 加了 c12、j11
+    expect(awaiting.map((i) => i.due)).toEqual(["overdue", "overdue", "overdue", "overdue", "overdue", "none"]);
   });
 
   it("面板的標題卡顯示到期日與「高」優先；逾期標成 overdue", async () => {
@@ -85,14 +89,16 @@ describe("到期日與優先順序（#133）", () => {
 });
 
 describe("readWorkList：匯入虛構資料後", () => {
-  it("manager：待驗收是 s14、c11、k13、j06；最近驗收過依驗收時間新到舊，最多 RECENT_LIMIT 筆", async () => {
+  it("manager：待驗收是 c12、j11、s14、c11、k13、j06；最近驗收過依驗收時間新到舊，最多 RECENT_LIMIT 筆", async () => {
     const { awaiting, recent } = await list(db, "manager");
     expect(ids(awaiting)).toEqual(AWAITING);
     expect(recent).toHaveLength(RECENT_LIMIT);
-    // c10 與 k12 的驗收時間相同，依交辦 id
-    expect(ids(recent).slice(0, 3)).toEqual(["c10", "k12", "s13"]);
-    expect(recent.every((i) => i.verdict === "accepted")).toBe(true);
-    expect(awaiting[0]).toEqual({
+    // #134 加了最新一輪退回的 k15（11-19）、s16（11-18），排在最前面；c10 與 k12 的驗收時間相同，依交辦 id
+    expect(ids(recent).slice(0, 5)).toEqual(["k15", "s16", "c10", "k12", "s13"]);
+    expect(recent.slice(0, 2).every((i) => i.verdict === "returned")).toBe(true);
+    expect(recent.slice(2).every((i) => i.verdict === "accepted")).toBe(true);
+    // #134 加了更早交件的 c12、j11，s14 移到第 3 筆
+    expect(awaiting[2]).toEqual({
       id: "s14",
       title: demo.assignments.find((a) => a.id === "s14")!.title[lang],
       sourceKind: "mailbox",
@@ -117,9 +123,10 @@ describe("readWorkList：匯入虛構資料後", () => {
     expect(j04).toMatchObject({ round: 2, workRef: "36", verdict: "accepted" });
   });
 
-  it("staff：只看到青翼專案（客服信箱、官方社群帳號），待驗收只有 s14、c11", async () => {
+  // #134 加了青翼專案的 c12
+  it("staff：只看到青翼專案（客服信箱、官方社群帳號），待驗收只有 c12、s14、c11", async () => {
     const { awaiting, recent } = await list(db, "staff");
-    expect(ids(awaiting)).toEqual(["s14", "c11"]);
+    expect(ids(awaiting)).toEqual(["c12", "s14", "c11"]);
     expect(recent.length).toBeGreaterThan(0);
     expect(recent.every((i) => [label("support-inbox"), label("social-account")].includes(i.sourceName))).toBe(true);
   });
@@ -130,7 +137,8 @@ describe("readWorkList：匯入虛構資料後", () => {
   });
 
   it("initialSelection：待驗收的第一筆；沒有待驗收時不選取", async () => {
-    expect(initialSelection(await list(db, "manager"))).toBe("s14");
+    // #134 加了更早交件的 c12
+    expect(initialSelection(await list(db, "manager"))).toBe("c12");
     expect(initialSelection(await list(db, "guest"))).toBeNull();
     expect(initialSelection({ awaiting: [], recent: (await list(db, "manager")).recent })).toBeNull();
   });
@@ -208,10 +216,11 @@ describe("readReviewPanel：匯入虛構資料後", () => {
 describe("readReviewPanel：交件的種類與全文的結構", () => {
   it("工作類型決定交件的種類：客服是回信、內容是貼文、知識庫是條目、開發是程式修改", async () => {
     const kinds = await Promise.all(AWAITING.map(async (id) => (await panel(db, "manager", id))!.deliverable));
-    expect(kinds).toEqual(["reply", "post", "kb", "code"]);
+    // #134 加了 c12（貼文）、j11（程式修改）
+    expect(kinds).toEqual(["post", "code", "reply", "post", "kb", "code"]);
   });
 
-  it.each([lang, other])("待驗收四件的全文（%s）都解析成功，每個重點在內容中都有位置", async (language) => {
+  it.each([lang, other])("待驗收六件的全文（%s）都解析成功，每個重點在內容中都有位置", async (language) => {
     for (const id of AWAITING) {
       const p = (await panel(db, "manager", id, language))!;
       expect(p.body.structured, id).toBe(true);

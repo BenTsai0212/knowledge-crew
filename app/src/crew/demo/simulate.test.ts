@@ -38,7 +38,7 @@ describe("simulateSubmission", () => {
     expect(works[0]).toMatchObject({
       id: s1.workId,
       round: 1,
-      externalRef: "43",
+      externalRef: "44",
       summary: first.summary["zh-TW"],
       body: first.body["zh-TW"],
       points: first.points.map((p) => p["zh-TW"]),
@@ -52,7 +52,7 @@ describe("simulateSubmission", () => {
     const s2 = await simulateSubmission(db, "manager", a.id, demo, "en");
     expect(s2.round).toBe(2);
     works = await getAssignmentWorks(db, "manager", a.id);
-    expect(works[1]).toMatchObject({ id: s2.workId, externalRef: "44", summary: second.summary.en, checks: [{ name: "ci", status: "pass" }] });
+    expect(works[1]).toMatchObject({ id: s2.workId, externalRef: "45", summary: second.summary.en, checks: [{ name: "ci", status: "pass" }] });
     expect((await listAssignments(db, "manager")).find((x) => x.id === a.id)).toMatchObject({ latestRound: 2, latestVerdict: null });
   });
 

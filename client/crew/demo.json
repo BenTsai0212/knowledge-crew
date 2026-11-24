@@ -910,6 +910,107 @@
           "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-19T11:01:00+08:00" }]
         }
       ]
+    },
+    {
+      "id": "s15", "source": "support-inbox", "externalRef": "1055", "workType": "support", "employee": "rowan", "dueAt": "2026-11-27", "priority": "low",
+      "title": { "zh-TW": "詢問發票抬頭能否更改", "en": "Changing the name on an invoice" }, "assignedBy": "manager", "assignedAt": "2026-11-19T09:00:00+08:00",
+      "works": []
+    },
+    {
+      "id": "s16", "source": "support-inbox", "externalRef": "1056", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問大量訂購的報價", "en": "Quote for a bulk order" }, "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-11-18T11:00:00+08:00",
+          "summary": { "zh-TW": "附上牌價表，請客人自行計算", "en": "Attach the price list and let the customer work it out" },
+          "body": {
+            "zh-TW": "附上牌價表，請客人自行計算。請看「要看的重點」。",
+            "en": "Attach the price list and let the customer work it out. See the points to review."
+          },
+          "points": [
+            { "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }
+          ],
+          "changes": [
+            { "path": "reply/p2", "summary": { "zh-TW": "附上牌價表", "en": "Attach the price list" } }
+          ],
+          "checks": [{ "name": "quote-match", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }],
+          "review": { "id": "s16-1", "verdict": "returned", "reason": "different_approach", "decidedBy": "manager", "decidedAt": "2026-11-18T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "c12", "source": "social-account", "workType": "content", "employee": "sorrel", "dueAt": "2026-11-17", "priority": "high",
+      "title": { "zh-TW": "門市營業時間調整的公告", "en": "Notice of new store hours" }, "assignedBy": "manager", "assignedAt": "2026-11-13T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-11-13T11:00:00+08:00",
+          "summary": { "zh-TW": "公告新的營業時間與生效日", "en": "Announce the new hours and when they start" },
+          "body": {
+            "zh-TW": "@@ post/account\n範例公司\n@@ post/title\n門市營業時間調整\n@@ post/body\n自〔2〕12/1 起〔/2〕，門市營業時間調整為〔1〕上午 11 點至晚上 8 點〔/1〕，週一公休。\n造成不便，敬請見諒。\n@@ post/hashtags\n#門市公告\n@@ post/image\n門市外觀照\n@@ post/image-alt\n門市的玻璃門與招牌",
+            "en": "@@ post/account\nExample Co.\n@@ post/title\nNew store hours\n@@ post/body\nFrom 〔2〕12/1〔/2〕, the store opens 〔1〕11 a.m. to 8 p.m.〔/1〕 and closes on Mondays.\nThank you for your understanding.\n@@ post/hashtags\n#StoreNews\n@@ post/image\nPhoto of the store front\n@@ post/image-alt\nThe store's glass door and sign"
+          },
+          "points": [
+            { "zh-TW": "引用的數字（折扣、庫存、評分）", "en": "Numbers quoted (discounts, stock, ratings)" },
+            { "zh-TW": "活動的起訖日期", "en": "Start and end dates of the campaign" }
+          ],
+          "changes": [
+            { "path": "post/title", "summary": { "zh-TW": "公告標題", "en": "Notice title" } },
+            { "path": "post/body", "summary": { "zh-TW": "新的營業時間", "en": "New hours" } }
+          ],
+          "checks": [{ "name": "length", "status": "pass", "checkedAt": "2026-11-13T11:20:00+08:00" }, { "name": "links", "status": "pass", "checkedAt": "2026-11-13T11:20:00+08:00" }]
+        }
+      ]
+    },
+    {
+      "id": "k14", "source": "company-kb", "workType": "knowledge", "employee": "linden", "dueAt": "2026-11-19", "priority": "high",
+      "title": { "zh-TW": "整理門市自取的流程", "en": "Write up in-store pickup" }, "assignedBy": "manager", "assignedAt": "2026-11-12T09:00:00+08:00",
+      "works": []
+    },
+    {
+      "id": "k15", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理禮品包裝的說明", "en": "Write up gift wrapping" }, "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-11-18T11:00:00+08:00",
+          "summary": { "zh-TW": "新增禮品包裝的費用與注意事項", "en": "Add the fee and notes for gift wrapping" },
+          "body": {
+            "zh-TW": "@@ kb/gift-wrapping | 禮品包裝說明\n@@ kb/gift-wrapping#owner [required] [point 1] | 負責部門\n電商營運組\n@@ kb/gift-wrapping#fee | 費用\n每件禮品包裝酌收 NT$ 50，可在結帳時勾選。\n@@ kb/gift-wrapping#notes | 注意事項\n〔2〕大型商品與預購商品不提供包裝〔/2〕，包裝後的商品仍可依退貨規則退回。",
+            "en": "@@ kb/gift-wrapping | Gift wrapping\n@@ kb/gift-wrapping#owner [required] [point 1] | Owner department\nE-commerce operations\n@@ kb/gift-wrapping#fee | Fee\nGift wrapping costs NT$ 50 per item and can be selected at checkout.\n@@ kb/gift-wrapping#notes | Notes\n〔2〕Large items and pre-orders cannot be wrapped〔/2〕; wrapped items can still be returned under the return policy."
+          },
+          "points": [
+            { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
+            { "zh-TW": "可能和既有條目重複", "en": "Possible overlap with existing entries" }
+          ],
+          "changes": [
+            { "path": "kb/gift-wrapping", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } },
+            { "path": "kb/gift-wrapping#owner", "summary": { "zh-TW": "負責的部門", "en": "Owning team" } }
+          ],
+          "checks": [{ "name": "format", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }],
+          "review": { "id": "k15-1", "verdict": "returned", "reason": "different_approach", "decidedBy": "manager", "decidedAt": "2026-11-19T10:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j11", "source": "company-site", "externalRef": "31", "workType": "dev", "employee": "juniper", "dueAt": "2026-11-21", "priority": "normal",
+      "title": { "zh-TW": "結帳頁的配送方式說明", "en": "Delivery options on the checkout page" }, "assignedBy": "manager", "assignedAt": "2026-11-14T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "43", "submittedAt": "2026-11-14T11:00:00+08:00",
+          "summary": { "zh-TW": "結帳頁加入配送方式的說明", "en": "Explain delivery options on the checkout page" },
+          "body": {
+            "zh-TW": "@@ src/checkout/DeliveryOptions.tsx [modified]\n每個配送方式下方加一行說明：宅配〔1〕2 至 3 個工作天、運費 NT$ 80〔/1〕，超商取貨〔1〕3 至 5 個工作天、運費 NT$ 60〔/1〕。\n@@ pr/description\n結帳頁加入配送方式的說明。\n- 〔2〕滿額免運時運費顯示為「免運」〔/2〕。\n- 新增說明文字的單元測試。",
+            "en": "@@ src/checkout/DeliveryOptions.tsx [modified]\nAdd a line under each delivery option: home delivery takes 〔1〕2 to 3 business days for NT$ 80〔/1〕, store pickup 〔1〕3 to 5 business days for NT$ 60〔/1〕.\n@@ pr/description\nExplain delivery options on the checkout page.\n- 〔2〕When the order ships free, the fee reads \"Free\"〔/2〕.\n- Add unit tests for the explanation."
+          },
+          "points": [
+            { "zh-TW": "各配送方式的天數與運費", "en": "Days and fee for each delivery option" },
+            { "zh-TW": "滿額免運的顯示", "en": "How free shipping is shown" }
+          ],
+          "changes": [
+            { "path": "src/checkout/DeliveryOptions.tsx", "summary": { "zh-TW": "加入說明", "en": "Add the explanation" } }
+          ],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-14T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-11-14T11:20:00+08:00" }]
+        }
+      ]
     }
   ],
   "levelDecisions": [

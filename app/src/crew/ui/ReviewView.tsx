@@ -34,7 +34,8 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
 
   const load = useCallback(
     async (want: string | null): Promise<Data> => {
-      const list = await readWorkList(db, identity, language);
+      // 要選的交辦較早驗收、不在最近幾筆時也列出（#134：總覽點了已完成的工作）
+      const list = await readWorkList(db, identity, language, undefined, want);
       const visible = want !== null && [...list.awaiting, ...list.recent].some((i) => i.id === want);
       const selected = visible ? want : initialSelection(list);
       const panel = selected === null ? null : await readReviewPanel(db, identity, language, selected, canReview);

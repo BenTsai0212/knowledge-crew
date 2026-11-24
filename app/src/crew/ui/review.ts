@@ -139,15 +139,26 @@ function toItem(a: AssignmentSummary, round: number, workRef: string | null, nam
 
 const strip = ({ decidedAt: _, ...item }: Sortable): WorkListItem => item;
 
-/** `today` 是到期狀態的「今天」（YYYY-MM-DD）：預設是 demo 的 today，沒有時是目前的日期（#133）。 */
-export async function readWorkList(db: Database, identity: string | null, language: LanguageCode, today: string = crewToday(DEMO)): Promise<WorkList> {
+/**
+ * `today` 是到期狀態的「今天」（YYYY-MM-DD）：預設是 demo 的 today，沒有時是目前的日期（#133）。
+ * `pinned` 是要選取的交辦（#134：總覽點了較早完成的工作）：已驗收但不在最近 RECENT_LIMIT 筆時，接在「最近驗收過」的最後。
+ */
+export async function readWorkList(
+  db: Database,
+  identity: string | null,
+  language: LanguageCode,
+  today: string = crewToday(DEMO),
+  pinned: string | null = null,
+): Promise<WorkList> {
   // 沒有身分時比照 guest：不讀取（與 readToday() 相同）
   if (identity === null) return EMPTY;
   const items = await readItems(db, identity, language, today);
-  const recent = items
+  const reviewed = items
     .filter((i) => i.verdict !== null)
-    .sort((x, y) => y.decidedAt - x.decidedAt || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
-    .slice(0, RECENT_LIMIT);
+    .sort((x, y) => y.decidedAt - x.decidedAt || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+  const recent = reviewed.slice(0, RECENT_LIMIT);
+  const extra = reviewed.slice(RECENT_LIMIT).find((i) => i.id === pinned);
+  if (extra) recent.push(extra);
   return { awaiting: items.filter((i) => i.verdict === null).map(strip), recent: recent.map(strip) };
 }
 

@@ -1,5 +1,5 @@
-// AI 員工的 README 截圖（knowledge-crew #106）：桌機 1440×900 的首頁今天的工作、驗收面板（Rowan 的回信）、信任時間軸，
-// 與手機 390×844 的驗收面板（固定的決定列），寫到 docs/crew/images/<名稱>.png。
+// AI 員工的 README 截圖（knowledge-crew #106）：桌機 1440×900 的首頁今天的工作、總覽（#134）、驗收面板（Rowan 的回信）、信任時間軸，
+// 與手機 390×844 的驗收面板（固定的決定列）與總覽（#134），寫到 docs/crew/images/<名稱>.png。
 // 不是測試，預設不執行：KC_README_SHOTS=1 時 playwright.config.ts 只執行這個檔案（重新產生的方式見 docs/testing.md「AI 員工的 README 截圖」）。
 // 參考情境（client/）的虛構資料、預設語言、主管身分、Light 模式、減少動態效果；/api/ask 是 openApp() 的假回應（不呼叫模型）；
 // openApp() 以邀請碼登入後才截圖，截圖中沒有登入頁與邀請碼。
@@ -40,11 +40,17 @@ async function openRowanReply(page: Page): Promise<void> {
 test.describe("桌機", () => {
   test.use({ viewport: DESKTOP });
 
-  test("首頁今天的工作、驗收面板、信任時間軸", async ({ page }) => {
+  test("首頁今天的工作、總覽、驗收面板、信任時間軸", async ({ page }) => {
     await start(page);
     expect(await gotoView(page, "home")).toBe(true);
     await expect(homeToday(page)).toBeVisible();
     await page.screenshot({ path: shotPath("home-today") });
+
+    // 總覽是 AI 員工頁的預設分頁（#134）
+    await openCrew(page);
+    await expect(page.getByRole("region", { name: ct.overview.boardLabel })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: shotPath("overview") });
 
     await openRowanReply(page);
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -66,5 +72,13 @@ test.describe("手機", () => {
     await reviewPanel(page, rowanReply).locator(".crew-review__decision").waitFor();
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: shotPath("mobile-review") });
+  });
+
+  test("總覽（#134：專案卡片直向排列，看板是依狀態切換的清單）", async ({ page }) => {
+    await start(page);
+    await openCrew(page);
+    await expect(page.getByRole("region", { name: ct.overview.boardLabel })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: shotPath("mobile-overview"), fullPage: true });
   });
 });

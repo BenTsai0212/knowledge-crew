@@ -53,7 +53,8 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
   test("Rowan：做錯了依規則自動改回，說明要重新累積，沒有按鈕", async ({ page }) => {
     const row = trustRow(page, "rowan", "support");
     await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
-    await expect(dots(row)).toHaveAttribute("aria-label", summary([[ct.trust.dotsAriaOk, 9], [ct.trust.dotsAriaWrong, 1]]));
+    // #134：最近 10 次含 s16 的退回（其他退回）
+    await expect(dots(row)).toHaveAttribute("aria-label", summary([[ct.trust.dotsAriaOk, 8], [ct.trust.dotsAriaWrong, 1], [ct.trust.dotsAriaNeutral, 1]]));
     await expect(row.getByText(crewFill(ct.trust.eventReset, { date: "10/15" }), { exact: false })).toBeVisible();
     await expect(row.getByText(ct.trust.noteReset, { exact: true })).toBeVisible();
     // 沒有同意或收回的按鈕（「建議的經過」裡打開那一件的按鈕不算，#125）
@@ -237,10 +238,11 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
     expect(reportBox.y).toBeLessThan(firstCard.y);
     const rowan = reportRow(page, "rowan", "support");
     await expect(rowan.getByRole("cell")).toHaveText([
-      "15",
-      crewFill(ct.trust.reportFirstPass, { percent: 85, passed: 11, total: 13 }),
+      // #134：s16 的退回（我想要不一樣的做法）加了一次驗收
+      "16",
+      crewFill(ct.trust.reportFirstPass, { percent: 79, passed: 11, total: 14 }),
       "1",
-      "1",
+      "2",
       "0",
       ct.trust.levelItem,
       /.+/,

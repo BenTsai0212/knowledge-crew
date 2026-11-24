@@ -38,8 +38,10 @@ test.describe("手機 390", () => {
     expect(await nav.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
     for (const button of await nav.getByRole("button").all()) expect((await box(button)).height).toBeGreaterThanOrEqual(44);
 
-    // 預設停在「工作與驗收」：數字與清單的待驗收件數相同，說明在 aria-describedby（按鈕的名稱仍是子頁名稱）
+    // 預設停在「總覽」（#134）；切到「工作與驗收」：數字與清單的待驗收件數相同，說明在 aria-describedby（按鈕的名稱仍是子頁名稱）
+    await expect(sectionButton(page, ct.common.sectionOverview)).toHaveAttribute("aria-current", "page");
     const works = sectionButton(page, ct.common.sectionWorks);
+    await gotoCrewSection(page, ct.common.sectionWorks);
     await expect(works).toHaveAttribute("aria-current", "page");
     const awaiting = await awaitingItems(page).count();
     expect(awaiting).toBeGreaterThan(0);
@@ -69,6 +71,8 @@ test.describe("手機 390", () => {
 
   test("主管：決定列固定在底部分頁列之上，捲到最後不蓋住內容；退回原因可以選擇與確定", async ({ page }) => {
     await openCrewAs(page, "manager");
+    // 預設是「總覽」（#134），明確切到「工作與驗收」
+    await gotoCrewSection(page, ct.common.sectionWorks);
     const bar = decisionBar(page);
     await expect(bar).toBeVisible();
     await expect(bar.getByRole("button", { name: ct.review.accept, exact: true })).toBeVisible();
@@ -111,6 +115,7 @@ test.describe("手機 390", () => {
 
   test("主管：看重點的件（#102 的 k13）決定列仍固定在分頁列之上；展開收起的欄位與變更後，捲到最後決定列回到原位", async ({ page }) => {
     await openCrewAs(page, "manager");
+    await gotoCrewSection(page, ct.common.sectionWorks);
     await reviewList(page).getByRole("button").filter({ hasText: k13Title }).click();
     const panel = reviewPanel(page, k13Title);
     await expect(panel.getByRole("region", { name: ct.review.lightTitle })).toBeVisible();
@@ -147,6 +152,9 @@ test.describe("手機 390", () => {
   for (const role of ["staff", "guest"]) {
     test(`${role}：沒有固定的決定列，子導覽沒有數字`, async ({ page }) => {
       await openCrewAs(page, role);
+      // 預設是「總覽」（#134），明確切到「工作與驗收」
+      await expect(sectionButton(page, ct.common.sectionOverview)).toHaveAttribute("aria-current", "page");
+      await gotoCrewSection(page, ct.common.sectionWorks);
       await expect(sectionButton(page, ct.common.sectionWorks)).toHaveAttribute("aria-current", "page");
       await expect(page.locator(".crew-review, .empty-state").first()).toBeVisible();
       await expect(decisionBar(page)).toHaveCount(0);
@@ -161,6 +169,7 @@ test.describe("桌機 1280", () => {
 
   test("子導覽仍是頁籤（底線、沒有框），決定列不固定", async ({ page }) => {
     await openCrewAs(page, "manager");
+    await gotoCrewSection(page, ct.common.sectionWorks);
     const works = sectionButton(page, ct.common.sectionWorks);
     const style = await works.evaluate((el) => {
       const s = getComputedStyle(el);
