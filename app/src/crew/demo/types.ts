@@ -17,6 +17,8 @@ export interface DemoSource {
   project: Id;
   /** 知識庫類來源：驗收通過的知識庫條目回流成這個機密等級（access.json 的等級）的文件；省略時不回流（#92） */
   knowledgeVisibility?: Id;
+  /** 確認的守則寫成這個機密等級（access.json 的等級）的知識庫文件；任何類型的來源都可以填，省略時不寫（#149） */
+  guidelineVisibility?: Id;
 }
 
 export interface DemoEmployee {

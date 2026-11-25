@@ -674,6 +674,7 @@ export function App() {
         language={language}
         documentId={documentId}
         onOpen={(assignmentId) => (closeSource(), openCrew({ section: "works", assignmentId }))}
+        onOpenEmployee={(employeeId) => (closeSource(), openCrew({ section: "employees", employeeId }))}
       />
     );
   // 桌機原文欄的 ✕：焦點回到引用標號（還在畫面上時）

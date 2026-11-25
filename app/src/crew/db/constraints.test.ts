@@ -1,4 +1,4 @@
-// crew 0002 的 CHECK 與 UNIQUE（#26）、0004 的工作來源與外部編號（#57）、0005 的知識庫回流（#92）與 0007 的守則（#142）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
+// crew 0002 的 CHECK 與 UNIQUE（#26）、0004 的工作來源與外部編號（#57）、0005 的知識庫回流（#92）、0007 的守則（#142）與 0008 的守則文件（#149）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyMigrations } from "../../db/migrate";
@@ -241,5 +241,45 @@ describe("crew 0007 的守則（#142）", () => {
     await expect(pg.exec(follow("gr2", "g3", "ga2", "juniper", "ui"))).rejects.toThrow(/foreign key/);
     await expect(pg.exec(follow("gr2", "g3", "ga1"))).rejects.toThrow(/foreign key/);
     await pg.exec(follow("gr2", "gr", "ga2", "rowan", "support"));
+  });
+
+  describe("crew 0008 的守則文件（#149）", () => {
+    const gdoc = (g: string, doc: string, confirm: string) =>
+      `INSERT INTO crew.guideline_documents (guideline_id, document_id, confirm_id) VALUES ('${g}', '${doc}', '${confirm}')`;
+
+    beforeAll(async () => {
+      await pg.exec(`
+        INSERT INTO kk.documents (id, title, language, visibility_level_id) VALUES
+          ('crew-guideline-g1', 'T', 'en', 'internal'), ('crew-guideline-g2', 'T', 'en', 'internal'),
+          ('crew-guideline-g3', 'T', 'en', 'internal'), ('other-doc', 'T', 'en', 'internal');
+      `);
+    });
+
+    it("守則等級可以為空、任何類型的來源都可以填，必須是存在的機密等級", async () => {
+      expect((await pg.query("SELECT guideline_visibility_level_id AS v FROM crew.sources WHERE id = 'lantern'")).rows).toEqual([{ v: null }]);
+      await pg.exec("UPDATE crew.sources SET guideline_visibility_level_id = 'internal' WHERE id = 'lantern'");
+      await expect(pg.exec("UPDATE crew.sources SET guideline_visibility_level_id = 'secret' WHERE id = 'lantern'")).rejects.toThrow(/foreign key/);
+    });
+
+    it.each([
+      ["文件 id 不是 crew-guideline-<守則 id>", gdoc("g3", "other-doc", "g3-d1"), /check constraint/],
+      ["文件 id 是別的守則的", gdoc("g3", "crew-guideline-g1", "g3-d1"), /check constraint/],
+      ["依據的是不採用", gdoc("g2", "crew-guideline-g2", "g2-d1"), /foreign key/],
+      ["依據的是別的守則的確認", gdoc("g3", "crew-guideline-g3", "g1-d1"), /foreign key/],
+      ["依據的是收回", gdoc("g1", "crew-guideline-g1", "g1-d3"), /foreign key/],
+      ["文件不存在", gdoc("gr", "crew-guideline-gr", "g1-d1"), /foreign key/],
+      ["指定 confirm_decision", "INSERT INTO crew.guideline_documents (guideline_id, document_id, confirm_id, confirm_decision) VALUES ('g3', 'crew-guideline-g3', 'g3-d1', 'confirm')", /generated|non-DEFAULT/],
+    ])("守則文件：%s 被拒", async (_name, sql, error) => {
+      await expect(pg.exec(sql)).rejects.toThrow(error);
+    });
+
+    it("合法的守則文件（已收回的守則也留著）；一條守則一份、一份文件一條守則", async () => {
+      await pg.exec(gdoc("g1", "crew-guideline-g1", "g1-d1"));
+      await pg.exec(gdoc("g3", "crew-guideline-g3", "g3-d1"));
+      await expect(pg.exec(gdoc("g1", "crew-guideline-g1", "g1-d1"))).rejects.toThrow(/unique|duplicate key/);
+      expect((await pg.query("SELECT guideline_id AS g, confirm_decision AS d FROM crew.guideline_documents ORDER BY 1")).rows).toEqual([
+        { g: "g1", d: "confirm" }, { g: "g3", d: "confirm" },
+      ]);
+    });
   });
 });

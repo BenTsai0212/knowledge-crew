@@ -12,7 +12,7 @@ knowledge-crew 的資料表都在 schema `crew`（crew ADR 0004），migration �
 
 | 資料表 | 內容 | migration |
 | --- | --- | --- |
-| `sources` | 工作來源（repo、信箱、社群帳號、知識庫）與所屬專案；讀取依專案 | 0001、0004、0005 |
+| `sources` | 工作來源（repo、信箱、社群帳號、知識庫）與所屬專案；回流與守則文件的機密等級；讀取依專案 | 0001、0004、0005、0008 |
 | `employees`、`work_types` | AI 員工與工作類型 | 0001 |
 | `assignments` | 交辦：來源、員工、工作類型、到期日與優先順序 | 0002、0004、0006 |
 | `works`、`work_points`、`work_changes`、`work_checks` | 交件（每輪一筆）、要看的重點、變更、自動檢查 | 0002、0004 |
@@ -20,6 +20,7 @@ knowledge-crew 的資料表都在 schema `crew`（crew ADR 0004），migration �
 | `level_decisions` | 人對「少看」的同意與收回；看得到同一員工 × 同一工作類型的交辦才看得到 | 0002、0003 |
 | `knowledge_flowbacks` | 哪一次驗收回流成知識庫的哪一份文件 | 0005 |
 | `guidelines`、`guideline_decisions`、`work_guidelines` | 守則、人的決定、一次交件依照的守則（下節） | 0007 |
+| `guideline_documents` | 哪一條守則寫成知識庫的哪一份文件（下節「守則進知識庫」） | 0008 |
 
 ## 守則（crew ADR 0007、#142）
 
@@ -37,8 +38,21 @@ knowledge-crew 的資料表都在 schema `crew`（crew ADR 0004），migration �
 
 讀取範圍與 `level_decisions` 相同：看得到同一員工 × 同一工作類型的交辦，才看得到守則與決定；依照的守則跟著交件。demo 以 superuser 匯入、不套用 RLS，時間條件（交件當時生效、決定晚於提出）由 demo 的驗證檢查。
 
+### 守則進知識庫（ADR 0007 決定 7、#149）
+
+確認的守則寫成一份知識庫文件（`kk.documents`／`kk.passages`，受 knowledge-kit 的上傳規則檢查），收回時不刪、不改文件；原文面板以「這條守則的來歷」標出生效中或已收回。
+
+- **`sources.guideline_visibility_level_id`**：這個來源的守則文件的機密等級，可為空（不寫文件），任何類型的來源都可以填（回流的 `knowledge_visibility_level_id` 只給知識庫類）。
+- **`guideline_documents`**：守則（主鍵，一條最多一份）、文件（UNIQUE，id 一定是 `crew-guideline-<守則 id>`）、寫入時依據的確認（`confirm_id`）、寫入時間。
+  - `confirm_id` 以複合外鍵指向同一守則的確認（`confirm_decision` 是產生欄位 `'confirm'`），superuser 匯入 demo 時也擋得住「沒有確認就寫文件」。
+  - 寫入 policy：`can_review`、確認是自己寫的、文件是自己上傳的、文件的專案等於來源交辦的工作來源的專案、機密等級等於該來源的守則等級。沒有 UPDATE、DELETE。
+  - 讀取：守則看得到（員工 × 工作類型）**且**文件看得到（`kk.can_see`）。文件的專案就是來源交辦的專案，所以看得到文件就看得到守則；反過來不一定（等級不夠，或經由另一個專案看到同員工 × 工作類型的守則），這時員工頁照常顯示守則，知識庫沒有這份文件。
+- 寫入：`decideGuideline()` 的確認與 `createReview()` 的 `saveAsGuideline` 在同一個交易呼叫 `writeGuidelineDocument()`（demo 的 seed 共用），回傳 `guidelineDocument`：`written`、`not-applicable`（不是確認、來源沒有守則等級）或 `no-upload-permission`（確認者不能上傳；確認照常生效，比照回流）。
+- 文件：標題「{員工}的「{工作類型}」守則：{守則文字前 24 字}」，兩段是守則目前的文字與來歷（退回日期與原因、員工提出時的「整理提出」、確認者與日期、確認時修改）；語言是 `defaultLanguage`，日期是確認日。固定文字在 `client/i18n/crew/knowledge.<語言>.json`。
+- 限制：knowledge-kit 的文件沒有撤回機制，含問答的版本可能引用已收回的守則文件（之後的版本處理）。
+
 ### demo 資料（`client/crew/demo.json`）
 
 - 退回的意見是 `assignments[].works[].review.note`（雙語）；守則是最上層的 `guidelines[]`（依提出時間），決定寫在各守則的 `decisions[]`（id 由 seed 產生：`<守則 id>-d<序號>`），交件依照的守則是 `works[].guidelines`。
 - `app/src/crew/demo/validate.ts` 在匯入前檢查：來源是同一員工 × 工作類型、原因不是 `process`、有意見的退回；人提的守則提出時間與文字等於那次退回、第一筆決定是同時間的確認、確認者是那次的驗收者；員工提出晚於來源退回；決定的順序（`canDecide()`）與時間；修改的文字只出現在確認；依照的守則在交件時生效（`activeAt()`）。
-- `app/src/crew/demo/seed.ts` 在驗收與看重點的決定之後依序寫入守則 → 決定 → 依照的守則；守則與意見不進信任的計算，層級、建議與報表數字不變。
+- `app/src/crew/demo/seed.ts` 在驗收與看重點的決定之後依序寫入守則 → 決定 → 守則的文件 → 依照的守則；守則與意見不進信任的計算，層級、建議與報表數字不變。四個來源的 `guidelineVisibility` 都是 `internal`，所以 g01、g03、g04（之後收回）、g05 有文件，等確認的 g02、不採用的 g06 沒有。

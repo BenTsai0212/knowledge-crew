@@ -8,5 +8,19 @@
   "originChecks": "{passed}/{total} automated checks passed",
   "originGuidelines": "Followed {count, plural, one {# guideline} other {# guidelines}}",
   "originSeparator": " · ",
-  "originOpen": "View this review"
+  "originOpen": "View this review",
+  "guidelineTitle": "Where this guideline came from",
+  "guidelineBy": "{employee}'s “{workType}” guideline · confirmed by {confirmer} on {date}",
+  "guidelineRevised": " (edited when confirmed)",
+  "guidelineFromHuman": "From the return on {date} ({reason}) · saved when returned",
+  "guidelineFromEmployee": "From the return on {date} ({reason}) · drafted by {employee}",
+  "guidelineActive": "In effect · followed {count, plural, one {# time} other {# times}} since",
+  "guidelineRevoked": "Retired ({date}); later work no longer follows it",
+  "guidelineOpenReturn": "View that return",
+  "guidelineOpenEmployee": "Go to employee",
+  "guidelineDocTitle": "{employee}'s “{workType}” guideline: {text}",
+  "guidelineDocOrigin": "{employee}'s “{workType}” guideline. From the return on {returnDate} ({reason}){drafted}; confirmed by {confirmer} on {confirmDate}{revised}.",
+  "guidelineDocDrafted": ", drafted by {employee}",
+  "guidelineDocRevised": " (edited when confirmed)",
+  "guidelineDocEllipsis": "…"
 }

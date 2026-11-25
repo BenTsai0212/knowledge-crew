@@ -1,11 +1,13 @@
-// 原文的「這條知識經過的把關」的文字（#147；原本是 #92 PR 3 的一行來源）：
+// 原文的「這條知識經過的把關」與「這條守則的來歷」（#149）的文字（#147；原本是 #92 PR 3 的一行來源）：
 // 第一行「{員工} 整理・{驗收者} 驗收通過（日期）」，第二行以「・」連接、沒有的項目不顯示。
 import { describe, expect, it } from "vitest";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import { crewStrings } from "../i18n";
-import type { FlowbackOrigin } from "../knowledge/origin";
-import { originLines } from "./SourceOrigin";
+import { reasonLabel } from "../knowledge/guideline-document";
+import type { FlowbackOrigin, GuidelineOrigin } from "../knowledge/origin";
+import { workTypeLabel } from "./labels";
+import { guidelineLines, originLines } from "./SourceOrigin";
 
 const origin: FlowbackOrigin = {
   assignmentId: "k13", title: "Title", employeeName: "Linden", decidedAt: "2026-11-22T04:00:00.000Z",
@@ -38,6 +40,49 @@ describe("originLines", () => {
       const t = crewStrings("knowledge", language);
       const facts = originLines({ ...origin, level: "item", returned: 2, checks: null, guidelines: 0 }, language).facts;
       expect(facts, language).toBe([t.originLevelItem, fill(t.originReturned, { count: 2 }, language)].join(t.originSeparator));
+    }
+  });
+});
+
+const guideline: GuidelineOrigin = {
+  guidelineId: "g01", employeeId: "rowan", employeeName: "Rowan", workTypeId: "support", text: "Answer first", proposerKind: "human",
+  assignmentId: "s05", returnedAt: "2026-09-17T07:00:00.000Z", reason: "different_approach", confirmedBy: "manager",
+  confirmedAt: "2026-09-18T07:00:00.000Z", revised: false, revokedAt: null, followed: 3,
+};
+
+describe("guidelineLines", () => {
+  it("第一行：員工、工作類型、確認者的身分名稱與日期；修改後確認時加註", () => {
+    for (const language of clientConfig.client.languages) {
+      const t = crewStrings("knowledge", language);
+      const { by } = guidelineLines(guideline, language);
+      for (const part of ["Rowan", workTypeLabel("support", language), roleLabel(language), "2026"]) expect(by, language).toContain(part);
+      expect(by, language).not.toContain(t.guidelineRevised);
+      expect(guidelineLines({ ...guideline, revised: true }, language).by.endsWith(t.guidelineRevised), language).toBe(true);
+    }
+  });
+
+  it("第二行：來自哪一次退回（原因）；人提是退回時記下，員工提是員工整理提出", () => {
+    for (const language of clientConfig.client.languages) {
+      const t = crewStrings("knowledge", language);
+      const human = guidelineLines(guideline, language).from;
+      expect(human, language).toContain(reasonLabel("different_approach", language));
+      const date = new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(new Date(guideline.returnedAt));
+      expect(human, language).toBe(fill(t.guidelineFromHuman, { date, reason: reasonLabel("different_approach", language) }, language));
+      const employee = guidelineLines({ ...guideline, proposerKind: "employee" }, language).from;
+      expect(employee, language).toContain("Rowan");
+      expect(employee, language).not.toBe(human);
+      expect(`${human}${employee}`, language).not.toMatch(/[{}]/);
+    }
+  });
+
+  it("第三行：生效中寫之後依照的次數；已收回寫收回日期與不再依照", () => {
+    for (const language of clientConfig.client.languages) {
+      const t = crewStrings("knowledge", language);
+      expect(guidelineLines(guideline, language).status, language).toBe(fill(t.guidelineActive, { count: 3 }, language));
+      const revoked = guidelineLines({ ...guideline, revokedAt: "2026-10-20T02:00:00.000Z" }, language).status;
+      expect(revoked, language).toContain("2026");
+      expect(revoked, language).not.toBe(fill(t.guidelineActive, { count: 3 }, language));
+      expect(revoked, language).not.toMatch(/[{}]/);
     }
   });
 });

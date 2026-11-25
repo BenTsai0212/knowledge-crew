@@ -1,10 +1,10 @@
 {
   "today": "2026-11-20",
   "sources": [
-    { "id": "support-inbox", "kind": "mailbox", "name": "Support inbox", "label": { "zh-TW": "客服信箱", "en": "Support inbox" }, "project": "bluewing" },
-    { "id": "social-account", "kind": "social", "name": "Social account", "label": { "zh-TW": "官方社群帳號", "en": "Social account" }, "project": "bluewing" },
-    { "id": "company-kb", "kind": "knowledge_base", "name": "Company KB", "label": { "zh-TW": "公司知識庫", "en": "Company KB" }, "project": "longpier", "knowledgeVisibility": "internal" },
-    { "id": "company-site", "kind": "repo", "name": "example-org/company-site", "project": "longpier" }
+    { "id": "support-inbox", "kind": "mailbox", "name": "Support inbox", "label": { "zh-TW": "客服信箱", "en": "Support inbox" }, "project": "bluewing", "guidelineVisibility": "internal" },
+    { "id": "social-account", "kind": "social", "name": "Social account", "label": { "zh-TW": "官方社群帳號", "en": "Social account" }, "project": "bluewing", "guidelineVisibility": "internal" },
+    { "id": "company-kb", "kind": "knowledge_base", "name": "Company KB", "label": { "zh-TW": "公司知識庫", "en": "Company KB" }, "project": "longpier", "knowledgeVisibility": "internal", "guidelineVisibility": "internal" },
+    { "id": "company-site", "kind": "repo", "name": "example-org/company-site", "project": "longpier", "guidelineVisibility": "internal" }
   ],
   "employees": [
     { "id": "rowan", "displayName": "Rowan", "roleNote": { "zh-TW": "客服", "en": "Customer support" } },

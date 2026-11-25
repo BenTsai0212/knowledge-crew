@@ -188,6 +188,7 @@ describe("validateDemo", () => {
       d.sources[0].kind = "knowledge_base";
       d.sources[0].knowledgeVisibility = "secret";
     }, "sources[0].knowledgeVisibility: must be a visibility level in access.json"],
+    ["守則等級不在 access.json（#149）", (d: any) => (d.sources[0].guidelineVisibility = "secret"), "sources[0].guidelineVisibility: must be a visibility level in access.json"],
     ["repo 類的交辦沒有外部編號", (d: any) => delete d.assignments[0].externalRef, "assignments[0].externalRef: is required for a repo source"],
     ["repo 類的工作沒有外部編號", (d: any) => delete d.assignments[0].works[0].externalRef, "works[0].externalRef: is required for a repo source"],
     ["repo 類的外部編號不是正整數", (d: any) => (d.assignments[0].externalRef = "A-1"), "assignments[0].externalRef: must be a positive integer string"],
