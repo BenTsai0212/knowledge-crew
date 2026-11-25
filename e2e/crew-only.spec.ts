@@ -177,7 +177,8 @@ test.describe("桌機", () => {
     await panel.getByRole("button", { name: ct.review.knowledgeOpen, exact: true }).click();
     const source = page.locator("aside.source");
     await expect(source.getByRole("heading", { level: 2 })).toHaveText(entry!.title);
-    await source.getByRole("button").filter({ hasText: title }).click();
+    // 「這條知識經過的把關」（#147；原本是含交辦標題的一行按鈕）的「看這次驗收」
+    await source.getByRole("region", { name: ct.knowledge.originTitle, exact: true }).getByRole("button", { name: ct.knowledge.originOpen, exact: true }).click();
     await expect(source).toHaveCount(0);
     await expect(reviewPanel(page, title)).toBeVisible();
   });
