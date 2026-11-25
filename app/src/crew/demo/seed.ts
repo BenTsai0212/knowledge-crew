@@ -3,10 +3,12 @@
 // 畫面依目前語言以 texts.ts 的 demoText() 換成 demo.json 的對應文字。
 // 已通過的知識庫條目以 createReview() 相同的寫法回流（db/store.ts 的 writeFlowback()，#92 的 `## 決定` 與計畫第 5 節），
 // 所以 demo 一開始就看得到；驗收者沒有上傳權限時不回流（同 createReview()）。
+// 守則（#142）在驗收與看重點的決定之後寫入：守則（依提出時間）→ 決定（依檔案順序）→ 交件依照的守則。資料庫的外鍵只要求父列先寫入；
+// 時間條件（交件當時生效、決定晚於提出）不套用 RLS，由 validateDemo() 在匯入前檢查。
 import type { PGliteInterface } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
 import { writeFlowback } from "../db/store";
-import { demoWorkId, type DemoFile } from "./types";
+import { demoGuidelineDecisionId, demoWorkId, type DemoFile } from "./types";
 import { assertDemo, type ValidateOptions } from "./validate";
 
 export interface DemoSeedConfig {
@@ -61,7 +63,7 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
           await insert(
             "reviews",
             ["id", "work_id", "verdict", "reason", "note", "decided_by", "decided_at"],
-            [r.id, workId, r.verdict, r.reason ?? null, r.note ?? null, r.decidedBy, r.decidedAt],
+            [r.id, workId, r.verdict, r.reason ?? null, r.note?.[language] ?? null, r.decidedBy, r.decidedAt],
           );
         }
       }
@@ -88,6 +90,39 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
         ["id", "employee_id", "work_type_id", "decision", "basis_review_id", "decided_by", "decided_at"],
         [d.id, d.employee, d.workType, d.decision, d.basisReview ?? null, d.decidedBy, d.decidedAt],
       );
+    }
+
+    // 來源退回 → 交件、交辦與驗收者（人提的守則的提出者）
+    const reviewSource = new Map(
+      demo.assignments.flatMap((a) => a.works.flatMap((w) => (w.review ? [[w.review.id, { workId: demoWorkId(a.id, w.round), assignmentId: a.id, decidedBy: w.review.decidedBy }] as const] : []))),
+    );
+    const byProposedAt = [...demo.guidelines].sort((x, y) => Date.parse(x.proposedAt) - Date.parse(y.proposedAt));
+    for (const g of byProposedAt) {
+      const source = reviewSource.get(g.sourceReview)!;
+      await insert(
+        "guidelines",
+        ["id", "employee_id", "work_type_id", "text", "source_review_id", "source_work_id", "source_assignment_id", "proposer_kind", "proposed_by", "proposed_at"],
+        [g.id, g.employee, g.workType, g.text[language], g.sourceReview, source.workId, source.assignmentId, g.proposer, g.proposer === "human" ? source.decidedBy : null, g.proposedAt],
+      );
+    }
+    for (const g of demo.guidelines) {
+      let confirmId: string | null = null;
+      for (const [i, d] of g.decisions.entries()) {
+        const id = demoGuidelineDecisionId(g.id, i + 1);
+        if (d.decision === "confirm") confirmId = id;
+        await insert("guideline_decisions", ["id", "guideline_id", "decision", "revised_text", "confirm_id", "decided_by", "decided_at"], [
+          id, g.id, d.decision, d.revisedText?.[language] ?? null, d.decision === "revoke" ? confirmId : null, d.decidedBy, d.decidedAt,
+        ]);
+      }
+    }
+    for (const a of demo.assignments) {
+      for (const w of a.works) {
+        for (const guidelineId of w.guidelines ?? []) {
+          await insert("work_guidelines", ["work_id", "guideline_id", "assignment_id", "employee_id", "work_type_id"], [
+            demoWorkId(a.id, w.round), guidelineId, a.id, a.employee, a.workType,
+          ]);
+        }
+      }
     }
   });
 }

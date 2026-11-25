@@ -386,11 +386,14 @@ describe("守則（#142）", () => {
   });
 
   it("交件依照生效的守則；listGuidelines 可依員工與工作類型篩選", async () => {
-    const active = (await listGuidelines(db, "manager", { employeeId: "rowan", workTypeId: "support" })).filter((g) => g.status === "active");
+    // demo.json 的 g01（#142 PR 2）之外，這個檔案前面的測試以 saveAsGuideline 新增的一條
+    const active = (await listGuidelines(db, "manager", { employeeId: "rowan", workTypeId: "support" })).filter((g) => g.status === "active" && g.id !== "g01");
     expect(active).toHaveLength(1);
     const w = await createWork(db, "manager", { ...WORK, externalRef: null, assignmentId: "s15", guidelineIds: [active[0].id] });
     expect((await listWorkGuidelines(db, "manager", w.id)).map((g) => g.id)).toEqual([active[0].id]);
-    expect(await listWorkGuidelines(db, "manager", "s14-w1")).toEqual([]);
+    // s14-w1 依照 demo.json 的 g01（#142 PR 2）；來源交辦的第 2 輪 s05-w2 沒有依照守則
+    expect((await listWorkGuidelines(db, "manager", "s14-w1")).map((g) => g.id)).toEqual(["g01"]);
+    expect(await listWorkGuidelines(db, "manager", "s05-w2")).toEqual([]);
     expect((await listGuidelines(db, "manager", { workTypeId: "content" })).every((g) => g.employeeId === "sorrel")).toBe(true);
     expect(await listGuidelines(db, "guest")).toEqual([]);
   });

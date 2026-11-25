@@ -174,7 +174,12 @@ describe("readReviewPanel：匯入虛構資料後", () => {
   it("前幾輪與其驗收結果：s12 的第 1 輪退回「做錯了」；已驗收的工作不能再驗收", async () => {
     const p = (await panel(db, "manager", "s12"))!;
     expect(p.earlier).toHaveLength(1);
-    expect(p.earlier[0]).toMatchObject({ round: 1, externalRef: null, review: { verdict: "returned", reason: "wrong", note: null } });
+    // 退回的意見是 demo.json 的預設語言（#142 補上）
+    const note = demo.assignments.find((a) => a.id === "s12")!.works[0].review!.note![clientConfig.client.defaultLanguage];
+    expect(p.earlier[0]).toMatchObject({ round: 1, externalRef: null, review: { verdict: "returned", reason: "wrong", note } });
+    // 意見依目前語言換成 demo.json 的文字
+    const en = (await panel(db, "manager", "s12", "en"))!;
+    expect(en.earlier[0].review?.note).toBe(demo.assignments.find((a) => a.id === "s12")!.works[0].review!.note!.en);
     expect(p.current.round).toBe(2);
     expect(p.canDecide).toBe(false);
   });

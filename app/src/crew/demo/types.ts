@@ -2,6 +2,7 @@
 // 資料表的文字欄位是單一語言，這裡的雙語文字由 seed 寫入預設語言、畫面以 texts.ts 換成目前語言（#29 的 `## 決定` 1）。
 import type { Id, LocalizedText } from "../../client/types";
 import type { Priority, SourceKind } from "../db/store";
+import type { GuidelineDecisionKind, ProposerKind } from "../guidelines/status";
 import type { CheckStatus, LevelDecisionKind, ReturnReason } from "../trust/types";
 
 /** 工作來源（RFC 0001 的 2026-11-21 修訂）。 */
@@ -35,8 +36,11 @@ export interface DemoCheck {
   checkedAt: string;
 }
 
-/** 驗收：`returned` 一定有原因，`accepted` 沒有。`id` 寫在檔案裡，供 levelDecisions.basisReview 參照。 */
-export type DemoReview = { id: Id; decidedBy: Id; decidedAt: string; note?: string } & (
+/**
+ * 驗收：`returned` 一定有原因，`accepted` 沒有。`id` 寫在檔案裡，供 levelDecisions.basisReview、guidelines.sourceReview 參照。
+ * `note` 是退回的意見（#142）：資料庫只存預設語言，畫面以 demoText("reviewNote") 換成目前語言。
+ */
+export type DemoReview = { id: Id; decidedBy: Id; decidedAt: string; note?: LocalizedText } & (
   | { verdict: "accepted"; reason?: undefined }
   | { verdict: "returned"; reason: ReturnReason }
 );
@@ -53,6 +57,8 @@ export interface DemoWork {
   checks: DemoCheck[];
   /** 只有最後一輪可以省略：省略時該交辦等待驗收 */
   review?: DemoReview;
+  /** 這次交件依照的守則（員工自述，#142）：同一員工 × 工作類型、交件時生效的 guidelines[].id */
+  guidelines?: Id[];
 }
 
 export interface DemoAssignment {
@@ -82,6 +88,30 @@ export interface DemoLevelDecision {
   decidedAt: string;
 }
 
+/** 人對守則的決定（#142）；`revisedText` 只能出現在確認。決定的 id 由 seed 產生：`<守則 id>-d<序號>`。 */
+export interface DemoGuidelineDecision {
+  decision: GuidelineDecisionKind;
+  decidedBy: Id;
+  decidedAt: string;
+  revisedText?: LocalizedText;
+}
+
+/**
+ * 守則（crew ADR 0007、#142）：來源一定是同一員工 × 工作類型的一次退回。
+ * 人提的守則：提出者是來源退回的驗收者，提出時間與文字等於那次退回，第一筆決定是同時間的確認。
+ */
+export interface DemoGuideline {
+  id: Id;
+  employee: Id;
+  workType: Id;
+  sourceReview: Id;
+  proposer: ProposerKind;
+  proposedAt: string;
+  text: LocalizedText;
+  /** 依時間順序 */
+  decisions: DemoGuidelineDecision[];
+}
+
 /** 「模擬交件」的預先回覆：檢查沒有時間，依檔案順序寫入。 */
 export interface DemoReply {
   summary: LocalizedText;
@@ -105,8 +135,13 @@ export interface DemoFile {
   workTypes: Id[];
   assignments: DemoAssignment[];
   levelDecisions: DemoLevelDecision[];
+  /** 依提出時間順序（#142） */
+  guidelines: DemoGuideline[];
   simulations: DemoSimulation[];
 }
 
 /** 工作的 id 由 seed 產生：`<交辦 id>-w<round>`。 */
 export const demoWorkId = (assignmentId: Id, round: number): Id => `${assignmentId}-w${round}`;
+
+/** 守則的決定的 id 由 seed 產生：`<守則 id>-d<序號>`（序號從 1 開始）。 */
+export const demoGuidelineDecisionId = (guidelineId: Id, ordinal: number): Id => `${guidelineId}-d${ordinal}`;

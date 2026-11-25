@@ -2,15 +2,17 @@
 // 找不到時（人在 demo 中新增的交辦、或該語言沒有文字）回傳 null，畫面顯示資料庫的原文。
 import type { LanguageCode, LocalizedText } from "../../client/types";
 import { DEMO } from "./load";
-import { demoWorkId, type DemoFile } from "./types";
+import { demoGuidelineDecisionId, demoWorkId, type DemoFile } from "./types";
 
 /**
  * 文字的種類與 id：
  * - `roleNote`：員工 id；`title`：交辦 id；`sourceName`：來源 id（來源的 `label`，#60）
  * - `summary`、`body`：工作 id（`<交辦 id>-w<round>`）
  * - `point`、`change`：`<工作 id>/<ordinal>`（ordinal 從 1 開始，與資料表相同）
+ * - `reviewNote`：驗收 id（退回的意見）；`guideline`：守則 id（提出的文字）；`guidelineRevision`：決定 id（確認時修改的文字）（#142）
  */
-export type DemoTextKind = "sourceName" | "roleNote" | "title" | "summary" | "body" | "point" | "change";
+export type DemoTextKind =
+  | "sourceName" | "roleNote" | "title" | "summary" | "body" | "point" | "change" | "reviewNote" | "guideline" | "guidelineRevision";
 
 export type DemoTextIndex = ReadonlyMap<string, LocalizedText>;
 
@@ -28,7 +30,12 @@ export function demoTextIndex(demo: DemoFile): DemoTextIndex {
       index.set(key("body", workId), w.body);
       w.points.forEach((p, i) => index.set(key("point", `${workId}/${i + 1}`), p));
       w.changes.forEach((c, i) => index.set(key("change", `${workId}/${i + 1}`), c.summary));
+      if (w.review?.note) index.set(key("reviewNote", w.review.id), w.review.note);
     }
+  }
+  for (const g of demo.guidelines ?? []) {
+    index.set(key("guideline", g.id), g.text);
+    g.decisions.forEach((d, i) => d.revisedText && index.set(key("guidelineRevision", demoGuidelineDecisionId(g.id, i + 1)), d.revisedText));
   }
   return index;
 }

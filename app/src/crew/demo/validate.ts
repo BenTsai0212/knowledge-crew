@@ -2,6 +2,8 @@
 // seed 在匯入前呼叫，有錯就不寫入。check:client 不讀 client/crew/，所以形狀也在這裡檢查。
 import type { AccessFile, LanguageCode } from "../../client/types";
 import { PRIORITIES, SOURCE_KINDS } from "../db/store";
+import { activeAt, canBeGuideline, canDecide, GUIDELINE_DECISIONS, type GuidelineDecision } from "../guidelines/status";
+import type { ReturnReason } from "../trust/types";
 import { isDateOnly } from "../work/due";
 import { parseWorkBody, type WorkSection } from "../work/body";
 import type { DemoFile } from "./types";
@@ -163,8 +165,10 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     if (!workTypes.has(str(o, "workType", p))) err(`${p}.workType`, "must be a work type in this file");
   };
 
-  // 驗收 id → 員工 × 工作類型與時間（levelDecisions.basisReview 用）
-  const reviews = new Map<string, { owner: string; at: number }>();
+  // 驗收 id → 員工 × 工作類型與時間（levelDecisions.basisReview、guidelines.sourceReview 用）
+  const reviews = new Map<string, { owner: string; at: number; reason: ReturnReason | null; note: Obj | null; decidedBy: string }>();
+  // 交件依照的守則（#142）：守則在檔案後面，讀完守則再檢查
+  const follows: { path: string; owner: string; submittedAt: string; ids: unknown[] }[] = [];
   const assignmentIds = new Set<string>();
   const issues = new Set<string>();
   const prs = new Set<string>();
@@ -189,6 +193,10 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
       const pr = ref(w, "externalRef", wp, kind);
       if (pr !== undefined) unique(prs, `${source}#${pr}`, `${wp}.externalRef`);
       const submitted = time(w, "submittedAt", wp);
+      if (w.guidelines !== undefined) {
+        if (!Array.isArray(w.guidelines)) err(`${wp}.guidelines`, "must be an array");
+        follows.push({ path: `${wp}.guidelines`, owner: `${a.employee}/${a.workType}`, submittedAt: String(w.submittedAt), ids: list(w.guidelines) });
+      }
       ordered(last, submitted, `${wp}.submittedAt`, "must be after the assignment or the previous review");
       loc(w.summary, `${wp}.summary`);
       loc(w.body, `${wp}.body`);
@@ -222,10 +230,14 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
       if (verdict === "accepted" && r.reason !== undefined) err(`${rp}.reason`, "must be omitted when accepted");
       if (verdict === "accepted" && !isLast) err(`${rp}.verdict`, "only the last round may be accepted");
       // 最後一輪是退回：交辦在修正中（#134），下一輪還沒交件
-      if (r.note !== undefined) str(r, "note", rp);
+      // 退回的意見（#142）：雙語
+      if (r.note !== undefined) loc(r.note, `${rp}.note`);
       last = time(r, "decidedAt", rp);
       ordered(latestCheck, last, `${rp}.decidedAt`, "must be after the work was submitted and checked");
-      reviews.set(id, { owner: `${a.employee}/${a.workType}`, at: last });
+      reviews.set(id, {
+        owner: `${a.employee}/${a.workType}`, at: last, reason: verdict === "returned" ? (r.reason as ReturnReason) : null,
+        note: isObj(r.note) ? r.note : null, decidedBy: String(r.decidedBy),
+      });
     });
   }
 
@@ -241,6 +253,66 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     if (!basis) err(`${p}.basisReview`, "must be a review in this file");
     else if (basis.owner !== `${d.employee}/${d.workType}`) err(`${p}.basisReview`, "must belong to the same employee and work type");
     else ordered(basis.at, at, `${p}.decidedAt`, "must be after the basis review");
+  }
+
+  // 守則（crew ADR 0007、#142）：資料庫以外鍵守住來源與員工 × 工作類型；時間與決定的順序（superuser 匯入不套用 RLS）在這裡檢查
+  const guidelines = new Map<string, { owner: string; decisions: GuidelineDecision[] }>();
+  const sameText = (a: unknown, b: Obj | null) => isObj(a) && b !== null && languages.every((lang) => a[lang] === b[lang]);
+  for (const [g, p] of objects(demo, "guidelines", "")) {
+    const id = str(g, "id", p);
+    if (guidelines.has(id)) err(`${p}.id`, `duplicate: ${id}`);
+    refs(g, p);
+    const owner = `${g.employee}/${g.workType}`;
+    const proposer = oneOf(g, "proposer", p, ["human", "employee"]);
+    const proposedAt = time(g, "proposedAt", p);
+    loc(g.text, `${p}.text`);
+    const source = reviews.get(String(g.sourceReview));
+    if (!source) err(`${p}.sourceReview`, "must be a review in this file");
+    else if (source.owner !== owner) err(`${p}.sourceReview`, "must belong to the same employee and work type");
+    else if (!canBeGuideline(source.reason, source.note ? String(source.note[languages[0]] ?? "") : null))
+      err(`${p}.sourceReview`, "must be a return with reason wrong or different_approach and a note");
+    else if (proposer === "human") {
+      // 人提：退回時勾選「記成守則」，提出就是那次退回、文字就是那句意見
+      if (proposedAt !== source.at) err(`${p}.proposedAt`, "must equal the source review's decidedAt for a human proposal");
+      if (!sameText(g.text, source.note)) err(`${p}.text`, "must equal the source review's note for a human proposal");
+    } else ordered(source.at, proposedAt, `${p}.proposedAt`, "must be after the source review");
+
+    const decisions: GuidelineDecision[] = [];
+    let previous = proposedAt;
+    for (const [d, dp] of objects(g, "decisions", p)) {
+      const decision = oneOf(d, "decision", dp, [...GUIDELINE_DECISIONS]);
+      reviewer(d, "decidedBy", dp);
+      const at = time(d, "decidedAt", dp);
+      const first = decisions.length === 0;
+      if (first && proposer === "human") {
+        if (decision !== "confirm" || at !== proposedAt) err(dp, "must be a confirm at proposedAt for a human proposal");
+        if (source && d.decidedBy !== source.decidedBy) err(`${dp}.decidedBy`, "must be the source review's decidedBy for a human proposal");
+        if (d.revisedText !== undefined) err(`${dp}.revisedText`, "must be omitted for a human proposal");
+      } else ordered(previous, at, `${dp}.decidedAt`, first ? "must be after proposedAt" : "must be after the previous decision");
+      if (d.revisedText !== undefined) {
+        if (decision !== "confirm") err(`${dp}.revisedText`, "is only for a confirm");
+        loc(d.revisedText, `${dp}.revisedText`);
+      }
+      if (GUIDELINE_DECISIONS.includes(decision as GuidelineDecision["decision"])) {
+        if (!canDecide(decisions, decision as GuidelineDecision["decision"])) err(`${dp}.decision`, `cannot ${decision} after ${decisions.map((x) => x.decision).join(", ") || "nothing"}`);
+        decisions.push({ decision: decision as GuidelineDecision["decision"], revisedText: null, decidedAt: String(d.decidedAt) });
+      }
+      if (!Number.isNaN(at)) previous = at;
+    }
+    if (proposer === "human" && decisions.length === 0) err(`${p}.decisions`, "must start with a confirm for a human proposal");
+    guidelines.set(id, { owner, decisions });
+  }
+  // 交件依照的守則：同一員工 × 工作類型、交件時生效（以前確認、以前沒有收回）、不重複
+  for (const f of follows) {
+    const seen = new Set<string>();
+    f.ids.forEach((v, i) => {
+      const at = `${f.path}[${i}]`;
+      const g = guidelines.get(String(v));
+      unique(seen, String(v), at);
+      if (!g) err(at, "must be a guideline in this file");
+      else if (g.owner !== f.owner) err(at, "must belong to the same employee and work type");
+      else if (!activeAt(g.decisions, f.submittedAt)) err(at, `guideline ${String(v)} must be active when the work was submitted`);
+    });
   }
 
   for (const [s, p] of objects(demo, "simulations", "")) {

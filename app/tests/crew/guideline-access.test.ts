@@ -32,11 +32,15 @@ afterAll(async () => {
   await db.close();
 });
 
+// demo.json 的守則 g01～g06（#142 PR 2）另在最後一個 describe 檢查；這裡只看測試新增的列（id 是 UUID）
+const DEMO_GUIDELINE = "g0[1-6]";
 const ids = (identity: string | null, sql: string) =>
   db.withIdentity(identity, async (tx) => (await tx.query<{ id: string }>(sql)).rows.map((r) => r.id).sort());
-const guidelineIds = (identity: string | null) => ids(identity, "SELECT id FROM crew.guidelines");
-const decisionGuidelines = (identity: string | null) => ids(identity, "SELECT DISTINCT guideline_id AS id FROM crew.guideline_decisions");
-const followedWorks = (identity: string | null) => ids(identity, "SELECT work_id AS id FROM crew.work_guidelines");
+const guidelineIds = (identity: string | null) => ids(identity, `SELECT id FROM crew.guidelines WHERE id !~ '^${DEMO_GUIDELINE}$'`);
+const decisionGuidelines = (identity: string | null) =>
+  ids(identity, `SELECT DISTINCT guideline_id AS id FROM crew.guideline_decisions WHERE guideline_id !~ '^${DEMO_GUIDELINE}$'`);
+const followedWorks = (identity: string | null) => ids(identity, `SELECT work_id AS id FROM crew.work_guidelines WHERE guideline_id !~ '^${DEMO_GUIDELINE}$'`);
+const demoIds = (identity: string | null, sql: string) => ids(identity, `${sql} ~ '^${DEMO_GUIDELINE}$'`);
 
 describe("讀取：同一員工 × 同一工作類型才看得到", () => {
   it("manager 看得到三條守則、兩條的決定與依照的守則", async () => {
@@ -127,5 +131,21 @@ describe("寫入：只限能驗收的身分，不能冒名", () => {
     await decideGuideline(db, "manager", { guidelineId: knowledge.guideline, decision: "revoke" });
     await expect(createWork(db, "manager", { ...WORK, assignmentId: knowledge.assignment, guidelineIds: [knowledge.guideline] })).rejects.toThrow(/row-level security/);
     expect((await listWorkGuidelines(db, "manager", knowledge.laterWork)).map((g) => [g.id, g.status])).toEqual([[knowledge.guideline, "revoked"]]);
+  });
+});
+
+describe("demo.json 的守則（#142 PR 2）：讀取範圍同上", () => {
+  it("manager 看得到 6 條守則與全部的決定、37 次依照；staff 只看得到青翼專案的員工 × 工作類型；guest 看不到", async () => {
+    const guidelines = (identity: string | null) => demoIds(identity, "SELECT id FROM crew.guidelines WHERE id");
+    const decisions = (identity: string | null) => demoIds(identity, "SELECT DISTINCT guideline_id AS id FROM crew.guideline_decisions WHERE guideline_id");
+    const follows = async (identity: string | null) =>
+      (await demoIds(identity, "SELECT work_id || '/' || guideline_id AS id FROM crew.work_guidelines WHERE guideline_id")).length;
+    expect(await guidelines("manager")).toEqual(["g01", "g02", "g03", "g04", "g05", "g06"]);
+    expect(await decisions("manager")).toEqual(["g01", "g03", "g04", "g05", "g06"]);
+    expect(await follows("manager")).toBe(37);
+    // Rowan × support、Sorrel × content 在青翼專案；Linden、Juniper 在長堤專案
+    expect(await guidelines("staff")).toEqual(["g01", "g02", "g03"]);
+    expect(await guidelines("guest")).toEqual([]);
+    expect(await follows("guest")).toBe(0);
   });
 });

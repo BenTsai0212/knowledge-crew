@@ -15,13 +15,17 @@ const access: AccessFile = {
   roles: [
     { id: "staff", label, scope: label, visibility: "internal", projects: ["bluewing"], canUpload: true, canReview: false },
     { id: "manager", label, scope: label, visibility: "internal", projects: ["bluewing"], canUpload: true, canReview: true },
+    { id: "lead", label, scope: label, visibility: "internal", projects: ["bluewing"], canUpload: false, canReview: true },
   ],
 };
 const NOW = new Date("2026-11-01T00:00:00Z");
 // 有結構的全文（#65）：等待驗收的交件必須是這種寫法
 const SECTIONS = t("@@ src/a.ts [modified]\n加上〔1〕排序〔/1〕", "@@ src/a.ts [modified]\nAdd 〔1〕sorting〔/1〕");
 
-// 最小的虛構資料：一筆交辦，第 1 輪退回、第 2 輪通過；另一筆等待驗收
+const NOTE = t("先寫結論", "Lead with the conclusion");
+
+// 最小的虛構資料：一筆交辦，第 1 輪退回（有意見）、第 2 輪通過；另一筆等待驗收，依照人提的守則 g01（#142）。
+// g02 是員工從同一次退回提出、等確認的守則
 function fixture(): DemoFile {
   const work = (round: number, day: number) => ({
     round,
@@ -48,7 +52,7 @@ function fixture(): DemoFile {
         assignedBy: "manager",
         assignedAt: "2026-09-01T09:00:00+08:00",
         works: [
-          { ...work(1, 2), review: { id: "j01-1", verdict: "returned", reason: "wrong", decidedBy: "manager", decidedAt: "2026-09-02T15:00:00+08:00" } },
+          { ...work(1, 2), review: { id: "j01-1", verdict: "returned", reason: "wrong", note: NOTE, decidedBy: "manager", decidedAt: "2026-09-02T15:00:00+08:00" } },
           { ...work(2, 3), review: { id: "j01-2", verdict: "accepted", decidedBy: "manager", decidedAt: "2026-09-03T15:00:00+08:00" } },
         ],
       },
@@ -61,11 +65,21 @@ function fixture(): DemoFile {
         title: t("排序", "Sorting"),
         assignedBy: "manager",
         assignedAt: "2026-09-04T09:00:00+08:00",
-        works: [{ ...work(1, 5), externalRef: "301", body: SECTIONS }],
+        works: [{ ...work(1, 5), externalRef: "301", body: SECTIONS, guidelines: ["g01"] }],
       },
     ],
     levelDecisions: [
       { id: "d01", employee: "juniper", workType: "ui", decision: "relax", basisReview: "j01-2", decidedBy: "manager", decidedAt: "2026-09-03T16:00:00+08:00" },
+    ],
+    guidelines: [
+      {
+        id: "g01", employee: "juniper", workType: "ui", sourceReview: "j01-1", proposer: "human", proposedAt: "2026-09-02T15:00:00+08:00",
+        text: NOTE, decisions: [{ decision: "confirm", decidedBy: "manager", decidedAt: "2026-09-02T15:00:00+08:00" }],
+      },
+      {
+        id: "g02", employee: "juniper", workType: "ui", sourceReview: "j01-1", proposer: "employee", proposedAt: "2026-09-02T16:00:00+08:00",
+        text: t("結論放第一段", "Put the conclusion first"), decisions: [],
+      },
     ],
     simulations: [{ employee: "juniper", workType: "ui", replies: [{ ...work(1, 6), checks: [{ name: "ci", status: "pending" }] }] }],
   };
@@ -260,6 +274,88 @@ describe("validateDemo", () => {
     expect(rewritten.length - added.length + replies.length).toBe(16);
   });
 
+  // 守則（#142）：附錄 A 的規則
+  const g = (d: any, i: number) => d.guidelines[i];
+  const decide = (decision: string, decidedAt: string, revisedText?: unknown) => ({ decision, decidedBy: "manager", decidedAt, ...(revisedText ? { revisedText } : {}) });
+  const follows = (d: any) => d.assignments[1].works[0];
+  it.each([
+    ["來源退回不存在", (d: any) => (g(d, 1).sourceReview = "nope"), "guidelines[1].sourceReview: must be a review in this file"],
+    ["來源是通過", (d: any) => (g(d, 1).sourceReview = "j01-2"), "guidelines[1].sourceReview: must be a return with reason wrong or different_approach and a note"],
+    ["來源退回的原因是流程上的小問題", (d: any) => (d.assignments[0].works[0].review.reason = "process"), "guidelines[0].sourceReview: must be a return with reason"],
+    ["來源退回沒有意見", (d: any) => delete d.assignments[0].works[0].review.note, "guidelines[1].sourceReview: must be a return with reason"],
+    ["守則與來源的員工 × 工作類型不同", (d: any) => {
+      d.workTypes.push("docs");
+      g(d, 1).workType = "docs";
+    }, "guidelines[1].sourceReview: must belong to the same employee and work type"],
+    ["重複的守則 id", (d: any) => (g(d, 1).id = "g01"), "guidelines[1].id: duplicate: g01"],
+    ["提出者不在列舉中", (d: any) => (g(d, 1).proposer = "system"), "guidelines[1].proposer: must be one of human, employee"],
+    ["人提的提出時間不是退回的時間", (d: any) => (g(d, 0).proposedAt = "2026-09-02T16:00:00+08:00"), "guidelines[0].proposedAt: must equal the source review's decidedAt"],
+    ["人提的文字不是退回的意見", (d: any) => (g(d, 0).text = t("別的話", "Something else")), "guidelines[0].text: must equal the source review's note"],
+    ["人提的第一筆決定不是確認", (d: any) => (g(d, 0).decisions = [decide("reject", "2026-09-02T15:00:00+08:00")]), "guidelines[0].decisions[0]: must be a confirm at proposedAt"],
+    ["人提的確認晚於提出", (d: any) => (g(d, 0).decisions[0].decidedAt = "2026-09-02T15:30:00+08:00"), "guidelines[0].decisions[0]: must be a confirm at proposedAt"],
+    ["人提的確認者不是退回的驗收者", (d: any) => {
+      d.assignments[0].works[0].review.decidedBy = "lead";
+    }, "guidelines[0].decisions[0].decidedBy: must be the source review's decidedBy"],
+    ["人提沒有決定", (d: any) => (g(d, 0).decisions = []), "guidelines[0].decisions: must start with a confirm"],
+    ["員工提出早於來源退回", (d: any) => (g(d, 1).proposedAt = "2026-09-02T14:00:00+08:00"), "guidelines[1].proposedAt: must be after the source review"],
+    ["決定早於提出", (d: any) => g(d, 1).decisions.push(decide("confirm", "2026-09-02T15:30:00+08:00")), "guidelines[1].decisions[0].decidedAt: must be after proposedAt"],
+    ["收回早於確認", (d: any) => g(d, 0).decisions.push(decide("revoke", "2026-09-02T14:00:00+08:00")), "guidelines[0].decisions[1].decidedAt: must be after the previous decision"],
+    ["不採用後再確認", (d: any) => g(d, 1).decisions.push(decide("reject", "2026-09-03T09:00:00+08:00"), decide("confirm", "2026-09-03T10:00:00+08:00")), "guidelines[1].decisions[1].decision: cannot confirm after reject"],
+    ["收回後再確認", (d: any) => g(d, 0).decisions.push(decide("revoke", "2026-09-06T09:00:00+08:00"), decide("confirm", "2026-09-06T10:00:00+08:00")), "guidelines[0].decisions[2].decision: cannot confirm after confirm, revoke"],
+    ["沒有確認就收回", (d: any) => g(d, 1).decisions.push(decide("revoke", "2026-09-03T09:00:00+08:00")), "guidelines[1].decisions[0].decision: cannot revoke after nothing"],
+    ["決定不在列舉中", (d: any) => g(d, 1).decisions.push(decide("approve", "2026-09-03T09:00:00+08:00")), "guidelines[1].decisions[0].decision: must be one of confirm, reject, revoke"],
+    ["修改的文字出現在不採用", (d: any) => g(d, 1).decisions.push(decide("reject", "2026-09-03T09:00:00+08:00", t("改", "Edit"))), "guidelines[1].decisions[0].revisedText: is only for a confirm"],
+    ["修改的文字缺少 en", (d: any) => g(d, 1).decisions.push(decide("confirm", "2026-09-03T09:00:00+08:00", { "zh-TW": "改" })), "guidelines[1].decisions[0].revisedText.en: must be a non-empty string"],
+    ["退回的意見缺少 en", (d: any) => delete d.assignments[0].works[0].review.note.en, "works[0].review.note.en: must be a non-empty string"],
+    ["依照的守則不存在", (d: any) => (follows(d).guidelines = ["nope"]), "works[0].guidelines[0]: must be a guideline in this file"],
+    ["依照等確認的守則", (d: any) => (follows(d).guidelines = ["g02"]), "works[0].guidelines[0]: guideline g02 must be active when the work was submitted"],
+    ["依照交件後才確認的守則", (d: any) => {
+      g(d, 1).decisions.push(decide("confirm", "2026-09-05T12:00:00+08:00"));
+      follows(d).guidelines = ["g02"];
+    }, "guideline g02 must be active when the work was submitted"],
+    ["依照已收回的守則", (d: any) => g(d, 0).decisions.push(decide("revoke", "2026-09-04T10:00:00+08:00")), "works[0].guidelines[0]: guideline g01 must be active when the work was submitted"],
+    ["依照別的員工 × 工作類型的守則", (d: any) => {
+      d.workTypes.push("docs");
+      d.assignments[1].workType = "docs";
+    }, "works[0].guidelines[0]: must belong to the same employee and work type"],
+    ["同一次交件重複依照", (d: any) => (follows(d).guidelines = ["g01", "g01"]), "works[0].guidelines[1]: duplicate: g01"],
+  ])("守則（#142）：%s", (_name, change, expected) => {
+    expect(errorsAfter(change).join("\n")).toContain(expected);
+  });
+
+  it.each([
+    ["修改後確認", (d: any) => g(d, 1).decisions.push(decide("confirm", "2026-09-03T09:00:00+08:00", t("結論寫在第一句", "Put the conclusion in the first sentence")))],
+    ["不採用", (d: any) => g(d, 1).decisions.push(decide("reject", "2026-09-03T09:00:00+08:00"))],
+    ["交件之後收回", (d: any) => g(d, 0).decisions.push(decide("revoke", "2026-09-06T09:00:00+08:00"))],
+    ["流程上的小問題也可以寫意見（只是不能成為守則）", (d: any) => {
+      d.assignments[0].works[1].review = { id: "j01-2", verdict: "returned", reason: "process", note: t("檔名改小寫", "Use lowercase file names"), decidedBy: "manager", decidedAt: "2026-09-03T15:00:00+08:00" };
+      d.levelDecisions = [];
+    }],
+    ["沒有守則", (d: any) => {
+      d.guidelines = [];
+      delete follows(d).guidelines;
+    }],
+  ])("守則（#142）：%s 不是錯誤", (_name, change) => {
+    expect(errorsAfter(change)).toEqual([]);
+  });
+
+  it("demo.json 的守則：附錄 A 的 6 條與 37 次依照（#142）", () => {
+    const guidelines = DEMO!.guidelines.map((x) => [x.id, x.proposer, x.decisions.map((d) => d.decision).join("+")].join(" "));
+    expect(guidelines).toEqual(["g04 human confirm+revoke", "g03 human confirm", "g06 employee reject", "g01 human confirm", "g05 employee confirm", "g02 employee "]);
+    const follows = new Map<string, string[]>();
+    for (const a of DEMO!.assignments) for (const w of a.works) for (const id of w.guidelines ?? []) follows.set(id, [...(follows.get(id) ?? []), `${a.id}-w${w.round}`]);
+    const ids = (prefix: string, from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => `${prefix}${String(from + i).padStart(2, "0")}-w1`);
+    expect(follows.get("g01")).toEqual([...ids("s", 6, 14), "s16-w1"]);
+    expect(follows.get("g03")?.sort()).toEqual(ids("c", 2, 12));
+    expect(follows.get("g04")?.sort()).toEqual(ids("k", 2, 10));
+    expect(follows.get("g05")?.sort()).toEqual([...ids("k", 8, 13), "k15-w1"]);
+    expect([...follows.values()].flat()).toHaveLength(37);
+    // 有意見但沒有成為守則：s16-1、k15-1；流程上的小問題：c05-1、j04-1
+    const sources = new Set(DEMO!.guidelines.map((x) => x.sourceReview));
+    const noted = DEMO!.assignments.flatMap((a) => a.works.flatMap((w) => (w.review?.note ? [w.review.id] : [])));
+    expect(noted.filter((id) => !sources.has(id)).sort()).toEqual(["c05-1", "j04-1", "k15-1", "s16-1"]);
+  });
+
   it("來源的顯示名稱（label）可以省略；有的話雙語齊全即通過（#60）", () => {
     expect(errorsAfter((d: any) => (d.sources[0].label = t("筆記", "Notes")))).toEqual([]);
     expect(errorsAfter((d: any) => delete d.sources[0].label)).toEqual([]);
@@ -289,6 +385,17 @@ describe("demoText", () => {
     expect(demoText("body", w1, "zh-TW", index)).toBe("本文");
     expect(demoText("point", `${w1}/1`, "en", index)).toBe("Point");
     expect(demoText("change", `${w1}/1`, "zh-TW", index)).toBe("變更");
+  });
+
+  it("reviewNote、guideline、guidelineRevision：退回的意見、守則提出的文字與確認時修改的文字（#142）", () => {
+    const revised = fixture();
+    revised.guidelines[1].decisions.push({ decision: "confirm", decidedBy: "manager", decidedAt: "2026-09-03T09:00:00+08:00", revisedText: t("改過", "Revised") });
+    const revisedIndex = demoTextIndex(revised);
+    expect(demoText("reviewNote", "j01-1", "en", index)).toBe("Lead with the conclusion");
+    expect(demoText("reviewNote", "j01-2", "en", index)).toBeNull();
+    expect(demoText("guideline", "g02", "zh-TW", index)).toBe("結論放第一段");
+    expect(demoText("guidelineRevision", "g02-d1", "en", revisedIndex)).toBe("Revised");
+    expect(demoText("guidelineRevision", "g01-d1", "en", revisedIndex)).toBeNull();
   });
 
   it("sourceName：來源有 label 時以來源 id 查得到，沒有 label 時是 null（#60）", () => {
