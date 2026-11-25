@@ -12,7 +12,12 @@ import {
   createLevelDecision,
   createReview,
   createWork,
+  decideGuideline,
   getAssignmentWorks,
+  GuidelineError,
+  listGuidelines,
+  listWorkGuidelines,
+  proposeGuideline,
   getTrustInputs,
   listAssignments,
   listEmployees,
@@ -305,5 +310,88 @@ describe("到期日與優先順序（#133）", () => {
       createAssignment(db, identity, { sourceId: "support-inbox", title: "X", workTypeId: "support", employeeId: "rowan", dueAt: "2026-12-01", priority: "high" }),
     ).rejects.toThrow();
     expect(await listAssignments(db, "manager")).toEqual(before);
+  });
+});
+
+describe("守則（#142）", () => {
+  let db: Database;
+  beforeAll(async () => {
+    db = await open();
+  });
+  afterAll(() => db.close());
+
+  const guideline = async (id: string) => (await listGuidelines(db, "manager")).find((g) => g.id === id)!;
+
+  it("createReview() 的 saveAsGuideline：同一交易寫入人提的守則與一筆確認，立即生效", async () => {
+    const r = await createReview(db, "manager", { workId: "s14-w1", verdict: "returned", reason: "wrong", note: "Ask for the last four digits first", saveAsGuideline: true });
+    expect(r.guidelineId).toBeTruthy();
+    const g = await guideline(r.guidelineId!);
+    expect(g).toMatchObject({
+      employeeId: "rowan", workTypeId: "support", text: "Ask for the last four digits first", currentText: "Ask for the last four digits first",
+      status: "active", proposerKind: "human", proposedBy: "manager",
+      sourceReviewId: r.id, sourceWorkId: "s14-w1", sourceAssignmentId: "s14",
+      sourceReview: { id: r.id, verdict: "returned", reason: "wrong", note: "Ask for the last four digits first" },
+    });
+    expect(g.decisions).toMatchObject([{ decision: "confirm", revisedText: null, decidedBy: "manager" }]);
+    expect(g.decisions[0].decidedAt).toBe(g.proposedAt);
+    expect(g.proposedAt).toBe(g.sourceReview!.decidedAt);
+    // 不勾選時不寫守則
+    const plain = await createReview(db, "manager", { workId: "c11-w1", verdict: "returned", reason: "wrong", note: "Check the price" });
+    expect(plain.guidelineId).toBeNull();
+    expect((await listGuidelines(db, "manager")).map((x) => x.sourceReviewId)).not.toContain(plain.id);
+  });
+
+  it.each([
+    ["流程上的小問題", { reason: "process" as const, note: "Resize the image" }],
+    ["意見是空的", { reason: "wrong" as const, note: " " }],
+    ["沒有意見", { reason: "different_approach" as const }],
+  ])("saveAsGuideline 但%s：拋出 not-eligible，驗收也沒有寫入", async (_name, review) => {
+    const before = await listGuidelines(db, "manager");
+    const error = await createReview(db, "manager", { workId: "j06-w1", verdict: "returned", saveAsGuideline: true, ...review }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(GuidelineError);
+    expect(error).toMatchObject({ code: "not-eligible" });
+    expect((await getAssignmentWorks(db, "manager", "j06"))[0].review).toBeNull();
+    expect(await listGuidelines(db, "manager")).toEqual(before);
+  });
+
+  it("員工提出 → 修改後確認（以修改後的文字為準）→ 收回；已收回不能再確認", async () => {
+    const source = (await listReviews(db, "manager", { assignmentId: "c11" }))[0];
+    const { id } = await proposeGuideline(db, "manager", { sourceReviewId: source.id, text: "Match the campaign page" });
+    expect(await guideline(id)).toMatchObject({ status: "pending", proposerKind: "employee", proposedBy: null, employeeId: "sorrel", workTypeId: "content", decisions: [] });
+
+    await expect(decideGuideline(db, "manager", { guidelineId: id, decision: "revoke" })).rejects.toMatchObject({ code: "invalid-transition" });
+    await decideGuideline(db, "manager", { guidelineId: id, decision: "confirm", revisedText: "Match the campaign page word for word" });
+    expect(await guideline(id)).toMatchObject({ status: "active", text: "Match the campaign page", currentText: "Match the campaign page word for word" });
+
+    await decideGuideline(db, "manager", { guidelineId: id, decision: "revoke" });
+    const revoked = await guideline(id);
+    expect(revoked.status).toBe("revoked");
+    expect(revoked.decisions.map((d) => d.decision)).toEqual(["confirm", "revoke"]);
+    for (const decision of ["confirm", "reject", "revoke"] as const) {
+      await expect(decideGuideline(db, "manager", { guidelineId: id, decision })).rejects.toMatchObject({ code: "invalid-transition" });
+    }
+    expect((await guideline(id)).decisions).toHaveLength(2);
+  });
+
+  it("不採用之後不能再確認；看不到或不能成為守則的來源被拒", async () => {
+    const source = (await listReviews(db, "manager", { assignmentId: "c11" }))[0];
+    const { id } = await proposeGuideline(db, "manager", { sourceReviewId: source.id, text: "Always use a table" });
+    await decideGuideline(db, "manager", { guidelineId: id, decision: "reject" });
+    expect((await guideline(id)).status).toBe("rejected");
+    await expect(decideGuideline(db, "manager", { guidelineId: id, decision: "confirm" })).rejects.toMatchObject({ code: "invalid-transition" });
+    await expect(decideGuideline(db, "manager", { guidelineId: "nowhere", decision: "confirm" })).rejects.toMatchObject({ code: "not-found" });
+    // c05-1 是流程上的小問題；k01-1 在長堤專案，staff 看不到
+    await expect(proposeGuideline(db, "manager", { sourceReviewId: "c05-1", text: "X" })).rejects.toMatchObject({ code: "not-eligible" });
+    await expect(proposeGuideline(db, "staff", { sourceReviewId: "k01-1", text: "X" })).rejects.toMatchObject({ code: "not-found" });
+  });
+
+  it("交件依照生效的守則；listGuidelines 可依員工與工作類型篩選", async () => {
+    const active = (await listGuidelines(db, "manager", { employeeId: "rowan", workTypeId: "support" })).filter((g) => g.status === "active");
+    expect(active).toHaveLength(1);
+    const w = await createWork(db, "manager", { ...WORK, externalRef: null, assignmentId: "s15", guidelineIds: [active[0].id] });
+    expect((await listWorkGuidelines(db, "manager", w.id)).map((g) => g.id)).toEqual([active[0].id]);
+    expect(await listWorkGuidelines(db, "manager", "s14-w1")).toEqual([]);
+    expect((await listGuidelines(db, "manager", { workTypeId: "content" })).every((g) => g.employeeId === "sorrel")).toBe(true);
+    expect(await listGuidelines(db, "guest")).toEqual([]);
   });
 });
