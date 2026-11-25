@@ -1,18 +1,36 @@
 // 「工作帳本」的資料整理（#40 計畫第 1～3 節；#77 加上事件篩選與列的樣式）：交辦、交件、驗收、同意改看重點與收回、因做錯了改回逐項看，
 // 依時間新到舊列出。一律經 withIdentity() 讀取，可見範圍由 RLS 決定；改回逐項看由 autoResets() 推得，不另存。
 // #125 加上「提出看重點的建議」：由 relaxProposals()（suggestion-history.ts）推得，同樣不另存。
+// #145 加上守則的事件（提出、記成、確認、修改後確認、不採用、收回）：由守則與其決定推得，同樣不另存。
 import type { Transaction } from "@electric-sql/pglite";
+import { clientConfig } from "../../client/load";
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getTrustInputs, listAssignments, listEmployees, listReviews, type AssignmentSummary, type SourceKind } from "../db/store";
+import {
+  getTrustInputs, listAssignments, listEmployees, listGuidelines, listReviews, type AssignmentSummary, type SourceKind, type StoredGuideline,
+} from "../db/store";
 import { demoText } from "../demo/texts";
+import { guidelineTexts } from "./guideline-text";
 import { sourceLabel } from "./refs";
 import { autoResets } from "../trust/rules";
 import { relaxProposals } from "./suggestion-history";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import type { LevelDecisionKind, ReturnReason, TrustParams } from "../trust/types";
 
-export type LedgerKind = "assigned" | "submitted" | "accepted" | "returned" | "proposed" | "relax" | "revoke" | "autoReset";
+export type LedgerKind =
+  | "assigned" | "submitted" | "accepted" | "returned" | "proposed" | "relax" | "revoke" | "autoReset"
+  | GuidelineLedgerKind;
+
+/** 守則的事件（#145）：員工提出、退回時記成守則（人提）、確認、修改後確認、不採用、收回 */
+export type GuidelineLedgerKind =
+  | "guidelineProposed" | "guidelineSaved" | "guidelineConfirmed" | "guidelineEdited" | "guidelineRejected" | "guidelineRetired";
+
+const GUIDELINE_KINDS: ReadonlySet<LedgerKind> = new Set<GuidelineLedgerKind>([
+  "guidelineProposed", "guidelineSaved", "guidelineConfirmed", "guidelineEdited", "guidelineRejected", "guidelineRetired",
+]);
+
+/** 守則的事件（「只看守則」的篩選） */
+export const isGuidelineEvent = (kind: LedgerKind): kind is GuidelineLedgerKind => GUIDELINE_KINDS.has(kind);
 
 export interface LedgerAssignment {
   id: string;
@@ -41,10 +59,12 @@ export interface LedgerEvent {
   reason: ReturnReason | null;
   /** 提出看重點的建議（proposed）的依據：驗收 id，依時間排序；其他種類沒有 */
   basis?: string[];
+  /** 守則的事件：守則 id 與目前語言的文字（修改後確認之後是修改後的文字）；其他種類沒有 */
+  guideline?: { id: string; text: string };
 }
 
-/** 事件的篩選（設計規格 v3 第 6.7 節）：全部／只看層級改變／只看退回 */
-export type LedgerEventFilter = "all" | "level" | "returned";
+/** 事件的篩選（設計規格 v3 第 6.7 節）：全部／只看層級改變／只看退回／只看守則（#145） */
+export type LedgerEventFilter = "all" | "level" | "returned" | "guideline";
 
 export interface LedgerFilter {
   employeeId?: string | null;
@@ -97,7 +117,15 @@ export interface LedgerSources {
   resets: { reviewId: string; at: string }[];
   /** 提出看重點的建議（#125）：觸發的驗收 id、時間與依據的驗收 id；省略時沒有 */
   proposals?: { reviewId: string; at: string; basis: string[] }[];
+  /** 守則與其決定（#145）；省略時沒有 */
+  guidelines?: LedgerGuideline[];
 }
+
+/** 帳本用的守則：store.ts 的守則，文字已換成目前語言 */
+export type LedgerGuideline = Pick<StoredGuideline, "id" | "employeeId" | "workTypeId" | "sourceAssignmentId" | "proposerKind" | "proposedBy" | "proposedAt"> & {
+  text: string;
+  decisions: { id: string; decision: "confirm" | "reject" | "revoke"; revisedText: string | null; decidedBy: string; decidedAt: string }[];
+};
 
 const iso = (value: Date | string): string => new Date(value).toISOString();
 
@@ -138,6 +166,13 @@ const TIE_ORDER: Record<LedgerKind, number> = {
   returned: 1,
   relax: 2,
   revoke: 2,
+  // 守則（#145）：退回時記成守則與那次退回同時，列在退回下方（退回在前、記成守則在後）
+  guidelineSaved: 2,
+  guidelineProposed: 2,
+  guidelineConfirmed: 2,
+  guidelineEdited: 2,
+  guidelineRejected: 2,
+  guidelineRetired: 2,
   submitted: 3,
   assigned: 4,
 };
@@ -222,11 +257,59 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
     if (!a) continue;
     events.push({ ...base(a), id: `proposed:${p.reviewId}`, kind: "proposed", at: p.at, actor: null, basis: [...p.basis] });
   }
+  for (const g of sources.guidelines ?? []) events.push(...guidelineEvents(g, employee, (id) => assignments.get(id), toAssignment));
   return events.sort(compareLedger);
 }
 
-const matchesEvent = (kind: LedgerKind, event: LedgerEventFilter = "all"): boolean =>
-  event === "all" || (event === "level" ? inLevelFilter(kind) : kind === "returned");
+const DECISION_KIND = { reject: "guidelineRejected", revoke: "guidelineRetired" } as const;
+
+/**
+ * 一條守則的事件：員工提的是「提出守則」（經手人是員工），人提的是「記成守則」（經手人是驗收者；同時寫入的確認不另列）；
+ * 之後的決定是確認、修改後確認、不採用、收回（經手人是決定者）。工作欄顯示的文字一律是目前的文字。
+ */
+function guidelineEvents(
+  g: LedgerGuideline,
+  employee: (id: string) => { id: string; displayName: string },
+  assignmentOf: (id: string) => AssignmentSummary | undefined,
+  toAssignment: (a: AssignmentSummary) => LedgerAssignment,
+): LedgerEvent[] {
+  const source = assignmentOf(g.sourceAssignmentId);
+  const base = {
+    employee: employee(g.employeeId),
+    workTypeId: g.workTypeId,
+    assignment: source ? toAssignment(source) : null,
+    round: null,
+    reason: null,
+    guideline: { id: g.id, text: g.text },
+  };
+  const human = g.proposerKind === "human";
+  const events: LedgerEvent[] = [
+    human
+      ? { ...base, id: `guidelineSaved:${g.id}`, kind: "guidelineSaved", at: g.proposedAt, actor: g.proposedBy ?? g.decisions[0]?.decidedBy ?? null }
+      : { ...base, id: `guidelineProposed:${g.id}`, kind: "guidelineProposed", at: g.proposedAt, actor: g.employeeId },
+  ];
+  for (const d of g.decisions) {
+    // 人提的守則，勾選「記成守則」就是確認（ADR 0007 決定 2），併在「記成守則」
+    if (d.decision === "confirm" && human) continue;
+    const kind: GuidelineLedgerKind =
+      d.decision === "confirm" ? (d.revisedText === null ? "guidelineConfirmed" : "guidelineEdited") : DECISION_KIND[d.decision];
+    events.push({ ...base, id: `${kind}:${d.id}`, kind, at: d.decidedAt, actor: d.decidedBy });
+  }
+  return events;
+}
+
+/** 工作欄的守則文字：超過 max 個字元時截斷並加上「…」 */
+export function truncateText(text: string, max = 40): string {
+  const chars = [...text];
+  return chars.length <= max ? text : `${chars.slice(0, max - 1).join("").trimEnd()}…`;
+}
+
+const matchesEvent = (kind: LedgerKind, event: LedgerEventFilter = "all"): boolean => {
+  if (event === "all") return true;
+  if (event === "level") return inLevelFilter(kind);
+  if (event === "guideline") return isGuidelineEvent(kind);
+  return kind === "returned";
+};
 
 /** 依員工、工作類型與事件篩選；沒有指定（null、省略或 "all"）的條件不篩選。 */
 export function filterLedger(events: readonly LedgerEvent[], filter: LedgerFilter): LedgerEvent[] {
@@ -262,9 +345,14 @@ export function actorName(
   return employees.find((e) => e.id === actor)?.displayName ?? actor;
 }
 
-export async function readLedgerSources(db: Database, identity: string | null, params: TrustParams = DEMO_PARAMS): Promise<LedgerSources> {
+export async function readLedgerSources(
+  db: Database,
+  identity: string | null,
+  language: LanguageCode = clientConfig.client.defaultLanguage,
+  params: TrustParams = DEMO_PARAMS,
+): Promise<LedgerSources> {
   // 沒有身分時比照 guest：不讀取（同 today.ts）
-  if (identity === null) return { assignments: [], employees: [], works: [], reviews: [], decisions: [], resets: [], proposals: [] };
+  if (identity === null) return { assignments: [], employees: [], works: [], reviews: [], decisions: [], resets: [], proposals: [], guidelines: [] };
   const assignments = await listAssignments(db, identity);
   const employees = await listEmployees(db, identity);
   const works = await readWorks(db, identity);
@@ -288,10 +376,27 @@ export async function readLedgerSources(db: Database, identity: string | null, p
     decisions,
     resets,
     proposals,
+    guidelines: (await listGuidelines(db, identity)).map((g) => toLedgerGuideline(g, language)),
+  };
+}
+
+// 守則的文字換成目前語言（demo 以外是資料庫的原文）；修改後確認之後是修改後的文字
+function toLedgerGuideline(g: StoredGuideline, language: LanguageCode): LedgerGuideline {
+  const { proposed, revised } = guidelineTexts(g, language);
+  return {
+    id: g.id,
+    employeeId: g.employeeId,
+    workTypeId: g.workTypeId,
+    sourceAssignmentId: g.sourceAssignmentId,
+    proposerKind: g.proposerKind,
+    proposedBy: g.proposedBy,
+    proposedAt: g.proposedAt,
+    text: revised ?? proposed,
+    decisions: g.decisions.map(({ id, decision, revisedText, decidedBy, decidedAt }) => ({ id, decision, revisedText, decidedBy, decidedAt })),
   };
 }
 
 /** 目前身分看得到的帳本，依時間新到舊。guest 與沒有身分時是空陣列。 */
 export async function readLedger(db: Database, identity: string | null, language: LanguageCode): Promise<LedgerEvent[]> {
-  return mergeLedger(await readLedgerSources(db, identity), language);
+  return mergeLedger(await readLedgerSources(db, identity, language), language);
 }

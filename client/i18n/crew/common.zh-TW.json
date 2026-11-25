@@ -12,6 +12,7 @@
   "sectionLedger": "工作帳本",
   "sectionWorksCount": "{count} 件待驗收",
   "sectionTrustCount": "{count} 個看重點的建議等你決定",
+  "sectionEmployeesCount": "{count} 條守則等你確認",
   "preparingTitle": "準備中",
   "preparingBody": "這個畫面還在準備，之後會在這裡顯示。",
   "workTypeSupport": "客戶回覆",

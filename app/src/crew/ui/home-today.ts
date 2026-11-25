@@ -6,7 +6,7 @@ import { crewStrings } from "../i18n";
 import type { CheckStatus } from "../trust/types";
 import { checkLabel } from "./glossary";
 import type { CrewTarget } from "./sections";
-import type { Today, TodayAssignment, TodaySuggestion } from "./today";
+import type { Today, TodayAssignment, TodayGuideline, TodaySuggestion } from "./today";
 
 export interface HomeToday {
   canReview: boolean;
@@ -16,6 +16,8 @@ export interface HomeToday {
   awaiting: TodayAssignment[];
   /** 3. 等你決定：看重點的建議（只有能驗收的身分） */
   decide: TodaySuggestion[];
+  /** 3. 等你決定：等確認的守則（#145，只有能驗收的身分） */
+  guidelines: TodayGuideline[];
   /** 4. 進行中 */
   inProgress: TodayAssignment[];
 }
@@ -28,17 +30,18 @@ export function homeToday(today: Today): HomeToday {
     failing: today.awaitingReview.filter(hasFailedCheck),
     awaiting: today.awaitingReview.filter((a) => !hasFailedCheck(a)),
     decide: today.canReview ? today.suggestions : [],
+    guidelines: today.canReview ? today.guidelines : [],
     inProgress: today.inProgress,
   };
 }
 
 /** 四組都是空的：能驗收的身分顯示一句空狀態，其他身分整區不顯示 */
-export const isHomeTodayEmpty = (h: HomeToday) => h.failing.length + h.awaiting.length + h.decide.length + h.inProgress.length === 0;
+export const isHomeTodayEmpty = (h: HomeToday) => h.failing.length + h.awaiting.length + h.decide.length + h.guidelines.length + h.inProgress.length === 0;
 
 /** 側欄「AI 員工」的待驗收件數（與「待審」分開）：只給能驗收的身分，其他身分是 null（不顯示） */
 export const awaitingCount = (today: Today): number | null => (today.canReview ? today.awaitingReview.length : null);
 
-/** 問候下方的一句總結；沒有待驗收、看重點的建議與進行中時是 null */
+/** 問候下方的一句總結；沒有待驗收、看重點的建議、等確認的守則與進行中時是 null */
 export function homeSummary(h: HomeToday, language: LanguageCode): string | null {
   const t = crewStrings("home", language);
   const awaiting = h.failing.length + h.awaiting.length;
@@ -50,6 +53,7 @@ export function homeSummary(h: HomeToday, language: LanguageCode): string | null
     parts.push(fill(template, { count: awaiting, failing: h.failing.length }, language));
   }
   if (h.decide.length > 0) parts.push(fill(t.summaryDecide, { count: h.decide.length }, language));
+  if (h.guidelines.length > 0) parts.push(fill(t.summaryGuidelines, { count: h.guidelines.length }, language));
   // 進行中只在沒有其他事時提一句（不是要你處理的事）
   if (parts.length === 0 && h.inProgress.length > 0) parts.push(fill(t.summaryInProgress, { count: h.inProgress.length }, language));
   return parts.length === 0 ? null : `${parts.join(t.summarySeparator)}${t.summaryEnd}`;
@@ -66,7 +70,9 @@ export function rowStatus(a: TodayAssignment, awaiting: boolean, language: Langu
   return checks.map((c) => fill(t[STATUS_KEY[c.status]], { check: checkLabel(c.name, language) }, language)).join(t.statusSeparator);
 }
 
-/** 點了到哪裡：待驗收與退回的到「工作與驗收」該件，還沒交件的到「交辦」，看重點的建議到「信任」 */
+/** 點了到哪裡：待驗收與退回的到「工作與驗收」該件，還沒交件的到「交辦」，看重點的建議到「信任」，等確認的守則到「員工」 */
 export const rowTarget = (a: TodayAssignment, awaiting: boolean): CrewTarget =>
   awaiting || a.returned ? { section: "works", assignmentId: a.id } : { section: "assignments" };
 export const DECIDE_TARGET: CrewTarget = { section: "trust" };
+/** 等確認的守則到「員工」，捲到該員工卡（#145） */
+export const guidelineTarget = (g: TodayGuideline): CrewTarget => ({ section: "employees", employeeId: g.employee.id });

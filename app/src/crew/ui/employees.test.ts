@@ -6,7 +6,9 @@ import { crewMigrations } from "../db/migrate";
 import { getTrustInputs } from "../db/store";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
-import { groupEmployees, readEmployees } from "./employees";
+import type { DemoFile } from "../demo/types";
+import { closedSummary, guidelineSummary } from "./EmployeeGuidelines";
+import { groupEmployees, readEmployees, type EmployeeGuideline } from "./employees";
 import { sourceLabel } from "./refs";
 
 const lang = clientConfig.client.defaultLanguage;
@@ -22,6 +24,8 @@ const STAFF_EMPLOYEES = [
   ["rowan", ["support"]],
   ["sorrel", ["content"]],
 ];
+
+const demo = (id: string) => (DEMO_RAW as DemoFile).guidelines!.find((g) => g.id === id)!;
 
 let db: Database;
 beforeAll(async () => {
@@ -121,5 +125,65 @@ describe("groupEmployees", () => {
     expect(workTypes[0].source).toEqual({ label: "b", kind: "mailbox" });
     expect(workTypes[0].awaiting).toBe(1);
     expect(workTypes[0].note).toEqual({ kind: "suggestion" });
+  });
+});
+
+describe("readEmployees：守則（#145）", () => {
+  const ids = (g: { id: string }[]) => g.map((x) => x.id);
+  const guidelinesOf = (list: Awaited<ReturnType<typeof readEmployees>>, id: string) => list.find((e) => e.id === id)!.guidelines;
+
+  it("manager：等確認、生效、已收回與不採用分開；文字、來歷的日期與之後依照的次數", async () => {
+    const list = await readEmployees(db, "manager", lang, true);
+    const rowan = guidelinesOf(list, "rowan");
+    expect([ids(rowan.pending), ids(rowan.active), ids(rowan.closed)]).toEqual([["g02"], ["g01"], []]);
+    const g01 = rowan.active[0];
+    expect(g01).toMatchObject({ proposerKind: "human", status: "active", revised: false, followed: 10, sourceAssignmentId: "s05", closedAt: null });
+    expect(g01.text).toBe(demo("g01").text[lang]);
+    expect(g01.confirmedAt).toBe(g01.proposedAt);
+    const g02 = rowan.pending[0];
+    expect(g02).toMatchObject({ proposerKind: "employee", confirmedAt: null, followed: 0, sourceAssignmentId: "s12" });
+    // 員工提的守則，來歷是那次退回的日期
+    expect(Date.parse(g02.returnedAt)).toBeLessThan(Date.parse(g02.proposedAt));
+
+    const linden = guidelinesOf(list, "linden");
+    expect([ids(linden.pending), ids(linden.active), ids(linden.closed)]).toEqual([[], ["g05"], ["g04"]]);
+    expect(linden.active[0]).toMatchObject({ revised: true, followed: 7, text: demo("g05").decisions[0].revisedText![lang], proposedText: demo("g05").text[lang] });
+    expect(linden.closed[0]).toMatchObject({ status: "revoked", closedAt: "2026-10-20T02:00:00.000Z" });
+    expect(guidelinesOf(list, "juniper").closed.map((g) => [g.id, g.status])).toEqual([["g06", "rejected"]]);
+    expect(ids(guidelinesOf(list, "sorrel").active)).toEqual(["g03"]);
+  });
+
+  it("文字依目前語言", async () => {
+    const other = lang === "en" ? "zh-TW" : "en";
+    const list = await readEmployees(db, "manager", other, true);
+    expect(guidelinesOf(list, "rowan").pending[0].text).toBe(demo("g02").text[other]);
+  });
+
+  it("staff：只看得到青翼專案的 Rowan、Sorrel 的守則（可見範圍由資料庫決定）", async () => {
+    const list = await readEmployees(db, "staff", lang);
+    const all = (id: string) => {
+      const g = guidelinesOf(list, id);
+      return [...g.pending, ...g.active, ...g.closed].map((x) => x.id);
+    };
+    expect(["rowan", "sorrel", "linden", "juniper"].map(all)).toEqual([["g02", "g01"], ["g03"], [], []]);
+  });
+});
+
+describe("guidelineSummary、closedSummary", () => {
+  const g = (status: "pending" | "active" | "rejected" | "revoked") => ({ status }) as EmployeeGuideline;
+
+  it("0 的那段不顯示；都沒有時是「還沒有守則」；不能驗收的身分是「等確認」", () => {
+    expect(guidelineSummary({ active: [g("active"), g("active")], pending: [g("pending")] }, true, "zh-TW")).toBe("守則 2 條・等你確認 1 條");
+    expect(guidelineSummary({ active: [g("active")], pending: [] }, true, "zh-TW")).toBe("守則 1 條");
+    expect(guidelineSummary({ active: [], pending: [g("pending")] }, true, "zh-TW")).toBe("等你確認 1 條");
+    expect(guidelineSummary({ active: [], pending: [g("pending")] }, false, "zh-TW")).toBe("等確認 1 條");
+    expect(guidelineSummary({ active: [], pending: [] }, true, "zh-TW")).toBe("還沒有守則");
+    expect(guidelineSummary({ active: [g("active")], pending: [g("pending")] }, true, "en")).toBe("1 guideline · 1 for you to confirm");
+  });
+
+  it("已收回與不採用", () => {
+    expect(closedSummary([g("revoked"), g("rejected"), g("revoked")], "zh-TW")).toBe("已收回 2 條・不採用 1 條");
+    expect(closedSummary([g("rejected")], "zh-TW")).toBe("不採用 1 條");
+    expect(closedSummary([g("revoked")], "en")).toBe("1 retired");
   });
 });

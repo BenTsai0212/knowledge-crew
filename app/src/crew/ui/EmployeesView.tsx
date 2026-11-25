@@ -1,12 +1,15 @@
 // 「員工」畫面（#37；#83 改為員工卡，設計規格 v3 第 6.5 節）：每位員工一張卡（職務圖示、AI 標記＋名字、職務・工作、
 // 層級徽章；交件、工作來源、驗收次數與待驗收件數、最近的圓點；一句說明；「看信任紀錄」「交辦給 ○○」）。
 // 資料整理在 employees.ts，這裡只負責呈現；「交辦給 ○○」只給能驗收的身分（與交辦頁的表單一致）。
-import { useEffect, useState } from "react";
+// #145 加上「守則」區塊（EmployeeGuidelines.tsx）：決定只給能驗收的身分，decideGuideline() 後重新讀取；從首頁點進來時捲到該員工卡。
+import { useEffect, useRef, useState } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
+import { decideGuideline, type NewGuidelineDecision } from "../db/store";
 import { crewStrings, type CrewTexts } from "../i18n";
 import { DotRow, EmployeeName, LevelBadge, withEmployee } from "./components";
+import { EmployeeGuidelineSection } from "./EmployeeGuidelines";
 import { readEmployees, type EmployeeNote, type EmployeeSummary, type EmployeeWorkType } from "./employees";
 import { workTypeLabel } from "./labels";
 import { deliverableName, deliverableOf, type Deliverable } from "./review/conclusion";
@@ -18,14 +21,19 @@ import "./EmployeesView.css";
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; employees: EmployeeSummary[] };
 type T = CrewTexts<"employees">;
 
-export function EmployeesView({ db, identity, language, navigate }: CrewScreenProps) {
+export function EmployeesView({ db, identity, language, navigate, employeeId, onChanged }: CrewScreenProps) {
   const t = crewStrings("employees", language);
   const canReview = canReviewOf(clientConfig.access, identity);
   const [state, setState] = useState<State>({ kind: "loading" });
+  // 寫入守則的決定（#145）：寫入中、寫入失敗的員工卡；寫入後（成功或失敗）以 version 重新讀取，不閃讀取中
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
+  const scrollPending = useRef(employeeId !== undefined);
 
   useEffect(() => {
     let current = true;
-    setState({ kind: "loading" });
+    if (version === 0) setState({ kind: "loading" });
     readEmployees(db, identity, language, canReview).then(
       (employees) => current && setState({ kind: "ready", employees }),
       () => current && setState({ kind: "failed" }),
@@ -33,7 +41,27 @@ export function EmployeesView({ db, identity, language, navigate }: CrewScreenPr
     return () => {
       current = false;
     };
-  }, [db, identity, language, canReview]);
+  }, [db, identity, language, canReview, version]);
+
+  // 從首頁的「等你決定」點進來（#145）：讀取完成後把該員工卡捲進畫面
+  useEffect(() => {
+    if (state.kind !== "ready" || !scrollPending.current) return;
+    scrollPending.current = false;
+    document.getElementById(`crew-employee-${employeeId}`)?.closest("section")?.scrollIntoView?.({ block: "start" });
+  }, [state, employeeId]);
+
+  const decide = async (employee: string, input: NewGuidelineDecision) => {
+    setSaving(true);
+    setFailed(null);
+    try {
+      await decideGuideline(db, identity, input);
+      onChanged?.();
+    } catch {
+      setFailed(employee);
+    }
+    setVersion((v) => v + 1);
+    setSaving(false);
+  };
 
   if (state.kind === "loading") return <p className="muted">{t.loading}</p>;
   if (state.kind === "failed") return <p className="error" role="alert">{t.loadFailed}</p>;
@@ -76,6 +104,16 @@ export function EmployeesView({ db, identity, language, navigate }: CrewScreenPr
               {e.workTypes.map((w) => (
                 <WorkFacts key={w.workTypeId} work={w} heading={e.workTypes.length > 1} t={t} language={language} now={now} />
               ))}
+              <EmployeeGuidelineSection
+                employee={e}
+                guidelines={e.guidelines}
+                canReview={canReview}
+                saving={saving}
+                failed={failed === e.id}
+                language={language}
+                decide={(input) => void decide(e.id, input)}
+                openReturn={navigate && ((assignmentId) => navigate({ section: "works", assignmentId }))}
+              />
               <div className="crew-employees__links">
                 <button type="button" className="link" onClick={() => navigate?.({ section: "trust" })}>
                   {t.linkTrust}

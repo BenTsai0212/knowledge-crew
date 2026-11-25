@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import type { HomeToday } from "./home-today";
 import { scrollDelta, sectionCounts } from "./section-counts";
-import type { TodayAssignment, TodaySuggestion } from "./today";
+import type { TodayAssignment, TodayGuideline, TodaySuggestion } from "./today";
 
 const assignment = (id: string): TodayAssignment => ({
   id,
@@ -16,7 +16,8 @@ const assignment = (id: string): TodayAssignment => ({
   returned: false,
 });
 const suggestion: TodaySuggestion = { employee: { id: "e1", displayName: "Rowan", roleNote: null }, workTypeId: "support", count: 10 };
-const today = (over: Partial<HomeToday>): HomeToday => ({ canReview: true, failing: [], awaiting: [], decide: [], inProgress: [], ...over });
+const guideline = (id: string): TodayGuideline => ({ id, employee: suggestion.employee, workTypeId: "support" });
+const today = (over: Partial<HomeToday>): HomeToday => ({ canReview: true, failing: [], awaiting: [], decide: [], guidelines: [], inProgress: [], ...over });
 
 describe("sectionCounts", () => {
   it("工作與驗收是待驗收件數（含有檢查沒通過的），信任是看重點的建議數", () => {
@@ -32,8 +33,14 @@ describe("sectionCounts", () => {
     expect(sectionCounts(today({ decide: [suggestion] }))).toEqual({ trust: 1 });
   });
 
+  it("員工是等確認的守則數（#145），0 不顯示", () => {
+    expect(sectionCounts(today({ guidelines: [guideline("g1"), guideline("g2")] }))).toEqual({ employees: 2 });
+    expect(sectionCounts(today({ guidelines: [] }))).toEqual({});
+  });
+
   it("不能驗收的身分沒有數字", () => {
     expect(sectionCounts(today({ canReview: false, awaiting: [assignment("a")], decide: [suggestion] }))).toEqual({});
+    expect(sectionCounts(today({ canReview: false, guidelines: [guideline("g1")] }))).toEqual({});
   });
 });
 

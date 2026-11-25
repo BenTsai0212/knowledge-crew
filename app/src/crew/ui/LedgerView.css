@@ -130,3 +130,8 @@
 .crew-ledger__active button {
   min-height: 44px;
 }
+
+/* 守則的事件（#145）：工作欄是守則的文字，點了追到來源交辦 */
+.crew-ledger__guideline {
+  text-align: start;
+}

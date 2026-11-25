@@ -1,6 +1,6 @@
 // crew 頁（#34）：頁首（標題與「虛構資料」標示）、子導覽與目前位置的畫面。
 // H～K 掛上畫面時：新增 <畫面>View.tsx／.css，在 SCREENS 插入一行 import 與一行登錄。
-// 子導覽的「工作與驗收」「信任」帶數字（#103，只給能驗收的身分）；目前的子頁捲進按鈕列（手機是可橫向滑動的按鈕列）。
+// 子導覽的「員工」「工作與驗收」「信任」帶數字（#103、#145，只給能驗收的身分）；目前的子頁捲進按鈕列（手機是可橫向滑動的按鈕列）。
 import { useEffect, useRef, useState } from "react";
 import { fill } from "../../client/i18n";
 import { crewStrings } from "../i18n";
@@ -28,6 +28,9 @@ interface Props extends Omit<CrewScreenProps, "navigate" | "employeeId" | "assig
   /** 從 crew 頁之外切到某個位置（原文的「來自 AI 員工 ○○」#92、首頁的今天的工作 #96）；n 每次要求都不同，同一個位置也重新切換 */
   request?: { target: CrewTarget; n: number } | null;
 }
+
+// 子導覽數字的說明（#145 加上「員工」：等確認的守則數）
+const COUNT_TEXT = { employees: "sectionEmployeesCount", works: "sectionWorksCount", trust: "sectionTrustCount" } as const;
 
 // 帳本的篩選不同時重新掛上畫面（#121），一開始的篩選才會套用
 const filterKey = (f: CrewTarget["ledgerFilter"]) => (f ? `${f.employeeId ?? ""}/${f.workTypeId ?? ""}/${f.event ?? "all"}` : "");
@@ -86,7 +89,7 @@ export function CrewPage({ request = null, ...props }: Props) {
                   </span>
                   {/* 數字的說明放在 aria-describedby，按鈕的名稱仍是子頁的名稱 */}
                   <span id={countId} hidden>
-                    {fill(s.id === "works" ? t.sectionWorksCount : t.sectionTrustCount, { count }, props.language)}
+                    {fill(t[COUNT_TEXT[s.id as keyof typeof COUNT_TEXT]], { count }, props.language)}
                   </span>
                 </>
               )}

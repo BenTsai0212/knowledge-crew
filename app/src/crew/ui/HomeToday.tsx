@@ -8,7 +8,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { crewStrings } from "../i18n";
 import { withEmployee } from "./components";
-import { DECIDE_TARGET, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget, type HomeToday } from "./home-today";
+import { DECIDE_TARGET, guidelineTarget, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget, type HomeToday } from "./home-today";
 import { workTypeLabel } from "./labels";
 import { assignmentRef } from "./refs";
 import type { CrewTarget } from "./sections";
@@ -131,7 +131,24 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
                 </strong>
                 <span className="home__sub crew-home__wrap">{fill(t.decideNote, { count: d.count }, language)}</span>
               </Row>
-            )),
+            )).concat(
+              // 等確認的守則（#145）：決定在員工頁做，點了切到「員工」並捲到該員工卡
+              data.guidelines.map((g) => (
+                <Row
+                  key={`guideline/${g.id}`}
+                  phone={phone}
+                  label={t.actionGuideline}
+                  primary={false}
+                  name={`${t.actionGuideline}${colon}${g.employee.displayName}`}
+                  onClick={() => onOpen(guidelineTarget(g))}
+                >
+                  <strong className="home__name crew-home__wrap">
+                    {withEmployee(t.guidelineItem, { workType: workTypeLabel(g.workTypeId, language) }, g.employee.displayName, language)}
+                  </strong>
+                  <span className="home__sub crew-home__wrap">{t.guidelineNote}</span>
+                </Row>
+              )),
+            ),
           )}
           {group("progress", t.groupInProgress, assignmentRows(data.inProgress, false))}
         </>

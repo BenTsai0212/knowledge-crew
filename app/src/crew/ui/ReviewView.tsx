@@ -26,6 +26,8 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
   const [saveFailed, setSaveFailed] = useState(false);
   // 剛才的「通過」因為沒有上傳權限而沒有收進知識庫（#92 的 `## 決定` 4）；只在這次畫面中註明，換一筆時清除
   const [noUpload, setNoUpload] = useState(false);
+  // 剛才的退回已記成守則（#145）；同樣只在這次畫面中註明
+  const [savedGuideline, setSavedGuideline] = useState(false);
   // 目前的選取只存在元件 state；重新讀取時保留（還看得到時），否則選待驗收的第一筆。從原文的來源（#92）或首頁的今天的工作（#96）切過來時先選那一件
   const selectedRef = useRef<string | null>(assignmentId ?? null);
   // 在清單選了一筆之後把面板捲進畫面（窄螢幕面板在清單之上；已在畫面上時不捲動）
@@ -72,6 +74,7 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
   const select = (id: string) => {
     setSaveFailed(false);
     setNoUpload(false);
+    setSavedGuideline(false);
     scrollPending.current = true;
     void refresh(id);
   };
@@ -87,9 +90,11 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
     setSaving(true);
     setSaveFailed(false);
     setNoUpload(false);
+    setSavedGuideline(false);
     try {
-      const { flowback } = await createReview(db, identity, input);
+      const { flowback, guidelineId } = await createReview(db, identity, input);
       setNoUpload(flowback === "no-upload-permission");
+      setSavedGuideline(guidelineId !== null);
       onChanged?.();
     } catch {
       setSaveFailed(true);
@@ -125,6 +130,7 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
           saveFailed={saveFailed}
           decide={decide}
           noUpload={noUpload}
+          savedGuideline={savedGuideline}
           onOpenSource={onOpenSource}
           onOpenTrust={navigate && (() => navigate({ section: "trust" }))}
         />
