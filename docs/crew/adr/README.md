@@ -45,3 +45,4 @@ ADR（Architecture Decision Record）記錄「決定了什麼、為什麼、放�
 | 0004 | [crew 的資料層與擴充點](0004-crew-data-and-extension-points.md) | Accepted |
 | 0005 | [只展示 AI 員工的線上 demo](0005-crew-only-demo.md) | Accepted |
 | 0006 | [平台連 GitHub 的方式與權限（第 1 階段）](0006-github-connection.md) | Accepted |
+| 0007 | [守則與知識的來歷（第 4 階段）](0007-guidelines.md) | Accepted |
