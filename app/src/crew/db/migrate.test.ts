@@ -23,6 +23,8 @@ describe("crew 的 migration", { timeout: 30_000 }, () => {
     for (const v of versions) expect(v).toMatch(/^crew\/\d{4}_[a-z0-9_]+$/);
     expect(versions).toEqual([...versions].sort());
     expect(versions).toContain(FIRST);
+    // #142 的守則
+    expect(versions).toContain("crew/0007_guidelines");
   });
 
   it("在 knowledge-kit 之後依序套用，不重複套用，兩邊的版本都有記錄", async () => {

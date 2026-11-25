@@ -1,4 +1,4 @@
-// crew 0002 的 CHECK 與 UNIQUE（#26）、0004 的工作來源與外部編號（#57），與 0005 的知識庫回流（#92）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
+// crew 0002 的 CHECK 與 UNIQUE（#26）、0004 的工作來源與外部編號（#57）、0005 的知識庫回流（#92）與 0007 的守則（#142）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyMigrations } from "../../db/migrate";
@@ -140,5 +140,106 @@ describe("crew 0006 的約束（#133）", () => {
     await expect(pg.exec(insert("d3", ", priority", ", 'urgent'"))).rejects.toThrow(/check constraint/);
     await expect(pg.exec(insert("d4", ", priority", ", NULL"))).rejects.toThrow(/not-null|null value/);
     await expect(pg.exec(insert("d5", ", due_at", ", '2026-02-30'"))).rejects.toThrow();
+  });
+});
+
+describe("crew 0007 的守則（#142）", () => {
+  beforeAll(async () => {
+    // juniper × ui 的 a1 沿用上面的資料；另加 rowan × support 的交辦。驗收：可成為守則的 gw1、gw2，不能的 gp（流程）、gn（沒有意見）、ga（通過）
+    await pg.exec(`
+      INSERT INTO crew.employees (id, display_name) VALUES ('rowan', 'Rowan');
+      INSERT INTO crew.work_types (id) VALUES ('support');
+      INSERT INTO crew.assignments (id, source_id, title, work_type_id, employee_id, assigned_by) VALUES
+        ('ga1', 'lantern', 'G1', 'ui', 'juniper', 'manager'), ('ga2', 'lantern', 'G2', 'support', 'rowan', 'manager');
+      INSERT INTO crew.works (id, assignment_id, round, summary) VALUES
+        ('gw1', 'ga1', 1, 'X'), ('gw2', 'ga1', 2, 'X'), ('gw3', 'ga1', 3, 'X'), ('gw4', 'ga1', 4, 'X'), ('gw5', 'ga1', 5, 'X'),
+        ('gr1', 'ga2', 1, 'X'), ('gr2', 'ga2', 2, 'X');
+      INSERT INTO crew.reviews (id, work_id, verdict, reason, note, decided_by) VALUES
+        ('gv1', 'gw1', 'returned', 'wrong', '以合約為準', 'manager'),
+        ('gv2', 'gw2', 'returned', 'different_approach', '分段寫', 'manager'),
+        ('gp', 'gw3', 'returned', 'process', '圖片尺寸不符', 'manager'),
+        ('gn', 'gw4', 'returned', 'wrong', '  ', 'manager'),
+        ('ga', 'gw5', 'accepted', NULL, '很好', 'manager'),
+        ('gvr', 'gr1', 'returned', 'wrong', '先確認末四碼', 'manager');
+    `);
+  });
+
+  const guideline = (id: string, review: string, work: string, assignment: string, opts: { employee?: string; workType?: string; kind?: string; by?: string | null; text?: string; eligible?: boolean } = {}) =>
+    `INSERT INTO crew.guidelines (id, employee_id, work_type_id, text, source_review_id, source_work_id, source_assignment_id, proposer_kind, proposed_by${opts.eligible === false ? ", source_eligible" : ""})
+     VALUES ('${id}', '${opts.employee ?? "juniper"}', '${opts.workType ?? "ui"}', '${opts.text ?? "守則"}', '${review}', '${work}', '${assignment}', '${opts.kind ?? "human"}', ${opts.by === null ? "NULL" : `'${opts.by ?? "manager"}'`}${opts.eligible === false ? ", false" : ""})`;
+  const decision = (id: string, g: string, kind: string, revised: string | null = null, confirm: string | null = null) =>
+    `INSERT INTO crew.guideline_decisions (id, guideline_id, decision, revised_text, confirm_id, decided_by) VALUES ('${id}', '${g}', '${kind}', ${revised === null ? "NULL" : `'${revised}'`}, ${confirm === null ? "NULL" : `'${confirm}'`}, 'manager')`;
+  const follow = (work: string, g: string, assignment: string, employee = "juniper", workType = "ui") =>
+    `INSERT INTO crew.work_guidelines (work_id, guideline_id, assignment_id, employee_id, work_type_id) VALUES ('${work}', '${g}', '${assignment}', '${employee}', '${workType}')`;
+
+  it("can_be_guideline 由原因與意見推算：只有做錯了或不一樣的做法、而且有意見", async () => {
+    const rows = (await pg.query<{ id: string; can_be_guideline: boolean }>(
+      "SELECT id, can_be_guideline FROM crew.reviews WHERE id IN ('gv1', 'gv2', 'gp', 'gn', 'ga', 'r1') ORDER BY id",
+    )).rows;
+    expect(Object.fromEntries(rows.map((r) => [r.id, r.can_be_guideline]))).toEqual({ ga: false, gn: false, gp: false, gv1: true, gv2: true, r1: false });
+  });
+
+  it("合法的守則：人提（有提出者）與員工提（提出者是 NULL）", async () => {
+    await pg.exec(guideline("g1", "gv1", "gw1", "ga1"));
+    await pg.exec(guideline("g2", "gv2", "gw2", "ga1", { kind: "employee", by: null }));
+    // 同一次退回可以有多條守則（恢復已收回的守則時提新的一條）
+    await pg.exec(guideline("g3", "gv1", "gw1", "ga1", { kind: "employee", by: null }));
+    await pg.exec(guideline("gr", "gvr", "gr1", "ga2", { employee: "rowan", workType: "support" }));
+  });
+
+  it.each([
+    ["來源退回是流程上的小問題", guideline("x", "gp", "gw3", "ga1"), /foreign key/],
+    ["來源退回沒有意見", guideline("x", "gn", "gw4", "ga1"), /foreign key/],
+    ["來源是通過", guideline("x", "ga", "gw5", "ga1"), /foreign key/],
+    ["來源的交件不是那次退回的交件", guideline("x", "gv1", "gw2", "ga1"), /foreign key/],
+    ["來源的交辦不是那次交件的交辦", guideline("x", "gv1", "gw1", "ga2"), /foreign key/],
+    ["員工和來源交辦不同", guideline("x", "gv1", "gw1", "ga1", { employee: "rowan" }), /foreign key/],
+    ["工作類型和來源交辦不同", guideline("x", "gv1", "gw1", "ga1", { workType: "support" }), /foreign key/],
+    ["source_eligible 不是 true", guideline("x", "gv1", "gw1", "ga1", { eligible: false }), /check constraint/],
+    ["提出者的種類是 robot", guideline("x", "gv1", "gw1", "ga1", { kind: "robot" }), /check constraint/],
+    ["人提卻沒有提出者", guideline("x", "gv1", "gw1", "ga1", { by: null }), /check constraint/],
+    ["員工提卻有提出者", guideline("x", "gv1", "gw1", "ga1", { kind: "employee" }), /check constraint/],
+    ["文字是空白", guideline("x", "gv1", "gw1", "ga1", { text: "  " }), /check constraint/],
+  ])("守則：%s 被拒", async (_name, sql, error) => {
+    await expect(pg.exec(sql)).rejects.toThrow(error);
+  });
+
+  it.each([
+    ["決定是 pause", decision("x", "g2", "pause"), /check constraint/],
+    ["不採用帶修改的文字", decision("x", "g2", "reject", "改寫"), /check constraint/],
+    ["收回帶修改的文字", decision("x", "g2", "revoke", "改寫"), /check constraint/],
+    ["收回沒有指向確認", decision("x", "g2", "revoke"), /check constraint/],
+    ["確認卻指向確認", decision("x", "g2", "confirm", null, "g1-d1"), /check constraint/],
+    ["確認的修改文字是空白", decision("x", "g2", "confirm", " "), /check constraint/],
+    ["守則不存在", decision("x", "nowhere", "confirm"), /foreign key/],
+  ])("決定：%s 被拒", async (_name, sql, error) => {
+    await expect(pg.exec(sql)).rejects.toThrow(error);
+  });
+
+  it("確認與不採用合計只有一次、收回只有一次；收回要指向同一守則的確認；修改後確認可以寫入", async () => {
+    await pg.exec(decision("g1-d1", "g1", "confirm"));
+    await expect(pg.exec(decision("g1-d2", "g1", "confirm"))).rejects.toThrow(/unique|duplicate key/);
+    await expect(pg.exec(decision("g1-d2", "g1", "reject"))).rejects.toThrow(/unique|duplicate key/);
+    await pg.exec(decision("g1-d3", "g1", "revoke", null, "g1-d1"));
+    await expect(pg.exec(decision("g1-d4", "g1", "revoke", null, "g1-d1"))).rejects.toThrow(/unique|duplicate key/);
+    await expect(pg.exec(decision("g1-d5", "g1", "confirm"))).rejects.toThrow(/unique|duplicate key/);
+    await pg.exec(decision("g2-d1", "g2", "reject"));
+    await expect(pg.exec(decision("g2-d2", "g2", "confirm"))).rejects.toThrow(/unique|duplicate key/);
+    // 沒有確認不能收回：指向不採用、別的守則的確認、收回、不存在的決定都被拒
+    await expect(pg.exec(decision("g2-d3", "g2", "revoke", null, "g2-d1"))).rejects.toThrow(/foreign key/);
+    await expect(pg.exec(decision("g2-d3", "g2", "revoke", null, "g1-d1"))).rejects.toThrow(/foreign key/);
+    await expect(pg.exec(decision("g1-d6", "g1", "revoke", null, "g1-d3"))).rejects.toThrow(/foreign key|unique|duplicate key/);
+    await expect(pg.exec(decision("g3-d0", "g3", "revoke", null, "nowhere"))).rejects.toThrow(/foreign key/);
+    await pg.exec(decision("g3-d1", "g3", "confirm", "以合約為準，註明出處"));
+  });
+
+  it("依照的守則：員工 × 工作類型要和交件相同，交件與交辦要一致，同一守則不重複", async () => {
+    await pg.exec(follow("gw2", "g3", "ga1"));
+    await expect(pg.exec(follow("gw2", "g3", "ga1"))).rejects.toThrow(/unique|duplicate key/);
+    // rowan 的交件依照 juniper 的守則：不論填交件的還是守則的員工 × 工作類型，都有一邊的外鍵失敗
+    await expect(pg.exec(follow("gr2", "g3", "ga2", "rowan", "support"))).rejects.toThrow(/foreign key/);
+    await expect(pg.exec(follow("gr2", "g3", "ga2", "juniper", "ui"))).rejects.toThrow(/foreign key/);
+    await expect(pg.exec(follow("gr2", "g3", "ga1"))).rejects.toThrow(/foreign key/);
+    await pg.exec(follow("gr2", "gr", "ga2", "rowan", "support"));
   });
 });

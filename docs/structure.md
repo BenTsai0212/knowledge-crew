@@ -248,6 +248,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `github/pr.ts`：PR 描述 → 交件（#112）：`parseManualTodos()`（「人工待辦」→ 要看的重點，讀不到與沒有重點分開）、`prToWork()`（交件全文、重點與變更；格式見 `docs/crew/work-body-format.md`「PR 描述轉成的交件」；測試在 `pr.test.ts`）
 - `github/state.ts`：GitHub 的現況與時間軸 → 平台狀態、轉換序列與已知狀況（`deriveGithubState()`、`linkOf()`；格式見 `docs/crew/github-state.md`，測試在 `state.test.ts`，#110）
 - `github/types.ts`：平台與 GitHub 之間共用的型別（GitHub REST API 回應的形狀，只列用到的欄位，例如 `GitHubPrFile`、狀態讀回的 `GhIssue`、`GhTimelineEvent`；貼出前檢查的結果等）
+- `guidelines/status.ts`：守則的狀態（crew ADR 0007、#142）：`guidelineStatus()`、`currentText()`、`canDecide()`、`activeAt()`、`canBeGuideline()`，由人的決定推算（測試在 `status.test.ts`；資料表見 `docs/crew/data-model.md`）
 - `i18n.ts`：crew 介面文字唯一的讀取模組（`crewStrings()`；一個畫面一份翻譯檔，`CrewScreenKeys` 一行一個畫面）
 - `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題、段落與 `#owner` 的部門名稱，不是一個知識庫條目時是 null）、`flowbackDocumentId()`、`flowbackOwnerPendingId()`（測試在 `flowback.test.ts`）
 - `knowledge/origin.ts`：回流文件的來源：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、哪一次驗收）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）
@@ -417,6 +418,7 @@ Playwright 的端對端測試（`*.spec.ts`）；設定在根目錄的 `playwrig
 
 - `adr/`：決策紀錄
 - `crew/adr/0007-guidelines.md`：crew ADR 0007（守則與知識的來歷，第 4 階段）：守則的來源、狀態與資料表，知識的來歷從既有紀錄推算（#140）
+- `crew/data-model.md`：crew 的資料表（schema `crew`）與守則的三張表的約束與可見範圍（#142）
 - `crew/research/`：knowledge-crew 的研究主張與依據（RFC 0001 的 2026-11-25 修訂，#137）
 - `crew/research/literature.md`：文獻與產業整理（五個主題的研究與來源）
 - `crew/research/README.md`：研究主張：一次驗收的四種產出與狀態、回應的研究議題、信任規則的取捨與限制
