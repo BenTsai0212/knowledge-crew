@@ -1,6 +1,6 @@
 {
   "cardTitle": "First time here? A 90-second tour",
-  "cardBody": "Five steps through assigning, reviewing, returning, how trust changes, and the flow back into the knowledge base.",
+  "cardBody": "Six steps through assigning, reviewing, returning, guidelines, how trust changes, and the flow back into the knowledge base.",
   "start": "Start the tour",
   "dismiss": "Close the tour card",
   "replay": "Watch the tour again",
@@ -16,8 +16,10 @@
   "reviewBody": "The employee marks the points to check, plus automated checks; you decide to accept or return.",
   "returnTitle": "Reasons for returning",
   "returnBody": "When you return work, pick one of three reasons: \"It is wrong\" sends this kind of work back to \"Review every item\"; the other two do not affect trust.",
+  "guidelinesTitle": "Guidelines",
+  "guidelinesBody": "Feedback from a return can be saved as a guideline, and the employee then says which ones it followed when handing in work; guidelines need your confirmation and you can retire them at any time.",
   "trustTitle": "Trust",
   "trustBody": "Trust grows with reviews; reviewing key points needs your consent and you can take it back at any time.",
   "flowbackTitle": "Back into the knowledge base",
-  "flowbackBody": "Accepted knowledge base entries go into the knowledge base and the graph, marked with where they came from."
+  "flowbackBody": "Accepted knowledge base entries and confirmed guidelines go into the knowledge base; the source shows what checks they went through."
 }

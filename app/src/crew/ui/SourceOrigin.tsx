@@ -4,7 +4,7 @@
 // 「看那次退回」回到「工作與驗收」的來源交辦，「到員工頁」捲到員工卡。兩種文件的 id 格式不同，不會同時出現。
 // 不是這兩種文件、或目前身分看不到紀錄時不顯示（原文照常）。
 // 文字在 client/i18n/crew/knowledge.<語言>.json；knowledge-kit 的原文元件（ui/SourcePanel.tsx、ui/SourceSheet.tsx）只留一個位置。
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
@@ -12,8 +12,10 @@ import type { Database } from "../../db/database";
 import { crewStrings } from "../i18n";
 import { reasonLabel } from "../knowledge/guideline-document";
 import { readFlowbackOrigin, readGuidelineOrigin, type FlowbackOrigin, type GuidelineOrigin } from "../knowledge/origin";
+import { withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import { actorName } from "./ledger";
+import { shortDate } from "./trust";
 import "./SourceOrigin.css";
 
 interface Props {
@@ -92,12 +94,12 @@ export function SourceOrigin({ db, identity, language, documentId, onOpen, onOpe
 }
 
 /**
- * 兩行文字：「{員工} 整理・{驗收者} 驗收通過（日期）」，與以「・」連接的當時的把關（沒有的項目不顯示）。
- * 驗收者是身分的名稱（client/access.json）；日期是瀏覽器時區的年月日。
+ * 兩行：「{員工} 整理・{驗收者} 驗收通過（日期）」，與以「・」連接的當時的把關（沒有的項目不顯示）。
+ * 員工名字加 AI 標記（EmployeeName）；驗收者是身分的名稱（client/access.json）；日期與員工卡、工作帳本相同的 MM/DD（shortDate，#151）。
  */
-export function originLines(origin: FlowbackOrigin, language: LanguageCode): { by: string; facts: string } {
+export function originLines(origin: FlowbackOrigin, language: LanguageCode): { by: ReactNode; facts: string } {
   const t = crewStrings("knowledge", language);
-  const date = new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(new Date(origin.decidedAt));
+  const date = shortDate(origin.decidedAt, language);
   const reviewer = actorName(clientConfig.access, [], origin.decidedBy, language) ?? origin.decidedBy;
   const facts = [
     origin.level === "light" ? t.originLevelLight : t.originLevelItem,
@@ -106,24 +108,30 @@ export function originLines(origin: FlowbackOrigin, language: LanguageCode): { b
     origin.guidelines > 0 && fill(t.originGuidelines, { count: origin.guidelines }, language),
   ].filter((x): x is string => typeof x === "string");
   return {
-    by: fill(t.originBy, { employee: origin.employeeName, reviewer, date }, language),
+    by: withEmployee(t.originBy, { reviewer, date }, origin.employeeName, language),
     facts: facts.join(t.originSeparator),
   };
 }
 
 /**
  * 守則的三行：「{員工} 的「{工作類型}」守則・{確認者} {日期} 確認」（修改後確認時加註）、「來自 {日期} 的退回（{原因}）」與提出方式、
- * 「生效中・之後依照 n 次」或「已收回（日期），之後的交件不再依照這條」。日期是瀏覽器時區的年月日。
+ * 「生效中・之後依照 n 次」或「已收回（日期），之後的交件不再依照這條」。
+ * 員工名字加 AI 標記（EmployeeName）；日期與員工卡、工作帳本相同的 MM/DD（shortDate，#151）。
  */
-export function guidelineLines(origin: GuidelineOrigin, language: LanguageCode): { by: string; from: string; status: string } {
+export function guidelineLines(origin: GuidelineOrigin, language: LanguageCode): { by: ReactNode; from: ReactNode; status: string } {
   const t = crewStrings("knowledge", language);
-  const date = (iso: string) => new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(new Date(iso));
+  const date = (iso: string) => shortDate(iso, language);
   const confirmer = actorName(clientConfig.access, [], origin.confirmedBy, language) ?? origin.confirmedBy;
-  const names = { employee: origin.employeeName, workType: workTypeLabel(origin.workTypeId, language) };
-  const from = { date: date(origin.returnedAt), reason: reasonLabel(origin.reason, language), employee: origin.employeeName };
+  const by = { workType: workTypeLabel(origin.workTypeId, language), confirmer, date: date(origin.confirmedAt) };
+  const from = { date: date(origin.returnedAt), reason: reasonLabel(origin.reason, language) };
   return {
-    by: `${fill(t.guidelineBy, { ...names, confirmer, date: date(origin.confirmedAt) }, language)}${origin.revised ? t.guidelineRevised : ""}`,
-    from: fill(origin.proposerKind === "employee" ? t.guidelineFromEmployee : t.guidelineFromHuman, from, language),
+    by: (
+      <>
+        {withEmployee(t.guidelineBy, by, origin.employeeName, language)}
+        {origin.revised && t.guidelineRevised}
+      </>
+    ),
+    from: withEmployee(origin.proposerKind === "employee" ? t.guidelineFromEmployee : t.guidelineFromHuman, from, origin.employeeName, language),
     status: origin.revokedAt === null
       ? fill(t.guidelineActive, { count: origin.followed }, language)
       : fill(t.guidelineRevoked, { date: date(origin.revokedAt) }, language),

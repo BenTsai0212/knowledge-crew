@@ -27,9 +27,15 @@ const lang = clientConfig.client.defaultLanguage;
 const DB_TIMEOUT = 20_000;
 
 describe("TOUR_STEPS", () => {
-  it("5 步：今天的工作 → 驗收面板 → 退回原因 → 信任 → 回流知識庫", () => {
-    expect(TOUR_STEPS.map((s) => s.id)).toEqual(["today", "review", "return", "trust", "flowback"]);
-    expect(TOUR_STEPS.map((s) => s.go.kind)).toEqual(["home", "crew", "crew", "crew", "flowback"]);
+  it("6 步：今天的工作 → 驗收面板 → 退回原因 → 守則 → 信任 → 回流知識庫", () => {
+    expect(TOUR_STEPS.map((s) => s.id)).toEqual(["today", "review", "return", "guidelines", "trust", "flowback"]);
+    expect(TOUR_STEPS.map((s) => s.go.kind)).toEqual(["home", "crew", "crew", "crew", "crew", "flowback"]);
+  });
+
+  it("守則一步切到「員工」，先標出有等確認守則的區塊（#151）", () => {
+    const step = TOUR_STEPS.find((s) => s.id === "guidelines")!;
+    expect(step.go).toEqual({ kind: "crew", target: { section: "employees" } });
+    expect(step.targets).toEqual([".crew-employees__guidelines[data-pending]", ".crew-employees__guidelines"]);
   });
 
   it("每一步都有標題、說明與至少一個目標，文字在每種語言都有", () => {

@@ -9,6 +9,7 @@ import { crewStrings, type CrewTexts } from "../../i18n";
 import { CheckRow, ConclusionRow, LevelBadge, ScheduleLine, withEmployee } from "../components";
 import type { ReviewPanel as PanelData, WorkListItem } from "../review";
 import { workTypeLabel } from "../labels";
+import { shortDate } from "../trust";
 import { assignmentRef, workRef } from "../refs";
 import { BodyView, PointList, type ActivePoint } from "./BodyView";
 import { conclusionOf, decisionQuestion, deliverableName, type Audience } from "./conclusion";
@@ -271,7 +272,7 @@ function FollowedCard({ guidelines, pending, employee, language, onOpenEmployee,
           <li key={g.id}>
             <span>{g.text}</span>
             <span className="muted crew-review__followed-origin">
-              {fill(g.proposerKind === "human" ? t.followedSavedOnReturn : t.followedConfirmed, { date: formatDate(g.since, language) }, language)}
+              {fill(g.proposerKind === "human" ? t.followedSavedOnReturn : t.followedConfirmed, { date: shortDate(g.since, language) }, language)}
               {g.retiredLater && t.followedRetiredLater}
             </span>
           </li>

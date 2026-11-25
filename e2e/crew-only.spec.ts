@@ -113,7 +113,7 @@ test.describe("桌機", () => {
     await expect(tourDialog(page)).toHaveCount(0);
   });
 
-  test("第一次來的導覽：5 步走完，沒有 /api/* 請求（afterEach）", async ({ page }) => {
+  test("第一次來的導覽：6 步走完，沒有 /api/* 請求（afterEach）", async ({ page }) => {
     await enter(page);
     await walkTour(page);
   });

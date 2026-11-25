@@ -1,5 +1,7 @@
 // 原文的「這條知識經過的把關」與「這條守則的來歷」（#149）的文字（#147；原本是 #92 PR 3 的一行來源）：
 // 第一行「{員工} 整理・{驗收者} 驗收通過（日期）」，第二行以「・」連接、沒有的項目不顯示。
+import { createElement, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
@@ -8,6 +10,19 @@ import { reasonLabel } from "../knowledge/guideline-document";
 import type { FlowbackOrigin, GuidelineOrigin } from "../knowledge/origin";
 import { workTypeLabel } from "./labels";
 import { guidelineLines, originLines } from "./SourceOrigin";
+import { shortDate } from "./trust";
+
+// #151：員工名字是 EmployeeName（AI 標記），日期是 shortDate 的 MM/DD
+const html = (node: ReactNode) => renderToStaticMarkup(createElement("div", null, node));
+const aiName = (name: string) => new RegExp(`<span class="crew-employee-name"><span class="crew-ai-mark">.*?</span>${name}</span>`);
+/** 畫面上看得到的文字：AI 標記的螢幕閱讀器文字換回 {employee} 前的名字，HTML 實體還原 */
+const visible = (node: ReactNode) =>
+  html(node)
+    .replace(/<span class="crew-ai-mark">.*?<\/span><\/span>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&amp;", "&");
 
 const origin: FlowbackOrigin = {
   assignmentId: "k13", title: "Title", employeeName: "Linden", decidedAt: "2026-11-22T04:00:00.000Z",
@@ -19,10 +34,11 @@ describe("originLines", () => {
   it("每種語言都帶入員工、驗收者的身分名稱與日期，沒有殘留的參數", () => {
     for (const language of clientConfig.client.languages) {
       const { by, facts } = originLines(origin, language);
-      expect(by, language).toContain("Linden");
-      expect(by, language).toContain(roleLabel(language));
-      expect(by, language).toContain("2026");
-      expect(`${by}${facts}`, language).not.toMatch(/[{}]/);
+      expect(html(by), language).toMatch(aiName("Linden"));
+      expect(visible(by), language).toContain(roleLabel(language));
+      expect(visible(by), language).toContain(shortDate(origin.decidedAt, language));
+      expect(visible(by), language).not.toContain("2026");
+      expect(`${visible(by)}${facts}`, language).not.toMatch(/[{}]/);
     }
   });
 
@@ -54,21 +70,24 @@ describe("guidelineLines", () => {
   it("第一行：員工、工作類型、確認者的身分名稱與日期；修改後確認時加註", () => {
     for (const language of clientConfig.client.languages) {
       const t = crewStrings("knowledge", language);
-      const { by } = guidelineLines(guideline, language);
-      for (const part of ["Rowan", workTypeLabel("support", language), roleLabel(language), "2026"]) expect(by, language).toContain(part);
+      const by = visible(guidelineLines(guideline, language).by);
+      expect(html(guidelineLines(guideline, language).by), language).toMatch(aiName("Rowan"));
+      for (const part of ["Rowan", workTypeLabel("support", language), roleLabel(language), shortDate(guideline.confirmedAt, language)]) expect(by, language).toContain(part);
       expect(by, language).not.toContain(t.guidelineRevised);
-      expect(guidelineLines({ ...guideline, revised: true }, language).by.endsWith(t.guidelineRevised), language).toBe(true);
+      expect(visible(guidelineLines({ ...guideline, revised: true }, language).by).endsWith(t.guidelineRevised), language).toBe(true);
     }
   });
 
   it("第二行：來自哪一次退回（原因）；人提是退回時記下，員工提是員工整理提出", () => {
     for (const language of clientConfig.client.languages) {
       const t = crewStrings("knowledge", language);
-      const human = guidelineLines(guideline, language).from;
+      const human = visible(guidelineLines(guideline, language).from);
       expect(human, language).toContain(reasonLabel("different_approach", language));
-      const date = new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(new Date(guideline.returnedAt));
+      const date = shortDate(guideline.returnedAt, language);
       expect(human, language).toBe(fill(t.guidelineFromHuman, { date, reason: reasonLabel("different_approach", language) }, language));
-      const employee = guidelineLines({ ...guideline, proposerKind: "employee" }, language).from;
+      const employeeNode = guidelineLines({ ...guideline, proposerKind: "employee" }, language).from;
+      expect(html(employeeNode), language).toMatch(aiName("Rowan"));
+      const employee = visible(employeeNode);
       expect(employee, language).toContain("Rowan");
       expect(employee, language).not.toBe(human);
       expect(`${human}${employee}`, language).not.toMatch(/[{}]/);
@@ -80,7 +99,7 @@ describe("guidelineLines", () => {
       const t = crewStrings("knowledge", language);
       expect(guidelineLines(guideline, language).status, language).toBe(fill(t.guidelineActive, { count: 3 }, language));
       const revoked = guidelineLines({ ...guideline, revokedAt: "2026-10-20T02:00:00.000Z" }, language).status;
-      expect(revoked, language).toContain("2026");
+      expect(revoked, language).toContain(shortDate("2026-10-20T02:00:00.000Z", language));
       expect(revoked, language).not.toBe(fill(t.guidelineActive, { count: 3 }, language));
       expect(revoked, language).not.toMatch(/[{}]/);
     }
