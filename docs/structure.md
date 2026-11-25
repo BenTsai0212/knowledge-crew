@@ -416,6 +416,9 @@ Playwright 的端對端測試（`*.spec.ts`）；設定在根目錄的 `playwrig
 文件。
 
 - `adr/`：決策紀錄
+- `crew/research/`：knowledge-crew 的研究主張與依據（RFC 0001 的 2026-11-25 修訂，#137）
+- `crew/research/literature.md`：文獻與產業整理（五個主題的研究與來源）
+- `crew/research/README.md`：研究主張：一次驗收的四種產出與狀態、回應的研究議題、信任規則的取捨與限制
 - `deploy.md`：線上 demo 的部署步驟、驗收清單、回退與費用上限（部署由人執行；ADR 0005）
 - `design/v1/boards/`：設計畫布「畫面流程圖」引用的畫板原始碼與接縫與討論版的畫板（#392）（`*.dc.html`，原樣保存、以 sha256 核對）；視覺以畫板為準，只供參考，不被 `app/` import、不進 build（#329）
 - `design/v1/boards/README.md`：畫板與頁面的對照、顏色名稱與 token 的對照、不實作的內容與已知衝突
