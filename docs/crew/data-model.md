@@ -36,3 +36,9 @@ knowledge-crew 的資料表都在 schema `crew`（crew ADR 0004），migration �
   - 只能依照交件當時生效的守則（交件時間以前確認、以前沒有收回）：由寫入 policy 守住；`createWork()` 的 `guidelineIds` 在同一交易寫入。
 
 讀取範圍與 `level_decisions` 相同：看得到同一員工 × 同一工作類型的交辦，才看得到守則與決定；依照的守則跟著交件。demo 以 superuser 匯入、不套用 RLS，時間條件（交件當時生效、決定晚於提出）由 demo 的驗證檢查。
+
+### demo 資料（`client/crew/demo.json`）
+
+- 退回的意見是 `assignments[].works[].review.note`（雙語）；守則是最上層的 `guidelines[]`（依提出時間），決定寫在各守則的 `decisions[]`（id 由 seed 產生：`<守則 id>-d<序號>`），交件依照的守則是 `works[].guidelines`。
+- `app/src/crew/demo/validate.ts` 在匯入前檢查：來源是同一員工 × 工作類型、原因不是 `process`、有意見的退回；人提的守則提出時間與文字等於那次退回、第一筆決定是同時間的確認、確認者是那次的驗收者；員工提出晚於來源退回；決定的順序（`canDecide()`）與時間；修改的文字只出現在確認；依照的守則在交件時生效（`activeAt()`）。
+- `app/src/crew/demo/seed.ts` 在驗收與看重點的決定之後依序寫入守則 → 決定 → 依照的守則；守則與意見不進信任的計算，層級、建議與報表數字不變。

@@ -213,5 +213,7 @@ function localize(w: StoredWork, language: LanguageCode): StoredWork {
     body: demoText("body", w.id, language) ?? w.body,
     points: w.points.map((p, i) => demoText("point", `${w.id}/${i + 1}`, language) ?? p),
     changes: w.changes.map((c, i) => ({ ...c, summary: demoText("change", `${w.id}/${i + 1}`, language) ?? c.summary })),
+    // 退回的意見（#142）：鍵是驗收 id
+    review: w.review && { ...w.review, note: w.review.note === null ? null : (demoText("reviewNote", w.review.id, language) ?? w.review.note) },
   };
 }
