@@ -103,5 +103,13 @@
   "lightTitle": "為什麼是看重點",
   "lightSince": "你在 {date} 同意的；{employee} 的「{workType}」最近 {count} 次沒有做錯。",
   "lightRule": "收起的只有沒標重點的欄位與變更。重點、檢查、空白欄位照樣顯示；一次「做錯了」就自動改回逐項看。",
-  "lightTrust": "看信任紀錄"
+  "lightTrust": "看信任紀錄",
+  "followedTitle": "這次依照的守則",
+  "followedBy": "{employee} 自述",
+  "followedJudge": "有沒有做到，由你判斷。",
+  "followedSavedOnReturn": "{date} 退回時記下",
+  "followedConfirmed": "{date} 確認",
+  "followedRetiredLater": "（之後已收回）",
+  "pendingGuidelines": "{employee} 整理了 {count} 條守則等你確認",
+  "pendingGuidelinesOpen": "到員工頁確認"
 }

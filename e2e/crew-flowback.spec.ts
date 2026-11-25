@@ -1,11 +1,11 @@
-// 知識庫條目回流知識庫（#92 PR 3）：主管驗收 k13 →「已收進知識庫」→ 圖譜出現負責部門 → 打開出處，看到「來自 AI 員工 Linden」→
+// 知識庫條目回流知識庫（#92 PR 3）：主管驗收 k13 →「已收進知識庫」→ 圖譜出現負責部門 → 打開出處，看到「這條知識經過的把關」（Linden 整理）→
 // 點了回到「工作與驗收」的 k13；問答的出處（假的 /api/ask 引用回流段落）同樣看得到來源；一般員工看不到回流的文件。
 // 只在有 crew/demo.json 的客戶執行；/api/ask 一律是 page.route 的假回應（openApp）。
 import { expect, test, type Page } from "@playwright/test";
 import { openApp, openTab, s, switchIdentity } from "./support/app";
 import { language, readClientJson } from "./support/client";
 import { sseBody } from "./support/fake-ask";
-import { crewFill, ct, demo, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
+import { ct, demo, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
 import { toFlowbackDocument } from "../app/src/crew/knowledge/flowback";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
@@ -17,10 +17,10 @@ const k13 = assignments.find((a) => a.id === "k13");
 const title = k13?.title[language] ?? "";
 const entry = k13 ? toFlowbackDocument(k13.works[0].body[language]) : null;
 const employee = k13 ? demo.employees.find((e) => e.id === k13.employee)!.displayName : "";
-const knowledge = hasCrewDemo ? readClientJson<{ origin: string }>(`i18n/crew/knowledge.${language}.json`) : { origin: "" };
-// 「來自 AI 員工 ○○・驗收「○○」（日期）」：日期依瀏覽器時區，所以只比對日期之前的部分
-const originPrefix = () => crewFill(knowledge.origin, { employee, title, date: "\u0000" }).split("\u0000")[0];
-const originButton = (page: Page) => page.locator("aside.source").getByRole("button", { name: new RegExp(`^${escape(originPrefix())}`) });
+// 「這條知識經過的把關」（#147；原本是一行「來自 AI 員工 ○○・驗收「○○」（日期）」的按鈕）：區塊中有員工名字，「看這次驗收」回到那一件
+const originButton = (page: Page) =>
+  page.locator("aside.source").getByRole("region", { name: ct.knowledge.originTitle, exact: true }).filter({ hasText: employee })
+    .getByRole("button", { name: ct.knowledge.originOpen, exact: true });
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 async function acceptK13(page: Page): Promise<void> {

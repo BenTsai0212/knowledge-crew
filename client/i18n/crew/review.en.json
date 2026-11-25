@@ -103,5 +103,13 @@
   "lightTitle": "Why this is a key-points review",
   "lightSince": "You approved it on {date}; {employee} has made no mistakes in the last {count, plural, one {# review} other {# reviews}} of “{workType}”.",
   "lightRule": "Only fields and changes without points are collapsed. Points, checks and empty fields are always shown; a single “It is wrong” switches back to reviewing each item.",
-  "lightTrust": "See the trust record"
+  "lightTrust": "See the trust record",
+  "followedTitle": "Guidelines followed this time",
+  "followedBy": "Self-reported by {employee}",
+  "followedJudge": "Whether it was actually done is for you to judge.",
+  "followedSavedOnReturn": "Saved when returned on {date}",
+  "followedConfirmed": "Confirmed {date}",
+  "followedRetiredLater": " (retired later)",
+  "pendingGuidelines": "{employee} drafted {count, plural, one {# guideline} other {# guidelines}} for you to confirm",
+  "pendingGuidelinesOpen": "Confirm on the Employees page"
 }
