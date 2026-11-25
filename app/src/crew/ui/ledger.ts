@@ -10,7 +10,7 @@ import {
   getTrustInputs, listAssignments, listEmployees, listGuidelines, listReviews, type AssignmentSummary, type SourceKind, type StoredGuideline,
 } from "../db/store";
 import { demoText } from "../demo/texts";
-import { guidelineTexts } from "./guideline-text";
+import { proposedText, revisionText } from "./guideline-text";
 import { sourceLabel } from "./refs";
 import { autoResets } from "../trust/rules";
 import { relaxProposals } from "./suggestion-history";
@@ -59,7 +59,7 @@ export interface LedgerEvent {
   reason: ReturnReason | null;
   /** 提出看重點的建議（proposed）的依據：驗收 id，依時間排序；其他種類沒有 */
   basis?: string[];
-  /** 守則的事件：守則 id 與目前語言的文字（修改後確認之後是修改後的文字）；其他種類沒有 */
+  /** 守則的事件：守則 id 與該事件當時的文字（目前語言）；其他種類沒有 */
   guideline?: { id: string; text: string };
 }
 
@@ -121,7 +121,7 @@ export interface LedgerSources {
   guidelines?: LedgerGuideline[];
 }
 
-/** 帳本用的守則：store.ts 的守則，文字已換成目前語言 */
+/** 帳本用的守則：store.ts 的守則；text 是提出時的文字、revisedText 是修改後的文字，都已換成目前語言 */
 export type LedgerGuideline = Pick<StoredGuideline, "id" | "employeeId" | "workTypeId" | "sourceAssignmentId" | "proposerKind" | "proposedBy" | "proposedAt"> & {
   text: string;
   decisions: { id: string; decision: "confirm" | "reject" | "revoke"; revisedText: string | null; decidedBy: string; decidedAt: string }[];
@@ -265,7 +265,8 @@ const DECISION_KIND = { reject: "guidelineRejected", revoke: "guidelineRetired" 
 
 /**
  * 一條守則的事件：員工提的是「提出守則」（經手人是員工），人提的是「記成守則」（經手人是驗收者；同時寫入的確認不另列）；
- * 之後的決定是確認、修改後確認、不採用、收回（經手人是決定者）。工作欄顯示的文字一律是目前的文字。
+ * 之後的決定是確認、修改後確認、不採用、收回（經手人是決定者）。
+ * 每個事件帶當時的文字：提出與記成是提出時的文字，修改後確認是修改後的文字，其他是該事件發生時的文字（#146 的修正要求）。
  */
 function guidelineEvents(
   g: LedgerGuideline,
@@ -280,20 +281,22 @@ function guidelineEvents(
     assignment: source ? toAssignment(source) : null,
     round: null,
     reason: null,
-    guideline: { id: g.id, text: g.text },
   };
+  let text = g.text;
   const human = g.proposerKind === "human";
   const events: LedgerEvent[] = [
     human
-      ? { ...base, id: `guidelineSaved:${g.id}`, kind: "guidelineSaved", at: g.proposedAt, actor: g.proposedBy ?? g.decisions[0]?.decidedBy ?? null }
-      : { ...base, id: `guidelineProposed:${g.id}`, kind: "guidelineProposed", at: g.proposedAt, actor: g.employeeId },
+      ? { ...base, id: `guidelineSaved:${g.id}`, kind: "guidelineSaved", at: g.proposedAt, actor: g.proposedBy ?? g.decisions[0]?.decidedBy ?? null, guideline: { id: g.id, text } }
+      : { ...base, id: `guidelineProposed:${g.id}`, kind: "guidelineProposed", at: g.proposedAt, actor: g.employeeId, guideline: { id: g.id, text } },
   ];
+  // decisions 依時間排序：修改後確認之後的事件帶修改後的文字
   for (const d of g.decisions) {
+    if (d.decision === "confirm" && d.revisedText !== null) text = d.revisedText;
     // 人提的守則，勾選「記成守則」就是確認（ADR 0007 決定 2），併在「記成守則」
     if (d.decision === "confirm" && human) continue;
     const kind: GuidelineLedgerKind =
       d.decision === "confirm" ? (d.revisedText === null ? "guidelineConfirmed" : "guidelineEdited") : DECISION_KIND[d.decision];
-    events.push({ ...base, id: `${kind}:${d.id}`, kind, at: d.decidedAt, actor: d.decidedBy });
+    events.push({ ...base, id: `${kind}:${d.id}`, kind, at: d.decidedAt, actor: d.decidedBy, guideline: { id: g.id, text } });
   }
   return events;
 }
@@ -380,9 +383,8 @@ export async function readLedgerSources(
   };
 }
 
-// 守則的文字換成目前語言（demo 以外是資料庫的原文）；修改後確認之後是修改後的文字
+// 守則的文字換成目前語言（demo 以外是資料庫的原文）：提出時的文字與各次修改後的文字
 function toLedgerGuideline(g: StoredGuideline, language: LanguageCode): LedgerGuideline {
-  const { proposed, revised } = guidelineTexts(g, language);
   return {
     id: g.id,
     employeeId: g.employeeId,
@@ -391,8 +393,14 @@ function toLedgerGuideline(g: StoredGuideline, language: LanguageCode): LedgerGu
     proposerKind: g.proposerKind,
     proposedBy: g.proposedBy,
     proposedAt: g.proposedAt,
-    text: revised ?? proposed,
-    decisions: g.decisions.map(({ id, decision, revisedText, decidedBy, decidedAt }) => ({ id, decision, revisedText, decidedBy, decidedAt })),
+    text: proposedText(g, language),
+    decisions: g.decisions.map(({ id, decision, revisedText, decidedBy, decidedAt }) => ({
+      id,
+      decision,
+      revisedText: revisionText({ id, revisedText }, language),
+      decidedBy,
+      decidedAt,
+    })),
   };
 }
 

@@ -115,6 +115,24 @@ describe("mergeLedger：排序", () => {
       expect(revoked.filter((e) => isGuidelineEvent(e.kind)).map((e) => e.kind)).toEqual(["guidelineRetired", "guidelineSaved"]);
     });
 
+    it("每個事件帶當時的文字：提出是提出時的、修改後確認是修改後的，之後的收回是修改後的；不採用是提出時的", () => {
+      const at = (id: string, kind: "confirm" | "reject" | "revoke", revisedText: string | null, decidedAt: string) =>
+        ({ id, decision: kind, revisedText, decidedBy: "manager", decidedAt });
+      const T4 = "2026-10-04T00:00:00.000Z";
+      const texts = (g: LedgerGuideline) =>
+        mergeLedger({ ...base, guidelines: [g] }, lang).filter((e) => isGuidelineEvent(e.kind)).map((e) => [e.kind, e.guideline!.text]);
+      const employee = guideline({ proposerKind: "employee", proposedBy: null });
+      expect(texts({ ...employee, decisions: [at("gd1", "confirm", "改過的文字", T3), at("gd2", "revoke", null, T4)] })).toEqual([
+        ["guidelineRetired", "改過的文字"], ["guidelineEdited", "改過的文字"], ["guidelineProposed", "先回答結論"],
+      ]);
+      expect(texts({ ...employee, decisions: [at("gd1", "confirm", null, T3), at("gd2", "revoke", null, T4)] })).toEqual([
+        ["guidelineRetired", "先回答結論"], ["guidelineConfirmed", "先回答結論"], ["guidelineProposed", "先回答結論"],
+      ]);
+      expect(texts({ ...employee, decisions: [at("gd1", "reject", null, T3)] })).toEqual([
+        ["guidelineRejected", "先回答結論"], ["guidelineProposed", "先回答結論"],
+      ]);
+    });
+
     it("看不到來源交辦時沒有工作（assignment 是 null），守則的事件照樣列出", () => {
       const events = mergeLedger({ ...base, guidelines: [guideline({ sourceAssignmentId: "hidden" })] }, lang);
       expect(events.find((e) => e.kind === "guidelineSaved")).toMatchObject({ assignment: null, employee: { id: "basil", displayName: "Basil" } });
@@ -313,8 +331,12 @@ describe("readLedger：守則的事件（#145）", () => {
     expect(g("g04")).toEqual([["guidelineRetired", "manager"], ["guidelineSaved", "manager"]]);
     expect(g("g05")).toEqual([["guidelineEdited", "manager"], ["guidelineProposed", "linden"]]);
     expect(g("g06")).toEqual([["guidelineRejected", "manager"], ["guidelineProposed", "juniper"]]);
+    // 事件帶當時的文字：g05 的「提出守則」是員工提出的文字，「修改後確認守則」是修改後的文字（#146 的修正要求）
     const g05 = demo.guidelines.find((x) => x.id === "g05")!;
-    for (const e of events.filter((x) => x.guideline?.id === "g05")) expect(e.guideline!.text).toBe(g05.decisions[0].revisedText![lang]);
+    const text = (kind: LedgerKind) => events.find((x) => x.guideline?.id === "g05" && x.kind === kind)!.guideline!.text;
+    expect(text("guidelineProposed")).toBe(g05.text[lang]);
+    expect(text("guidelineEdited")).toBe(g05.decisions[0].revisedText![lang]);
+    expect(text("guidelineProposed")).not.toBe(text("guidelineEdited"));
     // 點了追到來源交辦；員工欄是員工・工作類型
     expect(events.find((e) => e.id === "guidelineSaved:g01")).toMatchObject({ assignment: { id: "s05" }, employee: { id: "rowan" }, workTypeId: "support" });
     // 記成守則與那次退回同時：退回在前（列在上方）
@@ -327,5 +349,7 @@ describe("readLedger：守則的事件（#145）", () => {
   it("文字依目前語言", async () => {
     const e = (await readLedger(db, "manager", other)).find((x) => x.id === "guidelineProposed:g02")!;
     expect(e.guideline!.text).toBe(demo.guidelines.find((x) => x.id === "g02")!.text[other]);
+    const g05 = demo.guidelines.find((x) => x.id === "g05")!;
+    expect((await readLedger(db, "manager", other)).find((x) => x.id === "guidelineProposed:g05")!.guideline!.text).toBe(g05.text[other]);
   });
 });

@@ -36,6 +36,7 @@
   "reasonDifferentApproach": "我想要不一樣的做法",
   "reasonProcess": "流程上的小問題",
   "note": "備註（選填）",
+  "noteRequired": "意見（記成守則時必填）",
   "notePlaceholder": "要補充給員工的說明",
   "saveAsGuideline": "記成 {employee} 的「{workType}」守則",
   "saveAsGuidelineHint": "之後交件會照這條做；可以隨時收回。",

@@ -321,7 +321,8 @@ function DecisionBar({ question, workId, guidelineLabel, saving, decide, t }: De
             ))}
           </div>
           <label className="crew-review__note-field">
-            {t.note}
+            {/* 勾選「記成守則」後意見是必填，標籤跟著改（#146 的修正要求） */}
+            {guidelineAllowed && asGuideline ? t.noteRequired : t.note}
             <textarea
               value={note}
               placeholder={t.notePlaceholder}

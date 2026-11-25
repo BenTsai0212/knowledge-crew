@@ -91,8 +91,12 @@ test.describe("桌機 1280", () => {
     const check = panel.getByRole("checkbox");
     await expect(check).not.toBeChecked();
     await expect(panel.getByText(ct.review.saveAsGuidelineHint, { exact: true })).toBeVisible();
+    // 意見欄的標籤：沒勾時是選填，勾選後改為必填（#146 的修正要求）
+    await expect(panel.getByRole("textbox", { name: ct.review.note, exact: true })).toBeVisible();
     // 勾了但意見是空的：顯示錯誤並停下；改動意見後錯誤消失
     await check.check();
+    await expect(panel.getByRole("textbox", { name: ct.review.noteRequired, exact: true })).toBeVisible();
+    await expect(panel.getByRole("textbox", { name: ct.review.note, exact: true })).toHaveCount(0);
     const confirm = panel.getByRole("button", { name: ct.review.confirmReturn, exact: true });
     await confirm.click();
     await expect(panel.getByText(ct.review.guidelineNeedsNote, { exact: true })).toBeVisible();

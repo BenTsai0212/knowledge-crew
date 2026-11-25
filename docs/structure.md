@@ -267,13 +267,13 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/EmployeesView.css`：「員工」畫面的員工卡（桌機兩欄、窄螢幕一欄；職務圖示的方框）
 - `ui/EmployeesView.tsx`：「員工」畫面（設計規格 v3 第 6.5 節）：呈現 `employees.ts` 的員工卡（職務圖示、交件與來源、圓點、說明）；「看信任紀錄」切到信任頁，「交辦給 ○○」只給能驗收的身分，切到交辦頁並預選員工；守則的決定以 `decideGuideline()` 寫入後重新讀取，失敗時註明狀態已改變（#145）；從首頁點進來時捲到該員工卡
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`；只展示 AI 員工的 build（crew ADR 0005）：`crewOnlyMode`、`crewDefaultView()`、`crewStartIdentity()`、`CREW_ONLY_ACCESS_CODE`、`crewDirectEntryLabel()`
-- `ui/guideline-text.ts`：守則的文字換成目前語言（`guidelineTexts()`：提出的文字與確認時修改的文字；員工卡與工作帳本共用，#145）
+- `ui/guideline-text.ts`：守則的文字換成目前語言（`proposedText()`、`revisionText()`、`guidelineTexts()`：提出的文字與確認時修改的文字；員工卡與工作帳本共用，#145）
 - `ui/guidelines.test.ts`：守則的寫入（#145）：退回時記成守則、確認、修改後確認、不採用、收回、狀態已改變，寫入後以員工卡、首頁與工作帳本的資料整理讀回
 - `ui/home-today.ts`：首頁的「今天的工作」的資料整理（#96，設計規格 v3 第 6.1 節）：`homeToday()`（分組：先處理・有檢查沒通過、待驗收、等你決定（看重點的建議與等確認的守則，#145）、進行中）、`homeSummary()`（問候下方的一句總結）、`rowStatus()`、`rowTarget()`（點了到哪裡）、`awaitingCount()`（側欄的待驗收件數）；測試在 `home-today.test.ts`
 - `ui/HomeToday.css`：首頁的「今天的工作」：分組、總結與主要按鈕（列與卡片沿用首頁的 `home__*`）
 - `ui/HomeToday.tsx`：首頁的接入點（#96）：`useCrewToday()`（App 讀一次，首頁與側欄共用）、`HomeTodaySummary`、`HomeTodayCard`（不能驗收的身分沒有可看的事時不顯示）、`CrewTabCount`（側欄與手機導覽「AI 員工」的待驗收件數）
 - `ui/labels.ts`：各畫面共用的名稱（`workTypeLabel()`：工作類型名稱，沒有翻譯時顯示 id）
-- `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看、守則的事件（#145：提出、記成、確認、修改後確認、不採用、收回，由守則與決定推得），依時間新到舊；`filterLedger()`：依員工、工作類型與事件篩選（含「只看守則」）；`truncateText()`：工作欄的守則文字；`ledgerTone()`：層級改變與退回（做錯了）的樣式；測試在 `ledger.test.ts`）
+- `ui/ledger.ts`：「工作帳本」的資料整理（`readLedger()`：交辦、交件、驗收、層級決定與改回逐項看、守則的事件（#145：提出、記成、確認、修改後確認、不採用、收回，由守則與決定推得，每個事件帶當時的文字），依時間新到舊；`filterLedger()`：依員工、工作類型與事件篩選（含「只看守則」）；`truncateText()`：工作欄的守則文字；`ledgerTone()`：層級改變與退回（做錯了）的樣式；測試在 `ledger.test.ts`）
 - `ui/LedgerView.css`：「工作帳本」畫面的篩選、目前的篩選與表格（窄螢幕時表格在框內橫向捲動）
 - `ui/LedgerView.tsx`：「工作帳本」畫面：只負責呈現 `ledger.ts` 的結果（載入中、讀取失敗、空狀態、依員工與事件篩選的表格、「載入更早的紀錄」；只讀）；一開始的篩選來自信任頁的總覽報表（`ledgerFilter`），頂端顯示目前的篩選並可清除（#121）；守則的事件在工作欄顯示守則的文字，點了切到「工作與驗收」的來源交辦（#145）
 - `ui/overview.ts`：「總覽」的資料整理（#134）：`readOverview()`（看得到的專案卡片與工作，狀態與需注意的標記由 `work/status.ts` 推算）、`filterItems()`、`boardColumns()`（四欄與各欄的排序）；測試在 `overview.test.ts`
