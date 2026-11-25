@@ -1,12 +1,12 @@
-// AI 員工的 README 截圖（knowledge-crew #106）：桌機 1440×900 的首頁今天的工作、總覽（#134）、驗收面板（Rowan 的回信）、信任時間軸，
-// 與手機 390×844 的驗收面板（固定的決定列）與總覽（#134），寫到 docs/crew/images/<名稱>.png。
+// AI 員工的 README 截圖（knowledge-crew #106）：桌機 1440×900 的首頁今天的工作、總覽（#134）、驗收面板（Rowan 的回信）、信任時間軸、
+// 員工頁 Rowan 的卡（守則：一條等確認、一條生效）與守則文件的原文面板（這條守則的來歷）（#151），與手機 390×844 的驗收面板（固定的決定列）與總覽（#134），寫到 docs/crew/images/<名稱>.png。
 // 不是測試，預設不執行：KC_README_SHOTS=1 時 playwright.config.ts 只執行這個檔案（重新產生的方式見 docs/testing.md「AI 員工的 README 截圖」）。
 // 參考情境（client/）的虛構資料、預設語言、主管身分、Light 模式、減少動態效果；/api/ask 是 openApp() 的假回應（不呼叫模型）；
 // openApp() 以邀請碼登入後才截圖，截圖中沒有登入頁與邀請碼。
 import { expect, test, type Page } from "@playwright/test";
-import { gotoView, openApp, switchIdentity } from "./support/app";
+import { expandTimelineEntry, gotoView, openApp, s, switchIdentity } from "./support/app";
 import { access, language, readClientJson } from "./support/client";
-import { ct, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel, trustRow } from "./support/crew";
+import { ct, employeeName, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel, trustRow } from "./support/crew";
 
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
@@ -59,6 +59,27 @@ test.describe("桌機", () => {
     await gotoCrewSection(page, ct.common.sectionTrust);
     await expect(trustRow(page, "rowan", "support")).toBeVisible();
     await page.screenshot({ path: shotPath("trust") });
+  });
+
+  test("員工頁 Rowan 的守則、守則文件的原文面板（#151）", async ({ page }) => {
+    await start(page);
+    await openCrew(page);
+    await gotoCrewSection(page, ct.common.sectionEmployees);
+    // Rowan 的卡：g02 等確認、g01 生效（虛構資料）
+    const rowan = page.getByRole("region", { name: employeeName("rowan") }).filter({ has: page.locator(".crew-employees__top") });
+    await expect(rowan.locator(".crew-employees__guideline[data-status=pending]")).toHaveCount(1);
+    await expect(rowan.locator(".crew-employees__guideline[data-status=active]")).toHaveCount(1);
+    await rowan.screenshot({ path: shotPath("guidelines") });
+
+    // g01（Rowan 的「先回答再說明」守則）的文件：時間軸展開 → 打開原文 → 這條守則的來歷
+    expect(await gotoView(page, "timeline")).toBe(true);
+    const entry = page.locator('ol.timeline > li[data-document-id="crew-guideline-g01"]');
+    await expandTimelineEntry(entry);
+    await entry.getByRole("button", { name: s.openSource }).first().click();
+    const origin = page.getByRole("region", { name: ct.knowledge.guidelineTitle, exact: true });
+    await expect(origin).toBeVisible();
+    // 只截原文面板（時間軸的其他文件不入鏡）
+    await page.locator("aside.source").filter({ has: origin }).screenshot({ path: shotPath("provenance") });
   });
 });
 

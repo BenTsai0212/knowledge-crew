@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 import type { DemoFile } from "../app/src/crew/demo/types";
 import { expandTimelineEntry, gotoView, openApp, s, switchIdentity } from "./support/app";
 import { language, readClientJson } from "./support/client";
-import { assignmentTitle, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
+import { assignmentTitle, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel, shortDay } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -46,6 +46,8 @@ for (const width of [1280, 390]) {
       const block = origin(page);
       await expect(block).toBeVisible();
       await expect(block).toContainText(employeeName("rowan"));
+      // #151：員工提出的守則，第一、二行的名字都有 AI 標記
+      await expect(block.locator(".crew-employee-name")).toHaveCount(2);
       await expect(block).toContainText(lead(ct.knowledge.guidelineFromEmployee));
       await expect(block).toContainText(lead(ct.knowledge.guidelineActive));
       await expect(block).not.toContainText(lead(ct.knowledge.guidelineRevoked));
@@ -63,6 +65,11 @@ for (const width of [1280, 390]) {
       const block = origin(page);
       await expect(block).toBeVisible();
       await expect(block).toContainText(employeeName("linden"));
+      // #151：員工名字有 AI 標記；確認與收回的日期是短格式（MM/DD）
+      await expect(block.locator(".crew-employee-name").first()).toContainText(employeeName("linden"));
+      const [confirmed, revoked] = guidelines.find((g) => g.id === "g04")!.decisions;
+      for (const d of [confirmed, revoked]) await expect(block).toContainText(shortDay(d.decidedAt));
+      await expect(block).not.toContainText("2026");
       await expect(block).toContainText(lead(ct.knowledge.guidelineRevoked));
       await expect(block).toHaveClass(/crew-source-origin--revoked/);
 

@@ -61,6 +61,12 @@ interface Demo {
 export const demo: Demo = hasCrewDemo
   ? readClientJson<Demo>("crew/demo.json")
   : { sources: [], employees: [], assignments: [], simulations: [] };
+// 畫面的短日期 MM/DD（UTC；與 app/src/crew/ui/trust.ts 的 shortDate() 相同的格式，#151）
+export function shortDay(iso: string): string {
+  const parts = new Intl.DateTimeFormat(language, { month: "2-digit", day: "2-digit", timeZone: "UTC" }).formatToParts(new Date(iso));
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${part("month")}/${part("day")}`;
+}
 export const employeeName = (id: string) => demo.employees.find((e) => e.id === id)!.displayName;
 export const workTypeName = (id: string) => (ct.common as Record<string, string>)[`workType${id.charAt(0).toUpperCase()}${id.slice(1)}`];
 // 專案的工作來源；畫面上的名稱是目前語言的 label，沒有時是 name（#60 的 `## 決定` 2）
@@ -136,16 +142,17 @@ export async function assignSimulateReturn(
 // 首頁的「今天的工作」（#96）
 export const homeToday = (page: Page) => page.getByRole("region", { name: ct.home.title, exact: true });
 
-// ---- 第一次來的導覽（#122）：首頁的入口小卡與導覽對話框；walkTour() 走完 5 步，每一步確認切到的畫面與標出的區塊 ----
+// ---- 第一次來的導覽（#122）：首頁的入口小卡與導覽對話框；walkTour() 走完 6 步，每一步確認切到的畫面與標出的區塊 ----
 export const tourCard = (page: Page) => page.getByRole("region", { name: ct.tour.cardTitle, exact: true });
 export const tourDialog = (page: Page) => page.getByRole("dialog").filter({ has: page.locator(".crew-tour__title") });
 export const tourReplay = (page: Page) => page.getByRole("button", { name: ct.tour.replay, exact: true });
 
-// 每一步：標題、應在的畫面（首頁或 crew 的子頁）、標出的區塊
+// 每一步：標題、應在的畫面（首頁或 crew 的子頁）、標出的區塊（owner：區塊所在的員工卡）
 const TOUR = [
   { title: () => ct.tour.todayTitle, section: null, target: ".crew-home" },
   { title: () => ct.tour.reviewTitle, section: () => ct.common.sectionWorks, target: ".crew-review__pair" },
   { title: () => ct.tour.returnTitle, section: () => ct.common.sectionWorks, target: ".crew-review__decision" },
+  { title: () => ct.tour.guidelinesTitle, section: () => ct.common.sectionEmployees, target: ".crew-employees__guidelines[data-pending]", owner: "rowan" },
   { title: () => ct.tour.trustTitle, section: () => ct.common.sectionTrust, target: ".crew-trust__row" },
   { title: () => ct.tour.flowbackTitle, section: () => ct.common.sectionWorks, target: ".crew-review__knowledge" },
 ] as const;
@@ -191,7 +198,7 @@ async function expectTargetMostlyVisible(page: Page, target: string): Promise<vo
     .toBe(true);
 }
 
-// 從首頁的入口開始走完 5 步；keyboard 時以 Enter 按「下一步」（開始時焦點在「下一步」）。結束後回到首頁不必要：停在最後一步的畫面
+// 從首頁的入口開始走完 6 步；keyboard 時以 Enter 按「下一步」（開始時焦點在「下一步」）。結束後回到首頁不必要：停在最後一步的畫面
 export async function walkTour(page: Page, opts: { keyboard?: boolean } = {}): Promise<void> {
   await (await tourStart(page)).click();
   for (const [i, step] of TOUR.entries()) {
@@ -201,6 +208,8 @@ export async function walkTour(page: Page, opts: { keyboard?: boolean } = {}): P
     if (step.section === null) await expect(page.locator('[data-view="home"][aria-current="page"]').first()).toBeVisible();
     else await expect(crewSections(page).getByRole("button", { name: step.section(), exact: true })).toHaveAttribute("aria-current", "page");
     await expectSpotOn(page, step.target);
+    // 守則一步（#151）：標出的是 Rowan 卡（有一條等確認）的守則區塊
+    if ("owner" in step) await expect(page.locator(".crew-employees__card", { has: page.locator(step.target) }).first()).toContainText(employeeName(step.owner));
     const last = i === TOUR.length - 1;
     const button = dialog.getByRole("button", { name: last ? ct.tour.finish : ct.tour.next, exact: true });
     if (opts.keyboard) {

@@ -24,6 +24,14 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: "today", title: "todayTitle", body: "todayBody", go: { kind: "home" }, targets: [".crew-home"] },
   { id: "review", title: "reviewTitle", body: "reviewBody", go: WORKS, targets: [".crew-review__pair", ".crew-review__panel"] },
   { id: "return", title: "returnTitle", body: "returnBody", go: WORKS, targets: [".crew-review__decision", ".crew-review__panel"] },
+  {
+    id: "guidelines",
+    title: "guidelinesTitle",
+    body: "guidelinesBody",
+    go: { kind: "crew", target: { section: "employees" } },
+    // 有等確認守則的員工卡（demo 是 Rowan）；沒有時是第一張卡的守則區塊（#151）
+    targets: [".crew-employees__guidelines[data-pending]", ".crew-employees__guidelines"],
+  },
   { id: "trust", title: "trustTitle", body: "trustBody", go: { kind: "crew", target: { section: "trust" } }, targets: [".crew-trust__row", ".crew-trust"] },
   { id: "flowback", title: "flowbackTitle", body: "flowbackBody", go: { kind: "flowback" }, targets: [".crew-review__knowledge", ".crew-review__panel"] },
 ];

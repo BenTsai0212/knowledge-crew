@@ -1,4 +1,4 @@
-// 第一次來的導覽（#122）：首頁的入口小卡（可以關掉、可以重新看）、5 步都切到對應的畫面並標出區塊、鍵盤與 Esc、桌機 1280 與手機 390。
+// 第一次來的導覽（#122）：首頁的入口小卡（可以關掉、可以重新看）、6 步都切到對應的畫面並標出區塊、鍵盤與 Esc、桌機 1280 與手機 390。
 // 不自動彈出：進入首頁時只有入口小卡，沒有對話框（線上 demo 的「直接體驗」在 crew-only.spec.ts）。
 // 只在有 crew/demo.json 的客戶執行；/api/ask 一律是 page.route 的假回應（openApp）。
 import { expect, test, type Page } from "@playwright/test";
@@ -26,7 +26,7 @@ for (const viewport of [
   test.describe(viewport.name, () => {
     test.use({ viewport: viewport.size });
 
-    test("首頁有入口小卡、不自動彈出；走完 5 步後小卡換成「重新看導覽」並記住看過", async ({ page }) => {
+    test("首頁有入口小卡、不自動彈出；走完 6 步後小卡換成「重新看導覽」並記住看過", async ({ page }) => {
       await openHome(page);
       await expect(tourCard(page)).toBeVisible();
       await expect(tourDialog(page)).toHaveCount(0);

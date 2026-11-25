@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import type { DemoFile } from "../app/src/crew/demo/types";
 import { openApp, switchIdentity } from "./support/app";
 import { access, language, readClientJson } from "./support/client";
-import { assignmentTitle, crewFill, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
+import { assignmentTitle, crewFill, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel, shortDay } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -42,7 +42,11 @@ for (const width of [1280, 390]) {
       await expect(badge).toContainText(employeeName("rowan"));
       for (const part of around(ct.review.followedBy)) await expect(badge).toContainText(part);
       await expect(followed.getByText(ct.review.followedJudge, { exact: true })).toBeVisible();
-      await expect(followed.getByRole("listitem").filter({ hasText: guidelineText("g01") })).toContainText(around(ct.review.followedSavedOnReturn, { date: "\u0000" })[0] ?? "");
+      const g01 = followed.getByRole("listitem").filter({ hasText: guidelineText("g01") });
+      await expect(g01).toContainText(around(ct.review.followedSavedOnReturn, { date: "\u0000" })[0] ?? "");
+      // #151：日期是員工卡、工作帳本的短格式（MM/DD），不是含年份的長格式
+      await expect(g01).toContainText(shortDay(guidelines.find((g) => g.id === "g01")!.proposedAt));
+      await expect(g01).not.toContainText("2026");
 
       const pending = followed.getByRole("note");
       await expect(pending).toContainText(employeeName("rowan"));
@@ -64,6 +68,10 @@ for (const width of [1280, 390]) {
       await expect(origin).toBeVisible();
       const [by, facts] = [origin.locator("p").nth(0), origin.locator("p").nth(1)];
       await expect(by).toContainText(employeeName("linden"));
+      // #151：員工名字有 AI 標記；日期是短格式（MM/DD）
+      await expect(by.locator(".crew-employee-name .crew-ai-mark")).toHaveCount(1);
+      await expect(by.locator(".crew-employee-name")).toContainText(employeeName("linden"));
+      await expect(by).not.toContainText("2026");
       await expect(by).toContainText(managerLabel);
       // k13 是看重點時通過的（10/13 同意看重點之後沒有做錯），第一次就通過
       await expect(facts).toContainText(ct.knowledge.originLevelLight);

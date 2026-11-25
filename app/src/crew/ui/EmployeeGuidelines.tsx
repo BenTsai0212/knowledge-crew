@@ -1,6 +1,7 @@
 // 員工卡的「守則」區塊（#145，ADR 0007）：摘要一行；等確認的守則（確認、修改後確認、不採用）排最前，再來是生效的（收回）；
 // 已收回與不採用的收在一行，點了展開，不能再操作。每條都有「看那次退回」。資料整理在 employees.ts（groupGuidelines()），
 // 決定的按鈕只給能驗收的身分；寫入在 EmployeesView.tsx（decideGuideline() 後重新讀取）。
+// 有等確認的守則時區塊帶 data-pending（導覽的「守則」一步以此標出，#151）。
 import { useState, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
 import type { LanguageCode } from "../../client/types";
@@ -55,7 +56,7 @@ export function EmployeeGuidelineSection({ employee, guidelines, canReview, savi
     <GuidelineItem key={g.id} g={g} employee={employee.displayName} canReview={canReview} saving={saving} language={language} decide={decide} openReturn={openReturn} t={t} />
   );
   return (
-    <section className="crew-employees__guidelines" aria-labelledby={titleId}>
+    <section className="crew-employees__guidelines" aria-labelledby={titleId} data-pending={pending.length > 0 || undefined}>
       <h4 id={titleId}>{t.guidelinesTitle}</h4>
       <p className="muted">{guidelineSummary(guidelines, canReview, language)}</p>
       {failed && (
