@@ -21,6 +21,7 @@ type CrewFiles = {
   ledger: typeof import("@client/i18n/crew/ledger.zh-TW.json");
   tour: typeof import("@client/i18n/crew/tour.zh-TW.json");
   overview: typeof import("@client/i18n/crew/overview.zh-TW.json");
+  knowledge: typeof import("@client/i18n/crew/knowledge.zh-TW.json");
 };
 const crewJson = <S extends keyof CrewFiles>(screen: S): CrewFiles[S] =>
   hasCrewDemo ? readClientJson<CrewFiles[S]>(`i18n/crew/${screen}.${language}.json`) : ({} as CrewFiles[S]);
@@ -34,6 +35,7 @@ export const ct = {
   ledger: crewJson("ledger"),
   tour: crewJson("tour"),
   overview: crewJson("overview"),
+  knowledge: crewJson("knowledge"),
 };
 
 // 代入 {key}（只用於沒有單複數寫法的文字）

@@ -3,7 +3,9 @@
 // 層級只由 reviewLevel() 決定，面板只依 reviewFocus() 的結果呈現。
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type Priority, type SourceKind, type StoredWork } from "../db/store";
+import {
+  getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, listGuidelines, listWorkGuidelines, type AssignmentSummary, type Priority, type SourceKind, type StoredWork,
+} from "../db/store";
 import { DEMO } from "../demo/load";
 import { demoText } from "../demo/texts";
 import { readFlowbackPassage } from "../knowledge/origin";
@@ -11,6 +13,7 @@ import { parseWorkBody, type ParsedBody } from "../work/body";
 import { crewToday, shownDueStatus, type DueStatus } from "../work/due";
 import { sourceLabel } from "./refs";
 import { deliverableOf, type Deliverable } from "./review/conclusion";
+import { followedGuidelines, pendingGuidelineCount, type FollowedGuideline } from "./review/followed";
 import { lightReason, type LightReason } from "./review/light";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import { reviewFocus, reviewLevel } from "../trust/rules";
@@ -74,6 +77,10 @@ export interface ReviewPanel {
   light: LightReason | null;
   /** 最新一輪的變更（目前語言）：看重點時收成一行，「逐項列出」展開時用 */
   changeItems: WorkChange[];
+  /** 最新一輪依照的守則（員工自述，#147）；沒有時是空陣列 */
+  guidelines: FollowedGuideline[];
+  /** 同一員工 × 工作類型等確認的守則數（#147）；不能驗收的身分是 0 */
+  pendingGuidelines: number;
 }
 
 const EMPTY: WorkList = { awaiting: [], recent: [] };
@@ -184,6 +191,10 @@ export async function readReviewPanel(
   if (!current) return null;
   const { reviews, decisions } = await getTrustInputs(db, identity, item.employee.id, item.workTypeId);
   const level = reviewLevel(reviews, decisions);
+  const [followed, all] = await Promise.all([
+    listWorkGuidelines(db, identity, current.id),
+    canReview ? listGuidelines(db, identity, { employeeId: item.employee.id, workTypeId: item.workTypeId }) : Promise.resolve([]),
+  ]);
   return {
     item,
     focus: reviewFocus(current, level),
@@ -201,6 +212,8 @@ export async function readReviewPanel(
     knowledgePassage: current.review?.verdict === "accepted" ? await readFlowbackPassage(db, identity, current.id) : null,
     light: level === "light" ? lightReason(reviews, decisions, DEMO_PARAMS.window) : null,
     changeItems: current.changes,
+    guidelines: followedGuidelines(followed, current.submittedAt, language),
+    pendingGuidelines: pendingGuidelineCount(all, canReview),
   };
 }
 

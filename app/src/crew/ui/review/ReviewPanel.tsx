@@ -12,6 +12,7 @@ import { workTypeLabel } from "../labels";
 import { assignmentRef, workRef } from "../refs";
 import { BodyView, PointList, type ActivePoint } from "./BodyView";
 import { conclusionOf, decisionQuestion, deliverableName, type Audience } from "./conclusion";
+import type { FollowedGuideline } from "./followed";
 import type { LightReason } from "./light";
 
 type Texts = CrewTexts<"review">;
@@ -45,9 +46,11 @@ interface PanelProps {
   onOpenSource?: (passageId: string) => void;
   /** 切到信任頁；沒有時不顯示「看信任紀錄」 */
   onOpenTrust?: () => void;
+  /** 切到「員工」並捲到該員工卡（#147：等確認的守則）；沒有時不顯示「到員工頁確認」 */
+  onOpenEmployee?: (employeeId: string) => void;
 }
 
-export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, savedGuideline = false, onOpenSource, onOpenTrust }: PanelProps) {
+export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, savedGuideline = false, onOpenSource, onOpenTrust, onOpenEmployee }: PanelProps) {
   const t = crewStrings("review", language);
   const { item, focus, current, earlier, body, deliverable } = panel;
   // 選中的重點只存在元件 state；換一筆工作時（key 改變）重設
@@ -115,6 +118,14 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
             <PointList points={focus.points} body={body} language={language} active={active} onToggle={toggle} />
           )}
         </section>
+        <FollowedCard
+          guidelines={panel.guidelines}
+          pending={panel.pendingGuidelines}
+          employee={item.employee.displayName}
+          language={language}
+          onOpenEmployee={onOpenEmployee && (() => onOpenEmployee(item.employee.id))}
+          t={t}
+        />
         <section className="card crew-review__section">
           <h4>{t.checks}</h4>
           {focus.checks.length === 0 ? (
@@ -218,6 +229,55 @@ function LightCard({ reason, employee, workType, language, onOpenTrust, t }: Lig
           </button>
         )}
       </div>
+    </section>
+  );
+}
+
+interface FollowedProps {
+  guidelines: FollowedGuideline[];
+  pending: number;
+  employee: string;
+  language: LanguageCode;
+  onOpenEmployee?: () => void;
+  t: Texts;
+}
+
+/**
+ * 這次依照的守則（#147，crew ADR 0007 決定 5）：員工自述，有沒有做到由人判斷；不論層級都顯示。
+ * 下方是等確認的守則（只有能驗收的身分，pending > 0）；沒有依照任何守則時只留這一行，兩者都沒有時不顯示。
+ */
+function FollowedCard({ guidelines, pending, employee, language, onOpenEmployee, t }: FollowedProps) {
+  if (guidelines.length === 0 && pending === 0) return null;
+  const pendingRow = pending > 0 && (
+    <div className="crew-review__followed-pending" role="note">
+      <p>{withEmployee(t.pendingGuidelines, { count: pending }, employee, language)}</p>
+      {onOpenEmployee && (
+        <button type="button" className="secondary" onClick={onOpenEmployee}>
+          {t.pendingGuidelinesOpen}
+        </button>
+      )}
+    </div>
+  );
+  if (guidelines.length === 0) return <div className="card crew-review__section crew-review__followed">{pendingRow}</div>;
+  return (
+    <section className="card crew-review__section crew-review__followed" aria-labelledby="crew-review-followed-title">
+      <div className="crew-review__followed-head">
+        <h4 id="crew-review-followed-title">{t.followedTitle}</h4>
+        <span className="badge crew-review__self-reported">{withEmployee(t.followedBy, {}, employee, language)}</span>
+      </div>
+      <p className="muted crew-review__by">{t.followedJudge}</p>
+      <ul className="crew-review__followed-list">
+        {guidelines.map((g) => (
+          <li key={g.id}>
+            <span>{g.text}</span>
+            <span className="muted crew-review__followed-origin">
+              {fill(g.proposerKind === "human" ? t.followedSavedOnReturn : t.followedConfirmed, { date: formatDate(g.since, language) }, language)}
+              {g.retiredLater && t.followedRetiredLater}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {pendingRow}
     </section>
   );
 }

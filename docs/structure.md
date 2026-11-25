@@ -251,7 +251,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `guidelines/status.ts`：守則的狀態（crew ADR 0007、#142）：`guidelineStatus()`、`currentText()`、`canDecide()`、`activeAt()`、`canBeGuideline()`，由人的決定推算（測試在 `status.test.ts`；資料表見 `docs/crew/data-model.md`）
 - `i18n.ts`：crew 介面文字唯一的讀取模組（`crewStrings()`；一個畫面一份翻譯檔，`CrewScreenKeys` 一行一個畫面）
 - `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題、段落與 `#owner` 的部門名稱，不是一個知識庫條目時是 null）、`flowbackDocumentId()`、`flowbackOwnerPendingId()`（測試在 `flowback.test.ts`）
-- `knowledge/origin.ts`：回流文件的來源：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、哪一次驗收）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）
+- `knowledge/origin.ts`：回流文件的來源與當時的把關：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、誰驗收、當時的審查層級、退回次數、自動檢查、依照的守則數，#147；推算的純函式 `levelAt()`、`returnedBefore()`、`checkTally()` 的測試在 `origin.test.ts`）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）
 - `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數
 - `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
 - `trust/types.ts`：信任規則用的型別
@@ -280,19 +280,21 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/OverviewView.css`：「總覽」畫面的專案卡片、篩選列與看板（手機是依狀態切換的清單）
 - `ui/OverviewView.tsx`：「總覽」畫面（#134，AI 員工頁的預設分頁）：專案卡片（點卡片篩選）、篩選列（專案、員工、工作類型、只看需注意；可清除）、四欄的工作看板（點工作到「工作與驗收」，待交件到「交辦」）；只讀，不呈現績效
 - `ui/refs.ts`：工作來源與外部編號的顯示（`assignmentRef()`、`workRef()`：repo 類是 `<repo>#<Issue>`、`PR #<編號>`，其他類型是來源名稱與編號，沒有編號時只有來源名稱；文字在 `common` 的 `ref*`）
-- `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果與交件的種類；`initialSelection()`；測試在 `review.test.ts`）
+- `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果、交件的種類、依照的守則與等確認的守則數（#147）；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）
 - `ui/review/conclusion.ts`：驗收面板 v3 的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`conclusionOf()`：結論列；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
 - `ui/review/Deliverables.tsx`：驗收面板 v3 的四種交件（回信、貼文、知識庫條目、程式修改）依原本的樣子呈現（測試在 `Deliverables.test.ts`）
+- `ui/review/followed.ts`：驗收面板的「這次依照的守則」（#147）：`followedGuidelines()`（交件當時的文字、來歷的日期、之後已收回）與 `pendingGuidelineCount()`（等確認的守則數，只給能驗收的身分；測試在 `followed.test.ts`）
 - `ui/review/light.ts`：驗收面板的看重點（#102，規格 6.3）：「為什麼是看重點」的日期與次數（`lightReason()`，取自既有的驗收紀錄與層級決定）與收起的規則（`keptInLight()`、`splitFields()`：有重點與空白的欄位照樣顯示，其他欄位收起；測試在 `light.test.ts`）
 - `ui/review/marked.ts`：驗收面板 v3 的重點標記（`segments()`：依標記切片段；`canMark()`：能不能在內容中標出重點；測試在 `marked.test.ts`）
 - `ui/review/parts.tsx`：驗收面板 v3 的交件內容共用的小元件（上標的重點編號、依標記切開的內容、區塊的名稱欄與內容；四種交件與一般的寫法共用）
-- `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列、重點＋自動檢查（並排，窄螢幕堆疊）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡、「記成 ○○ 的守則」的勾選框（#145，「流程上的小問題」不顯示，意見是空的時顯示錯誤）；手機展開退回原因時取消固定並捲進畫面，#103）；看重點時另有「為什麼是看重點」說明卡（#102）
+- `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列、重點＋這次依照的守則（員工自述，與等確認的守則的「到員工頁確認」，#147）＋自動檢查（並排，窄螢幕堆疊）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡、「記成 ○○ 的守則」的勾選框（#145，「流程上的小問題」不顯示，意見是空的時顯示錯誤）；手機展開退回原因時取消固定並捲進畫面，#103）；看重點時另有「為什麼是看重點」說明卡（#102）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上；手機的決定列固定在底部分頁列之上，#103）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆（從原文的來源或首頁的今天的工作切過來時選那一件，#92、#96）；已回流的工作顯示「已收進知識庫」與「打開原文」，沒有上傳權限而沒有回流時註明原因；「通過」「退回」只給能驗收的身分，寫入後重新讀取（並通知 App 更新首頁與側欄的待驗收件數，#96）
 - `ui/section-counts.ts`：子導覽的數字（`sectionCounts()`：等確認的守則數、待驗收件數與待決定的看重點的建議數，只給能驗收的身分）與目前子頁的橫向捲動量（`scrollDelta()`；測試在 `section-counts.test.ts`，#103）
 - `ui/sections.ts`：子導覽的位置與名稱的鍵（總覽、員工、交辦、工作與驗收、信任、工作帳本）、點進 AI 員工時的預設位置（`DEFAULT_CREW_SECTION`：總覽，#134；#100 時是工作與驗收）、畫面元件的 props（`ledgerFilter`：切到工作帳本時的篩選，#121）
-- `ui/SourceOrigin.tsx`：原文的接入點：回流的文件在原文面板（`ui/SourcePanel.tsx`、`ui/SourceSheet.tsx` 的 `origin`）顯示「來自 AI 員工 ○○・驗收「○○」（日期）」，點了切到「工作與驗收」的那一件（`App.tsx` 經 `CrewPage` 的 `request`；測試在 `SourceOrigin.test.ts`）
+- `ui/SourceOrigin.css`：原文面板的「這條知識經過的把關」區塊（#147）
+- `ui/SourceOrigin.tsx`：原文的接入點：回流的文件在原文面板（`ui/SourcePanel.tsx`、`ui/SourceSheet.tsx` 的 `origin`）顯示「這條知識經過的把關」（#147：「{員工} 整理・{驗收者} 驗收通過（日期）」與當時的審查層級、退回次數、自動檢查、依照的守則），「看這次驗收」切到「工作與驗收」的那一件（`App.tsx` 經 `CrewPage` 的 `request`；測試在 `SourceOrigin.test.ts`）
 - `ui/today.ts`：今天的工作的資料整理（`readToday()`：待驗收、進行中、建議改看重點、等確認的守則（#145）；首頁的「今天的工作」使用，AI 員工頁籤內沒有「今天」子頁（#100）；測試在 `today.test.ts`）
 - `ui/tour-steps.ts`：第一次來的導覽（#122）的步驟與目標區塊、看過的紀錄（`localStorage`，讀寫包在 try/catch，讀不到時當成沒看過）、對話框的位置、回流那一步的工作（`readTourFlowback()`；測試在 `tour-steps.test.ts`）
 - `ui/Tour.css`：第一次來的導覽的入口小卡、「重新看導覽」、導覽對話框與標出區塊的外框（只用 theme 的 CSS 變數）

@@ -284,7 +284,7 @@ describe("seed 時回流與部門的合併", { timeout: 60_000 }, () => {
   });
 });
 
-// 原文的「來自 AI 員工 ○○」與「已收進知識庫」讀的回流紀錄（#92 PR 3）：看得到驗收與文件的身分才有
+// 原文的「這條知識經過的把關」（#147；原本是「來自 AI 員工 ○○」）與「已收進知識庫」讀的回流紀錄（#92 PR 3）：看得到驗收與文件的身分才有
 describe("回流的來源", { timeout: 60_000 }, () => {
   const lang = clientConfig.client.defaultLanguage;
   const origin = (identity: string | null, doc: string) => readFlowbackOrigin(db, identity, doc, lang);
@@ -294,6 +294,8 @@ describe("回流的來源", { timeout: 60_000 }, () => {
     expect(await origin("manager", SEEDED)).toEqual({
       assignmentId: "k12", title: (DEMO_RAW as DemoFile).assignments.find((a) => a.id === "k12")!.title[lang], employeeName: "Linden",
       decidedAt: new Date("2026-10-27T15:00:00+08:00").toISOString(),
+      // 知識的來歷（#147）：驗收者、當時看重點、第一次就通過、檢查 2/2、依照守則 1 條（g05）
+      decidedBy: "manager", level: "light", returned: 0, checks: { passed: 2, total: 2 }, guidelines: 1,
     });
     expect(await readFlowbackPassage(db, "manager", "k12-w1")).toBe(`${SEEDED}-1`);
     for (const identity of ["staff", "guest", null]) {

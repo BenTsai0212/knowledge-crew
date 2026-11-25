@@ -1,3 +1,12 @@
 {
-  "origin": "From AI employee {employee} · accepted “{title}” ({date})"
+  "originTitle": "How this knowledge was checked",
+  "originBy": "Prepared by {employee} · accepted by {reviewer} ({date})",
+  "originLevelItem": "Every item reviewed at the time",
+  "originLevelLight": "Key points reviewed at the time",
+  "originFirstTime": "Accepted the first time",
+  "originReturned": "Accepted after {count, plural, one {# return} other {# returns}}",
+  "originChecks": "{passed}/{total} automated checks passed",
+  "originGuidelines": "Followed {count, plural, one {# guideline} other {# guidelines}}",
+  "originSeparator": " · ",
+  "originOpen": "View this review"
 }

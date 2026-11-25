@@ -133,6 +133,7 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
           savedGuideline={savedGuideline}
           onOpenSource={onOpenSource}
           onOpenTrust={navigate && (() => navigate({ section: "trust" }))}
+          onOpenEmployee={navigate && ((employeeId) => navigate({ section: "employees", employeeId }))}
         />
       ) : (
         <p className="muted crew-review__hint">{t.selectHint}</p>

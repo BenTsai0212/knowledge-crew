@@ -1,3 +1,12 @@
 {
-  "origin": "來自 AI 員工 {employee}・驗收「{title}」（{date}）"
+  "originTitle": "這條知識經過的把關",
+  "originBy": "{employee} 整理・{reviewer} 驗收通過（{date}）",
+  "originLevelItem": "當時逐項看",
+  "originLevelLight": "當時看重點",
+  "originFirstTime": "第一次就通過",
+  "originReturned": "退回 {count} 次後通過",
+  "originChecks": "自動檢查 {passed}/{total} 項通過",
+  "originGuidelines": "依照守則 {count} 條",
+  "originSeparator": "・",
+  "originOpen": "看這次驗收"
 }
