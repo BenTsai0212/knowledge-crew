@@ -5,9 +5,12 @@
 // 所以 demo 一開始就看得到；驗收者沒有上傳權限時不回流（同 createReview()）。
 // 守則（#142）在驗收與看重點的決定之後寫入：守則（依提出時間）→ 決定（依檔案順序）→ 交件依照的守則。資料庫的外鍵只要求父列先寫入；
 // 時間條件（交件當時生效、決定晚於提出）不套用 RLS，由 validateDemo() 在匯入前檢查。
+// 確認的守則以 decideGuideline() 相同的規則寫成知識庫文件（writeGuidelineDocument()，#149）：來源有守則等級、確認者能上傳；
+// 之後收回的守則文件照樣寫入（收回不刪文件）。
 import type { PGliteInterface } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
-import { writeFlowback } from "../db/store";
+import { writeFlowback, writeGuidelineDocument } from "../db/store";
+import { identityName, toGuidelineDocument } from "../knowledge/guideline-document";
 import { demoGuidelineDecisionId, demoWorkId, type DemoFile } from "./types";
 import { assertDemo, type ValidateOptions } from "./validate";
 
@@ -30,8 +33,8 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
       tx.query(`INSERT INTO crew.${table} (${columns.join(", ")}) VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})`, values);
 
     for (const s of demo.sources) {
-      await insert("sources", ["id", "kind", "name", "project_id", "knowledge_visibility_level_id"], [
-        s.id, s.kind, s.name, s.project, s.knowledgeVisibility ?? null,
+      await insert("sources", ["id", "kind", "name", "project_id", "knowledge_visibility_level_id", "guideline_visibility_level_id"], [
+        s.id, s.kind, s.name, s.project, s.knowledgeVisibility ?? null, s.guidelineVisibility ?? null,
       ]);
     }
     for (const e of demo.employees) {
@@ -94,7 +97,9 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
 
     // 來源退回 → 交件、交辦與驗收者（人提的守則的提出者）
     const reviewSource = new Map(
-      demo.assignments.flatMap((a) => a.works.flatMap((w) => (w.review ? [[w.review.id, { workId: demoWorkId(a.id, w.round), assignmentId: a.id, decidedBy: w.review.decidedBy }] as const] : []))),
+      demo.assignments.flatMap((a) =>
+        a.works.flatMap((w) => (w.review ? [[w.review.id, { workId: demoWorkId(a.id, w.round), assignment: a, review: w.review, decidedBy: w.review.decidedBy }] as const] : [])),
+      ),
     );
     const byProposedAt = [...demo.guidelines].sort((x, y) => Date.parse(x.proposedAt) - Date.parse(y.proposedAt));
     for (const g of byProposedAt) {
@@ -102,7 +107,7 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
       await insert(
         "guidelines",
         ["id", "employee_id", "work_type_id", "text", "source_review_id", "source_work_id", "source_assignment_id", "proposer_kind", "proposed_by", "proposed_at"],
-        [g.id, g.employee, g.workType, g.text[language], g.sourceReview, source.workId, source.assignmentId, g.proposer, g.proposer === "human" ? source.decidedBy : null, g.proposedAt],
+        [g.id, g.employee, g.workType, g.text[language], g.sourceReview, source.workId, source.assignment.id, g.proposer, g.proposer === "human" ? source.decidedBy : null, g.proposedAt],
       );
     }
     for (const g of demo.guidelines) {
@@ -114,6 +119,23 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
           id, g.id, d.decision, d.revisedText?.[language] ?? null, d.decision === "revoke" ? confirmId : null, d.decidedBy, d.decidedAt,
         ]);
       }
+    }
+    for (const g of demo.guidelines) {
+      const at = g.decisions.findIndex((d) => d.decision === "confirm");
+      const confirm = g.decisions[at];
+      const { assignment, review } = reviewSource.get(g.sourceReview)!;
+      const source = demo.sources.find((s) => s.id === assignment.source)!;
+      if (!confirm || !source.guidelineVisibility || !uploaders.has(confirm.decidedBy)) continue;
+      const doc = toGuidelineDocument({
+        employeeName: demo.employees.find((e) => e.id === g.employee)!.displayName, workTypeId: g.workType,
+        text: (confirm.revisedText ?? g.text)[language], proposerKind: g.proposer,
+        returnDate: review.decidedAt.slice(0, 10), reason: review.reason!,
+        confirmerName: identityName(access, confirm.decidedBy, language), confirmDate: confirm.decidedAt.slice(0, 10), revised: confirm.revisedText !== undefined,
+      }, language);
+      await writeGuidelineDocument(tx, {
+        guidelineId: g.id, confirmId: demoGuidelineDecisionId(g.id, at + 1), doc, projectId: source.project, level: source.guidelineVisibility,
+        actor: confirm.decidedBy, language, date: confirm.decidedAt.slice(0, 10), at: confirm.decidedAt,
+      });
     }
     for (const a of demo.assignments) {
       for (const w of a.works) {

@@ -147,6 +147,9 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
       if (kind !== "knowledge_base") err(`${p}.knowledgeVisibility`, "is only for a knowledge_base source");
       else if (!levels.has(r.knowledgeVisibility as string)) err(`${p}.knowledgeVisibility`, "must be a visibility level in access.json");
     }
+    if (r.guidelineVisibility !== undefined && !levels.has(r.guidelineVisibility as string)) {
+      err(`${p}.guidelineVisibility`, "must be a visibility level in access.json");
+    }
   }
   const employees = new Set<string>();
   for (const [e, p] of objects(demo, "employees", "", 1)) {

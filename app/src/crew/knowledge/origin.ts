@@ -1,10 +1,15 @@
 // 回流文件的來源（#92 的計畫第 2 節與 `## 決定` 1）：知識庫的文件來自哪位 AI 員工、哪一次驗收。
 // 知識的來歷（#147，crew ADR 0007 決定 8）：當時經過的把關，只從既有紀錄推算、不加欄位：
 // 驗收者、當時的審查層級（通過那一刻以前的驗收與看重點的決定）、退回幾次後通過、通過那一輪的自動檢查、依照的守則數。
-// 一律經 db.withIdentity()：回流紀錄看得到（驗收與文件都看得到，crew 0005 的 policy）時才有，否則是 null。
+// 守則的文件（#149，ADR 0007 決定 7）：哪位員工、哪一次退回、誰確認、目前生效或已收回、之後依照幾次。
+// 一律經 db.withIdentity()：回流紀錄看得到（驗收與文件都看得到，crew 0005 的 policy）、守則的文件紀錄看得到
+// （守則與文件都看得到，crew 0008 的 policy）時才有，否則是 null。一份文件只會是其中一種（id 的格式不同）。
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getAssignmentWorks, getTrustInputs, listReviews, listWorkGuidelines } from "../db/store";
+import { getAssignmentWorks, getTrustInputs, listGuidelines, listReviews, listWorkGuidelines } from "../db/store";
+import type { ProposerKind } from "../guidelines/status";
+import { guidelineTexts } from "../ui/guideline-text";
+import type { ReturnReason } from "../trust/types";
 import { demoText } from "../demo/texts";
 import { reviewLevel } from "../trust/rules";
 import type { LevelDecision, Review, ReviewLevel, WorkCheck } from "../trust/types";
@@ -109,4 +114,67 @@ export async function readFlowbackPassage(db: Database, identity: string | null,
     ).rows;
     return rows[0]?.id ?? null;
   });
+}
+
+export interface GuidelineOrigin {
+  guidelineId: string;
+  employeeId: string;
+  employeeName: string;
+  workTypeId: string;
+  /** 守則目前的文字（目前語言；確認時修改過就是修改後的文字） */
+  text: string;
+  proposerKind: ProposerKind;
+  /** 來源交辦（「看那次退回」要選的交辦） */
+  assignmentId: string;
+  /** 來源退回的時間（ISO）與原因 */
+  returnedAt: string;
+  reason: ReturnReason;
+  /** 確認者（client/access.json 的身分 id）與確認時間（ISO） */
+  confirmedBy: string;
+  confirmedAt: string;
+  /** 確認時修改過 */
+  revised: boolean;
+  /** 已收回的時間（ISO）；生效中是 null */
+  revokedAt: string | null;
+  /** 之後依照的交件數（目前身分看得到的） */
+  followed: number;
+}
+
+/** 文件 id → 守則的來歷與狀態；不是守則的文件、或目前身分看不到守則或文件時是 null */
+export async function readGuidelineOrigin(db: Database, identity: string | null, documentId: string, language: LanguageCode): Promise<GuidelineOrigin | null> {
+  if (identity === null) return null;
+  const row = await db.withIdentity(identity, async (tx) =>
+    (await tx.query<{ guidelineId: string; employeeId: string; employeeName: string; returnedAt: Date | string; reason: ReturnReason; followed: number }>(
+      `SELECT gdoc.guideline_id AS "guidelineId", g.employee_id AS "employeeId", e.display_name AS "employeeName",
+              rv.decided_at AS "returnedAt", rv.reason,
+              (SELECT count(*)::int FROM crew.work_guidelines wg WHERE wg.guideline_id = g.id) AS followed
+       FROM crew.guideline_documents gdoc
+       JOIN crew.guidelines g ON g.id = gdoc.guideline_id
+       JOIN crew.employees e ON e.id = g.employee_id
+       JOIN crew.reviews rv ON rv.id = g.source_review_id
+       WHERE gdoc.document_id = $1`,
+      [documentId],
+    )).rows[0],
+  );
+  if (row === undefined) return null;
+  const [guideline] = (await listGuidelines(db, identity, { employeeId: row.employeeId })).filter((g) => g.id === row.guidelineId);
+  const confirm = guideline?.decisions.find((d) => d.decision === "confirm");
+  if (guideline === undefined || confirm === undefined) return null;
+  const texts = guidelineTexts(guideline, language);
+  return {
+    guidelineId: guideline.id,
+    employeeId: row.employeeId,
+    employeeName: row.employeeName,
+    workTypeId: guideline.workTypeId,
+    text: texts.revised ?? texts.proposed,
+    proposerKind: guideline.proposerKind,
+    assignmentId: guideline.sourceAssignmentId,
+    returnedAt: new Date(row.returnedAt).toISOString(),
+    reason: row.reason,
+    confirmedBy: confirm.decidedBy,
+    confirmedAt: confirm.decidedAt,
+    revised: confirm.revisedText !== null,
+    revokedAt: guideline.decisions.find((d) => d.decision === "revoke")?.decidedAt ?? null,
+    followed: row.followed,
+  };
 }

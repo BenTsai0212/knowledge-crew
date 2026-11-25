@@ -11,6 +11,7 @@ import {
   type GuidelineDecision, type GuidelineDecisionKind, type GuidelineStatus, type ProposerKind,
 } from "../guidelines/status";
 import { flowbackDocumentId, flowbackOwnerPendingId, OWNER_ENTITY_TYPE, toFlowbackDocument } from "../knowledge/flowback";
+import { guidelineDocumentId, identityName, toGuidelineDocument, type GuidelineDocument } from "../knowledge/guideline-document";
 import type { LevelDecision, LevelDecisionKind, ReturnReason, Review, Verdict, WorkChange, WorkCheck, WorkForReview } from "../trust/types";
 
 /** 工作來源的類型（RFC 0001 的 2026-11-21 修訂）；repo 類的外部編號是 Issue／PR 編號。 */
@@ -354,7 +355,7 @@ export function createReview(
   identityId: string | null,
   input: NewReview,
   options: ReviewOptions = {},
-): Promise<{ id: string; flowback: FlowbackOutcome; guidelineId: string | null }> {
+): Promise<{ id: string; flowback: FlowbackOutcome; guidelineId: string | null; guidelineDocument: GuidelineDocumentOutcome }> {
   const asGuideline = input.verdict === "returned" && input.saveAsGuideline === true;
   if (asGuideline && !canBeGuideline(input.reason, input.note)) {
     return Promise.reject(new GuidelineError("not-eligible", "only a return with reason wrong or different_approach and a non-empty note can become a guideline"));
@@ -367,11 +368,14 @@ export function createReview(
     ]);
     const flowback = input.verdict === "accepted" ? await flowBack(tx, id, input.workId, options) : "not-applicable";
     let guidelineId: string | null = null;
+    let guidelineDocument: GuidelineDocumentOutcome = "not-applicable";
     if (asGuideline) {
       guidelineId = await insertGuideline(tx, id, input.note!, "human");
-      await tx.query("INSERT INTO crew.guideline_decisions (id, guideline_id, decision) VALUES ($1, $2, 'confirm')", [crypto.randomUUID(), guidelineId]);
+      const confirmId = crypto.randomUUID();
+      await tx.query("INSERT INTO crew.guideline_decisions (id, guideline_id, decision) VALUES ($1, $2, 'confirm')", [confirmId, guidelineId]);
+      guidelineDocument = await documentGuideline(tx, guidelineId, confirmId, options);
     }
-    return { id, flowback, guidelineId };
+    return { id, flowback, guidelineId, guidelineDocument };
   });
 }
 
@@ -567,8 +571,16 @@ export type NewGuidelineDecision = { guidelineId: string } & (
   | { decision: Exclude<GuidelineDecisionKind, "confirm"> }
 );
 
-/** 寫入人的決定；先以目前的決定判斷能不能做（canDecide()），不能時拋出 GuidelineError，不寫入。 */
-export function decideGuideline(db: Database, identityId: string | null, input: NewGuidelineDecision): Promise<{ id: string }> {
+/**
+ * 寫入人的決定；先以目前的決定判斷能不能做（canDecide()），不能時拋出 GuidelineError，不寫入。
+ * 確認時在同一個交易寫入守則的文件（writeGuidelineDocument()，#149）；不採用、收回不寫，收回也不刪、不改文件。
+ */
+export function decideGuideline(
+  db: Database,
+  identityId: string | null,
+  input: NewGuidelineDecision,
+  options: ReviewOptions = {},
+): Promise<{ id: string; guidelineDocument: GuidelineDocumentOutcome }> {
   return db.withIdentity(identityId, async (tx) => {
     const [guideline] = await loadGuidelines(tx, "g.id = $1", [input.guidelineId]);
     if (!guideline) throw new GuidelineError("not-found", `guideline ${input.guidelineId} not found`);
@@ -582,8 +594,92 @@ export function decideGuideline(db: Database, identityId: string | null, input: 
     await tx.query("INSERT INTO crew.guideline_decisions (id, guideline_id, decision, revised_text, confirm_id) VALUES ($1, $2, $3, $4, $5)", [
       id, input.guidelineId, input.decision, revisedText, confirmId,
     ]);
-    return { id };
+    const guidelineDocument = input.decision === "confirm" ? await documentGuideline(tx, input.guidelineId, id, options) : "not-applicable";
+    return { id, guidelineDocument };
   });
+}
+
+/**
+ * 守則確認時寫成知識庫文件（#149）：`written` 已寫入；`not-applicable` 不需要寫（不是確認、來源沒有守則等級、看不到來源交辦）；
+ * `no-upload-permission` 確認者沒有上傳權限，確認照常寫入、守則照常生效，只是不寫文件（比照回流）。
+ */
+export type GuidelineDocumentOutcome = "written" | "not-applicable" | "no-upload-permission";
+
+// 寫入文件需要的資料：守則、來源交辦的工作來源（專案與守則等級）、來源退回、這次確認
+async function documentGuideline(tx: Transaction, guidelineId: string, confirmId: string, options: ReviewOptions): Promise<GuidelineDocumentOutcome> {
+  const [row] = await rows<{
+    text: string; proposerKind: ProposerKind; employeeName: string; workTypeId: string; projectId: string; level: string | null;
+    reason: ReturnReason; returnedAt: Date; revisedText: string | null; confirmedBy: string; confirmedAt: Date;
+  }>(
+    tx,
+    `SELECT g.text, g.proposer_kind AS "proposerKind", e.display_name AS "employeeName", g.work_type_id AS "workTypeId",
+            s.project_id AS "projectId", s.guideline_visibility_level_id AS level, rv.reason, rv.decided_at AS "returnedAt",
+            gd.revised_text AS "revisedText", gd.decided_by AS "confirmedBy", gd.decided_at AS "confirmedAt"
+     FROM crew.guidelines g
+     JOIN crew.employees e ON e.id = g.employee_id
+     JOIN crew.assignments a ON a.id = g.source_assignment_id
+     JOIN crew.sources s ON s.id = a.source_id
+     JOIN crew.reviews rv ON rv.id = g.source_review_id
+     JOIN crew.guideline_decisions gd ON gd.guideline_id = g.id AND gd.id = $2 AND gd.decision = 'confirm'
+     WHERE g.id = $1`,
+    [guidelineId, confirmId],
+  );
+  if (!row || row.level === null) return "not-applicable";
+  const [{ canUpload }] = await rows<{ canUpload: boolean }>(tx, `SELECT kk.can_upload() AS "canUpload"`);
+  if (!canUpload) return "no-upload-permission";
+  const language = options.language ?? clientConfig.client.defaultLanguage;
+  const confirmDate = options.date ?? localDate(new Date(row.confirmedAt));
+  const doc = toGuidelineDocument({
+    employeeName: row.employeeName, workTypeId: row.workTypeId, text: row.revisedText ?? row.text, proposerKind: row.proposerKind,
+    returnDate: localDate(new Date(row.returnedAt)), reason: row.reason,
+    confirmerName: identityName(clientConfig.access, row.confirmedBy, language), confirmDate, revised: row.revisedText !== null,
+  }, language);
+  await writeGuidelineDocument(tx, {
+    guidelineId, confirmId, doc, projectId: row.projectId, level: row.level, actor: row.confirmedBy, language, date: confirmDate,
+  });
+  return "written";
+}
+
+export interface GuidelineDocumentWrite {
+  guidelineId: string;
+  /** 依據的那筆確認（crew.guideline_documents 的外鍵） */
+  confirmId: string;
+  doc: GuidelineDocument;
+  projectId: string;
+  level: string;
+  /** 上傳者（＝確認者）；以 kk_app 寫入時必須是目前身分，RLS 檢查 */
+  actor: string;
+  language: LanguageCode;
+  /** 文件日期（YYYY-MM-DD，確認日） */
+  date: string;
+  /** 紀錄的時間；不傳時由資料庫預設（kk_app 不能指定，只有 seed 以 superuser 寫入時傳） */
+  at?: string;
+}
+
+/**
+ * 守則文件的寫入（decideGuideline()、createReview() 與 demo 的 seed 共用；比照 writeFlowback()）：
+ * 文件 → 段落（上傳的寫法：段落 id 是「文件 id-序號」、ordinal 從 0 開始）→ crew.guideline_documents。以 kk_app 寫入時每一列都受 RLS 檢查。
+ */
+export async function writeGuidelineDocument(tx: Transaction, input: GuidelineDocumentWrite): Promise<string> {
+  const { actor, language, level, projectId, doc } = input;
+  const documentId = guidelineDocumentId(input.guidelineId);
+  await tx.query(
+    `INSERT INTO kk.documents (id, title, language, visibility_level_id, project_id, document_date, uploaded_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [documentId, doc.title, language, level, projectId, input.date, actor],
+  );
+  for (const [i, content] of doc.passages.entries()) {
+    await tx.query(
+      `INSERT INTO kk.passages (id, document_id, ordinal, language, content, visibility_level_id, project_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [`${documentId}-${i + 1}`, documentId, i, language, content, level, projectId],
+    );
+  }
+  await tx.query(
+    `INSERT INTO crew.guideline_documents (guideline_id, document_id, confirm_id${input.at ? ", created_at" : ""}) VALUES ($1, $2, $3${input.at ? ", $4" : ""})`,
+    input.at ? [input.guidelineId, documentId, input.confirmId, input.at] : [input.guidelineId, documentId, input.confirmId],
+  );
+  return documentId;
 }
 
 async function loadGuidelines(tx: Transaction, where: string, params: unknown[]): Promise<StoredGuideline[]> {
