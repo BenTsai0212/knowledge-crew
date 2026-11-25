@@ -12,6 +12,7 @@ import { crewStrings } from "../i18n";
 import { WORK_STATUSES } from "../work/status";
 import { OverviewView } from "./OverviewView";
 import {
+  activeGuidelineCounts,
   boardColumns,
   COLUMN_LIMIT,
   compareActive,
@@ -119,6 +120,36 @@ describe("readOverview：匯入虛構資料後", () => {
   });
 });
 
+describe("守則 N 條（#153 第 7 點）", () => {
+  it("manager：只算現在生效的守則，依來源交辦的專案分組（青翼 g01、g03；長堤 g05；g02 待確認、g04 已收回、g06 不採用不算）", async () => {
+    const o = await read("manager");
+    const count = (id: string) => o.projects.find((p) => p.id === id)!.guidelines;
+    expect([count("bluewing"), count("longpier")]).toEqual([2, 1]);
+    // 回流知識維持原本的算法
+    expect(o.projects.find((p) => p.id === "longpier")!.knowledge).toBe(1);
+  });
+
+  it("staff：只算看得到的專案", async () => {
+    const o = await read("staff");
+    expect(o.projects.map((p) => [p.id, p.guidelines])).toEqual([["bluewing", 2]]);
+  });
+
+  it("activeGuidelineCounts：等確認、不採用、已收回不算；確認後又收回不算；沒有生效的專案不出現（卡片顯示 0）", () => {
+    const at = (d: string) => `2026-11-${d}T10:00:00+08:00`;
+    const counts = activeGuidelineCounts([
+      { id: "a", projectId: "p1", decision: "confirm", revisedText: null, decidedAt: at("01") },
+      { id: "b", projectId: "p1", decision: null, revisedText: null, decidedAt: null },
+      { id: "c", projectId: "p1", decision: "reject", revisedText: null, decidedAt: at("02") },
+      { id: "d", projectId: "p2", decision: "confirm", revisedText: "x", decidedAt: at("01") },
+      { id: "d", projectId: "p2", decision: "revoke", revisedText: null, decidedAt: at("03") },
+      { id: "e", projectId: "p3", decision: "confirm", revisedText: null, decidedAt: new Date(at("04")) },
+    ]);
+    expect(Object.fromEntries(counts)).toEqual({ p1: 1, p3: 1 });
+    const [p] = summarizeProjects([{ id: "p2", label: "P", sources: [] }], [], new Map(), counts);
+    expect(p.guidelines).toBe(0);
+  });
+});
+
 describe("篩選與看板", () => {
   it("看板四欄的排序：逾期 → 優先順序高 → 到期日近 → 停留久；已完成是最近完成的在前", async () => {
     const columns = boardColumns((await read("manager")).items);
@@ -158,7 +189,7 @@ describe("篩選與看板", () => {
     // 待交件沒有檢查：checkFailed 只在等驗收時標出
     expect(item).toMatchObject({ status: "notSubmitted", checkFailed: false, stayDays: 19, flags: { overdue: false, soon: true, stalled: true } });
     const [p] = summarizeProjects([{ id: "longpier", label: "L", sources: [] }], [item], new Map());
-    expect(p).toMatchObject({ total: 0, counts: { notSubmitted: 0, awaiting: 0, revising: 0, done: 0 }, knowledge: 0 });
+    expect(p).toMatchObject({ total: 0, counts: { notSubmitted: 0, awaiting: 0, revising: 0, done: 0 }, knowledge: 0, guidelines: 0 });
   });
 
   it("compareActive：同樣逾期時優先順序高的在前，其他相同時停留久的在前", () => {

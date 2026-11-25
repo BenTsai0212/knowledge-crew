@@ -42,6 +42,7 @@
   "saveAsGuidelineHint": "之後交件會照這條做；可以隨時收回。",
   "guidelineNeedsNote": "要先寫下意見，才能記成守則。",
   "confirmReturn": "確定退回",
+  "confirmReturnHint": "先選一個退回原因。",
   "cancel": "取消",
   "saving": "儲存中…",
   "saveFailed": "驗收沒有寫入，請再試一次。",

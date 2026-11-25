@@ -253,6 +253,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `knowledge/flowback.ts`：知識庫條目的回流：`toFlowbackDocument()`（交件全文 → 文件標題、段落與 `#owner` 的部門名稱，不是一個知識庫條目時是 null）、`flowbackDocumentId()`、`flowbackOwnerPendingId()`（測試在 `flowback.test.ts`）
 - `knowledge/guideline-document.ts`：守則進知識庫（#149，crew ADR 0007 決定 7）：`toGuidelineDocument()`（確認的守則 → 文件標題與兩段：守則的文字、來歷）、`guidelineDocumentId()`（`crew-guideline-<守則 id>`）、`reasonLabel()`、`identityName()`（測試在 `guideline-document.test.ts`）
 - `knowledge/origin.ts`：回流文件的來源與當時的把關：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、誰驗收、當時的審查層級、退回次數、自動檢查、依照的守則數，#147；純函式的測試在 `origin.test.ts`）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）；守則的文件：`readGuidelineOrigin()`（#149）
+- `time.ts`：時間戳的顯示一律用展示公司的時區（`client/crew/settings.json` 的 `timeZone`，沒有這個檔時是 UTC；不合法的時區拋錯）：`shortDate()`、`shortDateTime()`、`formatInZone()`、`isSameDay()`；只有日期的欄位（到期日、demo 的 `today`）不經過這裡（#153，測試在 `time.test.ts`）
 - `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數
 - `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
 - `trust/types.ts`：信任規則用的型別
@@ -340,6 +341,7 @@ Cloudflare Worker（TypeScript）：`GET /api/health`、`POST /api/ask`；其他
 
 - `*.json`：客戶設定
 - `crew/demo.json`：crew 的虛構資料（沒有這個檔的客戶不顯示 crew 頁籤）
+- `crew/settings.json`：crew 的設定：展示公司的時區 `timeZone`（IANA 名稱，例如 `Asia/Taipei`；時間戳一律以此顯示，見 `app/src/crew/time.ts`，#153）
 - `data/`：虛構資料集
 - `evals/questions.json`：評測題庫（見 `docs/evals.md`）
 - `i18n/<語言>.json`：介面翻譯檔（含拒答文字與各錯誤訊息）

@@ -85,8 +85,9 @@ export function TrustReport({ rows, language, openLedger }: Props) {
               >
                 <th scope="row" className="crew-trust-report__name">
                   {openLedger ? (
-                    <button type="button" className="link" aria-label={fill(t.reportOpenLedger, names)}>
-                      {title}
+                    // 名稱是看得到的標題＋隱藏的「在工作帳本查看」（#153 第 4 點，WCAG 2.5.3）
+                    <button type="button" className="link">
+                      {title} <span className="visually-hidden">{t.reportOpenLedgerHidden}</span>
                     </button>
                   ) : (
                     title

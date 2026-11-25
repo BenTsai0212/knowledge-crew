@@ -100,9 +100,11 @@ export async function gotoCrewSection(page: Page, label: string): Promise<void> 
   await expect(button).toHaveAttribute("aria-current", "page");
 }
 
-// 信任頁的一列（員工 × 工作類型）
+// 信任頁的一列（員工 × 工作類型）；列內「建議的經過」的區塊名稱也含員工與工作類型（#153），以列的頂端區分
 export const trustRow = (page: Page, employee: string, workType: string): Locator =>
-  page.getByRole("region", { name: crewFill(ct.trust.rowTitle, { employee: employeeName(employee), workType: workTypeName(workType) }) });
+  page
+    .getByRole("region", { name: crewFill(ct.trust.rowTitle, { employee: employeeName(employee), workType: workTypeName(workType) }) })
+    .filter({ has: page.locator(".crew-trust__top") });
 
 // 交辦 → 模擬交件 → 在「工作與驗收」選這一筆並以 reason（review 的 reason* 文字）退回；beforeReturn 在退回前檢查面板。
 // 結束時停在「工作與驗收」

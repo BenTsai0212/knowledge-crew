@@ -90,3 +90,25 @@ export function crewSeed(base: Seed, config: DemoSeedConfig, raw: unknown = DEMO
 export function crewTabLabel(language: LanguageCode): string {
   return CREW_TRANSLATIONS.common?.[language]?.tab ?? "";
 }
+
+/**
+ * 進入後的焦點（#153 第 6 點，WCAG 2.4.3）：crew-only 按「直接體驗」後，登入面板被首頁取代，焦點會落到 <body>。
+ * 等 selector 的元素出現（React 重新渲染之後）再移過去；timeout 內沒有出現就放棄。元素要有 tabIndex={-1}。
+ */
+export function focusWhenShown(selector: string, timeout = 5000): void {
+  const tryFocus = () => {
+    const target = document.querySelector<HTMLElement>(selector);
+    target?.focus({ preventScroll: true });
+    return target !== null;
+  };
+  if (tryFocus()) return;
+  const observer = new MutationObserver(() => {
+    if (tryFocus()) stop();
+  });
+  const timer = setTimeout(stop, timeout);
+  function stop() {
+    observer.disconnect();
+    clearTimeout(timer);
+  }
+  observer.observe(document.body, { childList: true, subtree: true });
+}

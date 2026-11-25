@@ -42,6 +42,7 @@
   "saveAsGuidelineHint": "Future submissions will follow it. You can retire it at any time.",
   "guidelineNeedsNote": "Write a note first to save it as a guideline.",
   "confirmReturn": "Confirm return",
+  "confirmReturnHint": "Choose a reason first.",
   "cancel": "Cancel",
   "saving": "Saving…",
   "saveFailed": "The review was not saved. Try again.",

@@ -8,6 +8,7 @@ import type { LanguageCode } from "../../client/types";
 import { PRIORITIES, type Priority } from "../db/store";
 import { DEMO } from "../demo/load";
 import { crewStrings, type CrewTexts } from "../i18n";
+import { formatInZone } from "../time";
 import {
   initialChoice,
   readAssign,
@@ -80,7 +81,7 @@ export function AssignView({ db, identity, language, employeeId, onChanged }: Cr
       )}
       <section className="card crew-assign__block" aria-labelledby="crew-assign-list">
         <div className="crew-assign__list-head">
-          <h3 id="crew-assign-list">{t.listTitle}</h3>
+          <h2 id="crew-assign-list" className="crew-assign__title">{t.listTitle}</h2>
           <span className="muted crew-assign__hint">
             {data.assignments.length === 0
               ? t.listEmpty
@@ -115,11 +116,8 @@ export function AssignView({ db, identity, language, employeeId, onChanged }: Cr
 const employeeLabel = (e: AssignEmployee | AssignItem["employee"], t: CrewTexts<"assign">, language: LanguageCode) =>
   withEmployee(e.roleNote === null ? "{employee}" : t.employeeOption, e.roleNote === null ? {} : { roleNote: e.roleNote }, e.displayName, language);
 
-function formatDay(iso: string, language: LanguageCode): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat(language, { month: "numeric", day: "numeric", timeZone: "UTC" }).format(date);
-}
+// 交辦日（assignedAt 是時間戳）以展示公司的時區顯示（#153 第 8 點）
+const formatDay = (iso: string, language: LanguageCode) => formatInZone(iso, language, { month: "numeric", day: "numeric" });
 
 interface FormInput {
   sourceId: string;
@@ -196,7 +194,7 @@ function AssignForm({
 
   return (
     <form className="card crew-assign__block crew-assign__form" aria-labelledby="crew-assign-form" onSubmit={submit}>
-      <h3 id="crew-assign-form">{t.formTitle}</h3>
+      <h2 id="crew-assign-form" className="crew-assign__title">{t.formTitle}</h2>
       <div className="crew-assign__field">
         <label htmlFor="crew-assign-title" className="crew-assign__label">
           {t.fieldTitle}

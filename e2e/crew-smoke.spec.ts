@@ -52,10 +52,10 @@ test.describe("冒煙（主管，桌機）", () => {
 
   test("員工：每個員工一張卡片，列出工作類型、交件與目前層級", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionEmployees);
-    const card = page.getByRole("region", { name: employeeName("linden") });
+    const card = page.getByRole("region", { name: employeeName("linden") }).filter({ has: page.locator(".crew-employees__top") });
     await expect(card.getByText(ct.employees.levelLight, { exact: true })).toBeVisible();
     await expect(card.getByText(workTypeName("knowledge"), { exact: false })).toBeVisible();
-    await expect(page.getByRole("region", { name: employeeName("sorrel") })).toBeVisible();
+    await expect(page.getByRole("region", { name: employeeName("sorrel") }).filter({ has: page.locator(".crew-employees__top") })).toBeVisible();
   });
 
   test("交辦：表單與交辦清單", async ({ page }) => {
