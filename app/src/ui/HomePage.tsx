@@ -507,7 +507,9 @@ export function HomePage(props: Props) {
   return (
     <div className={wide ? "home home--wide" : phone ? "home home--phone" : "home"}>
       <header className="home__top">
-        <h2>{s.home[greetingPeriod(now.getHours())]}</h2>
+        <h2 id="home-title" tabIndex={-1}>
+          {s.home[greetingPeriod(now.getHours())]}
+        </h2>
         {todaySummary}
         {/* 可見範圍：桌機在左側欄的使用者卡（#330），手機在身分與語言面板（#255、#356）；只有平板在問候下方 */}
         {!wide && !phone && (

@@ -39,6 +39,12 @@
   margin: 0;
 }
 
+/* 清單分組的標題是 h2（#153 第 5 點），大小維持原本 h3 的 0.95rem */
+.crew-review .crew-review__group-title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
 .crew-review__list,
 .crew-review__panel,
 .crew-review__group,
@@ -165,6 +171,7 @@
 }
 
 .crew-review__guideline-hint,
+.crew-review__confirm-hint,
 .crew-review__guideline .error {
   margin: 0;
   font-size: 0.85rem;

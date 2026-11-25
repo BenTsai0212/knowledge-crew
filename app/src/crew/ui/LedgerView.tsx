@@ -6,6 +6,7 @@ import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
 import { crewStrings, type CrewTexts } from "../i18n";
+import { CREW_TIME_ZONE } from "../time";
 import type { ReturnReason } from "../trust/types";
 import { EmployeeName, employeeOptionText, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
@@ -100,8 +101,8 @@ export function LedgerView({ db, identity, language, ledgerFilter, navigate }: C
 
   const events = state.kind === "ready" ? state.events : [];
   const options = useMemo(() => ledgerOptions(events), [events]);
-  const day = useMemo(() => new Intl.DateTimeFormat(language, { month: "2-digit", day: "2-digit" }), [language]);
-  const full = useMemo(() => new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }), [language]);
+  const day = useMemo(() => new Intl.DateTimeFormat(language, { month: "2-digit", day: "2-digit", timeZone: CREW_TIME_ZONE }), [language]);
+  const full = useMemo(() => new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short", timeZone: CREW_TIME_ZONE }), [language]);
 
   const header = (
     <div className="crew-ledger__header">

@@ -33,6 +33,8 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
   // 在清單選了一筆之後把面板捲進畫面（窄螢幕面板在清單之上；已在畫面上時不捲動）
   const panelRef = useRef<HTMLElement>(null);
   const scrollPending = useRef(assignmentId !== undefined);
+  // 使用者在清單選了一筆之後，焦點移到面板標題（#153 第 2 點）；初次載入、自動選第一筆時不移動
+  const focusPending = useRef(false);
 
   const load = useCallback(
     async (want: string | null): Promise<Data> => {
@@ -76,14 +78,21 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
     setNoUpload(false);
     setSavedGuideline(false);
     scrollPending.current = true;
+    focusPending.current = true;
     void refresh(id);
   };
 
   useEffect(() => {
-    if (state.kind !== "ready" || !scrollPending.current) return;
-    scrollPending.current = false;
+    if (state.kind !== "ready") return;
     const panel = panelRef.current;
-    if (panel && !topInView(panel)) panel.scrollIntoView?.({ block: "start" });
+    if (scrollPending.current) {
+      scrollPending.current = false;
+      if (panel && !topInView(panel)) panel.scrollIntoView?.({ block: "start" });
+    }
+    if (focusPending.current) {
+      focusPending.current = false;
+      panel?.querySelector<HTMLElement>("#crew-review-title")?.focus({ preventScroll: true });
+    }
   }, [state]);
 
   const decide = async (input: Parameters<typeof createReview>[2]) => {
@@ -156,9 +165,9 @@ interface ListGroupProps {
 function ListGroup({ title, count, empty, items, selected, select, t, language }: ListGroupProps) {
   return (
     <section className="crew-review__group">
-      <h3>
+      <h2 className="crew-review__group-title">
         {title} <span className="muted">{fill(count, { count: items.length }, language)}</span>
-      </h3>
+      </h2>
       {items.length === 0 ? (
         <p className="muted">{empty}</p>
       ) : (

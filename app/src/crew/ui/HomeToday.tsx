@@ -77,7 +77,7 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
     items.map((a) => {
       const { label, primary } = action(awaiting);
       return (
-        <Row key={a.id} phone={phone} label={label} primary={primary} name={`${label}${colon}${a.title}`} onClick={() => onOpen(rowTarget(a, awaiting))}>
+        <Row key={a.id} phone={phone} label={label} primary={primary} separator={colon} subject={a.title} onClick={() => onOpen(rowTarget(a, awaiting))}>
           <strong className="home__name" title={a.title}>
             {a.title}
           </strong>
@@ -123,7 +123,8 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
                 phone={phone}
                 label={t.actionTrust}
                 primary={false}
-                name={`${t.actionTrust}${colon}${d.employee.displayName}`}
+                separator={colon}
+                subject={d.employee.displayName}
                 onClick={() => onOpen(DECIDE_TARGET)}
               >
                 <strong className="home__name crew-home__wrap">
@@ -139,7 +140,8 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
                   phone={phone}
                   label={t.actionGuideline}
                   primary={false}
-                  name={`${t.actionGuideline}${colon}${g.employee.displayName}`}
+                  separator={colon}
+                  subject={g.employee.displayName}
                   onClick={() => onOpen(guidelineTarget(g))}
                 >
                   <strong className="home__name crew-home__wrap">
@@ -157,13 +159,18 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
   );
 }
 
-// 一列：桌機與平板右側是動作按鈕；手機整列是按鈕、右側是 ›（與首頁的「有更新」相同）
-function Row(props: { phone: boolean; label: string; primary: boolean; name: string; onClick(): void; children: ReactNode }) {
-  const { phone, label, primary, name, onClick, children } = props;
+// 一列：桌機與平板右側是動作按鈕；手機整列是按鈕、右側是 ›（與首頁的「有更新」相同）。
+// 按鈕的名稱是「動作＋分隔符號＋對象」；手機的整列按鈕不用 aria-label，在可見內容前放隱藏的動作與分隔符號，看得到的文字都在名稱裡（#153 第 4 點，WCAG 2.5.3）
+function Row(props: { phone: boolean; label: string; primary: boolean; separator: string; subject: string; onClick(): void; children: ReactNode }) {
+  const { phone, label, primary, separator, subject, onClick, children } = props;
   if (phone)
     return (
       <li>
-        <button type="button" className="home__row home__row--raised home__row--tap" aria-label={name} onClick={onClick}>
+        <button type="button" className="home__row home__row--raised home__row--tap" onClick={onClick}>
+          <span className="visually-hidden">
+            {label}
+            {separator}
+          </span>
           <span className="home__text">{children}</span>
           <span className="home__chevron" aria-hidden="true">
             ›
@@ -174,7 +181,7 @@ function Row(props: { phone: boolean; label: string; primary: boolean; name: str
   return (
     <li className="home__row home__row--raised">
       <span className="home__text">{children}</span>
-      <button type="button" className={primary ? "crew-home__primary" : "home__action"} aria-label={name} onClick={onClick}>
+      <button type="button" className={primary ? "crew-home__primary" : "home__action"} aria-label={`${label}${separator}${subject}`} onClick={onClick}>
         {label}
       </button>
     </li>

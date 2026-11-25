@@ -13,7 +13,8 @@ async function openEmployeesAs(page: Page, identity: string): Promise<void> {
   await gotoCrewSection(page, ct.common.sectionEmployees);
 }
 
-const card = (page: Page, id: string) => page.getByRole("region", { name: employeeName(id) });
+// 員工卡；卡內「守則」的區塊名稱也含員工名稱（#153），以卡的頂端區分
+const card = (page: Page, id: string) => page.getByRole("region", { name: employeeName(id) }).filter({ has: page.locator(".crew-employees__top") });
 const dots = (c: Locator) => c.getByRole("img").filter({ has: c.page().locator(".crew-dot") });
 const summary = (parts: [string, number][]) => parts.map(([key, count]) => crewFill(key, { count })).join(ct.trust.dotsAriaSeparator);
 // 「交辦給 {employee}」：員工名字前有 AI 標記，以名字之後的部分比對

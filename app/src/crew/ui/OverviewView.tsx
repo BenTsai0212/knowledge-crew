@@ -275,6 +275,8 @@ function ProjectCard({ project: p, selected, onSelect, t, language }: ProjectCar
         ))}
       </span>
       <span className="muted crew-overview__knowledge">{fill(t.projectKnowledge, { count: p.knowledge }, language)}</span>
+      {/* 現在生效的守則（#153 第 7 點）；0 條也顯示 */}
+      <span className="muted crew-overview__knowledge crew-overview__guidelines">{fill(t.projectGuidelines, { count: p.guidelines }, language)}</span>
     </button>
   );
 }

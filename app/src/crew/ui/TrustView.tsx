@@ -9,7 +9,7 @@ import type { LanguageCode } from "../../client/types";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import type { Dot, ReviewLevel } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { DotMark, dotsSummary, LevelBadge, withEmployee } from "./components";
+import { DotMark, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
 import { actorName, readLedger, type LedgerEvent } from "./ledger";
@@ -131,6 +131,7 @@ export function TrustView({ db, identity, language, onChanged, navigate }: CrewS
             <History
               steps={suggestionHistory(events, row.employee.id, row.workTypeId)}
               employees={trust.employees}
+              label={fill(t.historyLabel, { employee: employeeOptionText(row.employee.displayName, language), workType: workTypeLabel(row.workTypeId, language) })}
               {...{ t, language, date, openWork }}
             />
             <div className="crew-trust__footer">
@@ -324,6 +325,7 @@ function Basis({
 function History({
   steps,
   employees,
+  label,
   t,
   language,
   date,
@@ -331,6 +333,8 @@ function History({
 }: {
   steps: HistoryStep[];
   employees: readonly { id: string; displayName: string }[];
+  /** 區塊名稱（#153 第 5 點）：哪位員工、哪類工作的建議經過；看得到的標題包含在名稱裡 */
+  label: string;
   t: T;
   language: LanguageCode;
   date: (iso: string) => string;
@@ -354,7 +358,7 @@ function History({
     }
   };
   return (
-    <section className="crew-trust__history" aria-label={t.historyTitle}>
+    <section className="crew-trust__history" aria-label={label}>
       <h4 className="crew-trust__history-title">{t.historyTitle}</h4>
       <ol className="crew-trust__history-list">
         {steps.map((step, i) => (

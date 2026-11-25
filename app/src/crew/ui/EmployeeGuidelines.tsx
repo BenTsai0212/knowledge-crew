@@ -7,7 +7,7 @@ import { fill } from "../../client/i18n";
 import type { LanguageCode } from "../../client/types";
 import type { NewGuidelineDecision } from "../db/store";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { withEmployee } from "./components";
+import { employeeOptionText, withEmployee } from "./components";
 import type { EmployeeGuideline, EmployeeGuidelines } from "./employees";
 import { shortDate } from "./trust";
 
@@ -56,7 +56,12 @@ export function EmployeeGuidelineSection({ employee, guidelines, canReview, savi
     <GuidelineItem key={g.id} g={g} employee={employee.displayName} canReview={canReview} saving={saving} language={language} decide={decide} openReturn={openReturn} t={t} />
   );
   return (
-    <section className="crew-employees__guidelines" aria-labelledby={titleId} data-pending={pending.length > 0 || undefined}>
+    // 區塊名稱帶員工名稱（#153 第 5 點）；看得到的「守則」包含在名稱裡
+    <section
+      className="crew-employees__guidelines"
+      aria-label={fill(t.guidelinesLabel, { employee: employeeOptionText(employee.displayName, language) })}
+      data-pending={pending.length > 0 || undefined}
+    >
       <h4 id={titleId}>{t.guidelinesTitle}</h4>
       <p className="muted">{guidelineSummary(guidelines, canReview, language)}</p>
       {failed && (

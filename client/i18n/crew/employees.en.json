@@ -21,6 +21,7 @@
   "noteRevoke": "{date} Back to reviewing every item",
   "noteReset": "{date} Mistake; automatically back to reviewing every item",
   "guidelinesTitle": "Guidelines",
+  "guidelinesLabel": "{employee}’s guidelines",
   "guidelinesActive": "{count, plural, one {# guideline} other {# guidelines}}",
   "guidelinesPending": "{count} for you to confirm",
   "guidelinesPendingOthers": "{count} awaiting confirmation",

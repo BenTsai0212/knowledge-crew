@@ -9,6 +9,7 @@
   "projectSources": "Sources: {sources}",
   "projectProgress": "{done} of {total} done",
   "projectKnowledge": "{count, plural, one {# entry added to knowledge} other {# entries added to knowledge}}",
+  "projectGuidelines": "{count, plural, one {# guideline} other {# guidelines}}",
   "projectSelectHint": "Select a card to see only that project",
   "separator": ", ",
   "statusNotSubmitted": "Not submitted",

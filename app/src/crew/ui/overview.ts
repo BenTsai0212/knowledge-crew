@@ -4,6 +4,7 @@ import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import type { Priority } from "../db/store";
 import { DEMO } from "../demo/load";
+import { guidelineStatus, type GuidelineDecision } from "../guidelines/status";
 import { demoText } from "../demo/texts";
 import type { Verdict } from "../trust/types";
 import { crewToday, shownDueStatus, type DueStatus } from "../work/due";
@@ -47,6 +48,8 @@ export interface ProjectSummary {
   attention: { overdue: number; soon: number; stalled: number };
   /** 回流知識庫的筆數 */
   knowledge: number;
+  /** 現在生效的守則條數（#153 第 7 點） */
+  guidelines: number;
 }
 
 export interface Overview {
@@ -111,6 +114,7 @@ export function summarizeProjects(
   projects: readonly { id: string; label: string; sources: string[] }[],
   items: readonly OverviewItem[],
   knowledge: ReadonlyMap<string, number>,
+  guidelines: ReadonlyMap<string, number> = new Map(),
 ): ProjectSummary[] {
   return projects.map((p) => {
     const mine = items.filter((i) => i.projectId === p.id);
@@ -125,6 +129,7 @@ export function summarizeProjects(
         stalled: mine.filter((i) => i.flags.stalled).length,
       },
       knowledge: knowledge.get(p.id) ?? 0,
+      guidelines: guidelines.get(p.id) ?? 0,
     };
   });
 }
@@ -209,6 +214,38 @@ const KNOWLEDGE_SQL = `SELECT s.project_id AS "projectId", count(*)::int AS "cou
   JOIN crew.sources s ON s.id = a.source_id
   GROUP BY s.project_id`;
 
+// 守則與其決定（一條守則可能沒有決定，或有多筆）；專案是來源交辦的工作來源所屬的專案
+const GUIDELINES_SQL = `SELECT g.id, s.project_id AS "projectId", gd.decision, gd.revised_text AS "revisedText", gd.decided_at AS "decidedAt"
+  FROM crew.guidelines g
+  JOIN crew.assignments a ON a.id = g.source_assignment_id
+  JOIN crew.sources s ON s.id = a.source_id
+  LEFT JOIN crew.guideline_decisions gd ON gd.guideline_id = g.id
+  ORDER BY g.id, gd.decided_at, gd.id`;
+
+export interface GuidelineDecisionRow {
+  id: string;
+  projectId: string;
+  decision: GuidelineDecision["decision"] | null;
+  revisedText: string | null;
+  decidedAt: Date | string | null;
+}
+
+/**
+ * 每個專案現在生效的守則條數（純函式，#153 第 7 點）：狀態以 guidelines/status.ts 推算，等確認、不採用、已收回都不算；
+ * 依 source_assignment_id → 工作來源 → 專案分組。
+ */
+export function activeGuidelineCounts(rows: readonly GuidelineDecisionRow[]): Map<string, number> {
+  const byGuideline = new Map<string, { projectId: string; decisions: GuidelineDecision[] }>();
+  for (const r of rows) {
+    const g = byGuideline.get(r.id) ?? { projectId: r.projectId, decisions: [] };
+    byGuideline.set(r.id, g);
+    if (r.decision !== null && r.decidedAt !== null) g.decisions.push({ decision: r.decision, revisedText: r.revisedText, decidedAt: iso(r.decidedAt)! });
+  }
+  const counts = new Map<string, number>();
+  for (const g of byGuideline.values()) if (guidelineStatus(g.decisions) === "active") counts.set(g.projectId, (counts.get(g.projectId) ?? 0) + 1);
+  return counts;
+}
+
 /**
  * 總覽：目前身分看得到的專案與工作。沒有身分時比照 guest（不讀取）。
  * `today` 預設是 demo 的 today（沒有時是目前的日期），與到期日相同（#133）。
@@ -221,10 +258,11 @@ export async function readOverview(
   today: string = crewToday(DEMO),
 ): Promise<Overview> {
   if (identity === null) return EMPTY_OVERVIEW;
-  const { rows, sources, knowledge } = await db.withIdentity(identity, async (tx) => ({
+  const { rows, sources, knowledge, guidelines } = await db.withIdentity(identity, async (tx) => ({
     rows: (await tx.query<Row>(ITEMS_SQL)).rows,
     sources: (await tx.query<{ id: string; name: string; projectId: string }>(`SELECT id, name, project_id AS "projectId" FROM crew.sources ORDER BY name`)).rows,
     knowledge: (await tx.query<{ projectId: string; count: number }>(KNOWLEDGE_SQL)).rows,
+    guidelines: (await tx.query<GuidelineDecisionRow>(GUIDELINES_SQL)).rows,
   }));
   const items = rows.map((r) =>
     toOverviewItem(
@@ -245,5 +283,6 @@ export async function readOverview(
       sources: sources.filter((s) => s.projectId === p.id).map((s) => sourceLabel(s.id, s.name, language)),
     }))
     .filter((p) => p.sources.length > 0);
-  return { projects: summarizeProjects(projects, items, new Map(knowledge.map((k) => [k.projectId, k.count]))), items };
+  const knowledgeCounts = new Map(knowledge.map((k) => [k.projectId, k.count]));
+  return { projects: summarizeProjects(projects, items, knowledgeCounts, activeGuidelineCounts(guidelines)), items };
 }

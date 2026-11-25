@@ -95,3 +95,25 @@ describe("crewStrings", () => {
     expect(() => crewStrings("toString" as CrewScreen, "en")).toThrow("No crew UI strings for screen: toString");
   });
 });
+
+// #153 附錄 A：新增的字串照 Issue 原文（中英文都要有）；reportOpenLedger 已沒有使用而刪除
+describe("可近用性的字串（#153 附錄 A）", () => {
+  const APPENDIX_A: [CrewScreen, string, string, string][] = [
+    ["review", "confirmReturnHint", "先選一個退回原因。", "Choose a reason first."],
+    ["trust", "reportOpenLedgerHidden", "（在工作帳本查看）", "(show in the work ledger)"],
+    ["trust", "historyLabel", "{employee} 的「{workType}」：建議的經過", "{employee} · “{workType}”: how the suggestion went"],
+    ["employees", "guidelinesLabel", "{employee} 的守則", "{employee}’s guidelines"],
+    ["overview", "projectGuidelines", "守則 {count} 條", "{count, plural, one {# guideline} other {# guidelines}}"],
+  ];
+
+  it("逐字相同", () => {
+    for (const [screen, key, zh, en] of APPENDIX_A) {
+      expect((crewStrings(screen, "zh-TW") as Record<string, string>)[key], `${screen}.${key}`).toBe(zh);
+      expect((crewStrings(screen, "en") as Record<string, string>)[key], `${screen}.${key}`).toBe(en);
+    }
+  });
+
+  it("reportOpenLedger 已刪除", () => {
+    for (const language of ["zh-TW", "en"]) expect(Object.keys(crewStrings("trust", language))).not.toContain("reportOpenLedger");
+  });
+});

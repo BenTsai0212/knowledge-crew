@@ -21,6 +21,7 @@
   "noteRevoke": "{date} 收回，改回逐項看",
   "noteReset": "{date} 做錯了，已自動改回逐項看",
   "guidelinesTitle": "守則",
+  "guidelinesLabel": "{employee} 的守則",
   "guidelinesActive": "守則 {count} 條",
   "guidelinesPending": "等你確認 {count} 條",
   "guidelinesPendingOthers": "等確認 {count} 條",

@@ -12,7 +12,8 @@ const guidelines = hasCrewDemo ? readClientJson<DemoFile>("crew/demo.json").guid
 const text = (id: string) => guidelines.find((g) => g.id === id)!.text[language];
 
 const card = (page: Page, id: string) => page.getByRole("region", { name: employeeName(id) }).filter({ has: page.locator(".crew-employees__top") });
-const section = (c: Locator) => c.getByRole("region", { name: ct.employees.guidelinesTitle, exact: true });
+// 區塊名稱是「<員工> 的守則」（#153 第 5 點）
+const section = (c: Locator) => c.locator(".crew-employees__guidelines");
 const item = (c: Locator, guideline: string) => section(c).getByRole("listitem").filter({ hasText: guideline });
 const employeesButton = (page: Page) => crewSections(page).getByRole("button", { name: ct.common.sectionEmployees, exact: true });
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);

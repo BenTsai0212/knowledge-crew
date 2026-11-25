@@ -9,7 +9,7 @@ import { crewStrings, type CrewTexts } from "../../i18n";
 import { CheckRow, ConclusionRow, LevelBadge, ScheduleLine, withEmployee } from "../components";
 import type { ReviewPanel as PanelData, WorkListItem } from "../review";
 import { workTypeLabel } from "../labels";
-import { shortDate } from "../trust";
+import { formatInZone, shortDate, shortDateTime } from "../../time";
 import { assignmentRef, workRef } from "../refs";
 import { BodyView, PointList, type ActivePoint } from "./BodyView";
 import { conclusionOf, decisionQuestion, deliverableName, type Audience } from "./conclusion";
@@ -79,7 +79,9 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
           <span className="muted crew-review__ref">{itemRef(item, t, language)}</span>
           <LevelBadge level={focus.level}>{fill(t.levelBadge, { level: focus.level === "light" ? t.levelLight : t.levelItem })}</LevelBadge>
         </div>
-        <h3 id="crew-review-title">{item.title}</h3>
+        <h3 id="crew-review-title" tabIndex={-1}>
+          {item.title}
+        </h3>
         <p className="muted">{meta}</p>
         <ScheduleLine item={item} language={language} />
         {item.verdict !== null && (
@@ -341,9 +343,20 @@ function DecisionBar({ question, workId, guidelineLabel, saving, decide, t }: De
     void decide({ workId, verdict: "returned", reason, ...(trimmed === "" ? {} : { note: trimmed }), ...(save ? { saveAsGuideline: true } : {}) });
   };
   const ref = useRef<HTMLElement>(null);
+  // 焦點（#153 第 1 點，WCAG 2.4.3）：打開退回表單時移到第一個原因；按「取消」關閉時回到「退回」按鈕。初次顯示時不移動
+  const firstReason = useRef<HTMLInputElement>(null);
+  const returnButton = useRef<HTMLButtonElement>(null);
+  const toggled = useRef(false);
+  const openReturn = (open: boolean) => {
+    toggled.current = true;
+    setReturning(open);
+  };
   useEffect(() => {
     const bar = ref.current;
     if (returning && bar?.closest(".app--phone")) bar.scrollIntoView?.({ block: "nearest" });
+    if (!toggled.current) return;
+    toggled.current = false;
+    (returning ? firstReason.current : returnButton.current)?.focus();
   }, [returning]);
   return (
     <section ref={ref} className="card crew-review__decision" data-returning={returning}>
@@ -351,7 +364,7 @@ function DecisionBar({ question, workId, guidelineLabel, saving, decide, t }: De
         <div className="crew-review__decision-row">
           <p className="crew-review__question">{question}</p>
           <div className="crew-review__buttons">
-            <button type="button" className="secondary" disabled={saving} onClick={() => setReturning(true)}>
+            <button ref={returnButton} type="button" className="secondary" disabled={saving} onClick={() => openReturn(true)}>
               {t.return}
             </button>
             <button type="button" disabled={saving} onClick={() => decide({ workId, verdict: "accepted" })}>
@@ -363,9 +376,10 @@ function DecisionBar({ question, workId, guidelineLabel, saving, decide, t }: De
         <fieldset className="crew-review__return" disabled={saving}>
           <legend>{t.returnReason}</legend>
           <div className="crew-review__reasons">
-            {REASONS.map((r) => (
+            {REASONS.map((r, i) => (
               <label key={r} className="crew-review__reason" data-checked={reason === r}>
                 <input
+                  ref={i === 0 ? firstReason : undefined}
                   type="radio"
                   name="crew-review-reason"
                   checked={reason === r}
@@ -419,18 +433,25 @@ function DecisionBar({ question, workId, guidelineLabel, saving, decide, t }: De
             </div>
           )}
           <div className="crew-review__buttons">
-            <button type="button" className="secondary" onClick={() => setReturning(false)}>
+            <button type="button" className="secondary" onClick={() => openReturn(false)}>
               {t.cancel}
             </button>
             <button
               type="button"
               className="crew-review__confirm"
               disabled={reason === null}
+              aria-describedby={reason === null ? "crew-review-confirm-hint" : undefined}
               onClick={confirmReturn}
             >
               {saving ? t.saving : t.confirmReturn}
             </button>
           </div>
+          {/* 還沒選原因時「確定退回」是停用的，提示原因（#153 第 1 點） */}
+          {reason === null && (
+            <p id="crew-review-confirm-hint" className="muted crew-review__confirm-hint">
+              {t.confirmReturnHint}
+            </p>
+          )}
         </fieldset>
       )}
     </section>
@@ -446,20 +467,10 @@ function revealPoint(root: HTMLElement | null, n: number) {
   target.scrollIntoView?.({ block: "nearest" });
 }
 
-function formatDate(iso: string, language: LanguageCode): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeZone: "UTC" }).format(date);
-}
-
-/** 交件時間「MM/DD HH:mm」（瀏覽器的時區，與工作帳本相同） */
-function formatTime(iso: string, language: LanguageCode): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const parts = new Intl.DateTimeFormat(language, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
-  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${part("month")}/${part("day")} ${part("hour")}:${part("minute")}`;
-}
+// 交件日與交件時間以展示公司的時區顯示（#153 第 8 點）
+const formatDate = (iso: string, language: LanguageCode) => formatInZone(iso, language, { dateStyle: "medium" });
+/** 交件時間「MM/DD HH:mm」 */
+const formatTime = shortDateTime;
 
 const earlierRound = (round: number, work: string | null, t: Texts) =>
   work === null ? fill(t.earlierRoundNoRef, { round }) : fill(t.earlierRound, { round, work });

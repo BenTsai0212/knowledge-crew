@@ -29,6 +29,7 @@ npm run check:client
 | `scenarios.json` | `scenarios.schema.json` | 示範情境與預設問題 |
 | `i18n/<語言>.json` | `i18n.schema.json` | 介面文字，每種語言一份（見[翻譯檔](#翻譯檔clienti18n)） |
 | `evals/questions.json` | `evals/questions.schema.json` | 評測題庫（`evals.path` 內，見 [docs/evals.md](evals.md)） |
+| `crew/settings.json` | 無（`app/src/crew/time.ts` 檢查） | knowledge-crew：展示公司的時區 `timeZone`（例如 `Asia/Taipei`），AI 員工畫面的時間戳一律以此顯示；沒有這個檔時是 UTC（knowledge-crew #153） |
 
 ## 共用格式（`common.schema.json`）
 

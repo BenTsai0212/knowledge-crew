@@ -271,11 +271,11 @@ describe("trustTimeline／trustNote（純函式）", () => {
     expect(trustNote([ok("a", 1)], [], "item", true, min)).toBe("suggestion");
   });
 
-  it("shortDate 是 UTC 的 MM/DD；isSameDay 比對 UTC 日期", () => {
-    for (const language of clientConfig.client.languages) expect(shortDate("2026-09-08T23:30:00Z", language)).toBe("09/08");
+  it("shortDate 是展示公司時區（Asia/Taipei）的 MM/DD；isSameDay 比對該時區的日期（#153 第 8 點）", () => {
+    for (const language of clientConfig.client.languages) expect(shortDate("2026-09-08T23:30:00Z", language)).toBe("09/09");
     expect(shortDate("not a date", lang)).toBe("not a date");
-    expect(isSameDay("2026-10-13T02:00:00Z", new Date("2026-10-13T23:59:00Z"))).toBe(true);
-    expect(isSameDay("2026-10-13T02:00:00Z", new Date("2026-10-14T00:00:00Z"))).toBe(false);
+    expect(isSameDay("2026-10-13T02:00:00Z", new Date("2026-10-13T15:59:00Z"))).toBe(true);
+    expect(isSameDay("2026-10-13T02:00:00Z", new Date("2026-10-13T16:00:00Z"))).toBe(false);
   });
 });
 

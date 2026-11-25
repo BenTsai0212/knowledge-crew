@@ -250,3 +250,42 @@ test.describe("看重點（#102）：Linden 的 k13", () => {
     });
   }
 });
+
+// ---- 焦點（#153 第 1、2 點，WCAG 2.4.3） ----
+test.describe("焦點（#153）", () => {
+  const panelTitle = (panel: Locator) => panel.getByRole("heading", { level: 3 }).first();
+
+  test("初次載入、自動選第一筆時焦點不移到面板；在清單以 Enter 選一筆後焦點在面板標題", async ({ page }) => {
+    const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });
+    await expect(page.locator(".crew-review__panel")).toBeVisible();
+    await expect(works).toBeFocused();
+    await expect(page.locator("#crew-review-title")).not.toBeFocused();
+
+    const title = titles.get("s14")!;
+    const item = page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").filter({ hasText: title });
+    await item.focus();
+    await page.keyboard.press("Enter");
+    const panel = reviewPanel(page, title);
+    await expect(panelTitle(panel)).toHaveText(title);
+    await expect(panelTitle(panel)).toBeFocused();
+  });
+
+  test("按「退回」後焦點在第一個原因；按「取消」後回到「退回」；沒選原因時「確定退回」有提示", async ({ page }) => {
+    const panel = await openWork(page, "s14");
+    const returnButton = panel.getByRole("button", { name: ct.review.return, exact: true });
+    await returnButton.click();
+    await expect(panel.getByRole("radio", { name: ct.review.reasonWrong, exact: true })).toBeFocused();
+
+    const confirm = panel.getByRole("button", { name: ct.review.confirmReturn, exact: true });
+    await expect(confirm).toBeDisabled();
+    await expect(confirm).toHaveAccessibleDescription(ct.review.confirmReturnHint);
+    await expect(panel.getByText(ct.review.confirmReturnHint, { exact: true })).toBeVisible();
+    await panel.getByRole("radio", { name: ct.review.reasonWrong, exact: true }).check();
+    await expect(confirm).toBeEnabled();
+    await expect(panel.getByText(ct.review.confirmReturnHint, { exact: true })).toHaveCount(0);
+    await expect(confirm).toHaveAccessibleDescription("");
+
+    await panel.getByRole("button", { name: ct.review.cancel, exact: true }).click();
+    await expect(returnButton).toBeFocused();
+  });
+});

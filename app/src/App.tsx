@@ -84,7 +84,7 @@ import { CrewTabCount, HomeTodayCard, HomeTodaySummary, useCrewToday } from "./c
 import type { CrewTarget } from "./crew/ui/sections";
 import { SourceOrigin } from "./crew/ui/SourceOrigin";
 import { CrewTour, CrewTourCard, useCrewTour } from "./crew/ui/Tour";
-import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, hasCrewDemo, withCrew } from "./crew/ui/entry";
+import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, focusWhenShown, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
 import { ScriptPanel } from "./ui/ScriptPanel";
@@ -372,6 +372,8 @@ export function App() {
     setSignIn(next);
     setRejectedCode(null);
     setView(startView());
+    // crew-only：進入後焦點移到首頁的主標題（knowledge-crew #153 第 6 點）
+    if (crewOnlyMode) focusWhenShown("#home-title");
   }
 
   // 切換身分：捨棄進行中的提問（discard）；目前頁籤在新身分看不到時回到問答

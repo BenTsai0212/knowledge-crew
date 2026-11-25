@@ -113,6 +113,11 @@ test.describe("桌機", () => {
     await expect(tourDialog(page)).toHaveCount(0);
   });
 
+  test("直接體驗後焦點在首頁的主標題（#153 第 6 點）", async ({ page }) => {
+    await enter(page);
+    await expect(page.locator(".home__top h2")).toBeFocused();
+  });
+
   test("第一次來的導覽：6 步走完，沒有 /api/* 請求（afterEach）", async ({ page }) => {
     await enter(page);
     await walkTour(page);
@@ -227,8 +232,9 @@ test.describe("桌機 1280：首頁、圖譜、時間軸（#91）", () => {
 test.describe("手機", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test("直接體驗後是首頁的今天的工作；點一列到「工作與驗收」該件", async ({ page }) => {
+  test("直接體驗後是首頁的今天的工作，焦點在主標題（#153）；點一列到「工作與驗收」該件", async ({ page }) => {
     await enter(page);
+    await expect(page.locator(".home__top h2")).toBeFocused();
     const row = homeToday(page).getByRole("button", { name: new RegExp(`^${ct.home.actionReview}`) }).first();
     await row.click();
     await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");

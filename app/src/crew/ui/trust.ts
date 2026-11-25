@@ -185,17 +185,8 @@ export function trustNote(
   return null;
 }
 
-/** 等寬的 MM/DD（UTC，與畫面其他日期一致）。 */
-export function shortDate(iso: string, language: LanguageCode): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const parts = new Intl.DateTimeFormat(language, { month: "2-digit", day: "2-digit", timeZone: "UTC" }).formatToParts(date);
-  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${part("month")}/${part("day")}`;
-}
-
-/** 與 now 是同一天（UTC）。 */
-export const isSameDay = (iso: string, now: Date): boolean => new Date(iso).toISOString().slice(0, 10) === now.toISOString().slice(0, 10);
+// 日期與「今天」以展示公司的時區判斷（#153 第 8 點）；實作在 crew/time.ts。
+export { isSameDay, shortDate } from "../time";
 
 type RowKey = Pick<TrustRow, "workTypeId"> & { employee: Pick<CrewEmployee, "id"> };
 
