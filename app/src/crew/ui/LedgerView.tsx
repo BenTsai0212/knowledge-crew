@@ -1,5 +1,6 @@
 // 「工作帳本」畫面（#40；#77 依設計規格 v3 第 6.7 節改成表格）：交辦、交件、驗收、同意改看重點與收回、因做錯了改回逐項看，
 // 依時間新到舊列出，可依員工與事件篩選。資料整理在 ledger.ts，這裡只負責呈現；本畫面只讀，沒有寫入按鈕。
+// #145 加上守則的事件：工作欄是守則的文字（過長時截斷），點了切到「工作與驗收」的來源交辦。
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
@@ -15,6 +16,7 @@ import {
   ledgerOptions,
   ledgerTone,
   readLedger,
+  truncateText,
   type LedgerEvent,
   type LedgerEventFilter,
   type LedgerKind,
@@ -33,11 +35,21 @@ const REASON_KEYS: Record<ReturnReason, "reasonWrong" | "reasonDifferentApproach
 // 層級改變前的符號（設計稿：→ 同意改看重點、↺ 因做錯了改回逐項看）；只是裝飾，螢幕閱讀器不讀
 const KIND_SYMBOL: Partial<Record<LedgerKind, string>> = { relax: "→", autoReset: "↺" };
 
-const EVENT_FILTERS: { value: LedgerEventFilter; key: "filterAll" | "eventLevel" | "eventReturned" }[] = [
+const EVENT_FILTERS: { value: LedgerEventFilter; key: "filterAll" | "eventLevel" | "eventReturned" | "eventGuideline" }[] = [
   { value: "all", key: "filterAll" },
   { value: "level", key: "eventLevel" },
   { value: "returned", key: "eventReturned" },
+  { value: "guideline", key: "eventGuideline" },
 ];
+
+const GUIDELINE_TEXT = {
+  guidelineProposed: "kindGuidelineProposed",
+  guidelineSaved: "kindGuidelineSaved",
+  guidelineConfirmed: "kindGuidelineConfirmed",
+  guidelineEdited: "kindGuidelineEdited",
+  guidelineRejected: "kindGuidelineRejected",
+  guidelineRetired: "kindGuidelineRetired",
+} as const satisfies Partial<Record<LedgerKind, keyof CrewTexts<"ledger">>>;
 
 function kindText(event: LedgerEvent, t: CrewTexts<"ledger">, language: LanguageCode): string {
   switch (event.kind) {
@@ -59,10 +71,12 @@ function kindText(event: LedgerEvent, t: CrewTexts<"ledger">, language: Language
       return t.kindRevoke;
     case "autoReset":
       return t.kindAutoReset;
+    default:
+      return t[GUIDELINE_TEXT[event.kind]];
   }
 }
 
-export function LedgerView({ db, identity, language, ledgerFilter }: CrewScreenProps) {
+export function LedgerView({ db, identity, language, ledgerFilter, navigate }: CrewScreenProps) {
   const t = crewStrings("ledger", language);
   const [state, setState] = useState<State>({ kind: "loading" });
   // 篩選與顯示筆數只存在元件 state，不寫瀏覽器儲存；一開始的篩選來自信任頁的總覽報表（#121）
@@ -133,6 +147,24 @@ export function LedgerView({ db, identity, language, ledgerFilter }: CrewScreenP
       setWorkTypeId(null);
       setEventFilter("all");
     });
+  const workCell = (e: LedgerEvent, tone: string | null): ReactNode => {
+    if (e.guideline) {
+      const text = truncateText(e.guideline.text);
+      const title = text === e.guideline.text ? undefined : e.guideline.text;
+      // 守則的事件：點了追到來源交辦（看得到時）
+      return e.assignment && navigate ? (
+        <button type="button" className="link crew-ledger__guideline" title={title} onClick={() => navigate({ section: "works", assignmentId: e.assignment!.id })}>
+          {text}
+        </button>
+      ) : (
+        <span className="crew-ledger__guideline" title={title}>
+          {text}
+        </span>
+      );
+    }
+    // 層級改變是員工 × 工作類型的事，不屬於某一件工作（設計稿寫 —）
+    return e.assignment && tone !== "level" ? e.assignment.title : <span className="muted">{t.noAssignment}</span>;
+  };
   const actorCell = (e: LedgerEvent): ReactNode => {
     const actor = actorName(clientConfig.access, options.employees, e.actor, language);
     if (actor === null) return t.actorRule;
@@ -214,8 +246,7 @@ export function LedgerView({ db, identity, language, ledgerFilter }: CrewScreenP
                           <span>{kindText(e, t, language)}</span>
                         </span>
                       </td>
-                      {/* 層級改變是員工 × 工作類型的事，不屬於某一件工作（設計稿寫 —） */}
-                      <td>{e.assignment && tone !== "level" ? e.assignment.title : <span className="muted">{t.noAssignment}</span>}</td>
+                      <td>{workCell(e, tone)}</td>
                       <td>{withEmployee(t.eventMeta, { workType: workTypeLabel(e.workTypeId, language) }, e.employee.displayName, language)}</td>
                       <td className="muted">{actorCell(e)}</td>
                     </tr>

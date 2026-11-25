@@ -2,7 +2,9 @@
 // 可見範圍由 RLS 決定。資料庫的文字以 demoText() 換成目前語言，找不到時用資料庫的原文。
 import type { AccessFile, LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, type AssignmentSummary, type SourceKind, type StoredEmployee } from "../db/store";
+import {
+  getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, listGuidelines, type AssignmentSummary, type SourceKind, type StoredEmployee,
+} from "../db/store";
 import { demoText } from "../demo/texts";
 import { sourceLabel } from "./refs";
 import { DEMO_PARAMS } from "../trust/demo-params";
@@ -37,12 +39,21 @@ export interface TodaySuggestion {
   count: number;
 }
 
+/** 等確認的守則（#145：員工提出、還沒有決定；決定在員工頁做） */
+export interface TodayGuideline {
+  id: string;
+  employee: TodayEmployee;
+  workTypeId: string;
+}
+
 export interface Today {
   /** 能驗收的身分（client/access.json 的 canReview）才有「等你驗收」與建議改看重點 */
   canReview: boolean;
   awaitingReview: TodayAssignment[];
   inProgress: TodayAssignment[];
   suggestions: TodaySuggestion[];
+  /** 等確認的守則（只有能驗收的身分），依提出時間 */
+  guidelines: TodayGuideline[];
 }
 
 /** 與 knowledge-kit 判斷待審頁籤相同：依 client/access.json 的角色。 */
@@ -50,7 +61,7 @@ export function canReviewOf(access: Pick<AccessFile, "roles">, identity: string 
   return access.roles.find((r) => r.id === identity)?.canReview ?? false;
 }
 
-const EMPTY = (canReview: boolean): Today => ({ canReview, awaitingReview: [], inProgress: [], suggestions: [] });
+const EMPTY = (canReview: boolean): Today => ({ canReview, awaitingReview: [], inProgress: [], suggestions: [], guidelines: [] });
 
 /** 最新一輪已交件、還沒驗收 */
 const isAwaiting = (a: AssignmentSummary) => a.latestRound !== null && a.latestVerdict === null;
@@ -91,7 +102,7 @@ export async function readToday(
     awaitingReview: await Promise.all(oldestFirst.filter(isAwaiting).map(toItem).map(withChecks)),
     inProgress: oldestFirst.filter(isInProgress).map(toItem),
   };
-  // 建議改看重點只給能驗收的身分（只有他們能同意改看重點），其他身分不必計算
+  // 建議改看重點與等確認的守則只給能驗收的身分（只有他們能決定），其他身分不必計算
   if (!canReview) return today;
   const pairs = new Map<string, { employeeId: string; workTypeId: string }>();
   for (const a of oldestFirst) pairs.set(`${a.employeeId}\u0000${a.workTypeId}`, { employeeId: a.employeeId, workTypeId: a.workTypeId });
@@ -100,6 +111,10 @@ export async function readToday(
     const suggestion = relaxSuggestion(reviews, decisions, params);
     if (suggestion) today.suggestions.push({ employee: employee(employeeId), workTypeId, count: suggestion.basis.length });
   }
+  const guidelines = await listGuidelines(db, identity);
+  today.guidelines = guidelines
+    .filter((g) => g.status === "pending")
+    .map((g) => ({ id: g.id, employee: employee(g.employeeId), workTypeId: g.workTypeId }));
   return today;
 }
 

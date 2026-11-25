@@ -151,6 +151,25 @@
   font: inherit;
 }
 
+/* 記成守則（#145）：勾選框與一行小字；錯誤在旁邊（.error） */
+.crew-review__guideline {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.crew-review__guideline-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.crew-review__guideline-hint,
+.crew-review__guideline .error {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
 /* ---- 驗收面板 v3（#72；設計規格 v3 第 4、6.2 節）：不用 mark 系列 ---- */
 .crew-review__head-top {
   justify-content: space-between;

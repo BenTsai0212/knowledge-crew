@@ -8,7 +8,10 @@ import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
 import { simulateSubmission } from "../demo/simulate";
 import type { DemoFile } from "../demo/types";
-import { actorName, filterLedger, inLevelFilter, isLevelChange, ledgerOptions, ledgerTone, mergeLedger, readLedger, type LedgerEvent, type LedgerKind } from "./ledger";
+import {
+  actorName, filterLedger, inLevelFilter, isGuidelineEvent, isLevelChange, ledgerOptions, ledgerTone, mergeLedger, readLedger, truncateText,
+  type LedgerEvent, type LedgerGuideline, type LedgerKind,
+} from "./ledger";
 
 const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
@@ -83,6 +86,59 @@ describe("mergeLedger：排序", () => {
     expect(mergeLedger(accepted, lang).some((e) => e.kind === "proposed")).toBe(false);
   });
 
+  describe("守則的事件（#145）", () => {
+    const T3 = "2026-10-03T00:00:00.000Z";
+    const guideline = (over: Partial<LedgerGuideline>): LedgerGuideline => ({
+      id: "g1", employeeId: "basil", workTypeId: "docs", sourceAssignmentId: "a1", proposerKind: "human", proposedBy: "manager", proposedAt: T2,
+      text: "先回答結論", decisions: [{ id: "gd1", decision: "confirm", revisedText: null, decidedBy: "manager", decidedAt: T2 }], ...over,
+    });
+    const base = { ...sources, decisions: [], resets: [] };
+
+    it("人提：「記成守則」（經手人是驗收者），同時的確認不另列；與那次退回同時，退回在前、記成守則在後", () => {
+      const events = mergeLedger({ ...base, guidelines: [guideline({})] }, lang);
+      expect(events.map((e) => e.kind)).toEqual(["returned", "guidelineSaved", "submitted", "assigned"]);
+      expect(events[1]).toMatchObject({ id: "guidelineSaved:g1", actor: "manager", assignment: { id: "a1" }, guideline: { id: "g1", text: "先回答結論" } });
+    });
+
+    it("員工提：「提出守則」（經手人是員工）；之後的確認、修改後確認、不採用、收回（經手人是決定者）", () => {
+      const employee = guideline({ proposerKind: "employee", proposedBy: null, decisions: [] });
+      const at = (kind: "confirm" | "reject" | "revoke", revisedText: string | null = null, i = 1) =>
+        ({ id: `gd${i}`, decision: kind, revisedText, decidedBy: "manager", decidedAt: T3 });
+      expect(mergeLedger({ ...base, guidelines: [employee] }, lang).find((e) => e.kind === "guidelineProposed")).toMatchObject({ actor: "basil", at: T2 });
+      const kinds = (decisions: LedgerGuideline["decisions"]) =>
+        mergeLedger({ ...base, guidelines: [{ ...employee, decisions }] }, lang).filter((e) => isGuidelineEvent(e.kind)).map((e) => [e.kind, e.actor]);
+      expect(kinds([at("confirm")])).toEqual([["guidelineConfirmed", "manager"], ["guidelineProposed", "basil"]]);
+      expect(kinds([at("confirm", "改過")])).toEqual([["guidelineEdited", "manager"], ["guidelineProposed", "basil"]]);
+      expect(kinds([at("reject")])).toEqual([["guidelineRejected", "manager"], ["guidelineProposed", "basil"]]);
+      // 人提的守則收回
+      const revoked = mergeLedger({ ...base, guidelines: [guideline({ decisions: [...guideline({}).decisions, at("revoke", null, 2)] })] }, lang);
+      expect(revoked.filter((e) => isGuidelineEvent(e.kind)).map((e) => e.kind)).toEqual(["guidelineRetired", "guidelineSaved"]);
+    });
+
+    it("每個事件帶當時的文字：提出是提出時的、修改後確認是修改後的，之後的收回是修改後的；不採用是提出時的", () => {
+      const at = (id: string, kind: "confirm" | "reject" | "revoke", revisedText: string | null, decidedAt: string) =>
+        ({ id, decision: kind, revisedText, decidedBy: "manager", decidedAt });
+      const T4 = "2026-10-04T00:00:00.000Z";
+      const texts = (g: LedgerGuideline) =>
+        mergeLedger({ ...base, guidelines: [g] }, lang).filter((e) => isGuidelineEvent(e.kind)).map((e) => [e.kind, e.guideline!.text]);
+      const employee = guideline({ proposerKind: "employee", proposedBy: null });
+      expect(texts({ ...employee, decisions: [at("gd1", "confirm", "改過的文字", T3), at("gd2", "revoke", null, T4)] })).toEqual([
+        ["guidelineRetired", "改過的文字"], ["guidelineEdited", "改過的文字"], ["guidelineProposed", "先回答結論"],
+      ]);
+      expect(texts({ ...employee, decisions: [at("gd1", "confirm", null, T3), at("gd2", "revoke", null, T4)] })).toEqual([
+        ["guidelineRetired", "先回答結論"], ["guidelineConfirmed", "先回答結論"], ["guidelineProposed", "先回答結論"],
+      ]);
+      expect(texts({ ...employee, decisions: [at("gd1", "reject", null, T3)] })).toEqual([
+        ["guidelineRejected", "先回答結論"], ["guidelineProposed", "先回答結論"],
+      ]);
+    });
+
+    it("看不到來源交辦時沒有工作（assignment 是 null），守則的事件照樣列出", () => {
+      const events = mergeLedger({ ...base, guidelines: [guideline({ sourceAssignmentId: "hidden" })] }, lang);
+      expect(events.find((e) => e.kind === "guidelineSaved")).toMatchObject({ assignment: null, employee: { id: "basil", displayName: "Basil" } });
+    });
+  });
+
   it("層級決定只列出看得到該員工 × 該工作類型交辦的", () => {
     const hidden = { ...sources, decisions: [{ ...sources.decisions[0], workTypeId: "ui" }] };
     expect(mergeLedger(hidden, lang).some((e) => e.kind === "relax")).toBe(false);
@@ -119,6 +175,21 @@ describe("filterLedger 與 ledgerOptions", () => {
     expect(filterLedger(mixed, { event: "returned" }).map((e) => e.id)).toEqual(["b"]);
     expect(filterLedger(mixed, { event: "all" })).toHaveLength(7);
     expect(filterLedger(mixed, { employeeId: "basil", event: "level" }).map((e) => e.id)).toEqual(["a", "e", "g"]);
+  });
+
+  it("只看守則（#145）", () => {
+    const mixed = [
+      event("a", "guidelineSaved", "2026-10-05T00:00:00.000Z"),
+      event("b", "returned", "2026-10-05T00:00:00.000Z"),
+      event("c", "guidelineRetired", "2026-10-04T00:00:00.000Z"),
+      event("d", "relax", "2026-10-03T00:00:00.000Z"),
+      event("e", "guidelineProposed", "2026-10-02T00:00:00.000Z"),
+    ];
+    expect(filterLedger(mixed, { event: "guideline" }).map((e) => e.id)).toEqual(["a", "c", "e"]);
+    // 守則的事件不在「只看層級改變」與「只看退回」
+    expect(filterLedger(mixed, { event: "level" }).map((e) => e.id)).toEqual(["d"]);
+    expect(filterLedger(mixed, { event: "returned" }).map((e) => e.id)).toEqual(["b"]);
+    expect(ledgerTone({ kind: "guidelineRetired", reason: null })).toBeNull();
   });
 
   it("選項只來自目前的事件", () => {
@@ -161,9 +232,12 @@ describe("actorName", () => {
 describe("readLedger：匯入虛構資料後", () => {
   it("manager：四個來源的全部事件，含 Rowan、Linden、Juniper 的同意改看重點、Juniper 的收回、Rowan 的改回逐項看與提出看重點的建議", async () => {
     const events = await readLedger(db, "manager", lang);
-    // #134 加了交辦 6、交件 4、退回 2（s16-1、k15-1）
-    expect(countKinds(events)).toEqual({ assigned: 54, submitted: 60, accepted: 44, returned: 10, proposed: 4, relax: 3, revoke: 1, autoReset: 1 });
-    expect(events).toHaveLength(177);
+    // #134 加了交辦 6、交件 4、退回 2（s16-1、k15-1）；#145 加了守則的事件 9（demo 的六條守則與其決定）
+    expect(countKinds(events)).toEqual({
+      assigned: 54, submitted: 60, accepted: 44, returned: 10, proposed: 4, relax: 3, revoke: 1, autoReset: 1,
+      guidelineSaved: 3, guidelineProposed: 3, guidelineEdited: 1, guidelineRejected: 1, guidelineRetired: 1,
+    });
+    expect(events).toHaveLength(186);
     expect(new Set(events.map((e) => e.assignment?.sourceName).filter((n) => n !== undefined))).toEqual(new Set(SOURCE_NAMES));
     const relax = events.filter((e) => e.kind === "relax");
     expect(relax.map((e) => [e.employee.id, e.workTypeId, e.actor])).toEqual([
@@ -183,9 +257,11 @@ describe("readLedger：匯入虛構資料後", () => {
 
   it("staff：只看到青翼專案（客服信箱、官方社群帳號）的事件", async () => {
     const events = await readLedger(db, "staff", lang);
-    // #134 加了青翼專案的交辦 3（s15、s16、c12）、交件 2、退回 1（s16-1）
-    expect(events).toHaveLength(91);
-    expect(countKinds(events)).toEqual({ assigned: 28, submitted: 31, accepted: 23, returned: 5, proposed: 2, relax: 1, autoReset: 1 });
+    // #134 加了青翼專案的交辦 3（s15、s16、c12）、交件 2、退回 1（s16-1）；#145 加了 Rowan、Sorrel 的守則事件 3
+    expect(events).toHaveLength(94);
+    expect(countKinds(events)).toEqual({
+      assigned: 28, submitted: 31, accepted: 23, returned: 5, proposed: 2, relax: 1, autoReset: 1, guidelineSaved: 2, guidelineProposed: 1,
+    });
     expect(events.filter((e) => e.kind === "relax").map((e) => e.employee.id)).toEqual(["rowan"]);
     expect(events.filter((e) => e.kind === "proposed").map((e) => e.id)).toEqual(["proposed:c09-1", "proposed:s09-1"]);
     const bluewing = [label("support-inbox"), label("social-account")];
@@ -235,5 +311,45 @@ describe("readLedger：匯入虛構資料後", () => {
     const staff = await readLedger(db, "staff", lang);
     expect(staff.some((e) => e.id === `relax:${d.id}`)).toBe(false);
     expect(staff).toHaveLength(staffBefore.length);
+  });
+});
+
+describe("truncateText（#145：工作欄的守則文字）", () => {
+  it("不超過時原樣；超過時截斷並加上「…」，以字元計", () => {
+    expect(truncateText("短的", 40)).toBe("短的");
+    expect(truncateText("一二三四五六", 4)).toBe("一二三…");
+    expect([...truncateText("x".repeat(50))]).toHaveLength(40);
+  });
+});
+
+describe("readLedger：守則的事件（#145）", () => {
+  it("manager：demo 的守則；修改後確認的文字是修改後的、人提的經手人是驗收者、員工提的經手人是員工", async () => {
+    const events = await readLedger(db, "manager", lang);
+    const g = (id: string) => events.filter((e) => e.guideline?.id === id).map((e) => [e.kind, e.actor]);
+    expect(g("g01")).toEqual([["guidelineSaved", "manager"]]);
+    expect(g("g02")).toEqual([["guidelineProposed", "rowan"]]);
+    expect(g("g04")).toEqual([["guidelineRetired", "manager"], ["guidelineSaved", "manager"]]);
+    expect(g("g05")).toEqual([["guidelineEdited", "manager"], ["guidelineProposed", "linden"]]);
+    expect(g("g06")).toEqual([["guidelineRejected", "manager"], ["guidelineProposed", "juniper"]]);
+    // 事件帶當時的文字：g05 的「提出守則」是員工提出的文字，「修改後確認守則」是修改後的文字（#146 的修正要求）
+    const g05 = demo.guidelines.find((x) => x.id === "g05")!;
+    const text = (kind: LedgerKind) => events.find((x) => x.guideline?.id === "g05" && x.kind === kind)!.guideline!.text;
+    expect(text("guidelineProposed")).toBe(g05.text[lang]);
+    expect(text("guidelineEdited")).toBe(g05.decisions[0].revisedText![lang]);
+    expect(text("guidelineProposed")).not.toBe(text("guidelineEdited"));
+    // 點了追到來源交辦；員工欄是員工・工作類型
+    expect(events.find((e) => e.id === "guidelineSaved:g01")).toMatchObject({ assignment: { id: "s05" }, employee: { id: "rowan" }, workTypeId: "support" });
+    // 記成守則與那次退回同時：退回在前（列在上方）
+    const saved = events.findIndex((e) => e.id === "guidelineSaved:g01");
+    const returned = events.findIndex((e) => e.kind === "returned" && e.assignment?.id === "s05");
+    expect(events[returned].at).toBe(events[saved].at);
+    expect(returned).toBeLessThan(saved);
+  });
+
+  it("文字依目前語言", async () => {
+    const e = (await readLedger(db, "manager", other)).find((x) => x.id === "guidelineProposed:g02")!;
+    expect(e.guideline!.text).toBe(demo.guidelines.find((x) => x.id === "g02")!.text[other]);
+    const g05 = demo.guidelines.find((x) => x.id === "g05")!;
+    expect((await readLedger(db, "manager", other)).find((x) => x.id === "guidelineProposed:g05")!.guideline!.text).toBe(g05.text[other]);
   });
 });

@@ -5,7 +5,7 @@ import { openDatabase, type Database } from "../../db/database";
 import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
-import { awaitingCount, DECIDE_TARGET, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget } from "./home-today";
+import { awaitingCount, DECIDE_TARGET, guidelineTarget, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget } from "./home-today";
 import { canReviewOf, readToday, type Today, type TodayAssignment } from "./today";
 
 const read = (identity: string) => readToday(db, identity, "zh-TW", canReviewOf(clientConfig.access, identity));
@@ -28,7 +28,7 @@ const item = (over: Partial<TodayAssignment>): TodayAssignment => ({
   returned: false,
   ...over,
 });
-const today = (over: Partial<Today>): Today => ({ canReview: true, awaitingReview: [], inProgress: [], suggestions: [], ...over });
+const today = (over: Partial<Today>): Today => ({ canReview: true, awaitingReview: [], inProgress: [], suggestions: [], guidelines: [], ...over });
 
 describe("homeToday：匯入虛構資料後", () => {
   it("manager：有檢查沒通過的排在「先處理」，其餘待驗收、一個看重點的建議", async () => {
@@ -41,8 +41,12 @@ describe("homeToday：匯入虛構資料後", () => {
     expect(h.decide.map((d) => d.employee.id)).toEqual(["sorrel"]);
     expect(h.inProgress.map((a) => a.id)).toEqual(["k14", "k15", "s16", "s15"]);
     expect(awaitingCount(t)).toBe(6);
-    expect(homeSummary(h, "zh-TW")).toBe("6 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定。");
-    expect(homeSummary(h, "en")).toBe("6 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision.");
+    // #145：Rowan 整理的一條守則等確認
+    expect(h.guidelines.map((g) => [g.id, g.employee.id, g.workTypeId])).toEqual([["g02", "rowan", "support"]]);
+    expect(homeSummary(h, "zh-TW")).toBe("6 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定；1 條守則等你確認。");
+    expect(homeSummary(h, "en")).toBe(
+      "6 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision; 1 guideline awaits your confirmation.",
+    );
   });
 
   it("staff：只看得到自己專案的待驗收，沒有看重點的建議與側欄件數，總結用中性說法", async () => {
@@ -51,6 +55,9 @@ describe("homeToday：匯入虛構資料後", () => {
     // #134 加了青翼專案待驗收的 c12
     expect([...h.failing, ...h.awaiting].map((a) => a.id).sort()).toEqual(["c11", "c12", "s14"]);
     expect(h.decide).toEqual([]);
+    // 等確認的守則只給能驗收的身分（#145）
+    expect(t.guidelines).toEqual([]);
+    expect(h.guidelines).toEqual([]);
     expect(awaitingCount(t)).toBeNull();
     expect(homeSummary(h, "zh-TW")).toBe("3 件工作待驗收，其中 1 件有檢查沒通過。");
   });
@@ -86,6 +93,19 @@ describe("rowStatus、rowTarget", () => {
     expect(rowTarget(item({ id: "x", returned: true }), false)).toEqual({ section: "works", assignmentId: "x" });
     expect(rowTarget(item({}), false)).toEqual({ section: "assignments" });
     expect(DECIDE_TARGET).toEqual({ section: "trust" });
+  });
+
+  it("等確認的守則到「員工」並帶員工（捲到該員工卡，#145）", () => {
+    expect(guidelineTarget({ id: "g", employee: item({}).employee, workTypeId: "dev" })).toEqual({ section: "employees", employeeId: "e" });
+  });
+
+  it("總結：守則一句（#145）；不能驗收的身分沒有", () => {
+    const g = { id: "g", employee: item({}).employee, workTypeId: "dev" };
+    expect(homeSummary(homeToday(today({ guidelines: [g, { ...g, id: "g2" }] })), "zh-TW")).toBe("2 條守則等你確認。");
+    expect(homeSummary(homeToday(today({ guidelines: [g] })), "en")).toBe("1 guideline awaits your confirmation.");
+    const others = homeToday(today({ canReview: false, guidelines: [g] }));
+    expect(others.guidelines).toEqual([]);
+    expect(isHomeTodayEmpty(others)).toBe(true);
   });
 
   it("總結：只有進行中時提一句；不能驗收的身分沒有看重點的建議", () => {
@@ -124,5 +144,23 @@ describe("HomeTodayCard：每列的員工後面是工作類型（#100）", () =>
       expect(html.match(/class="crew-home__employee"/g)).toHaveLength(rows.length);
       for (const a of rows) expect(html).toContain(`${a.employee.displayName}</span>・${workTypeLabel(a.workTypeId, "zh-TW")}`);
     }
+  });
+});
+
+describe("HomeTodayCard：等確認的守則（#145）", () => {
+  it("manager：「等你決定」有 Rowan 整理的「客戶回覆」守則一列與小字", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { HomeTodayCard } = await import("./HomeToday");
+    const { workTypeLabel } = await import("./labels");
+    const { crewStrings } = await import("../i18n");
+    const t = crewStrings("home", "zh-TW");
+    const data = homeToday(await read("manager"));
+    const html = renderToStaticMarkup(
+      createElement(HomeTodayCard, { state: { identity: "manager", data, awaiting: 6 }, identity: "manager", language: "zh-TW", phone: false, onOpen: () => {} }),
+    );
+    expect(html).toContain(`Rowan</span> 整理了一條「${workTypeLabel("support", "zh-TW")}」守則，等你確認`);
+    expect(html).toContain(t.guidelineNote);
+    expect(html).toContain(`aria-label="${t.actionGuideline}：Rowan"`);
   });
 });

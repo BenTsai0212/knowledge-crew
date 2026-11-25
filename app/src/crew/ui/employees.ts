@@ -4,9 +4,11 @@
 // 完全沒有看得到的組合時（guest：RLS 讓它看得到員工，但看不到交辦）回傳空的，畫面顯示空狀態。
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { listAssignments, type AssignmentSummary, type SourceKind } from "../db/store";
+import { listAssignments, listGuidelines, type AssignmentSummary, type SourceKind, type StoredGuideline } from "../db/store";
+import type { GuidelineStatus, ProposerKind } from "../guidelines/status";
 import type { Dot, ReviewLevel } from "../trust/types";
 import { assignStatus, usualOf } from "./assign";
+import { guidelineTexts } from "./guideline-text";
 import { sourceLabel } from "./refs";
 import { readTrust, type CrewEmployee, type TimelineEvent, type Trust } from "./trust";
 
@@ -26,7 +28,39 @@ export interface EmployeeWorkType {
   note: EmployeeNote | null;
 }
 
-export type EmployeeSummary = CrewEmployee & { workTypes: EmployeeWorkType[] };
+/** 員工卡上的一條守則（#145，ADR 0007）；文字是目前語言（demo 以外是資料庫的原文） */
+export interface EmployeeGuideline {
+  id: string;
+  workTypeId: string;
+  status: GuidelineStatus;
+  /** 目前的文字（確認時修改過就是修改後的文字） */
+  text: string;
+  /** 提出的文字（「修改後確認」預填） */
+  proposedText: string;
+  /** 確認時修改過 */
+  revised: boolean;
+  proposerKind: ProposerKind;
+  proposedAt: string;
+  /** 來源退回的時間；看不到來源交辦時是提出的時間 */
+  returnedAt: string;
+  /** 確認的時間；沒有確認時是 null */
+  confirmedAt: string | null;
+  /** 收回或不採用的時間；其他狀態是 null */
+  closedAt: string | null;
+  /** 之後的交件依照了幾次（員工自述，看得到的交件） */
+  followed: number;
+  /** 「看那次退回」切到的交辦 */
+  sourceAssignmentId: string;
+}
+
+/** 員工卡的守則：等確認排最前，再來是生效的；已收回與不採用收在一起（依提出時間） */
+export interface EmployeeGuidelines {
+  pending: EmployeeGuideline[];
+  active: EmployeeGuideline[];
+  closed: EmployeeGuideline[];
+}
+
+export type EmployeeSummary = CrewEmployee & { workTypes: EmployeeWorkType[]; guidelines: EmployeeGuidelines };
 
 type AssignmentFields = Pick<AssignmentSummary, "employeeId" | "workTypeId" | "sourceId" | "sourceKind" | "sourceName" | "latestRound" | "latestVerdict">;
 
@@ -34,7 +68,7 @@ export function groupEmployees(
   trust: Pick<Trust, "employees" | "rows">,
   assignments: readonly AssignmentFields[],
   language: LanguageCode,
-): EmployeeSummary[] {
+): Omit<EmployeeSummary, "guidelines">[] {
   if (trust.rows.length === 0) return [];
   return trust.employees.map((e) => ({
     ...e,
@@ -66,5 +100,53 @@ export async function readEmployees(
   // 看重點的建議只給能驗收的身分（與信任頁一致）
   const trust = await readTrust(db, identity, language, canReview);
   if (identity === null || trust.rows.length === 0) return [];
-  return groupEmployees(trust, await listAssignments(db, identity), language);
+  const employees = groupEmployees(trust, await listAssignments(db, identity), language);
+  const guidelines = await listGuidelines(db, identity);
+  const followed = await readFollowCounts(db, identity);
+  return employees.map((e) => ({ ...e, guidelines: groupGuidelines(guidelines.filter((g) => g.employeeId === e.id), followed, language) }));
+}
+
+/** 一位員工的守則分成等確認、生效、已收回與不採用；文字以 demoText() 換成目前語言。 */
+export function groupGuidelines(
+  guidelines: readonly StoredGuideline[],
+  followed: ReadonlyMap<string, number>,
+  language: LanguageCode,
+): EmployeeGuidelines {
+  const items = guidelines.map((g) => toEmployeeGuideline(g, followed.get(g.id) ?? 0, language));
+  return {
+    pending: items.filter((g) => g.status === "pending"),
+    active: items.filter((g) => g.status === "active"),
+    closed: items.filter((g) => g.status === "revoked" || g.status === "rejected"),
+  };
+}
+
+function toEmployeeGuideline(g: StoredGuideline, followed: number, language: LanguageCode): EmployeeGuideline {
+  const { proposed: proposedText, revised: revision } = guidelineTexts(g, language);
+  const confirm = g.decisions.find((d) => d.decision === "confirm");
+  const last = g.decisions.at(-1);
+  return {
+    id: g.id,
+    workTypeId: g.workTypeId,
+    status: g.status,
+    text: revision ?? proposedText,
+    proposedText,
+    revised: revision !== null,
+    proposerKind: g.proposerKind,
+    proposedAt: g.proposedAt,
+    returnedAt: g.sourceReview?.decidedAt ?? g.proposedAt,
+    confirmedAt: confirm?.decidedAt ?? null,
+    closedAt: (g.status === "revoked" || g.status === "rejected") && last ? last.decidedAt : null,
+    followed,
+    sourceAssignmentId: g.sourceAssignmentId,
+  };
+}
+
+/** 每條守則被看得到的交件依照了幾次（crew.work_guidelines；可見範圍由 RLS 決定） */
+function readFollowCounts(db: Database, identity: string): Promise<Map<string, number>> {
+  return db.withIdentity(identity, async (tx) => {
+    const result = await tx.query<{ id: string; count: number }>(
+      `SELECT guideline_id AS id, count(*)::int AS count FROM crew.work_guidelines GROUP BY guideline_id`,
+    );
+    return new Map(result.rows.map((r) => [r.id, r.count]));
+  });
 }

@@ -128,3 +128,61 @@
   min-height: 44px;
   font-size: 0.9rem;
 }
+
+/* 守則（#145）：摘要、等確認排最前、生效的；已收回與不採用收在 details */
+.crew-employees__guidelines {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.crew-employees__guideline-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crew-employees__guideline {
+  display: grid;
+  gap: 0.375rem;
+  overflow-wrap: anywhere;
+}
+
+.crew-employees__guideline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.crew-employees__guideline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.crew-employees__guideline-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.crew-employees__guideline-form label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.crew-employees__guideline-form textarea {
+  min-height: 4rem;
+  font: inherit;
+}
+
+.crew-employees__guideline-closed summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}

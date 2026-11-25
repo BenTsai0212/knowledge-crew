@@ -12,6 +12,7 @@
   "sectionLedger": "Work ledger",
   "sectionWorksCount": "{count, plural, one {# awaiting review} other {# awaiting review}}",
   "sectionTrustCount": "{count, plural, one {# key-points suggestion to decide} other {# key-points suggestions to decide}}",
+  "sectionEmployeesCount": "{count, plural, one {# guideline to confirm} other {# guidelines to confirm}}",
   "preparingTitle": "Coming soon",
   "preparingBody": "This screen is still being prepared and will appear here later.",
   "workTypeSupport": "Customer replies",

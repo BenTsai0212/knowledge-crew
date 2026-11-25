@@ -61,7 +61,7 @@ describe("readToday：匯入虛構資料後", () => {
 
   it("沒有身分時比照 guest，不拋錯", async () => {
     const today = await read(null);
-    expect(today).toEqual({ canReview: false, awaitingReview: [], inProgress: [], suggestions: [] });
+    expect(today).toEqual({ canReview: false, awaitingReview: [], inProgress: [], suggestions: [], guidelines: [] });
   });
 
   it("交辦標題、員工說明與來源名稱依目前語言顯示", async () => {

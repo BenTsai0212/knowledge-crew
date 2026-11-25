@@ -1,6 +1,6 @@
 // 驗收面板 v3（#72 計畫第 1、5 點；設計規格 v3 第 6.2 節）：標題卡（結論列）→ 重點＋自動檢查 → 交件本身 → 前幾輪 → 決定列。
 // 資料只來自 readReviewPanel()；文字在 client/i18n/crew/review.<語言>.json。寫入行為與 v2 相同（createReview() 後重新讀取）。
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
 import type { createReview } from "../../db/store";
@@ -39,13 +39,15 @@ interface PanelProps {
   decide: Decide;
   /** 剛才的「通過」因為沒有上傳權限而沒有收進知識庫（#92 的 `## 決定` 4） */
   noUpload?: boolean;
+  /** 剛才的退回已記成守則（#145） */
+  savedGuideline?: boolean;
   /** 打開回流文件的原文；沒有時不顯示「打開原文」 */
   onOpenSource?: (passageId: string) => void;
   /** 切到信任頁；沒有時不顯示「看信任紀錄」 */
   onOpenTrust?: () => void;
 }
 
-export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, onOpenSource, onOpenTrust }: PanelProps) {
+export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, savedGuideline = false, onOpenSource, onOpenTrust }: PanelProps) {
   const t = crewStrings("review", language);
   const { item, focus, current, earlier, body, deliverable } = panel;
   // 選中的重點只存在元件 state；換一筆工作時（key 改變）重設
@@ -81,6 +83,11 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
             <span className="badge" data-verdict={item.verdict}>
               {item.verdict === "accepted" ? t.verdictAccepted : t.verdictReturned}
             </span>
+          </p>
+        )}
+        {savedGuideline && (
+          <p className="crew-review__notice" role="status">
+            {t.guidelineSaved}
           </p>
         )}
         <KnowledgeStatus passage={panel.knowledgePassage} noUpload={noUpload} onOpenSource={onOpenSource} t={t} />
@@ -163,7 +170,14 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
       )}
 
       {panel.canDecide ? (
-        <DecisionBar question={decisionQuestion(deliverable, language)} workId={current.id} saving={saving} decide={decide} t={t} />
+        <DecisionBar
+          question={decisionQuestion(deliverable, language)}
+          workId={current.id}
+          guidelineLabel={withEmployee(t.saveAsGuideline, { workType: workTypeLabel(item.workTypeId, language) }, item.employee.displayName, language)}
+          saving={saving}
+          decide={decide}
+          t={t}
+        />
       ) : (
         audience === "view" && <p className="muted crew-review__view-only">{t.viewOnlyNote}</p>
       )}
@@ -235,6 +249,8 @@ function KnowledgeStatus({ passage, noUpload, onOpenSource, t }: { passage: stri
 interface DecisionProps {
   question: string;
   workId: string;
+  /** 「記成 ○○ 的「工作類型」守則」（#145） */
+  guidelineLabel: ReactNode;
   saving: boolean;
   decide: Decide;
   t: Texts;
@@ -244,12 +260,25 @@ interface DecisionProps {
  * 決定列：問句＋退回（次要）＋通過（主要）；按退回後展開三張原因卡，「確定退回」是墨色實心按鈕。
  * 手機（#103）的決定列固定在底部分頁列之上（ReviewView.css）；展開退回原因時取消固定、回到面板最後，並把原因捲進畫面。
  */
-function DecisionBar({ question, workId, saving, decide, t }: DecisionProps) {
+function DecisionBar({ question, workId, guidelineLabel, saving, decide, t }: DecisionProps) {
   // 退回的表單只存在元件 state；換一筆工作時（key 改變）重設
   const [returning, setReturning] = useState(false);
   const [reason, setReason] = useState<ReturnReason | null>(null);
   const [note, setNote] = useState("");
+  // 記成守則（#145，ADR 0007 決定 2）：「流程上的小問題」不能成為守則；意見是空的時按「確定退回」才顯示錯誤（不用停用的按鈕）
+  const [asGuideline, setAsGuideline] = useState(false);
+  const [guidelineError, setGuidelineError] = useState(false);
   const trimmed = note.trim();
+  const guidelineAllowed = reason !== null && reason !== "process";
+  const confirmReturn = () => {
+    if (reason === null) return;
+    const save = guidelineAllowed && asGuideline;
+    if (save && trimmed === "") {
+      setGuidelineError(true);
+      return;
+    }
+    void decide({ workId, verdict: "returned", reason, ...(trimmed === "" ? {} : { note: trimmed }), ...(save ? { saveAsGuideline: true } : {}) });
+  };
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const bar = ref.current;
@@ -292,9 +321,42 @@ function DecisionBar({ question, workId, saving, decide, t }: DecisionProps) {
             ))}
           </div>
           <label className="crew-review__note-field">
-            {t.note}
-            <textarea value={note} placeholder={t.notePlaceholder} onChange={(e) => setNote(e.target.value)} />
+            {/* 勾選「記成守則」後意見是必填，標籤跟著改（#146 的修正要求） */}
+            {guidelineAllowed && asGuideline ? t.noteRequired : t.note}
+            <textarea
+              value={note}
+              placeholder={t.notePlaceholder}
+              onChange={(e) => {
+                setNote(e.target.value);
+                setGuidelineError(false);
+              }}
+            />
           </label>
+          {guidelineAllowed && (
+            <div className="crew-review__guideline">
+              <label className="crew-review__guideline-check">
+                <input
+                  type="checkbox"
+                  checked={asGuideline}
+                  aria-describedby={`crew-review-guideline-hint${guidelineError ? " crew-review-guideline-error" : ""}`}
+                  aria-invalid={guidelineError || undefined}
+                  onChange={(e) => {
+                    setAsGuideline(e.target.checked);
+                    setGuidelineError(false);
+                  }}
+                />
+                <span>{guidelineLabel}</span>
+              </label>
+              <p id="crew-review-guideline-hint" className="muted crew-review__guideline-hint">
+                {t.saveAsGuidelineHint}
+              </p>
+              {guidelineError && (
+                <p id="crew-review-guideline-error" className="error" role="alert">
+                  {t.guidelineNeedsNote}
+                </p>
+              )}
+            </div>
+          )}
           <div className="crew-review__buttons">
             <button type="button" className="secondary" onClick={() => setReturning(false)}>
               {t.cancel}
@@ -303,7 +365,7 @@ function DecisionBar({ question, workId, saving, decide, t }: DecisionProps) {
               type="button"
               className="crew-review__confirm"
               disabled={reason === null}
-              onClick={() => reason && decide({ workId, verdict: "returned", reason, ...(trimmed === "" ? {} : { note: trimmed }) })}
+              onClick={confirmReturn}
             >
               {saving ? t.saving : t.confirmReturn}
             </button>
