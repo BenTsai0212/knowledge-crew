@@ -144,7 +144,7 @@ export async function assignSimulateReturn(
 // 首頁的「今天的工作」（#96）
 export const homeToday = (page: Page) => page.getByRole("region", { name: ct.home.title, exact: true });
 
-// ---- 第一次來的導覽（#122）：首頁的入口小卡與導覽對話框；walkTour() 走完 6 步，每一步確認切到的畫面與標出的區塊 ----
+// ---- 第一次來的導覽（#122）：首頁的入口小卡與導覽對話框；walkTour() 走完 8 步，每一步確認切到的畫面與標出的區塊 ----
 export const tourCard = (page: Page) => page.getByRole("region", { name: ct.tour.cardTitle, exact: true });
 export const tourDialog = (page: Page) => page.getByRole("dialog").filter({ has: page.locator(".crew-tour__title") });
 export const tourReplay = (page: Page) => page.getByRole("button", { name: ct.tour.replay, exact: true });
@@ -156,6 +156,9 @@ const TOUR = [
   { title: () => ct.tour.returnTitle, section: () => ct.common.sectionWorks, target: ".crew-review__decision" },
   { title: () => ct.tour.guidelinesTitle, section: () => ct.common.sectionEmployees, target: ".crew-employees__guidelines[data-pending]", owner: "rowan" },
   { title: () => ct.tour.trustTitle, section: () => ct.common.sectionTrust, target: ".crew-trust__row" },
+  // 抽查（k17 的「這次抽查」卡）與事後更正（k01 的更正紀錄）（#171）
+  { title: () => ct.tour.spotTitle, section: () => ct.common.sectionWorks, target: ".crew-review__spot" },
+  { title: () => ct.tour.correctionTitle, section: () => ct.common.sectionWorks, target: ".crew-review__correction" },
   { title: () => ct.tour.flowbackTitle, section: () => ct.common.sectionWorks, target: ".crew-review__knowledge" },
 ] as const;
 
@@ -200,7 +203,7 @@ async function expectTargetMostlyVisible(page: Page, target: string): Promise<vo
     .toBe(true);
 }
 
-// 從首頁的入口開始走完 6 步；keyboard 時以 Enter 按「下一步」（開始時焦點在「下一步」）。結束後回到首頁不必要：停在最後一步的畫面
+// 從首頁的入口開始走完 8 步；keyboard 時以 Enter 按「下一步」（開始時焦點在「下一步」）。結束後回到首頁不必要：停在最後一步的畫面
 export async function walkTour(page: Page, opts: { keyboard?: boolean } = {}): Promise<void> {
   await (await tourStart(page)).click();
   for (const [i, step] of TOUR.entries()) {

@@ -1,6 +1,6 @@
 {
   "cardTitle": "First time here? A 90-second tour",
-  "cardBody": "Six steps through assigning, reviewing, returning, guidelines, how trust changes, and the flow back into the knowledge base.",
+  "cardBody": "Eight steps through assigning, reviewing, returning, guidelines, how trust changes, spot checks, corrections after approval, and the flow back into the knowledge base.",
   "start": "Start the tour",
   "dismiss": "Close the tour card",
   "replay": "Watch the tour again",
@@ -13,13 +13,17 @@
   "todayTitle": "Today's work",
   "todayBody": "Work handed in by AI employees waits here for your review; items with failing checks come first.",
   "reviewTitle": "Review panel",
-  "reviewBody": "The employee marks the points to check, plus automated checks; you decide to accept or return.",
+  "reviewBody": "The top half is what the employee says (the key points it marked, the guidelines it followed); the bottom half is the independent checks. You decide to approve or return.",
   "returnTitle": "Reasons for returning",
   "returnBody": "When you return work, pick one of three reasons: \"It is wrong\" sends this kind of work back to \"Review every item\"; the other two do not affect trust.",
   "guidelinesTitle": "Guidelines",
   "guidelinesBody": "Feedback from a return can be saved as a guideline, and the employee then says which ones it followed when handing in work; guidelines need your confirmation and you can retire them at any time.",
   "trustTitle": "Trust",
   "trustBody": "Trust grows with reviews; reviewing key points needs your consent and you can take it back at any time.",
+  "spotTitle": "Spot checks",
+  "spotBody": "While you review key points, one in every 5 is picked for a full review; if it is wrong, this kind of work goes back to \"Review every item\".",
+  "correctionTitle": "Corrections after approval",
+  "correctionBody": "If you find a mistake after approving, you can record it. It counts as \"It is wrong\", stays in the work ledger, and cannot be undone.",
   "flowbackTitle": "Back into the knowledge base",
   "flowbackBody": "Accepted knowledge base entries and confirmed guidelines go into the knowledge base; the source shows what checks they went through."
 }

@@ -33,6 +33,15 @@ export const TOUR_STEPS: readonly TourStep[] = [
     targets: [".crew-employees__guidelines[data-pending]", ".crew-employees__guidelines"],
   },
   { id: "trust", title: "trustTitle", body: "trustBody", go: { kind: "crew", target: { section: "trust" } }, targets: [".crew-trust__row", ".crew-trust"] },
+  // 抽查（#166）：demo 的 k17 是 Linden 看重點期間的第 5 件；事後更正（#164）：demo 的 k01 已通過後更正（#171）
+  { id: "spot", title: "spotTitle", body: "spotBody", go: { kind: "crew", target: { section: "works", assignmentId: "k17" } }, targets: [".crew-review__spot", ".crew-review__panel"] },
+  {
+    id: "correction",
+    title: "correctionTitle",
+    body: "correctionBody",
+    go: { kind: "crew", target: { section: "works", assignmentId: "k01" } },
+    targets: [".crew-review__correction", ".crew-review__panel"],
+  },
   { id: "flowback", title: "flowbackTitle", body: "flowbackBody", go: { kind: "flowback" }, targets: [".crew-review__knowledge", ".crew-review__panel"] },
 ];
 
