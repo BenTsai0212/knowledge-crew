@@ -81,7 +81,8 @@ describe("readTrust：匯入虛構資料後", () => {
     const r = row(await read(db, "manager"), "juniper", "dev");
     expect(r.level).toBe("item");
     expect(r.suggestion).toBeNull();
-    expect(r.reviewCount).toBe(11);
+    // #161 加了 j12～j15
+    expect(r.reviewCount).toBe(15);
     expect(r.dots.length).toBe(DEMO_PARAMS.dots);
   });
 
@@ -181,14 +182,14 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
   const levels = (r: TrustRow) => r.timeline.cells.map((c) => c.level);
   const kinds = (r: TrustRow) => r.timeline.events.map((g) => [g.column, g.items.map((e) => e.kind)]);
 
-  // #134 加了 s16-1，時間軸往左移一格
-  it("Rowan：10 格，第 7 格是做錯了；層級帶逐項看 ×6／看重點 ×1／逐項看 ×3；同意改看重點與自動改回在同一格；說明是 reset", async () => {
+  // #134 加了 s16-1，時間軸往左移一格；#161 在同意與做錯了之間加了 s17～s20（做錯了的 s12-1 是抽查）
+  it("Rowan：10 格，第 7 格是做錯了；層級帶逐項看 ×2／看重點 ×5／逐項看 ×3；同意改看重點在第 3 格、自動改回在第 7 格；說明是 reset", async () => {
     const r = row(await read(db, "manager"), "rowan", "support");
     expect(r.timeline.cells).toHaveLength(DEMO_PARAMS.dots);
     expect(r.timeline.empty).toBe(0);
     expect(r.timeline.cells.map((c) => c.dot).indexOf("wrong")).toBe(6);
-    expect(levels(r)).toEqual([...Array(6).fill("item"), "light", "item", "item", "item"]);
-    expect(kinds(r)).toEqual([[6, ["relax", "reset"]]]);
+    expect(levels(r)).toEqual([...Array(2).fill("item"), ...Array(5).fill("light"), "item", "item", "item"]);
+    expect(kinds(r)).toEqual([[2, ["relax"]], [6, ["reset"]]]);
     expect(r.note).toBe("reset");
   });
 
@@ -208,12 +209,13 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
     expect(r.note).toBe("light");
   });
 
-  it("Juniper：10 格沒有空格，同意改看重點與收回都在最後一格（看重點驗收一次），說明是剛收回（#125）", async () => {
+  // #161 在同意與收回（改為 11/10）之間加了 j12～j15（j15 是抽查）
+  it("Juniper：10 格沒有空格，同意改看重點在第 6 格、收回在最後一格（看重點驗收 5 次），說明是剛收回（#125）", async () => {
     const r = row(await read(db, "manager"), "juniper", "dev");
     expect(r.timeline.cells).toHaveLength(DEMO_PARAMS.dots);
     expect(r.timeline.empty).toBe(0);
-    expect(levels(r)).toEqual([...Array(9).fill("item"), "light"]);
-    expect(kinds(r)).toEqual([[9, ["relax", "revoke"]]]);
+    expect(levels(r)).toEqual([...Array(5).fill("item"), ...Array(5).fill("light")]);
+    expect(kinds(r)).toEqual([[5, ["relax"]], [9, ["revoke"]]]);
     expect(r.note).toBe("revoked");
   });
 

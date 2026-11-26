@@ -261,9 +261,10 @@ describe("validateDemo", () => {
     expect(errorsAfter((d: any) => (d.simulations[0].replies[0].points = [t("一", "One"), t("二", "Two")]))).toEqual([]);
   });
 
-  it("demo.json：改寫的 16 份與 #134 新增的 3 份全文都有結構，其他交件維持一行摘要（#65 的 `## 決定` 3）", () => {
-    // #134 新增的 c12、j11（等驗收）與 k15（修正中）是有結構的全文；s16（修正中）是一行摘要
-    const added = ["c12", "j11", "k15"];
+  it("demo.json：改寫的 16 份、#134 新增的 3 份與 #161 的 2 份全文都有結構，其他交件維持一行摘要（#65 的 `## 決定` 3）", () => {
+    // #134 新增的 c12、j11（等驗收）與 k15（修正中）是有結構的全文；s16（修正中）是一行摘要。
+    // #161：k01-2 改寫成知識庫條目（回流後被事後更正）、新增的 k17（等驗收的抽查）有結構；新增的已通過交件（s17～s20、j12～j15、k16）是一行摘要
+    const added = ["c12", "j11", "k15", "k01", "k17"];
     const rewritten = ["s14", "c11", "k13", "j06", "s13", "c10", "k12", "j05", ...added];
     const works = DEMO!.assignments.flatMap((a) => a.works.map((w) => ({ id: a.id, w })));
     const replies = DEMO!.simulations.flatMap((s) => s.replies);
@@ -340,17 +341,17 @@ describe("validateDemo", () => {
     expect(errorsAfter(change)).toEqual([]);
   });
 
-  it("demo.json 的守則：附錄 A 的 6 條與 37 次依照（#142）", () => {
+  it("demo.json 的守則：附錄 A 的 6 條與 44 次依照（#142；#161 加了 7 次）", () => {
     const guidelines = DEMO!.guidelines.map((x) => [x.id, x.proposer, x.decisions.map((d) => d.decision).join("+")].join(" "));
     expect(guidelines).toEqual(["g04 human confirm+revoke", "g03 human confirm", "g06 employee reject", "g01 human confirm", "g05 employee confirm", "g02 employee "]);
     const follows = new Map<string, string[]>();
     for (const a of DEMO!.assignments) for (const w of a.works) for (const id of w.guidelines ?? []) follows.set(id, [...(follows.get(id) ?? []), `${a.id}-w${w.round}`]);
     const ids = (prefix: string, from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => `${prefix}${String(from + i).padStart(2, "0")}-w1`);
-    expect(follows.get("g01")).toEqual([...ids("s", 6, 14), "s16-w1"]);
+    expect(follows.get("g01")).toEqual([...ids("s", 6, 14), "s16-w1", ...ids("s", 17, 20)]);
     expect(follows.get("g03")?.sort()).toEqual(ids("c", 2, 12));
-    expect(follows.get("g04")?.sort()).toEqual(ids("k", 2, 10));
-    expect(follows.get("g05")?.sort()).toEqual([...ids("k", 8, 13), "k15-w1"]);
-    expect([...follows.values()].flat()).toHaveLength(37);
+    expect(follows.get("g04")?.sort()).toEqual([...ids("k", 2, 10), "k16-w1"]);
+    expect(follows.get("g05")?.sort()).toEqual([...ids("k", 8, 13), "k15-w1", "k16-w1", "k17-w1"]);
+    expect([...follows.values()].flat()).toHaveLength(44);
     // 有意見但沒有成為守則：s16-1、k15-1；流程上的小問題：c05-1、j04-1
     const sources = new Set(DEMO!.guidelines.map((x) => x.sourceReview));
     const noted = DEMO!.assignments.flatMap((a) => a.works.flatMap((w) => (w.review?.note ? [w.review.id] : [])));

@@ -107,8 +107,8 @@ export async function readToday(
   const pairs = new Map<string, { employeeId: string; workTypeId: string }>();
   for (const a of oldestFirst) pairs.set(`${a.employeeId}\u0000${a.workTypeId}`, { employeeId: a.employeeId, workTypeId: a.workTypeId });
   for (const { employeeId, workTypeId } of pairs.values()) {
-    const { reviews, decisions } = await getTrustInputs(db, identity, employeeId, workTypeId);
-    const suggestion = relaxSuggestion(reviews, decisions, params);
+    const { reviews, decisions, corrections } = await getTrustInputs(db, identity, employeeId, workTypeId);
+    const suggestion = relaxSuggestion(reviews, decisions, params, corrections);
     if (suggestion) today.suggestions.push({ employee: employee(employeeId), workTypeId, count: suggestion.basis.length });
   }
   const guidelines = await listGuidelines(db, identity);

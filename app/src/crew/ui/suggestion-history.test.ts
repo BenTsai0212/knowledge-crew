@@ -138,18 +138,19 @@ describe("匯入虛構資料後（demo.json）", () => {
   afterAll(() => db.close());
 
   const proposalsOf = async (employee: string, workType: string) => {
-    const { reviews, decisions } = await getTrustInputs(db, "manager", employee, workType);
-    return relaxProposals(reviews, decisions, DEMO_PARAMS).map((p) => [p.review.id, ids(p.basis)]);
+    const { reviews, decisions, corrections } = await getTrustInputs(db, "manager", employee, workType);
+    return relaxProposals(reviews, decisions, DEMO_PARAMS, corrections).map((p) => [p.review.id, ids(p.basis)]);
   };
   const kinds = (events: LedgerEvent[], employee: string, workType: string) =>
     suggestionHistory(events, employee, workType).map((s) => [s.kind, s.at.slice(0, 10)]);
 
-  it("四組各提出一次：第 10 次沒有做錯的驗收（Rowan s09、Linden k09、Sorrel c09、Juniper j10）", async () => {
+  // #161：Linden 的 k01-2 在 9/04 事後更正（算一次做錯了），k09-1 的依據含 k01-2 不再成立，改由 k16-1 提出
+  it("四組各提出一次：第 10 次沒有做錯的驗收（Rowan s09、Linden k16、Sorrel c09、Juniper j10）", async () => {
     expect(await proposalsOf("rowan", "support")).toEqual([
       ["s09-1", ["s01-1", "s02-1", "s03-1", "s04-1", "s05-1", "s05-2", "s06-1", "s07-1", "s08-1", "s09-1"]],
     ]);
     expect(await proposalsOf("linden", "knowledge")).toEqual([
-      ["k09-1", ["k01-2", "k02-1", "k03-1", "k04-1", "k05-1", "k06-1", "k07-1", "k07-2", "k08-1", "k09-1"]],
+      ["k16-1", ["k02-1", "k03-1", "k04-1", "k05-1", "k06-1", "k07-1", "k07-2", "k08-1", "k09-1", "k16-1"]],
     ]);
     expect(await proposalsOf("sorrel", "content")).toEqual([
       ["c09-1", ["c01-2", "c02-1", "c03-1", "c04-1", "c05-1", "c05-2", "c06-1", "c07-1", "c08-1", "c09-1"]],
@@ -165,14 +166,14 @@ describe("匯入虛構資料後（demo.json）", () => {
     expect(proposed.map((e) => [e.id, e.actor, e.basis?.length])).toEqual([
       ["proposed:c09-1", null, 10],
       ["proposed:j10-1", null, 10],
-      ["proposed:k09-1", null, 10],
+      ["proposed:k16-1", null, 10],
       ["proposed:s09-1", null, 10],
     ]);
     expect(kinds(events, "juniper", "dev")).toEqual([
       ["proposed", "2026-10-16"],
       ["relax", "2026-10-19"],
       ["effective", "2026-10-22"],
-      ["revoke", "2026-10-24"],
+      ["revoke", "2026-11-10"],
     ]);
     const juniper = suggestionHistory(events, "juniper", "dev");
     expect(juniper[2]).toMatchObject({ kind: "effective", assignment: { id: "j05" } });
@@ -180,12 +181,14 @@ describe("匯入虛構資料後（demo.json）", () => {
     expect(kinds(events, "rowan", "support")).toEqual([
       ["proposed", "2026-10-03"],
       ["relax", "2026-10-09"],
-      ["effective", "2026-10-15"],
+      ["effective", "2026-10-10"],
       ["autoReset", "2026-10-15"],
     ]);
+    // #161：同意後的第一次驗收是 s17；做錯了的 s12 是同意後的第 5 件（抽查）
+    expect(suggestionHistory(events, "rowan", "support")[2]).toMatchObject({ assignment: { id: "s17" } });
     expect(suggestionHistory(events, "rowan", "support")[3]).toMatchObject({ assignment: { id: "s12" } });
     expect(kinds(events, "linden", "knowledge")).toEqual([
-      ["proposed", "2026-10-11"],
+      ["proposed", "2026-10-12"],
       ["relax", "2026-10-13"],
       ["effective", "2026-10-16"],
     ]);

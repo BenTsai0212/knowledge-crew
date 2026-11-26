@@ -3,7 +3,7 @@
 // - suggestionBasis()、suggestionHistory()：以工作帳本的事件（ledger.ts）整理信任頁的「依據」與「建議的經過」。
 // 規則一律呼叫 rules.ts 的 relaxSuggestion()，不另寫條件。
 import { relaxSuggestion } from "../trust/rules";
-import type { LevelDecision, Review, TrustParams } from "../trust/types";
+import type { Correction, LevelDecision, Review, TrustParams } from "../trust/types";
 import type { LedgerAssignment, LedgerEvent } from "./ledger";
 
 /** 一次「提出看重點的建議」：觸發的那次驗收（時間相同）與當時的依據。 */
@@ -24,11 +24,13 @@ const byTime = <T extends { decidedAt: string }>(items: readonly T[]): T[] =>
  * 提出看重點的建議的事件，依時間排序。以層級決定切成段（第一筆決定之前、每筆決定之後），
  * 每一段只取「第一次符合建議條件的那次驗收」：當下的驗收與不晚於它的決定（同時間決定在先，與 rules.ts 一致）
  * 傳給 relaxSuggestion() 不是 null 的第一次。同一段之後的驗收不再重複提出。
+ * 事後更正（#161）只傳當時已發生的（更正時間不晚於該次驗收）。
  */
 export function relaxProposals(
   reviews: readonly Review[],
   decisions: readonly LevelDecision[],
   params: Pick<TrustParams, "window" | "min">,
+  corrections: readonly Correction[] = [],
 ): RelaxProposal[] {
   const all = byTime(reviews);
   const sorted = byTime(decisions);
@@ -42,7 +44,8 @@ export function relaxProposals(
       proposed = false;
     }
     if (proposed) return;
-    const suggestion = relaxSuggestion(all.slice(0, i + 1), known, params);
+    const happened = corrections.filter((c) => time(c.correctedAt) <= time(review.decidedAt));
+    const suggestion = relaxSuggestion(all.slice(0, i + 1), known, params, happened);
     if (suggestion === null) return;
     proposals.push({ review, at: review.decidedAt, basis: suggestion.basis });
     proposed = true;

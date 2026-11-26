@@ -45,6 +45,8 @@ export interface TrustParams {
   window: number;
   /** 建議改看重點時，至少要有幾次驗收 */
   min: number;
+  /** 抽查：看重點期間按交件順序每幾件抽 1 件逐項看（crew ADR 0008 第 7 點） */
+  spotEvery: number;
 }
 
 /** 建議改看重點：只是資料，不改變層級；要人同意後寫入 `relax` 才生效。 */
@@ -53,10 +55,19 @@ export interface RelaxSuggestion {
   basis: Review[];
 }
 
-/** 因做錯了改回逐項看的事件：在 `light` 期間發生 `wrong` 的那一次。 */
+/** 因做錯了改回逐項看的事件：在 `light` 期間發生 `wrong`（或事後更正）的那一次。 */
 export interface AutoReset {
+  /** 做錯了的那次驗收；由更正觸發時是被更正的那次（通過） */
   review: Review;
   at: string;
+  /** 由事後更正觸發時是那筆更正；一般的做錯了沒有這個欄位 */
+  correction?: Correction;
+}
+
+/** 抽查（crew ADR 0008 第 7 點）：看重點期間的第幾件（`ordinal`，從 1 起算）與每幾件抽 1 件（`every`）。 */
+export interface SpotCheck {
+  ordinal: number;
+  every: number;
 }
 
 /** 自動檢查的狀態：`crew.work_checks.status`。 */
@@ -97,4 +108,6 @@ export interface ReviewFocus {
   checks: WorkCheck[];
   changes: ChangesView;
   body: { text: string; collapsed: true };
+  /** 這件是抽查（逐項列出變更）；不是抽查時沒有這個欄位 */
+  spotCheck?: SpotCheck;
 }

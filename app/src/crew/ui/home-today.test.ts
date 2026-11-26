@@ -36,16 +36,16 @@ describe("homeToday：匯入虛構資料後", () => {
     const h = homeToday(t);
     // 設計規格 v3 第 6.1 節的例子：Rowan（報價核對）、Linden（必填欄位）先處理
     expect(h.failing.map((a) => a.id)).toEqual(["s14", "k13"]);
-    // #134 加了待驗收的 c12、j11，與進行中的 k14、k15、s16、s15（還沒交件或退回後等下一輪，依交辦時間舊到新）
-    expect(h.awaiting.map((a) => a.id).sort()).toEqual(["c11", "c12", "j06", "j11"]);
+    // #134 加了待驗收的 c12、j11，與進行中的 k14、k15、s16、s15（還沒交件或退回後等下一輪，依交辦時間舊到新）；#161 加了待驗收的 k17
+    expect(h.awaiting.map((a) => a.id).sort()).toEqual(["c11", "c12", "j06", "j11", "k17"]);
     expect(h.decide.map((d) => d.employee.id)).toEqual(["sorrel"]);
     expect(h.inProgress.map((a) => a.id)).toEqual(["k14", "k15", "s16", "s15"]);
-    expect(awaitingCount(t)).toBe(6);
+    expect(awaitingCount(t)).toBe(7);
     // #145：Rowan 整理的一條守則等確認
     expect(h.guidelines.map((g) => [g.id, g.employee.id, g.workTypeId])).toEqual([["g02", "rowan", "support"]]);
-    expect(homeSummary(h, "zh-TW")).toBe("6 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定；1 條守則等你確認。");
+    expect(homeSummary(h, "zh-TW")).toBe("7 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定；1 條守則等你確認。");
     expect(homeSummary(h, "en")).toBe(
-      "6 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision; 1 guideline awaits your confirmation.",
+      "7 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision; 1 guideline awaits your confirmation.",
     );
   });
 

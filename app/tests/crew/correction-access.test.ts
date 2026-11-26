@@ -1,7 +1,7 @@
 // 事後更正與逐條回饋的讀取範圍與寫入權限（#161、crew ADR 0008）。讀取比照 crew.reviews：看得到該次驗收才看得到。
 // 寫入：can_review、不能冒名、時間由資料庫決定；更正只對通過、一次一筆；逐條回饋只能和驗收在同一交易寫入。
 // 虛構資料中 Rowan × support 在客服信箱（青翼專案，staff 看得到），Linden × knowledge 在公司知識庫（長堤專案，staff 看不到）。
-// demo.json 目前沒有更正與回饋（PR 2 才加），這裡在匯入前加上：k01-2 的更正、s13-1 的逐條回饋，順便測 seed 的寫入。
+// 這裡在匯入前改寫 demo.json 的 k01-2 的更正與 s13-1 的逐條回饋（g01 改成沒做到），順便測 seed 的寫入；s12-1 的 g01 沒做到沿用 demo.json（#161 PR 2）。
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientConfig } from "../../src/client/load";
 import { crewMigrations } from "../../src/crew/db/migrate";
@@ -57,10 +57,10 @@ describe("讀取：看得到該次驗收才看得到", () => {
     expect(await count(identity, "review_feedback")).toBe(0);
   });
 
-  it("守則被標「沒做到」的次數：g01 是 1（manager 與 staff 相同）", async () => {
+  it("守則被標「沒做到」的次數：g01 是 2（s12-1 與改寫的 s13-1；manager 與 staff 相同）", async () => {
     for (const identity of ["manager", "staff"]) {
       const g01 = (await listGuidelines(db, identity, { employeeId: "rowan", workTypeId: "support" })).find((g) => g.id === "g01")!;
-      expect(g01.notDoneCount).toBe(1);
+      expect(g01.notDoneCount).toBe(2);
       expect(g01.sourceCorrectionId).toBeNull();
     }
   });

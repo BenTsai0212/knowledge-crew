@@ -32,11 +32,11 @@ describe("canReviewOf：依 client/access.json 的角色", () => {
 });
 
 describe("readToday：匯入虛構資料後", () => {
-  // #134 加了待驗收的 c12、j11，與進行中的 k14、s15（還沒交件）、k15、s16（退回後等下一輪）
-  it("manager：待驗收 6（c12、j11、s14、c11、k13、j06）、進行中 4（k14、k15、s16、s15）、建議改看重點 1（Sorrel × 貼文與商品介紹）", async () => {
+  // #134 加了待驗收的 c12、j11，與進行中的 k14、s15（還沒交件）、k15、s16（退回後等下一輪）；#161 加了待驗收的 k17
+  it("manager：待驗收 7（c12、j11、s14、c11、k13、k17、j06）、進行中 4（k14、k15、s16、s15）、建議改看重點 1（Sorrel × 貼文與商品介紹）", async () => {
     const today = await read("manager");
     expect(today.canReview).toBe(true);
-    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "c12", "j06", "j11", "k13", "s14"]);
+    expect(today.awaitingReview.map((a) => a.id).sort()).toEqual(["c11", "c12", "j06", "j11", "k13", "k17", "s14"]);
     expect(today.inProgress.map((a) => [a.id, a.returned])).toEqual([["k14", false], ["k15", true], ["s16", true], ["s15", false]]);
     expect(today.suggestions.map((s) => [s.employee.id, s.workTypeId])).toEqual([["sorrel", "content"]]);
     expect(today.suggestions[0].count).toBe(10);

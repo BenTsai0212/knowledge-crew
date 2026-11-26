@@ -26,7 +26,7 @@ const visible = (node: ReactNode) =>
 
 const origin: FlowbackOrigin = {
   assignmentId: "k13", title: "Title", employeeName: "Linden", decidedAt: "2026-11-22T04:00:00.000Z",
-  decidedBy: "manager", level: "light", returned: 0, checks: { passed: 3, total: 3 }, guidelines: 1,
+  decidedBy: "manager", level: "light", returned: 0, checks: { passed: 3, total: 3 }, guidelines: 1, correctedAt: null,
 };
 const roleLabel = (language: string) => clientConfig.access.roles.find((r) => r.id === "manager")!.label[language];
 

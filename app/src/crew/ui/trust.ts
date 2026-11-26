@@ -6,7 +6,7 @@ import { createLevelDecision, getTrustInputs, listAssignments, listEmployees, ty
 import { demoText } from "../demo/texts";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import { autoResets, dotOf, recentDots, relaxSuggestion, reviewLevel } from "../trust/rules";
-import type { Dot, LevelDecision, Review, ReviewLevel, TrustParams } from "../trust/types";
+import type { Correction, Dot, LevelDecision, Review, ReviewLevel, TrustParams } from "../trust/types";
 
 export interface CrewEmployee {
   id: string;
@@ -104,23 +104,23 @@ export async function readTrust(
   );
   const rows: TrustRow[] = [];
   for (const { employeeId, workTypeId } of sorted) {
-    const { reviews, decisions } = await getTrustInputs(db, identity, employeeId, workTypeId);
+    const { reviews, decisions, corrections } = await getTrustInputs(db, identity, employeeId, workTypeId);
     // 建議只給能驗收的身分（只有他們能同意改看重點），與首頁的今天的工作一致
-    const suggestion = canReview ? relaxSuggestion(reviews, decisions, params) : null;
-    const level = reviewLevel(reviews, decisions);
-    const timeline = trustTimeline(reviews, decisions, params);
+    const suggestion = canReview ? relaxSuggestion(reviews, decisions, params, corrections) : null;
+    const level = reviewLevel(reviews, decisions, corrections);
+    const timeline = trustTimeline(reviews, decisions, params, corrections);
     rows.push({
       employee: byId.get(employeeId) ?? { id: employeeId, displayName: employeeId, roleNote: null },
       workTypeId,
       dots: recentDots(reviews, params.dots),
       level,
       reviewCount: reviews.length,
-      lastReset: autoResets(reviews, decisions).at(-1)?.at ?? null,
+      lastReset: autoResets(reviews, decisions, corrections).at(-1)?.at ?? null,
       suggestion: suggestion
         ? { count: suggestion.basis.length, basisReviewId: suggestion.basis.at(-1)!.id, basisReviewIds: suggestion.basis.map((r) => r.id) }
         : null,
       timeline,
-      note: trustNote(reviews, decisions, level, suggestion !== null, params),
+      note: trustNote(reviews, decisions, level, suggestion !== null, params, corrections),
     });
   }
   return { canReview, employees, rows };
@@ -135,15 +135,24 @@ const byTime = <T extends { decidedAt: string }>(items: readonly T[]): T[] =>
 /**
  * 時間軸（#75）：最近 params.dots 次驗收的圓點與當時的層級，以及層級改變的事件。
  * 當時的層級＝該次驗收之前的驗收與不晚於它的決定（同時間決定在先，與 rules.ts 一致）算出的層級。
- * 事件早於顯示範圍時不列出。
+ * 事件早於顯示範圍時不列出。事後更正（#161）在更正的時間算一次做錯了：由它觸發的改回放在更正時間以前最後一次驗收的那一格。
  */
-export function trustTimeline(reviews: readonly Review[], decisions: readonly LevelDecision[], params: Pick<TrustParams, "dots">): TrustTimeline {
+export function trustTimeline(
+  reviews: readonly Review[],
+  decisions: readonly LevelDecision[],
+  params: Pick<TrustParams, "dots">,
+  corrections: readonly Correction[] = [],
+): TrustTimeline {
   const all = byTime(reviews);
   const sorted = byTime(decisions);
   const offset = Math.max(0, all.length - Math.max(0, params.dots));
   const cells = all.slice(offset).map((review, i): TimelineCell => {
     const before = all.slice(0, offset + i);
-    const level = reviewLevel(before, sorted.filter((d) => time(d.decidedAt) <= time(review.decidedAt)));
+    const level = reviewLevel(
+      before,
+      sorted.filter((d) => time(d.decidedAt) <= time(review.decidedAt)),
+      corrections.filter((c) => time(c.correctedAt) < time(review.decidedAt)),
+    );
     return { dot: dotOf(review), at: review.decidedAt, level };
   });
   const located: { index: number; event: TimelineEvent }[] = [
@@ -151,7 +160,10 @@ export function trustTimeline(reviews: readonly Review[], decisions: readonly Le
       const next = all.findIndex((r) => time(r.decidedAt) >= time(d.decidedAt));
       return { index: next === -1 ? all.length - 1 : next, event: { kind: d.decision, at: d.decidedAt } as TimelineEvent };
     }),
-    ...autoResets(all, sorted).map((r) => ({ index: all.indexOf(r.review), event: { kind: "reset", at: r.at } as TimelineEvent })),
+    ...autoResets(all, sorted, corrections).map((r) => ({
+      index: r.correction ? all.filter((x) => time(x.decidedAt) <= time(r.at)).length - 1 : all.indexOf(r.review),
+      event: { kind: "reset", at: r.at } as TimelineEvent,
+    })),
   ];
   const events: TrustTimeline["events"] = [];
   // 同一格的事件依時間排序；同時間時決定在先（located 的順序）
@@ -173,13 +185,14 @@ export function trustNote(
   level: ReviewLevel,
   hasSuggestion: boolean,
   params: Pick<TrustParams, "min">,
+  corrections: readonly Correction[] = [],
 ): TrustNote | null {
   if (hasSuggestion) return "suggestion";
   if (level === "light") return "light";
   const latest = byTime(decisions).at(-1);
   const after = (at: string) => reviews.filter((r) => time(r.decidedAt) > time(at)).length;
   if (latest?.decision === "revoke" && after(latest.decidedAt) === 0) return "revoked";
-  const reset = autoResets(reviews, decisions).at(-1);
+  const reset = autoResets(reviews, decisions, corrections).at(-1);
   if (reset && (!latest || time(latest.decidedAt) <= time(reset.at))) return "reset";
   if (reviews.length < params.min) return "tooFew";
   return null;

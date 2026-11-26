@@ -217,8 +217,8 @@ export function simulateAssignment(
 }
 
 async function levelOf(db: Database, identity: string, employeeId: string, workTypeId: string): Promise<ReviewLevel> {
-  const { reviews, decisions } = await getTrustInputs(db, identity, employeeId, workTypeId);
-  return reviewLevel(reviews, decisions);
+  const { reviews, decisions, corrections } = await getTrustInputs(db, identity, employeeId, workTypeId);
+  return reviewLevel(reviews, decisions, corrections);
 }
 
 // today.ts 的 toEmployee 沒有匯出（不修改 today.ts）

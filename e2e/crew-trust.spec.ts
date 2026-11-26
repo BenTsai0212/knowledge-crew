@@ -91,7 +91,8 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(steps).toHaveCount(4);
     await expect(steps.nth(0)).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/03", count: 10, from: "09/01", to: "10/03" }));
     await expect(steps.nth(1)).toHaveText(crewFill(ct.trust.historyRelax, { date: "10/09", actor: roleName("manager") }));
-    await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/15" }));
+    // #161：同意後的第一次驗收是 s17（10/10）；做錯了的 s12 是同意後的第 5 件（抽查）
+    await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/10" }));
     await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyReset, { date: "10/15", title: assignmentTitle("s12") }));
   });
 
@@ -99,10 +100,11 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     const row = trustRow(page, "juniper", "dev");
     await expect(dots(row).getByRole("listitem")).toHaveCount(10);
     await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
-    const event = row.getByText(crewFill(ct.trust.eventRelax, { date: "10/19" }) + ct.trust.eventSeparator + crewFill(ct.trust.eventRevoke, { date: "10/24" }), { exact: true });
-    await expect(event).toBeVisible();
+    // #161：同意與收回（改為 11/10）之間看重點驗收 5 次，兩個事件在不同的格
+    const events = [crewFill(ct.trust.eventRelax, { date: "10/19" }), crewFill(ct.trust.eventRevoke, { date: "11/10" })].map((text) => row.getByText(text, { exact: true }));
+    for (const event of events) await expect(event).toBeVisible();
     // 1280 時每個事件各自一行（不從「改回逐項看」的中間斷開，#131）
-    for (const item of await event.locator(".crew-trust__event-item").all()) {
+    for (const item of await row.locator(".crew-trust__event-item").all()) {
       expect(await item.evaluate((el) => Math.round(el.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(el).lineHeight)))).toBe(1);
     }
     await expect(row.getByText(ct.trust.noteRevoked, { exact: true })).toBeVisible();
@@ -111,7 +113,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(steps.nth(0)).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/16", count: 10, from: "09/04", to: "10/16" }));
     await expect(steps.nth(1)).toHaveText(crewFill(ct.trust.historyRelax, { date: "10/19", actor: roleName("manager") }));
     await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/22" }));
-    await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyRevoke, { date: "10/24", actor: roleName("manager") }));
+    await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyRevoke, { date: "11/10", actor: roleName("manager") }));
     // 沒有看重點的建議（收回後要重新累積），只有打開那一件的按鈕
     await expect(row.getByRole("button", { name: ct.trust.agreeRelax, exact: true })).toHaveCount(0);
     await steps.nth(2).getByRole("button", { name: crewFill(ct.trust.historyOpenWork, { title: assignmentTitle("j05") }), exact: true }).click();
@@ -238,9 +240,9 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
     expect(reportBox.y).toBeLessThan(firstCard.y);
     const rowan = reportRow(page, "rowan", "support");
     await expect(rowan.getByRole("cell")).toHaveText([
-      // #134：s16 的退回（我想要不一樣的做法）加了一次驗收
-      "16",
-      crewFill(ct.trust.reportFirstPass, { percent: 79, passed: 11, total: 14 }),
+      // #134：s16 的退回（我想要不一樣的做法）加了一次驗收；#161 加了 s17～s20 四次通過
+      "20",
+      crewFill(ct.trust.reportFirstPass, { percent: 83, passed: 15, total: 18 }),
       "1",
       "2",
       "0",

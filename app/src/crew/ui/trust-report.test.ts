@@ -57,17 +57,17 @@ describe("trustReport：匯入虛構資料後", () => {
     }
   });
 
-  // #134 加了 s16-1（第 1 輪以不一樣的做法退回）
-  it("manager：Rowan × 客戶回覆：16 次驗收、做錯了 1／不一樣的做法 2／流程 0，逐項看，層級變化 2 次、最近一次是自動改回", async () => {
+  // #134 加了 s16-1（第 1 輪以不一樣的做法退回）；#161 加了 s17～s20（第一次就通過）
+  it("manager：Rowan × 客戶回覆：20 次驗收、做錯了 1／不一樣的做法 2／流程 0，逐項看，層級變化 2 次、最近一次是自動改回", async () => {
     const row = find((await read("manager")).report, "rowan", "support");
-    expect(row.reviews).toBe(16);
+    expect(row.reviews).toBe(20);
     expect(row.returns).toEqual({ wrong: 1, different_approach: 2, process: 0 });
     expect(row.level).toBe("item");
     expect(row.levelChanges).toBe(2);
     expect(row.lastChange).toEqual({ kind: "autoReset", at: "2026-10-15T07:00:00.000Z" });
-    // #134 的 s16 第 1 輪退回：第一次就通過 11／14
-    expect(row.firstPass).toEqual({ passed: 11, total: 14 });
-    expect(firstPassPercent(row.firstPass)).toBe(79);
+    // #134 的 s16 第 1 輪退回：第一次就通過 11／14；#161 的 s17～s20 都是第一次就通過：15／18
+    expect(row.firstPass).toEqual({ passed: 15, total: 18 });
+    expect(firstPassPercent(row.firstPass)).toBe(83);
   });
 
   it("manager：Linden 是看重點、最近一次是同意改看重點；Sorrel 沒有層級變化、Juniper 同意後收回；三種退回原因分開計數", async () => {
@@ -77,9 +77,9 @@ describe("trustReport：匯入虛構資料後", () => {
     expect(linden.lastChange).toEqual({ kind: "relax", at: "2026-10-13T02:00:00.000Z" });
     expect(find(report, "sorrel", "content")).toMatchObject({ reviews: 12, levelChanges: 0, lastChange: null, returns: { wrong: 1, different_approach: 0, process: 1 } });
     expect(find(report, "juniper", "dev")).toMatchObject({
-      reviews: 11,
+      reviews: 15,
       levelChanges: 2,
-      lastChange: { kind: "revoke", at: "2026-10-24T02:00:00.000Z" },
+      lastChange: { kind: "revoke", at: "2026-11-10T02:00:00.000Z" },
       returns: { wrong: 0, different_approach: 1, process: 1 },
     });
   });

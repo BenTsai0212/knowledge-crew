@@ -10,7 +10,7 @@ import type { DemoFile } from "./types";
 
 const demo = DEMO_RAW as DemoFile;
 const TABLES = ["sources", "employees", "work_types", "assignments", "works", "work_points", "work_changes", "work_checks", "reviews", "level_decisions",
-  "guidelines", "guideline_decisions", "work_guidelines"];
+  "guidelines", "guideline_decisions", "work_guidelines", "review_corrections", "review_feedback"];
 
 const counts = async (pg: PGliteInterface) =>
   Object.fromEntries(
@@ -39,11 +39,11 @@ describe("demoSeed", () => {
     expect(DEMO_RAW).not.toBeNull();
   });
 
-  it("匯入後的筆數與 demo.json 一致（交辦 54、工作 60、驗收 54、看重點的決定 4；#134 加了 6 件交辦；#142 的守則 6、決定 6、依照 37）", async () => {
+  it("匯入後的筆數與 demo.json 一致（交辦 64、工作 70、驗收 63、看重點的決定 4；#134 加了 6 件、#161 加了 10 件交辦；#142 的守則 6、決定 6、依照 44；#161 的更正 1、逐條回饋 6）", async () => {
     const works = demo.assignments.flatMap((a) => a.works);
     const expected = {
-      sources: 4, employees: 4, work_types: 4, assignments: 54, works: 60, reviews: 54, level_decisions: 4,
-      guidelines: 6, guideline_decisions: 6, work_guidelines: 37,
+      sources: 4, employees: 4, work_types: 4, assignments: 64, works: 70, reviews: 63, level_decisions: 4,
+      guidelines: 6, guideline_decisions: 6, work_guidelines: 44, review_corrections: 1, review_feedback: 6,
       work_points: works.reduce((n, w) => n + w.points.length, 0),
       work_changes: works.reduce((n, w) => n + w.changes.length, 0),
       work_checks: works.reduce((n, w) => n + w.checks.length, 0),
@@ -73,8 +73,8 @@ describe("demoSeed", () => {
         LEFT JOIN crew.reviews r ON r.work_id = w.id
         WHERE r.id IS NULL ORDER BY a.id`)).rows.map((r) => r.id),
     );
-    // #134 加了停滯的等驗收 c12、j11
-    expect(pending).toEqual(["c11", "c12", "j06", "j11", "k13", "s14"]);
+    // #134 加了停滯的等驗收 c12、j11；#161 加了抽查的 k17
+    expect(pending).toEqual(["c11", "c12", "j06", "j11", "k13", "k17", "s14"]);
   }, DB_TIMEOUT);
 
   it("同一檢查有多筆時依檔案順序寫入（同時間時 id 較大的是後寫的）", async () => {

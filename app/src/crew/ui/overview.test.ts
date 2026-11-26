@@ -48,14 +48,15 @@ describe("readOverview：匯入虛構資料後", () => {
 
   it("manager：兩個專案；四種狀態依交件與驗收推算", async () => {
     const o = await read("manager");
-    expect(o.items).toHaveLength(54);
+    // #161 加了已通過的 9 件與待驗收的 k17
+    expect(o.items).toHaveLength(64);
     expect(byStatus(o)).toEqual({
       notSubmitted: ["k14", "s15"],
-      awaiting: ["c11", "c12", "j06", "j11", "k13", "s14"],
+      awaiting: ["c11", "c12", "j06", "j11", "k13", "k17", "s14"],
       revising: ["k15", "s16"],
       done: expect.any(Array),
     });
-    expect(byStatus(o).done).toHaveLength(44);
+    expect(byStatus(o).done).toHaveLength(53);
     const item = (id: string) => o.items.find((i) => i.id === id)!;
     // 修正中標出第幾輪退回；等驗收的 s14 有檢查沒通過（k13 也是），c11 的檢查還在進行
     expect(item("s16").round).toBe(1);
@@ -83,27 +84,27 @@ describe("readOverview：匯入虛構資料後", () => {
     const [bluewing, longpier] = o.projects;
     expect(bluewing).toMatchObject({
       label: t("bluewing"),
-      total: 28,
-      counts: { notSubmitted: 1, awaiting: 3, revising: 1, done: 23 },
+      total: 32,
+      counts: { notSubmitted: 1, awaiting: 3, revising: 1, done: 27 },
       attention: { overdue: 2, soon: 1, stalled: 1 },
       knowledge: 0,
     });
     expect(bluewing.sources).toHaveLength(2);
     expect(longpier).toMatchObject({
       label: t("longpier"),
-      total: 26,
-      counts: { notSubmitted: 1, awaiting: 3, revising: 1, done: 21 },
+      total: 32,
+      counts: { notSubmitted: 1, awaiting: 4, revising: 1, done: 26 },
       attention: { overdue: 1, soon: 1, stalled: 2 },
     });
     expect(longpier.sources).toHaveLength(2);
-    // 回流的只有知識庫條目格式的交件（k12；其他已通過的知識庫交件是一行摘要）
-    expect(longpier.knowledge).toBe(1);
+    // 回流的只有知識庫條目格式的交件（k12 與 #161 改寫的 k01-2；其他已通過的知識庫交件是一行摘要）
+    expect(longpier.knowledge).toBe(2);
   });
 
   it("staff：只看到自己專案（青翼）的卡片與工作", async () => {
     const o = await read("staff");
     expect(o.projects.map((p) => p.id)).toEqual(["bluewing"]);
-    expect(o.items).toHaveLength(28);
+    expect(o.items).toHaveLength(32);
     expect(new Set(o.items.map((i) => i.projectId))).toEqual(new Set(["bluewing"]));
   });
 
@@ -125,8 +126,8 @@ describe("守則 N 條（#153 第 7 點）", () => {
     const o = await read("manager");
     const count = (id: string) => o.projects.find((p) => p.id === id)!.guidelines;
     expect([count("bluewing"), count("longpier")]).toEqual([2, 1]);
-    // 回流知識維持原本的算法
-    expect(o.projects.find((p) => p.id === "longpier")!.knowledge).toBe(1);
+    // 回流知識維持原本的算法（#161 的 k01-2 也回流）
+    expect(o.projects.find((p) => p.id === "longpier")!.knowledge).toBe(2);
   });
 
   it("staff：只算看得到的專案", async () => {
@@ -154,7 +155,8 @@ describe("篩選與看板", () => {
   it("看板四欄的排序：逾期 → 優先順序高 → 到期日近 → 停留久；已完成是最近完成的在前", async () => {
     const columns = boardColumns((await read("manager")).items);
     expect(ids(columns.notSubmitted)).toEqual(["k14", "s15"]);
-    expect(ids(columns.awaiting)).toEqual(["c12", "s14", "j06", "j11", "c11", "k13"]);
+    // #161 的 k17：一般優先、12-02 到期，排在 c11（11-22）與 k13（12-04）之間
+    expect(ids(columns.awaiting)).toEqual(["c12", "s14", "j06", "j11", "c11", "k17", "k13"]);
     expect(ids(columns.revising)).toEqual(["s16", "k15"]);
     const doneAt = columns.done.map((i) => i.doneAt!);
     expect(doneAt).toEqual([...doneAt].sort().reverse());
@@ -166,7 +168,7 @@ describe("篩選與看板", () => {
     expect(filterItems(items, NO_FILTER)).toHaveLength(items.length);
     expect(isFiltered(NO_FILTER)).toBe(false);
     const longpier = { ...NO_FILTER, projectId: "longpier" };
-    expect(filterItems(items, longpier)).toHaveLength(26);
+    expect(filterItems(items, longpier)).toHaveLength(32);
     expect(ids(filterItems(items, { ...longpier, attentionOnly: true })).sort()).toEqual(["j11", "k14"]);
     expect(ids(filterItems(items, { ...NO_FILTER, employeeId: "sorrel", attentionOnly: true })).sort()).toEqual(["c11", "c12"]);
     expect(ids(filterItems(items, { ...NO_FILTER, workTypeId: "dev", attentionOnly: true }))).toEqual(["j11"]);
