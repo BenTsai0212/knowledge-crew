@@ -94,6 +94,7 @@ describe("groupEmployees", () => {
     employee: basil,
     workTypeId: "docs",
     dots: ["ok" as const],
+    dotCorrections: [null],
     level: "item" as const,
     reviewCount: 1,
     lastReset: null,
@@ -113,7 +114,7 @@ describe("groupEmployees", () => {
 
   it("沒有看得到的組合的員工也列出，workTypes 為空；完全沒有組合時是空的", () => {
     expect(groupEmployees({ employees: [basil, fern], rows: [docs] }, [], lang)).toEqual([
-      { ...basil, workTypes: [{ workTypeId: "docs", level: "item", reviewCount: 1, dots: ["ok"], awaiting: 0, source: null, note: { kind: "event", event: reset } }] },
+      { ...basil, workTypes: [{ workTypeId: "docs", level: "item", reviewCount: 1, dots: ["ok"], dotCorrections: [null], awaiting: 0, source: null, note: { kind: "event", event: reset } }] },
       { ...fern, workTypes: [] },
     ]);
     expect(groupEmployees({ employees: [fern], rows: [] }, [], lang)).toEqual([]);

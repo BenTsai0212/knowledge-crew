@@ -5,6 +5,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { blockModelDownload, signInPanel } from "./support/app";
 import {
+  assignmentTitle,
   ct,
   crewContent,
   gotoCrewSection,
@@ -118,6 +119,23 @@ async function walk(page: Page): Promise<void> {
   await cancel.click();
   await expect(returnButton).toBeVisible();
   await scan(page, scans, "工作與驗收（退回表單關閉）", CREW);
+
+  // 事後更正（#164）：已通過的 k12，表單打開時掃一次（不送出）
+  await page
+    .getByRole("navigation", { name: ct.review.listLabel })
+    .getByRole("button")
+    .filter({ hasText: assignmentTitle("k12") })
+    .click();
+  await content
+    .getByRole("button", { name: ct.review.correctionOpen, exact: true })
+    .click();
+  await expect(
+    content.getByRole("button", {
+      name: ct.review.correctionSubmit,
+      exact: true,
+    }),
+  ).toBeVisible();
+  await scan(page, scans, "工作與驗收（事後更正表單打開）", CREW);
 
   for (const [name, section] of [
     ["信任", ct.common.sectionTrust],

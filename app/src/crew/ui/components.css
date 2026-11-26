@@ -163,6 +163,12 @@
   background: var(--color-success);
 }
 
+/* 通過後事後更正（#164）：仍是 success，改成中空的圓 */
+.crew-dot[data-dot="ok"][data-corrected] {
+  border: 2px solid var(--color-success);
+  background: transparent;
+}
+
 .crew-dot[data-dot="wrong"] {
   color: var(--color-danger);
   font-size: 1rem;
@@ -185,6 +191,15 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
+}
+
+/* 「中空＝通過後事後更正」的圖例（#164） */
+.crew-dots-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
 }
 
 /* 到期日與優先順序（#133）：逾期 danger、即將到期 warning（不做底色）；優先只標「高」 */

@@ -13,6 +13,7 @@ import { formatInZone, shortDate, shortDateTime } from "../../time";
 import { assignmentRef, workRef } from "../refs";
 import { BodyView, PointList, type ActivePoint } from "./BodyView";
 import { conclusionOf, decisionQuestion, deliverableName, type Audience } from "./conclusion";
+import { CorrectionDone, CorrectionForm, type Correct } from "./Correction";
 import type { FollowedGuideline } from "./followed";
 import type { LightReason } from "./light";
 
@@ -39,6 +40,8 @@ interface PanelProps {
   saving: boolean;
   saveFailed: boolean;
   decide: Decide;
+  /** 記下事後更正（#164）；沒有時不顯示「通過後發現有錯」 */
+  correct?: Correct;
   /** 剛才的「通過」因為沒有上傳權限而沒有收進知識庫（#92 的 `## 決定` 4） */
   noUpload?: boolean;
   /** 剛才的退回已記成守則（#145） */
@@ -51,7 +54,7 @@ interface PanelProps {
   onOpenEmployee?: (employeeId: string) => void;
 }
 
-export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, noUpload = false, savedGuideline = false, onOpenSource, onOpenTrust, onOpenEmployee }: PanelProps) {
+export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decide, correct, noUpload = false, savedGuideline = false, onOpenSource, onOpenTrust, onOpenEmployee }: PanelProps) {
   const t = crewStrings("review", language);
   const { item, focus, current, earlier, body, deliverable } = panel;
   // 選中的重點只存在元件 state；換一筆工作時（key 改變）重設
@@ -66,6 +69,8 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
   const conclusion = conclusionOf(focus.checks, { deliverable, body, pointCount: focus.points.length, audience, language });
   const name = deliverableName(deliverable, language);
   const role = item.employee.roleNote;
+  const workType = workTypeLabel(item.workTypeId, language);
+  const guidelineLabel = withEmployee(t.saveAsGuideline, { workType }, item.employee.displayName, language);
   const meta = withEmployee(
     role === null ? t.submittedByNoRole : t.submittedBy,
     { role: role ?? "", deliverable: name, round: current.round, date: formatTime(current.submittedAt, language) },
@@ -91,6 +96,21 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
             </span>
           </p>
         )}
+        {/* 事後更正（#164）：在「已通過」下方；已有更正時只顯示紀錄 */}
+        {panel.correction !== null ? (
+          <CorrectionDone correctedAt={panel.correction.correctedAt} note={panel.correction.note} language={language} t={t} />
+        ) : (
+          panel.canCorrect && panel.reviewId !== null && correct && (
+            <CorrectionForm
+              reviewId={panel.reviewId}
+              guidelineLabel={guidelineLabel}
+              consequence={focus.level === "light" ? fill(t.correctionConsequenceLight, { workType }) : t.correctionConsequenceItem}
+              saving={saving}
+              correct={correct}
+              t={t}
+            />
+          )
+        )}
         {savedGuideline && (
           <p className="crew-review__notice" role="status">
             {t.guidelineSaved}
@@ -106,7 +126,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
         )}
       </header>
       {focus.level === "light" && panel.light && (
-        <LightCard reason={panel.light} employee={item.employee.displayName} workType={workTypeLabel(item.workTypeId, language)} language={language} onOpenTrust={onOpenTrust} t={t} />
+        <LightCard reason={panel.light} employee={item.employee.displayName} workType={workType} language={language} onOpenTrust={onOpenTrust} t={t} />
       )}
 
       <div className="crew-review__pair">
@@ -187,7 +207,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
         <DecisionBar
           question={decisionQuestion(deliverable, language)}
           workId={current.id}
-          guidelineLabel={withEmployee(t.saveAsGuideline, { workType: workTypeLabel(item.workTypeId, language) }, item.employee.displayName, language)}
+          guidelineLabel={guidelineLabel}
           saving={saving}
           decide={decide}
           t={t}

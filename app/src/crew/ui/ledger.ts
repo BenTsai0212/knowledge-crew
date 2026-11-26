@@ -2,6 +2,7 @@
 // 依時間新到舊列出。一律經 withIdentity() 讀取，可見範圍由 RLS 決定；改回逐項看由 autoResets() 推得，不另存。
 // #125 加上「提出看重點的建議」：由 relaxProposals()（suggestion-history.ts）推得，同樣不另存。
 // #145 加上守則的事件（提出、記成、確認、修改後確認、不採用、收回）：由守則與其決定推得，同樣不另存。
+// #164 加上事後更正（crew ADR 0008）：更正本身是一個事件，由它觸發的改回逐項看標出 `byCorrection`。
 import type { Transaction } from "@electric-sql/pglite";
 import { clientConfig } from "../../client/load";
 import type { AccessFile, LanguageCode } from "../../client/types";
@@ -18,7 +19,7 @@ import { DEMO_PARAMS } from "../trust/demo-params";
 import type { LevelDecisionKind, ReturnReason, TrustParams } from "../trust/types";
 
 export type LedgerKind =
-  | "assigned" | "submitted" | "accepted" | "returned" | "proposed" | "relax" | "revoke" | "autoReset"
+  | "assigned" | "submitted" | "accepted" | "returned" | "corrected" | "proposed" | "relax" | "revoke" | "autoReset"
   | GuidelineLedgerKind;
 
 /** 守則的事件（#145）：員工提出、退回時記成守則（人提）、確認、修改後確認、不採用、收回 */
@@ -61,6 +62,10 @@ export interface LedgerEvent {
   basis?: string[];
   /** 守則的事件：守則 id 與該事件當時的文字（目前語言）；其他種類沒有 */
   guideline?: { id: string; text: string };
+  /** 事後更正（corrected）的備註；沒寫備註或其他種類沒有 */
+  note?: string;
+  /** 由事後更正觸發的改回逐項看（autoReset）；其他沒有 */
+  byCorrection?: true;
 }
 
 /** 事件的篩選（設計規格 v3 第 6.7 節）：全部／只看層級改變／只看退回／只看守則（#145） */
@@ -83,10 +88,10 @@ export const isLevelChange = (kind: LedgerKind): boolean => LEVEL_KINDS.has(kind
 /** 「只看層級改變」的篩選：層級改變，加上提出看重點的建議（#125；建議不改變層級，不以灰底標出）。 */
 export const inLevelFilter = (kind: LedgerKind): boolean => isLevelChange(kind) || kind === "proposed";
 
-/** 事件文字的樣式：層級改變是粗體灰底列，退回（做錯了）是 danger 粗體，其他沒有。 */
+/** 事件文字的樣式：層級改變是粗體灰底列，退回（做錯了）與事後更正（算一次做錯了）是 danger 粗體，其他沒有。 */
 export function ledgerTone(event: Pick<LedgerEvent, "kind" | "reason">): "level" | "wrong" | null {
   if (isLevelChange(event.kind)) return "level";
-  return event.kind === "returned" && event.reason === "wrong" ? "wrong" : null;
+  return (event.kind === "returned" && event.reason === "wrong") || event.kind === "corrected" ? "wrong" : null;
 }
 
 // 原始資料：store.ts 沒有的讀取（交件的時間、層級決定的 id 與決定者）
@@ -113,8 +118,10 @@ export interface LedgerSources {
   works: WorkRow[];
   reviews: { id: string; workId: string; verdict: "accepted" | "returned"; reason: ReturnReason | null; decidedBy: string; decidedAt: string }[];
   decisions: DecisionRow[];
-  /** 改回逐項看：造成它的驗收 id 與時間 */
-  resets: { reviewId: string; at: string }[];
+  /** 改回逐項看：造成它的驗收 id 與時間；由事後更正觸發時 `byCorrection`（#164） */
+  resets: { reviewId: string; at: string; byCorrection?: boolean }[];
+  /** 事後更正（#164）；省略時沒有 */
+  corrections?: LedgerCorrection[];
   /** 提出看重點的建議（#125）：觸發的驗收 id、時間與依據的驗收 id；省略時沒有 */
   proposals?: { reviewId: string; at: string; basis: string[] }[];
   /** 守則與其決定（#145）；省略時沒有 */
@@ -126,6 +133,15 @@ export type LedgerGuideline = Pick<StoredGuideline, "id" | "employeeId" | "workT
   text: string;
   decisions: { id: string; decision: "confirm" | "reject" | "revoke"; revisedText: string | null; decidedBy: string; decidedAt: string }[];
 };
+
+/** 帳本用的事後更正（`crew.review_corrections` 的一列） */
+export interface LedgerCorrection {
+  id: string;
+  reviewId: string;
+  note: string | null;
+  correctedBy: string;
+  correctedAt: string;
+}
 
 const iso = (value: Date | string): string => new Date(value).toISOString();
 
@@ -140,6 +156,17 @@ function readWorks(db: Database, identity: string): Promise<WorkRow[]> {
       `SELECT id, assignment_id AS "assignmentId", round, submitted_at AS "submittedAt" FROM crew.works ORDER BY submitted_at, id`,
     );
     return result.map((w) => ({ ...w, submittedAt: iso(w.submittedAt) }));
+  });
+}
+
+function readCorrections(db: Database, identity: string): Promise<LedgerCorrection[]> {
+  return db.withIdentity(identity, async (tx) => {
+    const result = await rows<Omit<LedgerCorrection, "correctedAt"> & { correctedAt: Date }>(
+      tx,
+      `SELECT id, review_id AS "reviewId", note, corrected_by AS "correctedBy", corrected_at AS "correctedAt"
+       FROM crew.review_corrections ORDER BY corrected_at, id`,
+    );
+    return result.map((c) => ({ ...c, correctedAt: iso(c.correctedAt) }));
   });
 }
 
@@ -164,6 +191,8 @@ const TIE_ORDER: Record<LedgerKind, number> = {
   proposed: 0,
   accepted: 1,
   returned: 1,
+  // 事後更正（#164）：由它觸發的改回逐項看在上方
+  corrected: 1,
   relax: 2,
   revoke: 2,
   // 守則（#145）：退回時記成守則與那次退回同時，列在退回下方（退回在前、記成守則在後）
@@ -250,7 +279,15 @@ export function mergeLedger(sources: LedgerSources, language: LanguageCode): Led
   for (const reset of sources.resets) {
     const a = assignmentOfReview(reset.reviewId);
     if (!a) continue;
-    events.push({ ...base(a), id: `autoReset:${reset.reviewId}`, kind: "autoReset", at: reset.at, actor: null });
+    const byCorrection = reset.byCorrection ? { byCorrection: true as const } : {};
+    events.push({ ...base(a), id: `autoReset:${reset.reviewId}`, kind: "autoReset", at: reset.at, actor: null, ...byCorrection });
+  }
+  for (const c of sources.corrections ?? []) {
+    const a = assignmentOfReview(c.reviewId);
+    if (!a) continue;
+    const round = works.get(reviews.get(c.reviewId)!.workId)?.round ?? null;
+    const note = c.note === null || c.note.trim() === "" ? {} : { note: c.note };
+    events.push({ ...base(a), id: `corrected:${c.id}`, kind: "corrected", at: c.correctedAt, actor: c.correctedBy, round, ...note });
   }
   for (const p of sources.proposals ?? []) {
     const a = assignmentOfReview(p.reviewId);
@@ -311,7 +348,8 @@ const matchesEvent = (kind: LedgerKind, event: LedgerEventFilter = "all"): boole
   if (event === "all") return true;
   if (event === "level") return inLevelFilter(kind);
   if (event === "guideline") return isGuidelineEvent(kind);
-  return kind === "returned";
+  // 事後更正（#164）與退回同一組
+  return kind === "returned" || kind === "corrected";
 };
 
 /** 依員工、工作類型與事件篩選；沒有指定（null、省略或 "all"）的條件不篩選。 */
@@ -355,7 +393,7 @@ export async function readLedgerSources(
   params: TrustParams = DEMO_PARAMS,
 ): Promise<LedgerSources> {
   // 沒有身分時比照 guest：不讀取（同 today.ts）
-  if (identity === null) return { assignments: [], employees: [], works: [], reviews: [], decisions: [], resets: [], proposals: [], guidelines: [] };
+  if (identity === null) return { assignments: [], employees: [], works: [], reviews: [], decisions: [], resets: [], corrections: [], proposals: [], guidelines: [] };
   const assignments = await listAssignments(db, identity);
   const employees = await listEmployees(db, identity);
   const works = await readWorks(db, identity);
@@ -366,7 +404,9 @@ export async function readLedgerSources(
   const pairs = new Map(assignments.map((a) => [pairKey(a.employeeId, a.workTypeId), a]));
   for (const { employeeId, workTypeId } of pairs.values()) {
     const inputs = await getTrustInputs(db, identity, employeeId, workTypeId);
-    for (const r of autoResets(inputs.reviews, inputs.decisions, inputs.corrections)) resets.push({ reviewId: r.review.id, at: r.at });
+    for (const r of autoResets(inputs.reviews, inputs.decisions, inputs.corrections)) {
+      resets.push({ reviewId: r.review.id, at: r.at, ...(r.correction ? { byCorrection: true } : {}) });
+    }
     for (const p of relaxProposals(inputs.reviews, inputs.decisions, params, inputs.corrections)) {
       proposals.push({ reviewId: p.review.id, at: p.at, basis: p.basis.map((r) => r.id) });
     }
@@ -378,6 +418,7 @@ export async function readLedgerSources(
     reviews: reviews.map(({ id, workId, verdict, reason, decidedBy, decidedAt }) => ({ id, workId, verdict, reason, decidedBy, decidedAt })),
     decisions,
     resets,
+    corrections: await readCorrections(db, identity),
     proposals,
     guidelines: (await listGuidelines(db, identity)).map((g) => toLedgerGuideline(g, language)),
   };

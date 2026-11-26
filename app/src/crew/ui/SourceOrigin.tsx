@@ -84,6 +84,7 @@ export function SourceOrigin({ db, identity, language, documentId, onOpen, onOpe
       </h3>
       <p>{lines.by}</p>
       <p className="muted">{lines.facts}</p>
+      {lines.corrected !== null && <p className="crew-source-origin__corrected">{lines.corrected}</p>}
       <p>
         <button type="button" className="chip" onClick={() => onOpen(origin.assignmentId)}>
           {t.originOpen}
@@ -95,9 +96,10 @@ export function SourceOrigin({ db, identity, language, documentId, onOpen, onOpe
 
 /**
  * 兩行：「{員工} 整理・{驗收者} 驗收通過（日期）」，與以「・」連接的當時的把關（沒有的項目不顯示）。
+ * 通過後被事後更正時（#164，crew ADR 0008 第 5 點）加一行「通過後發現有錯（日期）」；沒有更正時 `corrected` 是 null。
  * 員工名字加 AI 標記（EmployeeName）；驗收者是身分的名稱（client/access.json）；日期與員工卡、工作帳本相同的 MM/DD（shortDate，#151）。
  */
-export function originLines(origin: FlowbackOrigin, language: LanguageCode): { by: ReactNode; facts: string } {
+export function originLines(origin: FlowbackOrigin, language: LanguageCode): { by: ReactNode; facts: string; corrected: string | null } {
   const t = crewStrings("knowledge", language);
   const date = shortDate(origin.decidedAt, language);
   const reviewer = actorName(clientConfig.access, [], origin.decidedBy, language) ?? origin.decidedBy;
@@ -110,6 +112,7 @@ export function originLines(origin: FlowbackOrigin, language: LanguageCode): { b
   return {
     by: withEmployee(t.originBy, { reviewer, date }, origin.employeeName, language),
     facts: facts.join(t.originSeparator),
+    corrected: origin.correctedAt === null ? null : fill(t.originCorrected, { date: shortDate(origin.correctedAt, language) }),
   };
 }
 

@@ -5,7 +5,7 @@ import type { Database } from "../../db/database";
 import { createLevelDecision, getTrustInputs, listAssignments, listEmployees, type StoredEmployee } from "../db/store";
 import { demoText } from "../demo/texts";
 import { DEMO_PARAMS } from "../trust/demo-params";
-import { autoResets, dotOf, recentDots, relaxSuggestion, reviewLevel } from "../trust/rules";
+import { autoResets, dotOf, recentDotEntries, relaxSuggestion, reviewLevel } from "../trust/rules";
 import type { Correction, Dot, LevelDecision, Review, ReviewLevel, TrustParams } from "../trust/types";
 
 export interface CrewEmployee {
@@ -29,6 +29,8 @@ export interface TrustRow {
   workTypeId: string;
   /** 最近 params.dots 次（舊到新） */
   dots: Dot[];
+  /** dots 的每一格被事後更正的時間（#164）；沒有更正時是 null */
+  dotCorrections: (string | null)[];
   level: ReviewLevel;
   /** 看得到的驗收次數 */
   reviewCount: number;
@@ -47,6 +49,8 @@ export interface TimelineCell {
   dot: Dot;
   at: string;
   level: ReviewLevel;
+  /** 這次驗收（通過）被事後更正的時間（#164）；沒有更正時是 null */
+  correctedAt: string | null;
 }
 
 /** 層級改變的事件：同意改看重點、收回看重點、因做錯了自動改回逐項看。 */
@@ -109,10 +113,12 @@ export async function readTrust(
     const suggestion = canReview ? relaxSuggestion(reviews, decisions, params, corrections) : null;
     const level = reviewLevel(reviews, decisions, corrections);
     const timeline = trustTimeline(reviews, decisions, params, corrections);
+    const entries = recentDotEntries(reviews, corrections, params.dots);
     rows.push({
       employee: byId.get(employeeId) ?? { id: employeeId, displayName: employeeId, roleNote: null },
       workTypeId,
-      dots: recentDots(reviews, params.dots),
+      dots: entries.map((e) => e.dot),
+      dotCorrections: entries.map((e) => e.correction?.correctedAt ?? null),
       level,
       reviewCount: reviews.length,
       lastReset: autoResets(reviews, decisions, corrections).at(-1)?.at ?? null,
@@ -153,7 +159,8 @@ export function trustTimeline(
       sorted.filter((d) => time(d.decidedAt) <= time(review.decidedAt)),
       corrections.filter((c) => time(c.correctedAt) < time(review.decidedAt)),
     );
-    return { dot: dotOf(review), at: review.decidedAt, level };
+    const correctedAt = corrections.find((c) => c.reviewId === review.id)?.correctedAt ?? null;
+    return { dot: dotOf(review), at: review.decidedAt, level, correctedAt };
   });
   const located: { index: number; event: TimelineEvent }[] = [
     ...sorted.map((d) => {

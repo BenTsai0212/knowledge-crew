@@ -21,6 +21,8 @@ export interface EmployeeWorkType {
   reviewCount: number;
   /** 最近幾次的圓點（舊到新，與信任頁相同） */
   dots: Dot[];
+  /** dots 的每一格被事後更正的時間（#164）；省略或 null 時沒有更正 */
+  dotCorrections?: (string | null)[];
   /** 待驗收件數：最新一輪已交件、還沒驗收的交辦 */
   awaiting: number;
   /** 平常的工作來源（該員工 × 工作類型的交辦中最常用的，名稱是目前語言）；沒有時是 null */
@@ -74,7 +76,7 @@ export function groupEmployees(
     ...e,
     workTypes: trust.rows
       .filter((r) => r.employee.id === e.id)
-      .map(({ workTypeId, level, reviewCount, dots, suggestion, timeline }): EmployeeWorkType => {
+      .map(({ workTypeId, level, reviewCount, dots, dotCorrections, suggestion, timeline }): EmployeeWorkType => {
         const own = assignments.filter((a) => a.employeeId === e.id && a.workTypeId === workTypeId);
         const usual = own.find((a) => a.sourceId === usualOf(own, e.id).sourceId);
         const event = timeline.events.at(-1)?.items.at(-1);
@@ -83,6 +85,7 @@ export function groupEmployees(
           level,
           reviewCount,
           dots,
+          dotCorrections,
           awaiting: own.filter((a) => assignStatus(a) === "awaitingReview").length,
           source: usual ? { label: sourceLabel(usual.sourceId, usual.sourceName, language), kind: usual.sourceKind } : null,
           note: suggestion ? { kind: "suggestion" } : event ? { kind: "event", event } : null,

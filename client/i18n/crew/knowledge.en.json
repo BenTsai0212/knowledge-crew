@@ -22,5 +22,6 @@
   "guidelineDocOrigin": "{employee}'s “{workType}” guideline. From the return on {returnDate} ({reason}){drafted}; confirmed by {confirmer} on {confirmDate}{revised}.",
   "guidelineDocDrafted": ", drafted by {employee}",
   "guidelineDocRevised": " (edited when confirmed)",
-  "guidelineDocEllipsis": "…"
+  "guidelineDocEllipsis": "…",
+  "originCorrected": "Found wrong after approval ({date})"
 }

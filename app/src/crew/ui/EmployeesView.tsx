@@ -159,7 +159,7 @@ function WorkFacts({ work, heading, t, language, now }: { work: EmployeeWorkType
         <dt>{t.fieldReviews}</dt>
         <dd>{fill(t.reviewsValue, { reviews: fill(t.reviewCount, { count: work.reviewCount }, language), count: work.awaiting }, language)}</dd>
         <dt>{fill(t.fieldRecent, { count: work.dots.length }, language)}</dt>
-        <dd>{work.dots.length === 0 ? <span className="muted">{t.noDots}</span> : <DotRow dots={work.dots} language={language} />}</dd>
+        <dd>{work.dots.length === 0 ? <span className="muted">{t.noDots}</span> : <DotRow dots={work.dots} corrected={work.dotCorrections} language={language} />}</dd>
       </dl>
       {work.note !== null && (
         <p className="crew-employees__note" data-kind={work.note.kind}>

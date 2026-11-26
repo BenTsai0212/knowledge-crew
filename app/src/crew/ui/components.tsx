@@ -7,6 +7,7 @@ import type { Priority } from "../db/store";
 import type { CheckStatus, Dot, ReviewLevel } from "../trust/types";
 import type { DueStatus } from "../work/due";
 import { crewStrings } from "../i18n";
+import { shortDate } from "../time";
 import { checkLabel, checkSentence } from "./glossary";
 import "./components.css";
 
@@ -123,22 +124,58 @@ export function dotsSummary(dots: readonly Dot[], language: LanguageCode): strin
     .join(t.dotsAriaSeparator);
 }
 
-/** 一個圓點（設計規格 v3 第 4 節）：通過＝success 實心圓、做錯了＝danger 粗體 ×、其他退回＝textMuted 虛線空心圓；none 是不足的空格。 */
-export function DotMark({ dot, className }: { dot: Dot | "none"; className?: string }) {
+/**
+ * 一個圓點（設計規格 v3 第 4 節）：通過＝success 實心圓、做錯了＝danger 粗體 ×、其他退回＝textMuted 虛線空心圓；none 是不足的空格。
+ * 通過後事後更正（#164，crew ADR 0008 第 3 點）：仍是 success，但改成中空的圓（`corrected`）；`title` 是滑過時的提示。
+ */
+export function DotMark({ dot, className, corrected = false, title }: { dot: Dot | "none"; className?: string; corrected?: boolean; title?: string }) {
   return (
-    <span className={className === undefined ? "crew-dot" : `crew-dot ${className}`} data-dot={dot} aria-hidden="true">
+    <span
+      className={className === undefined ? "crew-dot" : `crew-dot ${className}`}
+      data-dot={dot}
+      data-corrected={corrected || undefined}
+      title={title}
+      aria-hidden="true"
+    >
       {dot === "wrong" ? "×" : ""}
     </span>
   );
 }
 
-/** 一排圓點（員工卡）：整排是一張圖，aria-label 是摘要。信任頁的時間軸以同一個 DotMark 與 dotsSummary() 排成格線。 */
-export function DotRow({ dots, language }: { dots: readonly Dot[]; language: LanguageCode }) {
+/** 被事後更正的那一格的說明「通過，MM/DD 事後更正為做錯了」（#164） */
+export const dotCorrectedText = (correctedAt: string, language: LanguageCode): string =>
+  fill(crewStrings("trust", language).dotCorrected, { date: shortDate(correctedAt, language) });
+
+/**
+ * 一排圓點（員工卡）：整排是一張圖，aria-label 是摘要。信任頁的時間軸以同一個 DotMark 與 dotsSummary() 排成格線。
+ * `corrected` 是每一格被事後更正的時間（#164）：那一格中空，摘要之後逐一加上「通過，MM/DD 事後更正為做錯了」，下方加圖例。
+ */
+export function DotRow({ dots, corrected = [], language }: { dots: readonly Dot[]; corrected?: readonly (string | null)[]; language: LanguageCode }) {
+  const notes = corrected.filter((c): c is string => c !== null).map((c) => dotCorrectedText(c, language));
+  const label = [dotsSummary(dots, language), ...notes].join(crewStrings("trust", language).dotsAriaSeparator);
+  const dotRow = (
+    <span className="crew-dots" role="img" aria-label={label}>
+      {dots.map((d, i) => {
+        const at = corrected[i] ?? null;
+        return <DotMark key={i} dot={d} corrected={at !== null} title={at === null ? undefined : dotCorrectedText(at, language)} />;
+      })}
+    </span>
+  );
+  if (notes.length === 0) return dotRow;
   return (
-    <span className="crew-dots" role="img" aria-label={dotsSummary(dots, language)}>
-      {dots.map((d, i) => (
-        <DotMark key={i} dot={d} />
-      ))}
+    <>
+      {dotRow}
+      <DotLegendCorrected language={language} />
+    </>
+  );
+}
+
+/** 「中空＝通過後事後更正」的圖例（#164）：只在這一列有被更正過的格子時放；圓點只是裝飾，文字就是說明。 */
+export function DotLegendCorrected({ language }: { language: LanguageCode }) {
+  return (
+    <span className="muted crew-dots-legend">
+      <DotMark dot="ok" corrected />
+      {crewStrings("trust", language).dotLegendCorrected}
     </span>
   );
 }

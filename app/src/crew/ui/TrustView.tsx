@@ -9,7 +9,7 @@ import type { LanguageCode } from "../../client/types";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import type { Dot, ReviewLevel } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { DotMark, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
+import { DotLegendCorrected, DotMark, dotCorrectedText, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
 import { actorName, readLedger, type LedgerEvent } from "./ledger";
@@ -238,20 +238,24 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
         </ol>
       )}
       <ol className="crew-trust__grid crew-trust__dots" aria-label={aria}>
-        {cells.map((c, i) => (
-          <li key={i} className="crew-trust__cell" aria-label={fill(t.dotCell, { result: t[DOT_TEXT[c.dot]], date: date(c.at) })}>
-            <DotMark dot={c.dot} className="crew-trust__dot" />
-            <span className="crew-trust__date" aria-hidden="true">
-              {/* 窄螢幕時在斜線後換行，不把數字拆開 */}
-              {date(c.at).split("/").map((part, j) => (
-                <Fragment key={j}>
-                  {j > 0 && <>/<wbr /></>}
-                  {part}
-                </Fragment>
-              ))}
-            </span>
-          </li>
-        ))}
+        {cells.map((c, i) => {
+          // 被事後更正的那一格（#164）：中空，名稱與提示是「通過，MM/DD 事後更正為做錯了」
+          const corrected = c.correctedAt === null ? undefined : dotCorrectedText(c.correctedAt, language);
+          return (
+            <li key={i} className="crew-trust__cell" aria-label={fill(t.dotCell, { result: corrected ?? t[DOT_TEXT[c.dot]], date: date(c.at) })}>
+              <DotMark dot={c.dot} className="crew-trust__dot" corrected={corrected !== undefined} title={corrected} />
+              <span className="crew-trust__date" aria-hidden="true">
+                {/* 窄螢幕時在斜線後換行，不把數字拆開 */}
+                {date(c.at).split("/").map((part, j) => (
+                  <Fragment key={j}>
+                    {j > 0 && <>/<wbr /></>}
+                    {part}
+                  </Fragment>
+                ))}
+              </span>
+            </li>
+          );
+        })}
         {/* 不足的空格不是驗收，不算清單項目 */}
         {Array.from({ length: empty }, (_, i) => (
           <li key={`empty-${i}`} role="none" className="crew-trust__cell" aria-hidden="true">
@@ -275,6 +279,7 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
           </span>
         )}
       </div>
+      {cells.some((c) => c.correctedAt !== null) && <DotLegendCorrected language={language} />}
     </div>
   );
 }

@@ -51,6 +51,15 @@ describe("originLines", () => {
     }
   });
 
+  it("事後更正（#164）：有更正時多一行「通過後發現有錯（MM/DD）」，沒有時是 null", () => {
+    for (const language of clientConfig.client.languages) {
+      const t = crewStrings("knowledge", language);
+      expect(originLines(origin, language).corrected, language).toBeNull();
+      const correctedAt = "2026-11-24T08:00:00.000Z";
+      expect(originLines({ ...origin, correctedAt }, language).corrected, language).toBe(fill(t.originCorrected, { date: shortDate(correctedAt, language) }));
+    }
+  });
+
   it("沒有自動檢查、沒有依照守則時不顯示那兩項；退回過時寫退回次數", () => {
     for (const language of clientConfig.client.languages) {
       const t = crewStrings("knowledge", language);

@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientConfig } from "../../client/load";
 import { openDatabase, type Database } from "../../db/database";
-import { createAssignment, createReview, createWork, nextExternalRef } from "../db/store";
+import { createAssignment, createCorrection, createReview, createWork, nextExternalRef } from "../db/store";
 import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
@@ -246,6 +246,33 @@ describe("readReviewPanel：交件的種類與全文的結構", () => {
       expect(p.body.errors, id).toEqual([]);
       expect(p.body.points, id).toHaveLength(p.focus.points.length);
       expect(p.body.points.every((l) => l.length > 0), id).toBe(true);
+    }
+  });
+});
+
+describe("readReviewPanel：事後更正（#164）", { timeout: DB_TIMEOUT }, () => {
+  it("k01（已更正）：任何看得到的身分都有更正的日期與備註，不能再更正", async () => {
+    // demo 的 cr01：2026-09-04 16:00（+08:00）更正，有備註
+    for (const identity of ["manager", "staff"]) {
+      const p = await panel(db, identity, "k01");
+      if (p === null) continue;
+      expect(p.correction, identity).toEqual({ correctedAt: "2026-09-04T08:00:00.000Z", note: expect.stringMatching(/\S/) });
+      expect(p.canCorrect, identity).toBe(false);
+    }
+  });
+
+  it("k12（已通過、沒有更正）：manager 可以更正，staff 看不到或不能更正；記下更正後層級改回逐項看", async () => {
+    const own = await open();
+    try {
+      const p = (await panel(own, "manager", "k12"))!;
+      expect([p.correction, p.canCorrect, p.focus.level]).toEqual([null, true, "light"]);
+      expect((await panel(own, "staff", "k12"))?.canCorrect ?? false).toBe(false);
+      await createCorrection(own, "manager", { reviewId: p.reviewId!, note: "Cutoff is 15:00", notInPoints: true });
+      const after = (await panel(own, "manager", "k12"))!;
+      expect(after.correction).toMatchObject({ note: "Cutoff is 15:00" });
+      expect([after.canCorrect, after.focus.level]).toEqual([false, "item"]);
+    } finally {
+      await own.close();
     }
   });
 });
