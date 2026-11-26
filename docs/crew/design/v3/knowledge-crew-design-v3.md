@@ -1,5 +1,7 @@
 # knowledge-crew 設計規格 v3：AI 員工畫面的整體方向
 
+> 用詞與 AI 員工的子頁已由 [ADR 0009](../../adr/0009-wording-and-sections.md) 與[設計規格 v5](../v5/knowledge-crew-design-v5.md) 取代；第 6.2 節退回選項的「影響信任」改為直接寫後果。
+
 - 狀態：方向已由決定者確認（2026-11-21），細節可再調整
 - 範圍：AI 員工的六個子頁（今天、員工、交辦、工作與驗收、信任、工作帳本），桌機與手機（註：#100 拿掉「今天」子頁，現在是五個子頁；「今天」併入首頁的今天的工作（#96））
 - 依據：`docs/crew/rfcs/0001-project-charter.md`（含 2026-11-21 修訂）、`docs/design.md`（設計規格 v1）、`docs/adr/0008-design-system.md`、`client/theme.json`、`client/i18n/crew/`、`client/crew/demo.json`

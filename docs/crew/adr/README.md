@@ -47,3 +47,4 @@ ADR（Architecture Decision Record）記錄「決定了什麼、為什麼、放�
 | 0006 | [平台連 GitHub 的方式與權限（第 1 階段）](0006-github-connection.md) | Accepted |
 | 0007 | [守則與知識的來歷（第 4 階段）](0007-guidelines.md) | Accepted |
 | 0008 | [讓放手站得住（第 5 階段）](0008-letting-go.md) | Accepted |
+| 0009 | [用詞、AI 員工的子頁與視覺統一](0009-wording-and-sections.md) | Accepted |
