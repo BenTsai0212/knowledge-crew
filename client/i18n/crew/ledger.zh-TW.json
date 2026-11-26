@@ -41,5 +41,7 @@
   "noAssignment": "—",
   "loadMore": "載入更早的紀錄",
   "activeFilter": "目前的篩選",
-  "clearFilter": "清除篩選"
+  "clearFilter": "清除篩選",
+  "kindCorrected": "事後更正：通過後發現有錯",
+  "kindAutoResetCorrection": "因事後更正改回逐項看"
 }

@@ -70,8 +70,11 @@ function kindText(event: LedgerEvent, t: CrewTexts<"ledger">, language: Language
       return t.kindRelax;
     case "revoke":
       return t.kindRevoke;
+    case "corrected":
+      return t.kindCorrected;
     case "autoReset":
-      return t.kindAutoReset;
+      // 由事後更正觸發的改回逐項看（#164）
+      return event.byCorrection ? t.kindAutoResetCorrection : t.kindAutoReset;
     default:
       return t[GUIDELINE_TEXT[event.kind]];
   }
@@ -161,6 +164,21 @@ export function LedgerView({ db, identity, language, ledgerFilter, navigate }: C
         <span className="crew-ledger__guideline" title={title}>
           {text}
         </span>
+      );
+    }
+    // 事後更正（#164）：連到被更正的那次驗收（工作與驗收的那一件），有備註時列在下方
+    if (e.kind === "corrected" && e.assignment) {
+      return (
+        <>
+          {navigate ? (
+            <button type="button" className="link" onClick={() => navigate({ section: "works", assignmentId: e.assignment!.id })}>
+              {e.assignment.title}
+            </button>
+          ) : (
+            e.assignment.title
+          )}
+          {e.note !== undefined && <span className="muted crew-ledger__note">{e.note}</span>}
+        </>
       );
     }
     // 層級改變是員工 × 工作類型的事，不屬於某一件工作（設計稿寫 —）

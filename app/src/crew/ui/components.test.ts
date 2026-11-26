@@ -2,9 +2,11 @@
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import { crewStrings } from "../i18n";
 import { AiMark, CheckRow, CollapsedFields, ConclusionRow, DotMark, DotRow, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
+import { shortDate } from "../time";
 import { checkLabel, checkSentence } from "./glossary";
 import css from "./components.css?raw";
 
@@ -176,6 +178,18 @@ describe("圓點（#83：信任頁與員工卡共用）", () => {
     const out = html(createElement(DotRow, { dots: ["ok", "neutral", "wrong"], language }));
     expect(out).toContain(`role="img" aria-label="${dotsSummary(["ok", "neutral", "wrong"], language)}"`);
     expect(out.match(/class="crew-dot"/g)).toHaveLength(3);
+  });
+
+  it("DotRow 的事後更正（#164）：那一格中空並有提示，名稱加上「通過，MM/DD 事後更正為做錯了」，下方有圖例；沒有更正時沒有圖例", () => {
+    const at = "2026-11-24T08:00:00.000Z";
+    const tr = crewStrings("trust", language);
+    const note = fill(tr.dotCorrected, { date: shortDate(at, language) });
+    const out = html(createElement(DotRow, { dots: ["ok", "ok"], corrected: [null, at], language }));
+    expect(out).toContain(`aria-label="${[dotsSummary(["ok", "ok"], language), note].join(tr.dotsAriaSeparator)}"`);
+    expect(out).toContain(`data-corrected="true" title="${note}"`);
+    expect(out).toContain(tr.dotLegendCorrected);
+    expect(html(createElement(DotRow, { dots: ["ok"], corrected: [null], language }))).not.toContain(tr.dotLegendCorrected);
+    expect(rule('.crew-dot[data-dot="ok"][data-corrected]')).toContain("border: 2px solid var(--color-success)");
   });
 
   it("通過＝success 實心、做錯了＝danger、其他退回＝textMuted 虛線", () => {

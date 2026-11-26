@@ -4,7 +4,7 @@
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import {
-  getAssignmentWorks, getTrustSummary, listAssignments, listEmployees, listGuidelines, listWorkGuidelines, type AssignmentSummary, type Priority, type SourceKind, type StoredWork,
+  getAssignmentWorks, getReviewDetails, getTrustSummary, listAssignments, listEmployees, listGuidelines, listWorkGuidelines, type AssignmentSummary, type Priority, type SourceKind, type StoredWork,
 } from "../db/store";
 import { DEMO } from "../demo/load";
 import { demoText } from "../demo/texts";
@@ -81,6 +81,12 @@ export interface ReviewPanel {
   guidelines: FollowedGuideline[];
   /** 同一員工 × 工作類型等確認的守則數（#147）；不能驗收的身分是 0 */
   pendingGuidelines: number;
+  /** 最新一輪的驗收 id；待驗收時是 null */
+  reviewId: string | null;
+  /** 最新一輪（通過）的事後更正（#164）；沒有時是 null */
+  correction: { correctedAt: string; note: string | null } | null;
+  /** 能驗收的身分、最新一輪是通過、還沒有更正：可以記下事後更正 */
+  canCorrect: boolean;
 }
 
 const EMPTY: WorkList = { awaiting: [], recent: [] };
@@ -192,6 +198,9 @@ export async function readReviewPanel(
   const { inputs, spotChecks } = await getTrustSummary(db, identity, item.employee.id, item.workTypeId, DEMO_PARAMS);
   const { reviews, decisions, corrections } = inputs;
   const level = reviewLevel(reviews, decisions, corrections);
+  const accepted = current.review?.verdict === "accepted" ? current.review : null;
+  const stored = accepted && (await getReviewDetails(db, identity, accepted.id)).correction;
+  const correction = stored ? { correctedAt: stored.correctedAt, note: stored.note } : null;
   const [followed, all] = await Promise.all([
     listWorkGuidelines(db, identity, current.id),
     canReview ? listGuidelines(db, identity, { employeeId: item.employee.id, workTypeId: item.workTypeId }) : Promise.resolve([]),
@@ -216,6 +225,9 @@ export async function readReviewPanel(
     changeItems: current.changes,
     guidelines: followedGuidelines(followed, current.submittedAt, language),
     pendingGuidelines: pendingGuidelineCount(all, canReview),
+    reviewId: current.review?.id ?? null,
+    correction,
+    canCorrect: canReview && accepted !== null && correction === null,
   };
 }
 

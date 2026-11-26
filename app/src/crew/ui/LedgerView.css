@@ -135,3 +135,9 @@
 .crew-ledger__guideline {
   text-align: start;
 }
+
+/* 事後更正的備註（#164）：工作標題下方一行 */
+.crew-ledger__note {
+  display: block;
+  font-size: 0.85rem;
+}

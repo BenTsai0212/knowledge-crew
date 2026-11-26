@@ -34,3 +34,10 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+/* 回流的文件通過後被事後更正（#164）：比照已收回的守則，淡色底與左側橘色條；知識庫的文件本身不變 */
+.crew-source-origin__corrected {
+  border-left: 4px solid var(--color-warning);
+  background: var(--color-surfaceRaised);
+  padding: 0.25rem 0.5rem;
+}

@@ -22,5 +22,6 @@
   "guidelineDocOrigin": "{employee} 的「{workType}」守則。來自 {returnDate} 的退回（{reason}）{drafted}，{confirmer} 於 {confirmDate} 確認{revised}。",
   "guidelineDocDrafted": "，由 {employee} 整理提出",
   "guidelineDocRevised": "（確認時修改）",
-  "guidelineDocEllipsis": "…"
+  "guidelineDocEllipsis": "…",
+  "originCorrected": "通過後發現有錯（{date}）"
 }

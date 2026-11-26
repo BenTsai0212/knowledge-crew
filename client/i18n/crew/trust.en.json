@@ -78,5 +78,7 @@
   "reportChangeRelax": "agreed to review key points",
   "reportChangeRevoke": "revoked",
   "reportChangeAutoReset": "mistake, back to every item",
-  "reportNoChange": "No changes"
+  "reportNoChange": "No changes",
+  "dotCorrected": "Approved; corrected to a mistake on {date}",
+  "dotLegendCorrected": "Hollow = corrected after approval"
 }

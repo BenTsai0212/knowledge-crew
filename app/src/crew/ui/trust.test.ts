@@ -257,6 +257,12 @@ describe("trustTimeline／trustNote（純函式）", () => {
     expect(t.empty).toBe(2);
   });
 
+  it("事後更正（#164）：被更正的那格仍是通過、帶更正時間；其他格是 null", () => {
+    const corrections = [{ id: "c1", reviewId: "b", correctedAt: at(4), notInPoints: false }];
+    const t = trustTimeline([ok("a", 1), ok("b", 2), ok("c", 3)], [], { dots: 5 }, corrections);
+    expect(t.cells.map((c) => [c.dot, c.correctedAt])).toEqual([["ok", null], ["ok", at(4)], ["ok", null]]);
+  });
+
   it("沒有驗收時沒有格與事件", () => {
     expect(trustTimeline([], [relax(1)], { dots: 3 })).toEqual({ cells: [], empty: 3, events: [] });
   });

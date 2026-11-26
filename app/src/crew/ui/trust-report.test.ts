@@ -45,7 +45,8 @@ describe("trustReport：匯入虛構資料後", () => {
     for (const row of report) {
       const pair = { employeeId: row.employee.id, workTypeId: row.workTypeId };
       const all = filterLedger(events, pair);
-      const returned = filterLedger(events, { ...pair, event: "returned" });
+      // 「只看退回」也含事後更正（#164），退回次數不算它
+      const returned = filterLedger(events, { ...pair, event: "returned" }).filter((e) => e.kind === "returned");
       // 「只看層級改變」也含提出看重點的建議（#125），層級變化不算它
       const level = filterLedger(events, { ...pair, event: "level" }).filter((e) => e.kind !== "proposed");
       expect(row.reviews).toBe(all.filter((e) => e.kind === "accepted" || e.kind === "returned").length);
@@ -102,6 +103,7 @@ describe("trustReport／firstPassPercent（純函式）", () => {
     employee: { id: employeeId, displayName: employeeId, roleNote: null },
     workTypeId,
     dots: [],
+    dotCorrections: [],
     level: "item",
     reviewCount: 0,
     lastReset: null,

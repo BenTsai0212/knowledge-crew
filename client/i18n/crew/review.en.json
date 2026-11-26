@@ -112,5 +112,13 @@
   "followedConfirmed": "Confirmed {date}",
   "followedRetiredLater": " (retired later)",
   "pendingGuidelines": "{employee} drafted {count, plural, one {# guideline} other {# guidelines}} for you to confirm",
-  "pendingGuidelinesOpen": "Confirm on the Employees page"
+  "pendingGuidelinesOpen": "Confirm on the Employees page",
+  "correctionOpen": "Found a mistake after approval",
+  "correctionNote": "What was wrong",
+  "correctionNotInPoints": "This mistake wasn't marked as a point to review",
+  "correctionConsequenceLight": "This counts as a mistake: \"{workType}\" goes back to reviewing every item. You can't undo this correction.",
+  "correctionConsequenceItem": "This counts as a mistake. You can't undo this correction.",
+  "correctionSubmit": "Record correction",
+  "correctionDone": "Found wrong after approval ({date})",
+  "correctionNoteShown": "What was wrong: {note}"
 }

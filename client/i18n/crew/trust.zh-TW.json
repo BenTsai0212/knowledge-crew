@@ -78,5 +78,7 @@
   "reportChangeRelax": "同意改看重點",
   "reportChangeRevoke": "收回",
   "reportChangeAutoReset": "做錯了自動改回逐項看",
-  "reportNoChange": "沒有變化"
+  "reportNoChange": "沒有變化",
+  "dotCorrected": "通過，{date} 事後更正為做錯了",
+  "dotLegendCorrected": "中空＝通過後事後更正"
 }

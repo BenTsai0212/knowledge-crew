@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import type { LanguageCode } from "../../client/types";
-import { createReview } from "../db/store";
+import { createCorrection, createReview } from "../db/store";
 import { crewStrings, type CrewTexts } from "../i18n";
 import { ScheduleLine, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
@@ -113,6 +113,23 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
     setSaving(false);
   };
 
+  // 事後更正（#164）：寫入後同樣重新讀取；記成守則時沿用「已記成守則」的通知
+  const correct = async (input: Parameters<typeof createCorrection>[2]) => {
+    setSaving(true);
+    setSaveFailed(false);
+    setNoUpload(false);
+    setSavedGuideline(false);
+    try {
+      const { guidelineId } = await createCorrection(db, identity, input);
+      setSavedGuideline(guidelineId !== null);
+      onChanged?.();
+    } catch {
+      setSaveFailed(true);
+    }
+    await refresh(selectedRef.current);
+    setSaving(false);
+  };
+
   if (state.kind === "loading") return <p className="muted">{t.loading}</p>;
   if (state.kind === "failed") return <p className="error" role="alert">{t.loadFailed}</p>;
   const { list, selected, panel } = state.data;
@@ -138,6 +155,7 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
           saving={saving}
           saveFailed={saveFailed}
           decide={decide}
+          correct={correct}
           noUpload={noUpload}
           savedGuideline={savedGuideline}
           onOpenSource={onOpenSource}

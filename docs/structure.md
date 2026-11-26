@@ -286,6 +286,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果、交件的種類、依照的守則與等確認的守則數（#147）；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）
 - `ui/review/conclusion.ts`：驗收面板 v3 的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`conclusionOf()`：結論列；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
+- `ui/review/Correction.tsx`：驗收面板的事後更正（#164，crew ADR 0008）：「已通過」下方的「通過後發現有錯」按鈕與展開的表單（發現的問題、沒被標成重點、記成守則、送出前的提醒），已有更正時顯示日期與備註
 - `ui/review/Deliverables.tsx`：驗收面板 v3 的四種交件（回信、貼文、知識庫條目、程式修改）依原本的樣子呈現（測試在 `Deliverables.test.ts`）
 - `ui/review/followed.ts`：驗收面板的「這次依照的守則」（#147）：`followedGuidelines()`（交件當時的文字、來歷的日期、之後已收回）與 `pendingGuidelineCount()`（等確認的守則數，只給能驗收的身分；測試在 `followed.test.ts`）
 - `ui/review/light.ts`：驗收面板的看重點（#102，規格 6.3）：「為什麼是看重點」的日期與次數（`lightReason()`，取自既有的驗收紀錄與層級決定）與收起的規則（`keptInLight()`、`splitFields()`：有重點與空白的欄位照樣顯示，其他欄位收起；測試在 `light.test.ts`）

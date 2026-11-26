@@ -86,6 +86,22 @@ describe("mergeLedger：排序", () => {
     expect(mergeLedger(accepted, lang).some((e) => e.kind === "proposed")).toBe(false);
   });
 
+  it("事後更正（#164）：時間是更正時間、經手人是更正者、帶輪次與備註；由它觸發的改回逐項看標出 byCorrection，列在更正上方", () => {
+    const T3 = "2026-10-03T00:00:00.000Z";
+    const accepted = { ...sources, reviews: [{ ...sources.reviews[0], verdict: "accepted" as const, reason: null }], decisions: [] };
+    const correction = { id: "c1", reviewId: "rv1", note: "期限寫錯了", correctedBy: "manager", correctedAt: T3 };
+    const events = mergeLedger({ ...accepted, resets: [{ reviewId: "rv1", at: T3, byCorrection: true }], corrections: [correction] }, lang);
+    expect(events.map((e) => e.kind)).toEqual(["autoReset", "corrected", "accepted", "submitted", "assigned"]);
+    expect(events[0]).toMatchObject({ byCorrection: true, actor: null });
+    expect(events[1]).toMatchObject({ id: "corrected:c1", at: T3, actor: "manager", round: 1, note: "期限寫錯了", assignment: { id: "a1" } });
+    // 沒寫備註時沒有 note；一般的改回逐項看沒有 byCorrection
+    const plain = mergeLedger({ ...accepted, resets: [{ reviewId: "rv1", at: T3 }], corrections: [{ ...correction, note: null }] }, lang);
+    expect(plain.find((e) => e.kind === "corrected")).not.toHaveProperty("note");
+    expect(plain.find((e) => e.kind === "autoReset")).not.toHaveProperty("byCorrection");
+    // 看不到的驗收不列出
+    expect(mergeLedger({ ...accepted, resets: [], corrections: [{ ...correction, reviewId: "unknown" }] }, lang).some((e) => e.kind === "corrected")).toBe(false);
+  });
+
   describe("守則的事件（#145）", () => {
     const T3 = "2026-10-03T00:00:00.000Z";
     const guideline = (over: Partial<LedgerGuideline>): LedgerGuideline => ({
@@ -177,6 +193,16 @@ describe("filterLedger 與 ledgerOptions", () => {
     expect(filterLedger(mixed, { employeeId: "basil", event: "level" }).map((e) => e.id)).toEqual(["a", "e", "g"]);
   });
 
+  it("事後更正（#164）在「只看退回」；由更正觸發的改回逐項看在「只看層級改變」；更正是 danger 樣式", () => {
+    const reset = { ...event("a", "autoReset", "2026-10-05T00:00:00.000Z"), byCorrection: true as const };
+    const mixed = [reset, event("b", "corrected", "2026-10-05T00:00:00.000Z"), event("c", "returned", "2026-10-04T00:00:00.000Z")];
+    expect(filterLedger(mixed, { event: "returned" }).map((e) => e.id)).toEqual(["b", "c"]);
+    expect(filterLedger(mixed, { event: "level" }).map((e) => e.id)).toEqual(["a"]);
+    expect(filterLedger(mixed, { event: "guideline" })).toEqual([]);
+    expect(ledgerTone({ kind: "corrected", reason: null })).toBe("wrong");
+    expect(ledgerTone(reset)).toBe("level");
+  });
+
   it("只看守則（#145）", () => {
     const mixed = [
       event("a", "guidelineSaved", "2026-10-05T00:00:00.000Z"),
@@ -233,12 +259,12 @@ describe("readLedger：匯入虛構資料後", () => {
   it("manager：四個來源的全部事件，含 Rowan、Linden、Juniper 的同意改看重點、Juniper 的收回、Rowan 的改回逐項看與提出看重點的建議", async () => {
     const events = await readLedger(db, "manager", lang);
     // #134 加了交辦 6、交件 4、退回 2（s16-1、k15-1）；#145 加了守則的事件 9（demo 的六條守則與其決定）；
-    // #161 加了交辦 10、交件 10、通過 9（s17～s20、j12～j15、k16；k17 待驗收）
+    // #161 加了交辦 10、交件 10、通過 9（s17～s20、j12～j15、k16；k17 待驗收）；#164 列出 k01-2 的事後更正（當時是逐項看，沒有改回）
     expect(countKinds(events)).toEqual({
-      assigned: 64, submitted: 70, accepted: 53, returned: 10, proposed: 4, relax: 3, revoke: 1, autoReset: 1,
+      assigned: 64, submitted: 70, accepted: 53, returned: 10, corrected: 1, proposed: 4, relax: 3, revoke: 1, autoReset: 1,
       guidelineSaved: 3, guidelineProposed: 3, guidelineEdited: 1, guidelineRejected: 1, guidelineRetired: 1,
     });
-    expect(events).toHaveLength(215);
+    expect(events).toHaveLength(216);
     expect(new Set(events.map((e) => e.assignment?.sourceName).filter((n) => n !== undefined))).toEqual(new Set(SOURCE_NAMES));
     const relax = events.filter((e) => e.kind === "relax");
     expect(relax.map((e) => [e.employee.id, e.workTypeId, e.actor])).toEqual([

@@ -112,5 +112,13 @@
   "followedConfirmed": "{date} 確認",
   "followedRetiredLater": "（之後已收回）",
   "pendingGuidelines": "{employee} 整理了 {count} 條守則等你確認",
-  "pendingGuidelinesOpen": "到員工頁確認"
+  "pendingGuidelinesOpen": "到員工頁確認",
+  "correctionOpen": "通過後發現有錯",
+  "correctionNote": "發現的問題",
+  "correctionNotInPoints": "這個錯沒有被標成重點",
+  "correctionConsequenceLight": "會算一次「做錯了」：「{workType}」改回逐項看。這筆更正不能撤回。",
+  "correctionConsequenceItem": "會算一次「做錯了」。這筆更正不能撤回。",
+  "correctionSubmit": "記下更正",
+  "correctionDone": "通過後發現有錯（{date}）",
+  "correctionNoteShown": "發現的問題：{note}"
 }
