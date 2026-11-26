@@ -427,6 +427,7 @@ Playwright 的端對端測試（`*.spec.ts`）；設定在根目錄的 `playwrig
 
 - `adr/`：決策紀錄
 - `crew/adr/0007-guidelines.md`：crew ADR 0007（守則與知識的來歷，第 4 階段）：守則的來源、狀態與資料表，知識的來歷從既有紀錄推算（#140）
+- `crew/adr/0008-letting-go.md`：crew ADR 0008（讓放手站得住，第 5 階段）：事後更正、抽查（必要功能）、逐條回饋、自述與獨立檢查分開，與預計的資料（#159）
 - `crew/data-model.md`：crew 的資料表（schema `crew`）與守則的三張表的約束與可見範圍（#142）
 - `crew/research/`：knowledge-crew 的研究主張與依據（RFC 0001 的 2026-11-25 修訂，#137）
 - `crew/research/literature.md`：文獻與產業整理（五個主題的研究與來源）
