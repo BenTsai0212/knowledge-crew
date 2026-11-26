@@ -35,8 +35,14 @@
 
 .crew-review h3,
 .crew-review h4,
+.crew-review h5,
 .crew-review p {
   margin: 0;
+}
+
+/* 卡片標題（#168 起在分區之下是 h5）維持原本 h4 的大小 */
+.crew-review h5 {
+  font-size: 1rem;
 }
 
 /* 清單分組的標題是 h2（#153 第 5 點），大小維持原本 h3 的 0.95rem */
@@ -654,4 +660,95 @@ p.crew-review__kb-title {
 .crew-review__followed-pending p {
   margin: 0;
   flex: 1 1 12rem;
+}
+
+/* ---- 自述／獨立檢查分區（#168，crew ADR 0008 第 16 點）：外層只加標題與說明，卡片內容與順序不變 ---- */
+.crew-review__zone {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.crew-review__zone > h4 {
+  font-size: 1.05rem;
+}
+
+/* ---- 逐條回饋（#168，第 12～14 點）：重點與守則每列右側一組切換按鈕或唯讀標籤；窄時換到下一行 ---- */
+.crew-review__points li.crew-review__point-row,
+.crew-review__followed-list li.crew-review__followed-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.25rem 0.5rem;
+}
+
+.crew-review__point-row > .crew-review__point {
+  flex: 1 1 12rem;
+  width: auto;
+  min-width: 0;
+}
+
+.crew-review__followed-text {
+  display: grid;
+  flex: 1 1 12rem;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crew-review__feedback {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+}
+
+.crew-review__feedback button.chip {
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.app--phone .crew-review__feedback button.chip {
+  min-height: 44px;
+}
+
+.crew-review__feedback button.chip[data-result="problem"][aria-pressed="true"],
+.crew-review__feedback button.chip[data-result="not_done"][aria-pressed="true"] {
+  border-color: var(--color-danger);
+}
+
+.crew-review__feedback-tag {
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+
+.crew-review__feedback-tag[data-result="problem"],
+.crew-review__feedback-tag[data-result="not_done"] {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.crew-review__not-in-points {
+  margin-inline-start: 0.4rem;
+}
+
+.crew-review__feedback-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.crew-review__feedback-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.crew-review__feedback-list .crew-review__feedback-tag {
+  margin-inline-start: 0;
 }

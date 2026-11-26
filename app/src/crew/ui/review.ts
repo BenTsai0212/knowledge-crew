@@ -4,7 +4,7 @@
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import {
-  getAssignmentWorks, getReviewDetails, getTrustSummary, listAssignments, listEmployees, listGuidelines, listWorkGuidelines, type AssignmentSummary, type Priority, type SourceKind, type StoredWork,
+  getAssignmentWorks, getReviewDetails, getTrustSummary, listAssignments, listEmployees, listGuidelines, listWorkGuidelines, type AssignmentSummary, type GuidelineResult, type PointResult, type Priority, type SourceKind, type StoredFeedback, type StoredWork,
 } from "../db/store";
 import { DEMO } from "../demo/load";
 import { demoText } from "../demo/texts";
@@ -58,7 +58,16 @@ export interface EarlierRound {
   externalRef: string | null;
   summary: string;
   submittedAt: string;
-  review: { verdict: Verdict; reason: ReturnReason | null; note: string | null; decidedAt: string } | null;
+  review: {
+    verdict: Verdict;
+    reason: ReturnReason | null;
+    note: string | null;
+    decidedAt: string;
+    /** 退回時勾了「這個錯沒有被標成重點」（#168） */
+    notInPoints: boolean;
+    /** 逐條回饋（#168）：有標記的重點（依序號）與守則的文字和結果 */
+    feedback: { text: string; result: PointResult | GuidelineResult }[];
+  } | null;
 }
 
 export interface ReviewPanel {
@@ -83,6 +92,10 @@ export interface ReviewPanel {
   guidelines: FollowedGuideline[];
   /** 同一員工 × 工作類型等確認的守則數（#147）；不能驗收的身分是 0 */
   pendingGuidelines: number;
+  /** 最新一輪的退回原因與「沒被標成重點」（#168）；不是退回時是 null */
+  returned: { reason: ReturnReason; notInPoints: boolean } | null;
+  /** 最新一輪已驗收時的逐條回饋（#168，getReviewDetails()）；待驗收時是 null */
+  feedback: StoredFeedback | null;
   /** 最新一輪的驗收 id；待驗收時是 null */
   reviewId: string | null;
   /** 最新一輪（通過）的事後更正（#164）；沒有時是 null */
@@ -215,25 +228,22 @@ export async function readReviewPanel(
   const { reviews, decisions, corrections } = inputs;
   const level = reviewLevel(reviews, decisions, corrections);
   const spotCheck = spotChecks.get(current.id) ?? null;
-  const accepted = current.review?.verdict === "accepted" ? current.review : null;
-  const stored = accepted && (await getReviewDetails(db, identity, accepted.id)).correction;
+  const review = current.review;
+  const accepted = review?.verdict === "accepted" ? review : null;
+  const details = review ? await getReviewDetails(db, identity, review.id) : null;
+  const stored = accepted && details?.correction;
   const correction = stored ? { correctedAt: stored.correctedAt, note: stored.note } : null;
-  const [followed, all] = await Promise.all([
+  const [followed, all, earlier] = await Promise.all([
     listWorkGuidelines(db, identity, current.id),
     canReview ? listGuidelines(db, identity, { employeeId: item.employee.id, workTypeId: item.workTypeId }) : Promise.resolve([]),
+    Promise.all(works.slice(0, -1).map((w) => earlierRound(db, identity, w, language))),
   ]);
   return {
     item: { ...item, spotCheck: spotCheck !== null },
     // 抽查（#161）：被抽到的那件逐項列出變更；面板以「這次抽查」卡片標示（#166）
     focus: reviewFocus(current, level, { spotCheck }),
     current: { id: current.id, round: current.round, externalRef: current.externalRef, summary: current.summary, submittedAt: current.submittedAt },
-    earlier: works.slice(0, -1).map((w) => ({
-      round: w.round,
-      externalRef: w.externalRef,
-      summary: w.summary,
-      submittedAt: w.submittedAt,
-      review: w.review && { verdict: w.review.verdict, reason: w.review.reason, note: w.review.note, decidedAt: w.review.decidedAt },
-    })),
+    earlier,
     canDecide: canReview && current.review === null,
     body: parseWorkBody(current.body, current.points.length),
     deliverable: deliverableOf(item.workTypeId),
@@ -242,9 +252,31 @@ export async function readReviewPanel(
     changeItems: current.changes,
     guidelines: followedGuidelines(followed, current.submittedAt, language),
     pendingGuidelines: pendingGuidelineCount(all, canReview),
-    reviewId: current.review?.id ?? null,
+    returned: review?.verdict === "returned" ? { reason: review.reason, notInPoints: review.notInPoints } : null,
+    feedback: details?.feedback ?? null,
+    reviewId: review?.id ?? null,
     correction,
     canCorrect: canReview && accepted !== null && correction === null,
+  };
+}
+
+/** 前幾輪的一輪：驗收的逐條回饋（#168）以重點與守則的文字列出（守則是交件當時的文字） */
+async function earlierRound(db: Database, identity: string, w: StoredWork, language: LanguageCode): Promise<EarlierRound> {
+  const base = { round: w.round, externalRef: w.externalRef, summary: w.summary, submittedAt: w.submittedAt };
+  if (w.review === null) return { ...base, review: null };
+  const { feedback } = await getReviewDetails(db, identity, w.review.id);
+  const texts =
+    feedback.guidelines.length === 0 ? new Map<string, string>() : new Map(followedGuidelines(await listWorkGuidelines(db, identity, w.id), w.submittedAt, language).map((g) => [g.id, g.text]));
+  const { verdict, reason, note, decidedAt, notInPoints } = w.review;
+  return {
+    ...base,
+    review: {
+      verdict, reason, note, decidedAt, notInPoints,
+      feedback: [
+        ...feedback.points.map((p) => ({ text: w.points[p.ordinal - 1] ?? String(p.ordinal), result: p.result })),
+        ...feedback.guidelines.map((g) => ({ text: texts.get(g.guidelineId) ?? g.guidelineId, result: g.result })),
+      ],
+    },
   };
 }
 

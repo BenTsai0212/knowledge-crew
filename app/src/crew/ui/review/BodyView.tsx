@@ -2,7 +2,7 @@
 // 重點在內容中畫底線＋上標編號。不能標出重點（舊格式、解析有錯）時退回純文字。
 // 點選重點：重點卡的列是 aria-pressed 的按鈕，選中時內容中 data-point 相符的位置加 data-active（surfaceRaised 底）。
 // 交件類型是回信、貼文、知識庫條目或程式修改時，依 Deliverables.tsx 以原本的樣子呈現。
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
 import type { ChangesView, WorkChange } from "../../trust/types";
@@ -23,13 +23,15 @@ interface PointListProps {
   active?: ActivePoint;
   /** 點選第 n 個重點（從 1 開始）；再點一次由呼叫端取消 */
   onToggle?: (n: number) => void;
+  /** 每列右側的逐條回饋（#168：切換按鈕或唯讀標籤）；n 從 1 開始 */
+  aside?: (n: number, text: string) => ReactNode;
 }
 
 /**
  * 重點卡：每點一列，編號＋重點文字＋在內容中的位置（沒有位置時不顯示）。
  * 在內容中有位置的列是 `aria-pressed` 的按鈕；沒有位置的列（舊格式、解析有錯、該重點沒有標記）是一般的文字。
  */
-export function PointList({ points, body, language, active = null, onToggle }: PointListProps) {
+export function PointList({ points, body, language, active = null, onToggle, aside }: PointListProps) {
   const places = pointPlaces(body, language);
   const separator = crewStrings("review", language).listSeparator;
   return (
@@ -57,8 +59,9 @@ export function PointList({ points, body, language, active = null, onToggle }: P
             </span>
           </>
         );
+        const extra = aside?.(n, text);
         return (
-          <li key={i}>
+          <li key={i} className={extra ? "crew-review__point-row" : undefined}>
             {onToggle !== undefined && pointLocated(body, i) ? (
               <button type="button" className="crew-review__point" aria-pressed={active === n} onClick={() => onToggle(n)}>
                 {content}
@@ -66,6 +69,7 @@ export function PointList({ points, body, language, active = null, onToggle }: P
             ) : (
               <div className="crew-review__point">{content}</div>
             )}
+            {extra}
           </li>
         );
       })}
