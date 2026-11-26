@@ -11,17 +11,17 @@ const demo = process.env.VITE_ONLINE_DEMO === "1";
 const readmeShots = process.env.KK_README_SHOTS === "1";
 // AI 員工的 README 截圖（knowledge-crew #106，docs/testing.md「AI 員工的 README 截圖」）：KC_README_SHOTS=1 時只執行 crew-readme-shots.spec.ts
 const crewShots = process.env.KC_README_SHOTS === "1";
-// 只展示 AI 員工的 build（VITE_CREW_ONLY=1，#84）只執行 crew-only.spec.ts，其他 build 不執行它
+// 只展示 AI 員工的 build（VITE_CREW_ONLY=1，#84）只執行 crew-only.spec.ts 與 crew-a11y.spec.ts（axe，knowledge-crew #155），其他 build 不執行它們
 const crewOnly = process.env.VITE_CREW_ONLY === "1";
 const scope = crewOnly
-  ? { testMatch: "crew-only.spec.ts" }
+  ? { testMatch: ["crew-only.spec.ts", "crew-a11y.spec.ts"] }
   : demo
     ? { testMatch: "demo.spec.ts" }
     : readmeShots
       ? { testMatch: "readme-shots.spec.ts" }
       : crewShots
         ? { testMatch: "crew-readme-shots.spec.ts" }
-        : { testIgnore: ["demo.spec.ts", "readme-shots.spec.ts", "crew-only.spec.ts", "crew-readme-shots.spec.ts"] };
+        : { testIgnore: ["demo.spec.ts", "readme-shots.spec.ts", "crew-only.spec.ts", "crew-a11y.spec.ts", "crew-readme-shots.spec.ts"] };
 
 export default defineConfig({
   testDir: "e2e",

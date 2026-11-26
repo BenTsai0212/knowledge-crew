@@ -178,6 +178,7 @@ repo 預計公開，CI 紀錄也會公開，所以兩者的輸出都**不包含�
 | `compare.spec.ts` | 展示模式的身分對照（#261，需要 `VITE_DEMO_COMPARE=1` 的 build，見下方「本機執行」）：頂端列的按鈕開關對照，沒有題目時是說明；對照打開時點劇本中只有一個身分看得到答案段落的題目（以 `oracle.ts` 算出；沒有時略過），每個身分一欄、依 `access.json` 的順序，只有目前身分的欄是 `is-current`；假的 `/api/ask` 只在送出的段落含答案段落時回答（比對答案段落中第一段其他段落都不含的 20 字，不用開頭：開頭可能與看得到的段落相同；另有不需要瀏覽器與開關的測試確認比對文字只出現在一個答案段落），所以看得到的身分的欄有引用，其他欄是一般的拒答與「先確認要找的是哪一種」的提問（#377），每一欄都不出現該身分看不到的段落；`C` 打開與關閉、`Esc` 關閉，焦點在輸入框時 `C` 是文字；1920×1080 時照畫板 `H-QA`（#349：題目泡泡、欄內的回答不是卡片、各欄等高、對照時沒有輸入區、沒有橫向捲動，截圖附在報告）；減少動態效果時欄的動畫時間是 0 |
 | `demo.spec.ts` | 線上 demo 的設定（#100，只在 `VITE_ONLINE_DEMO=1` 的 build 執行，見下方「線上 demo」）：公開試用碼預先填入並以它提問、問答與上傳頁的提醒、評測台隱藏（帶 `?tools=evals` 也一樣）而待審保留、上傳後萃取的實體出現在待審；以 `VITE_DEMO_COMPARE=1` build 時，展示模式也沒有身分對照（#261） |
 | `crew-only.spec.ts` | 只展示 AI 員工的設定（#84，只在 `VITE_CREW_ONLY=1` 的 build 執行，見下方「只展示 AI 員工」）：登入頁不要求邀請碼、「直接體驗」以主管進入首頁的今天的工作（#96；側欄有待驗收件數，手機點一列到「工作與驗收」）、導覽是首頁、圖譜、時間軸、AI 員工（#91；帶 `?tools=evals`、`?mode=presentation` 也一樣）、五個子畫面都能開啟（#100：沒有「今天」）、首頁與圖譜沒有提問的入口、三個頁在桌機 1280 與手機 390 能開且不破版、切換身分後內容改變、帳號登入不要求邀請碼；整個流程沒有任何 `/api/*` 請求 |
+| `crew-a11y.spec.ts` | crew 畫面的 axe 可近用性檢查（knowledge-crew #155，只在 `VITE_CREW_ONLY=1` 的 build 執行，`@axe-core/playwright`）：標籤 `wcag2a`、`wcag2aa`、`wcag21a`、`wcag21aa`、`wcag22aa`，違規數要是 0，失敗時列出規則 id 與節點選擇器；範圍是登入面板、首頁的主標題與「今天的工作」、AI 員工 6 個子頁（「工作與驗收」打開一筆，退回表單打開與關閉各掃一次）的 `.crew-page` 之內，不含側欄、頁首與底部分頁列；桌機 1280×800 與手機 390×844 各一個 test 依序走完，每次掃描的違規數與時間印在 log |
 | `crew-home.spec.ts` | 首頁的「今天的工作」（#96，只在有 `crew/demo.json` 的客戶執行）：桌機 1280 與手機 390 時主管依分組看到待驗收與看重點的建議、每列的員工後面是工作類型（#100）、只有第一列是主要按鈕、點一列到「工作與驗收」該件或信任頁、從導覽點進 AI 員工預設是「工作與驗收」（#100），側欄與手機的「更多」有 AI 員工的待驗收件數；一般員工沒有驗收的按鈕與件數；訪客不顯示；不破版 |
 
 - **看不到的段落**以 `app/src/evals/oracle.ts` 的 `expectedVisible()` 從選定客戶的 `data/` 算出（`e2e/support/dataset.ts`），不以畫面或資料庫的結果為準；畫面文字以每段開頭 20 個字元比對（空白先合併）。切換前先確認畫面上確實有看不到的段落，比對本身才有效。
@@ -209,7 +210,7 @@ VITE_ONLINE_DEMO=1 VITE_PUBLIC_ACCESS_CODE=e2e-public-code VITE_DEMO_COMPARE=1 n
 
 ### 只展示 AI 員工
 
-`VITE_CREW_ONLY=1` 時只執行 `crew-only.spec.ts`，其他情況不執行它（優先於 `VITE_ONLINE_DEMO`；部署方式見 [docs/deploy.md](deploy.md)「只展示 AI 員工的線上 demo」）。build 與測試用同一個變數，只用參考情境 `client/`：
+`VITE_CREW_ONLY=1` 時只執行 `crew-only.spec.ts` 與 `crew-a11y.spec.ts`，其他情況不執行它們（優先於 `VITE_ONLINE_DEMO`；部署方式見 [docs/deploy.md](deploy.md)「只展示 AI 員工的線上 demo」）。build 與測試用同一個變數，只用參考情境 `client/`：
 
 ```bash
 VITE_CREW_ONLY=1 npm run build
@@ -227,7 +228,7 @@ VITE_CREW_ONLY=1 npm run test:e2e
 
 - `list` job 列出參考情境（`""`）與 `clients/` 底下的客戶（`scripts/check-clients.mjs` 的 `listClients()`），`playwright` job 以 matrix 對每一個各執行一格（`KK_CLIENT` 設為該名稱，build 後執行測試；`fail-fast: false`）。`playwright` 與 `demo` 兩個 job 都設 `VITE_DEMO_COMPARE=1`（#261）：一般 build 執行 `compare.spec.ts`，線上 demo 的 build 確認身分對照仍然關閉。
 - `demo` job 以線上 demo 的設定（`VITE_ONLINE_DEMO=1`、虛構的 `VITE_PUBLIC_ACCESS_CODE`）build 參考情境，執行 `demo.spec.ts`；失敗時的 artifact 是 `playwright-online-demo`，成功時是 `playwright-report-online-demo`。
-- `crew-only` job 以 `VITE_CREW_ONLY=1` build 參考情境，以 `npx wrangler deploy -c wrangler.crew-demo.jsonc --dry-run` 確認設定檔有效（不需登入、不上傳），再執行 `crew-only.spec.ts`；失敗時的 artifact 是 `playwright-crew-only`，成功時是 `playwright-report-crew-only`。
+- `crew-only` job 以 `VITE_CREW_ONLY=1` build 參考情境，以 `npx wrangler deploy -c wrangler.crew-demo.jsonc --dry-run` 確認設定檔有效（不需登入、不上傳），再執行 `crew-only.spec.ts` 與 `crew-a11y.spec.ts`；失敗時的 artifact 是 `playwright-crew-only`，成功時是 `playwright-report-crew-only`。
 - 權限只有 `contents: read`，不使用任何 secret。
 - PR 上失敗時：程式造成的失敗由決策中心貼修正要求；GitHub 端異常造成的失敗由決策中心重跑（[decision-center.md](workflow/decision-center.md) 第 4 節）。main 上失敗時由決策中心另開修正 Issue（workflow 不會自動開 Issue）。
 
