@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>工作：只看標記處｜knowledge-crew v5 草稿</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="v4.css">
+</head>
+<body>
+<div class="app">
+<nav class="side" aria-label="主要導覽">
+  <div class="brand"><svg width="28" height="28" viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/><path d="M17 12v24M17 25l12-10M17 25l12 10" stroke="var(--fg)" stroke-width="3.5" stroke-linecap="round" fill="none"/><circle cx="29" cy="35" r="3.5" fill="var(--primary)"/><circle cx="31" cy="14" r="4.5" fill="var(--mark)" stroke="var(--mark-text)" stroke-width="1.5"/></svg><span>範例公司</span><a class="btn btn--ghost btn--icon bell" href="01-home.html#changes" aria-label="最近的變化，4 則"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg><span class="count count--you">4</span></a></div>
+  <a class="nav" href="01-home.html" title="首頁"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>首頁</span></a>
+  <a class="nav" href="02-qa.html" title="問答"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>問答</span></a>
+  <a class="nav" href="03-graph.html" title="圖譜"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="9" cy="18" r="2.5"/><path d="M8 7.5l7.6 1.2M7 8.3l1.5 7.3M16.5 10l-5.8 6.3"/></svg><span>圖譜</span></a>
+  <a class="nav" href="04-timeline.html" title="時間軸"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v18"/><circle cx="6" cy="7" r="2"/><circle cx="6" cy="17" r="2"/><path d="M10 7h10M10 17h7"/></svg><span>時間軸</span></a>
+  <a class="nav" href="05-upload.html" title="上傳"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/></svg><span>上傳</span></a>
+  <a class="nav" href="06-kit-review.html" title="待審"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg><span>待審</span></a>
+  <div class="nav-sep" role="separator"></div>
+  <a class="nav" href="13a-review-item.html" aria-current="page" title="AI 員工"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12v1M15 12v1M9 16h6"/></svg><span>AI 員工</span><span class="count count--you" aria-label="7 件待驗收">7</span></a>
+  <a class="nav" href="07-evals.html" title="評測台"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>評測台</span></a>
+  <div class="side-foot">
+    <div class="demo-flag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span>虛構資料・展示用權限</span></div>
+    <button class="user" type="button" data-open="identity" aria-haspopup="dialog"><span class="avatar">主</span><span class="who"><strong>主管</strong><small>可驗收・看得到機密文件</small></span></button>
+  </div>
+</nav>
+<div class="main">
+<header class="topbar">
+  <div class="brand"><svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="var(--surface)" stroke="var(--border)" stroke-width="2"/><path d="M17 12v24M17 25l12-10M17 25l12 10" stroke="var(--fg)" stroke-width="3.5" stroke-linecap="round" fill="none"/><circle cx="29" cy="35" r="3.5" fill="var(--primary)"/><circle cx="31" cy="14" r="4.5" fill="var(--mark)" stroke="var(--mark-text)" stroke-width="1.5"/></svg><span>範例公司</span></div>
+  <span class="badge badge--quiet">虛構資料</span>
+  <span class="spacer"></span>
+  <button class="btn btn--ghost btn--icon" type="button" aria-label="最近的變化，4 則"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></button>
+  <button class="avatar" type="button" style="border:0;cursor:pointer;width:36px;height:36px" data-open="identity" aria-label="身分：主管，切換身分與語言">主</button>
+</header>
+<main class="page page--wide" id="main">
+<header class="page-head">
+  <div class="page-head__row"><div class="page-head__title">
+    <p class="eyebrow"><a href="13a-review-item.html">AI 員工</a></p>
+    <h1 tabindex="-1">工作</h1>
+  </div></div>
+  <nav class="tabs" aria-label="AI 員工的畫面"><a class="tab" href="13a-review-item.html" aria-current="page">工作<span class="count count--you" aria-label="7 件待驗收">7</span></a><a class="tab" href="11-employees.html">員工<span class="count count--you" aria-label="2 件事等你決定">2</span></a><a class="tab" href="12-assign.html">交辦</a><a class="tab" href="15-records.html">紀錄</a></nav>
+</header>
+
+<div class="review">
+  <div class="hide-m"><section class="card card--flush review__list" aria-labelledby="wl-title">
+  <div class="card-head" style="padding-bottom:var(--s2)">
+    <h2 id="wl-title" style="font-size:15px">待驗收</h2><span class="count count--you">7</span>
+    <span class="spacer"></span>
+    <nav class="seg" aria-label="顯示方式"><a href="13-works.html" aria-current="page">清單</a><a href="10-board.html">看板</a></nav>
+  </div>
+  <ul class="list">
+    <li><a class="row row--compact" data-id="s14" href="13a-review-item.html"><span class="row__body"><span class="row__title">詢問預購商品的到貨日</span><span class="row__meta"><span><span class="ai" aria-label="AI 員工">AI</span>Rowan</span><span class="t-bad" style="font-weight:700">✕ 報價</span><span class="due--over">逾期</span></span></span></a></li>
+    <li><a class="row row--compact" data-id="k13" href="13c-review-light.html"><span class="row__body"><span class="row__title">整理預購商品的說明</span><span class="row__meta"><span><span class="ai" aria-label="AI 員工">AI</span>Linden</span><span class="t-bad" style="font-weight:700">✕ 必填欄位</span></span></span></a></li>
+    <li><a class="row row--compact" data-id="c12" href="#"><span class="row__body"><span class="row__title">門市營業時間調整的公告</span><span class="row__meta"><span><span class="ai" aria-label="AI 員工">AI</span>Sorrel</span><span class="due--over">逾期</span></span></span></a></li>
+    <li><a class="row row--compact" data-id="j11" href="#"><span class="row__body"><span class="row__title">結帳頁的配送方式說明</span><span class="row__meta"><span><span class="ai" aria-label="AI 員工">AI</span>Juniper</span><span class="due--soon">明天到期</span></span></span></a></li>
+    <li><a class="row row--compact" data-id="c11" href="#"><span class="row__body"><span class="row__title">冬季限定組合的介紹</span><span class="row__meta"><span><span class="ai" aria-label="AI 員工">AI</span>Sorrel</span><span class="t-wait">檢查中</span></span></span></a></li>
+    <li><a class="row row--compact" data-id="k17" href="13b-review-spot.html"><span class="row__body"><span class="row__title">整理門市換貨的說明</span><span class="row__meta"><span><span class="ai" aria-label="AI 員工">AI</span>Linden</span><span>抽查</span></span></span></a></li>
+    <li><a class="row row--compact" data-id="j06" href="#"><span class="row__body"><span class="row__title">常見問題頁的搜尋</span><span class="row__meta"><span><span class="ai" aria-label="AI 員工">AI</span>Juniper</span><span class="t-wait">檢查中</span></span></span></a></li>
+  </ul>
+  <div class="card-foot" style="padding:var(--s3) var(--s5)"><a href="15-records.html" style="font-size:14px">已驗收的工作在「紀錄」</a></div>
+</section>
+</div>
+
+  <article class="panel" aria-labelledby="w-title">
+    <a class="only-m btn btn--ghost" href="13-works.html" style="align-self:flex-start;padding-left:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>待驗收 7</a>
+
+    <header class="stack-s">
+      <div class="inline"><h2 id="w-title" style="font-size:22px;flex:1 1 auto">整理預購商品的說明</h2>
+        <span class="badge badge--light" data-unless="full">只看標記處</span><span class="badge badge--item" data-when="full" hidden>這次全部看</span>
+        <details class="tip tip--r"><summary class="qmark" aria-label="只看標記處是什麼">?</summary><div class="tip__body">Linden 最近 10 次都沒做錯，你在 10/13 同意只看它標記的地方。每 5 件會抽 1 件全部看；做錯一次就改回全部看。<br><a href="11-employees.html">看 Linden 的審查方式</a></div></details></div>
+      <div class="inline muted" style="font-size:14px"><span class="ai" aria-label="AI 員工">AI</span>Linden・知識庫條目・12/4 到期
+        <details class="tip"><summary class="link" style="font-size:13px">詳細</summary><div class="tip__body">公司知識庫・11/18 11:00 交件・第 1 輪・優先：低</div></details></div>
+      <p class="big-verdict big-verdict--bad" role="status"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> 先別加進知識庫：「生效日期」是空的</p>
+    </header>
+
+    <section class="pane" aria-label="請你確認與系統檢查">
+      <div>
+        <div class="inline" style="margin-bottom:var(--s2)"><h3 style="margin:0;flex:1"><span class="ai" aria-label="AI 員工">AI</span>Linden 請你確認 2 處</h3><button class="btn btn--sm" type="button" data-flag="mark" data-flag-label="逐條標記|完成" aria-pressed="false">逐條標記</button></div>
+        <div class="confirm">
+          <div class="confirm__row"><span class="pt__n">1</span><button class="link pt__link" type="button" data-point="1" aria-pressed="false">部門名稱不確定</button><small>負責部門</small><span class="spacer"></span><span class="seg" data-when="mark" hidden role="group" aria-label="第 1 處"><button type="button" aria-pressed="false">沒問題</button><button type="button" aria-pressed="false">有問題</button></span></div>
+          <div class="confirm__row"><span class="pt__n">2</span><button class="link pt__link" type="button" data-point="2" aria-pressed="false">可能和既有條目重複</button><small>到貨時間</small><span class="spacer"></span><span class="seg" data-when="mark" hidden role="group" aria-label="第 2 處"><button type="button" aria-pressed="false">沒問題</button><button type="button" aria-pressed="false">有問題</button></span></div>
+          <div class="confirm__row muted" style="font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>照守則：保養方式依材質分段</span><span class="spacer"></span><span class="seg" data-when="mark" hidden role="group" aria-label="守則"><button type="button" aria-pressed="false">做到</button><button type="button" aria-pressed="false">沒做到</button></span></div>
+        </div>
+      </div>
+      <div>
+        <h3>系統檢查</h3>
+        <div class="inline"><span class="cc cc--bad"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>必填欄位</span><span class="cc cc--ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>重複條目</span><span class="cc cc--ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>格式</span></div>
+      </div>
+    </section>
+
+    <section class="deliv" aria-label="知識庫條目">
+      <div class="deliv__head" style="display:flex;gap:var(--s2);align-items:center"><strong style="font-size:16px">預購商品說明</strong><span class="spacer"></span><span class="hint">新增條目</span></div>
+      <div class="deliv__body">
+        <dl class="kv">
+          <dt>負責部門</dt><dd><span class="pm" data-n="1">電商營運組</span><span class="tag">1</span></dd>
+          <dt>到貨時間</dt><dd>預購商品在<span class="pm" data-n="2">下單後 4 至 6 週</span><span class="tag">2</span>到貨，實際日期以出貨通知為準。</dd>
+          <dt>生效日期</dt><dd><span class="blank">空白・必填</span></dd>
+          <dt data-when="full" hidden>付款方式</dt><dd data-when="full" hidden>預購商品在下單時全額付款，可使用信用卡或轉帳。</dd>
+          <dt data-when="full" hidden>取消規則</dt><dd data-when="full" hidden>出貨前可以免費取消，款項在 7 個工作天內退回。</dd>
+        </dl>
+        <button class="btn btn--sm" type="button" data-flag="full" data-flag-label="這次全部看（另 2 欄）|收回" style="align-self:flex-start">這次全部看（另 2 欄）</button>
+      </div>
+    </section>
+
+    <div class="decide">
+      <strong>可以加進知識庫嗎？</strong>
+      <button class="btn" type="button">退回</button>
+      <button class="btn btn--primary" type="button">通過</button>
+    </div>
+  </article>
+</div>
+
+</main>
+</div>
+</div>
+<nav class="tabbar" aria-label="主要導覽"><a href="01-home.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>首頁</a><a href="02-qa.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>問答</a><a href="03-graph.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="9" cy="18" r="2.5"/><path d="M8 7.5l7.6 1.2M7 8.3l1.5 7.3M16.5 10l-5.8 6.3"/></svg>圖譜</a><a href="13a-review-item.html" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12v1M15 12v1M9 16h6"/></svg>AI 員工<span class="count count--you">7</span></a><a href="04-timeline.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>更多</a></nav>
+<div class="scrim" data-state="identity" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="id-title">
+    <div class="inline"><h2 id="id-title" style="flex:1">身分與語言</h2><button class="btn btn--ghost btn--icon" type="button" data-close aria-label="關閉"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="hint">切換後，只顯示那個身分看得到的資料。</p>
+    <fieldset class="stack-s"><legend class="label" style="margin-bottom:6px">身分</legend>
+      <label class="choice"><input type="radio" name="idr"><span><strong>訪客</strong><br><span class="hint">公開文件</span></span></label>
+      <label class="choice"><input type="radio" name="idr"><span><strong>一般員工</strong><br><span class="hint">內部文件・可上傳</span></span></label>
+      <label class="choice choice--on"><input type="radio" name="idr" checked><span><strong>主管</strong><br><span class="hint">機密文件・可驗收</span></span></label>
+    </fieldset>
+    <div class="field"><label class="label" for="lang">語言</label><select class="select" id="lang"><option>中文（台灣）</option><option>English</option></select></div>
+    <div class="dialog__foot"><button class="btn" type="button" data-close>取消</button><button class="btn btn--primary" type="button" data-close>切換</button></div>
+  </div>
+</div>
+<script src="v4.js"></script>
+</body>
+</html>
