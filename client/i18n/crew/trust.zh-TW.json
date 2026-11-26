@@ -86,5 +86,9 @@
   "spotSummary": "抽查 {count} 次：通過 {accepted}・做錯了 {wrong}・其他退回 {other}",
   "reportColumnSpot": "抽查（其中做錯了）",
   "reportHeadSpot": "抽查",
-  "reportSpot": "{count}（{wrong}）"
+  "reportSpot": "{count}（{wrong}）",
+  "missSummary": "事後更正 {corrections} 次・錯在沒標成重點的地方 {notInPoints} 次",
+  "reportColumnNotInPoints": "錯在沒標成重點的地方",
+  "reportHeadNotInPoints": "重點外的錯",
+  "reportChangeAutoResetCorrection": "事後更正後自動改回逐項看"
 }

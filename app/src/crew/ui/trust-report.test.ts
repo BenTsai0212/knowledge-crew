@@ -54,7 +54,7 @@ describe("trustReport：匯入虛構資料後", () => {
       for (const reason of REASONS) expect(row.returns[reason]).toBe(returned.filter((e) => e.reason === reason).length);
       expect(REASONS.reduce((sum, reason) => sum + row.returns[reason], 0)).toBe(returned.length);
       expect(row.levelChanges).toBe(level.length);
-      expect(row.lastChange).toEqual(level[0] ? { kind: level[0].kind, at: level[0].at } : null);
+      expect(row.lastChange).toEqual(level[0] ? { kind: level[0].kind, at: level[0].at, ...(level[0].byCorrection ? { byCorrection: true } : {}) } : null);
     }
   });
 
@@ -94,6 +94,12 @@ describe("trustReport：匯入虛構資料後", () => {
     expect(find(report, "sorrel", "content").spot).toBeNull();
   });
 
+  // #168：s12-1 退回時勾了「沒被標成重點」（Rowan）；Linden 的事後更正勾了（ADR 0008 第 15 點）
+  it("manager：錯在沒標成重點的地方欄是 Rowan 1、Linden 1、Juniper 0、Sorrel 0", async () => {
+    const { report } = await read("manager");
+    expect(["rowan/support", "linden/knowledge", "juniper/dev", "sorrel/content"].map((k) => find(report, ...(k.split("/") as [string, string])).notInPoints)).toEqual([1, 1, 0, 0]);
+  });
+
   it("staff：只有自己專案看得到的兩列，數字與主管看到的相同", async () => {
     const staff = (await read("staff")).report;
     const manager = (await read("manager")).report;
@@ -108,7 +114,12 @@ describe("trustReport：匯入虛構資料後", () => {
 });
 
 describe("trustReport／firstPassPercent（純函式）", () => {
-  const trustRow = (employeeId: string, workTypeId: string, spotChecks: TrustRow["spotChecks"] = { total: 0, accepted: 0, wrong: 0, other: 0 }): TrustRow => ({
+  const trustRow = (
+    employeeId: string,
+    workTypeId: string,
+    spotChecks: TrustRow["spotChecks"] = { total: 0, accepted: 0, wrong: 0, other: 0 },
+    misses: TrustRow["misses"] = { corrections: 0, notInPoints: 0 },
+  ): TrustRow => ({
     employee: { id: employeeId, displayName: employeeId, roleNote: null },
     workTypeId,
     dots: [],
@@ -120,11 +131,12 @@ describe("trustReport／firstPassPercent（純函式）", () => {
     timeline: { cells: [], empty: 0, events: [] },
     note: null,
     spotChecks,
+    misses,
   });
   const event = (
     kind: LedgerKind,
     at: string,
-    extra: Partial<Pick<LedgerEvent, "round" | "reason">> & { assignmentId?: string; employeeId?: string; workTypeId?: string } = {},
+    extra: Partial<Pick<LedgerEvent, "round" | "reason" | "byCorrection">> & { assignmentId?: string; employeeId?: string; workTypeId?: string } = {},
   ): LedgerEvent => ({
     id: `${kind}:${at}`,
     kind,
@@ -137,6 +149,7 @@ describe("trustReport／firstPassPercent（純函式）", () => {
     actor: null,
     round: extra.round ?? null,
     reason: extra.reason ?? null,
+    ...(extra.byCorrection ? { byCorrection: true as const } : {}),
   });
 
   it("第一次就通過只看第 1 輪；之後的輪次通過不算；其他組合的事件不算", () => {
@@ -171,6 +184,22 @@ describe("trustReport／firstPassPercent（純函式）", () => {
     expect(none.spot).toBeNull();
     const [some] = trustReport([trustRow("basil", "docs", { total: 5, accepted: 2, wrong: 1, other: 1 })], []);
     expect(some.spot).toEqual({ count: 4, wrong: 1 });
+  });
+
+  // #168：由事後更正觸發的改回逐項看另外標出；報表的文字是 reportChangeAutoResetCorrection
+  it("層級變化：最近一次是由事後更正觸發的改回時帶 byCorrection，一般做錯了沒有", () => {
+    const corrected = trustReport([trustRow("basil", "docs")], [
+      event("autoReset", "2026-10-03T00:00:00.000Z", { byCorrection: true }),
+      event("autoReset", "2026-10-02T00:00:00.000Z"),
+    ])[0];
+    expect(corrected.lastChange).toEqual({ kind: "autoReset", at: "2026-10-03T00:00:00.000Z", byCorrection: true });
+    const plain = trustReport([trustRow("basil", "docs")], [event("autoReset", "2026-10-02T00:00:00.000Z")])[0];
+    expect(plain.lastChange).toEqual({ kind: "autoReset", at: "2026-10-02T00:00:00.000Z" });
+  });
+
+  it("錯在沒標成重點的地方：取自 readTrust() 的列，0 也是數字", () => {
+    expect(trustReport([trustRow("basil", "docs")], [])[0].notInPoints).toBe(0);
+    expect(trustReport([trustRow("basil", "docs", undefined, { corrections: 2, notInPoints: 3 })], [])[0].notInPoints).toBe(3);
   });
 
   it("沒有事件：全部是 0，比例是 null", () => {

@@ -51,6 +51,8 @@ export interface EmployeeGuideline {
   closedAt: string | null;
   /** 之後的交件依照了幾次（員工自述，看得到的交件） */
   followed: number;
+  /** 驗收的逐條回饋把這條標成「沒做到」的次數（看得到的驗收，crew ADR 0008 第 14 點） */
+  notDone: number;
   /** 「看那次退回」切到的交辦 */
   sourceAssignmentId: string;
 }
@@ -140,6 +142,7 @@ function toEmployeeGuideline(g: StoredGuideline, followed: number, language: Lan
     confirmedAt: confirm?.decidedAt ?? null,
     closedAt: (g.status === "revoked" || g.status === "rejected") && last ? last.decidedAt : null,
     followed,
+    notDone: g.notDoneCount,
     sourceAssignmentId: g.sourceAssignmentId,
   };
 }
