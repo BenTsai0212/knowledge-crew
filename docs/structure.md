@@ -235,13 +235,13 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `db/constraints.test.ts`：crew migration 的 CHECK 與 UNIQUE
 - `db/migrate.ts`：crew 的 migration 清單（版本加 `crew/` 前綴，由 `openDatabase()` 的 `migrations` 選項套用；測試在 `migrate.test.ts`）
 - `db/migrations/*.sql`：crew 的 migration（已合併的不可修改）
-- `db/store.ts`：crew 的資料存取，一律經 `withIdentity()`，可見範圍由 RLS 決定；`createReview()` 在「通過」時於同一個交易中把知識庫條目回流成 knowledge-kit 的文件與段落，`#owner` 欄位經待審與人做的核准成為部門實體（`writeFlowback()`，demo 的 seed 共用；#92，crew ADR 0004 的 2026-11-22 修訂）；守則確認時寫成文件（`writeGuidelineDocument()`，#149）
+- `db/store.ts`：crew 的資料存取，一律經 `withIdentity()`，可見範圍由 RLS 決定；`createReview()` 在「通過」時於同一個交易中把知識庫條目回流成 knowledge-kit 的文件與段落，`#owner` 欄位經待審與人做的核准成為部門實體（`writeFlowback()`，demo 的 seed 共用；#92，crew ADR 0004 的 2026-11-22 修訂）；守則確認時寫成文件（`writeGuidelineDocument()`，#149）；事後更正與逐條回饋（#161）
 - `demo/load.ts`：選定客戶的 `crew/demo.json`（沒有時是 `null`）
 - `demo/seed.ts`：`demo.json` 驗證後匯入資料庫（交給 `openDatabase()` 的 seed）；已通過的知識庫條目以 `writeFlowback()` 回流；守則、決定與交件依照的守則在驗收之後寫入（#142）；確認的守則以 `writeGuidelineDocument()` 寫成知識庫文件（#149）
 - `demo/simulate.ts`：「模擬交件」：以目前身分寫入下一輪的工作
 - `demo/texts.ts`：`demoText()`：虛構資料的文字換成目前語言（含退回的意見與守則的文字）
 - `demo/types.ts`：`demo.json` 的結構
-- `demo/validate.ts`：`demo.json` 的驗證（含守則的來源、決定的順序與「交件時生效」，#142）
+- `demo/validate.ts`：`demo.json` 的驗證（含守則的來源、決定的順序與「交件時生效」，#142；更正、逐條回饋與「沒被標成重點」，#161）
 - `github/fixtures/`：測試用的假 GitHub 回應（形狀同 REST API，內容全部虛構；`lifecycle.json` 是完整的一輪，`build.ts` 組出其他情況）
 - `github/issue.ts`：交辦 → GitHub Issue 的轉換純函式（#111）：`assignmentToIssue()`（`{ title, body, labels }`，本文沿用 `.github/ISSUE_TEMPLATE/feature.md` 的標題，標籤不含 `agent:ready`）、`planFirstOption()`（高風險一律先提計畫、不能取消）、`dispatchSteps()`（建立 → 讀回比對 → 單獨加 `agent:ready`）、`assignmentIdOf()`；工作類型的對照表由呼叫的一方傳入
 - `github/post-check.ts`：平台寫進 GitHub 前的檢查純函式（#111）：email、個人路徑、禁用名稱（規則與 `tools/workflow/check-sensitive.mjs` 一致，清單由呼叫的一方傳入，沒有時拒絕），留言不得以 `## 決定`、`## 修正要求` 開頭；只回報欄位、行號與種類（測試在 `post-check.test.ts`，與 `tools/workflow/` 共用案例）

@@ -419,3 +419,55 @@ describe("demoText", () => {
     else expect(demoText("title", "j01", "en")).toBeNull();
   });
 });
+
+describe("validateDemo：事後更正、逐條回饋與「沒被標成重點」（#161）", () => {
+  const CORRECTION = { id: "c01", correctedBy: "manager", correctedAt: "2026-09-04T09:00:00+08:00", note: t("漏了退款條件", "Missed the refund terms"), notInPoints: true };
+  // j01-1（退回 wrong）有一個重點；j02 的交件依照 g01，加上通過的驗收以便寫回饋
+  const withReviewOnJ02 = (d: any, feedback: unknown) => {
+    d.assignments[1].works[0].review = { id: "j02-1", verdict: "accepted", decidedBy: "manager", decidedAt: "2026-09-05T15:00:00+08:00", feedback };
+  };
+
+  it("合法的更正、回饋與「沒被標成重點」通過", () => {
+    expect(errorsAfter((d: any) => {
+      d.assignments[0].works[0].review.notInPoints = true;
+      d.assignments[0].works[0].review.feedback = { points: [{ ordinal: 1, result: "problem" }] };
+      d.assignments[0].works[1].review.correction = CORRECTION;
+      withReviewOnJ02(d, { points: [{ ordinal: 1, result: "ok" }], guidelines: [{ guideline: "g01", result: "not_done" }] });
+    })).toEqual([]);
+    // 只有守則、或只有重點的回饋也可以
+    expect(errorsAfter((d: any) => withReviewOnJ02(d, { guidelines: [{ guideline: "g01", result: "done" }] }))).toEqual([]);
+  });
+
+  it.each([
+    ["沒被標成重點在不一樣的做法", (d: any) => Object.assign(d.assignments[0].works[0].review, { reason: "different_approach", notInPoints: true }), "works[0].review.notInPoints: is only for a return with reason wrong"],
+    ["沒被標成重點在通過", (d: any) => (d.assignments[0].works[1].review.notInPoints = true), "works[1].review.notInPoints: is only for a return with reason wrong"],
+    ["沒被標成重點不是布林", (d: any) => (d.assignments[0].works[0].review.notInPoints = "yes"), "works[0].review.notInPoints: must be a boolean"],
+    ["更正在退回", (d: any) => (d.assignments[0].works[0].review.correction = CORRECTION), "works[0].review.correction: is only for an accepted review"],
+    ["更正早於驗收", (d: any) => (d.assignments[0].works[1].review.correction = { ...CORRECTION, correctedAt: "2026-09-03T14:00:00+08:00" }), "correction.correctedAt: must not be before the review"],
+    ["更正者不能驗收", (d: any) => (d.assignments[0].works[1].review.correction = { ...CORRECTION, correctedBy: "staff" }), "correction.correctedBy: must be an identity"],
+    ["更正的備註少一種語言", (d: any) => (d.assignments[0].works[1].review.correction = { ...CORRECTION, note: { "zh-TW": "漏了" } }), "correction.note.en: must be a non-empty string"],
+    ["重點序號超出該次交件", (d: any) => (d.assignments[0].works[0].review.feedback = { points: [{ ordinal: 2, result: "ok" }] }), "feedback.points[0].ordinal: must be a point of"],
+    ["同一重點兩筆", (d: any) => (d.assignments[0].works[0].review.feedback = { points: [{ ordinal: 1, result: "ok" }, { ordinal: 1, result: "problem" }] }), "feedback.points[1].ordinal: duplicate: 1"],
+    ["重點的結果是 done", (d: any) => (d.assignments[0].works[0].review.feedback = { points: [{ ordinal: 1, result: "done" }] }), "feedback.points[0].result: must be one of ok, problem"],
+    ["守則不是該次交件依照的", (d: any) => (d.assignments[0].works[0].review.feedback = { guidelines: [{ guideline: "g01", result: "done" }] }), "feedback.guidelines[0].guideline: must be a guideline followed by"],
+    ["同一守則兩筆", (d: any) => withReviewOnJ02(d, { guidelines: [{ guideline: "g01", result: "done" }, { guideline: "g01", result: "not_done" }] }), "feedback.guidelines[1].guideline: duplicate: g01"],
+    ["守則的結果是 ok", (d: any) => withReviewOnJ02(d, { guidelines: [{ guideline: "g01", result: "ok" }] }), "feedback.guidelines[0].result: must be one of done, not_done"],
+  ])("%s 被拒", (_name, change, expected) => {
+    expect(errorsAfter(change).join("\n")).toContain(expected);
+  });
+
+  it("更正的 id 不重複", () => {
+    const errors = errorsAfter((d: any) => {
+      d.assignments[0].works[1].review.correction = CORRECTION;
+      withReviewOnJ02(d, undefined);
+      d.assignments[1].works[0].review.correction = CORRECTION;
+    });
+    expect(errors.join("\n")).toContain("correction.id: duplicate: c01");
+  });
+
+  it("correctionNote：更正的備註以更正 id 查得到", () => {
+    const demo = structuredClone(fixture()) as any;
+    demo.assignments[0].works[1].review.correction = CORRECTION;
+    expect(demoText("correctionNote", "c01", "en", demoTextIndex(demo))).toBe("Missed the refund terms");
+  });
+});

@@ -168,6 +168,52 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
     if (!workTypes.has(str(o, "workType", p))) err(`${p}.workType`, "must be a work type in this file");
   };
 
+  // 讓放手站得住（crew ADR 0008、#161）：「沒被標成重點」只在做錯了、事後更正只在通過且不早於驗收、
+  // 逐條回饋的對象屬於該次交件且同一對象一筆。資料庫的 CHECK 與外鍵也擋，時間（superuser 匯入不套用 RLS）只在這裡檢查
+  const correctionIds = new Set<string>();
+  const flag = (o: Obj, k: string, path: string) => {
+    if (o[k] !== undefined && typeof o[k] !== "boolean") err(`${path}.${k}`, "must be a boolean");
+    return o[k] === true;
+  };
+  const lettingGo = (r: Obj, rp: string, w: Obj, wp: string, verdict: string, decidedAt: number) => {
+    if (flag(r, "notInPoints", rp) && !(verdict === "returned" && r.reason === "wrong")) {
+      err(`${rp}.notInPoints`, "is only for a return with reason wrong");
+    }
+    if (r.correction !== undefined) {
+      if (verdict !== "accepted") err(`${rp}.correction`, "is only for an accepted review");
+      if (!isObj(r.correction)) err(`${rp}.correction`, "must be an object");
+      else {
+        const c = r.correction;
+        const cp = `${rp}.correction`;
+        unique(correctionIds, str(c, "id", cp), `${cp}.id`);
+        reviewer(c, "correctedBy", cp);
+        ordered(decidedAt, time(c, "correctedAt", cp), `${cp}.correctedAt`, "must not be before the review", false);
+        if (c.note !== undefined) loc(c.note, `${cp}.note`);
+        flag(c, "notInPoints", cp);
+      }
+    }
+    if (r.feedback === undefined) return;
+    if (!isObj(r.feedback)) return err(`${rp}.feedback`, "must be an object");
+    const fp = `${rp}.feedback`;
+    const feedback = r.feedback;
+    const optional = (k: string) => (feedback[k] === undefined ? [] : objects(feedback, k, fp));
+    const points = new Set<string>();
+    for (const [f, p] of optional("points")) {
+      const n = f.ordinal;
+      if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > list(w.points).length) err(`${p}.ordinal`, `must be a point of ${wp} (1 to ${list(w.points).length})`);
+      unique(points, String(n), `${p}.ordinal`);
+      oneOf(f, "result", p, ["ok", "problem"]);
+    }
+    const followed = new Set(list(w.guidelines).map(String));
+    const targets = new Set<string>();
+    for (const [f, p] of optional("guidelines")) {
+      const g = str(f, "guideline", p);
+      if (!followed.has(g)) err(`${p}.guideline`, `must be a guideline followed by ${wp}`);
+      unique(targets, g, `${p}.guideline`);
+      oneOf(f, "result", p, ["done", "not_done"]);
+    }
+  };
+
   // 驗收 id → 員工 × 工作類型與時間（levelDecisions.basisReview、guidelines.sourceReview 用）
   const reviews = new Map<string, { owner: string; at: number; reason: ReturnReason | null; note: Obj | null; decidedBy: string }>();
   // 交件依照的守則（#142）：守則在檔案後面，讀完守則再檢查
@@ -237,6 +283,7 @@ export function validateDemo(raw: unknown, access: AccessFile, options: Validate
       if (r.note !== undefined) loc(r.note, `${rp}.note`);
       last = time(r, "decidedAt", rp);
       ordered(latestCheck, last, `${rp}.decidedAt`, "must be after the work was submitted and checked");
+      lettingGo(r, rp, w, wp, verdict, last);
       reviews.set(id, {
         owner: `${a.employee}/${a.workType}`, at: last, reason: verdict === "returned" ? (r.reason as ReturnReason) : null,
         note: isObj(r.note) ? r.note : null, decidedBy: String(r.decidedBy),

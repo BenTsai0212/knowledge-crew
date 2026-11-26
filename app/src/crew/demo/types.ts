@@ -1,7 +1,7 @@
 // crew demo 的虛構資料 client/crew/demo.json 的結構（#29 計畫第 2 節）。
 // 資料表的文字欄位是單一語言，這裡的雙語文字由 seed 寫入預設語言、畫面以 texts.ts 換成目前語言（#29 的 `## 決定` 1）。
 import type { Id, LocalizedText } from "../../client/types";
-import type { Priority, SourceKind } from "../db/store";
+import type { GuidelineResult, PointResult, Priority, SourceKind } from "../db/store";
 import type { GuidelineDecisionKind, ProposerKind } from "../guidelines/status";
 import type { CheckStatus, LevelDecisionKind, ReturnReason } from "../trust/types";
 
@@ -39,12 +39,32 @@ export interface DemoCheck {
 }
 
 /**
+ * 驗收時的逐條回饋（crew ADR 0008 第 12～13 點，#161）：重點是該次交件 `points` 的序號（從 1 開始），守則是該次交件 `guidelines`
+ * 裡的 id；同一對象最多一筆。
+ */
+export interface DemoFeedback {
+  points?: { ordinal: number; result: PointResult }[];
+  guidelines?: { guideline: Id; result: GuidelineResult }[];
+}
+
+/** 事後更正（crew ADR 0008 第 1～6、15 點，#161）：只能在通過的驗收，時間不早於該次驗收。`note` 的畫面文字同 DemoReview。 */
+export interface DemoCorrection {
+  id: Id;
+  correctedBy: Id;
+  correctedAt: string;
+  note?: LocalizedText;
+  /** 這個錯沒有被標成重點 */
+  notInPoints?: boolean;
+}
+
+/**
  * 驗收：`returned` 一定有原因，`accepted` 沒有。`id` 寫在檔案裡，供 levelDecisions.basisReview、guidelines.sourceReview 參照。
  * `note` 是退回的意見（#142）：資料庫只存預設語言，畫面以 demoText("reviewNote") 換成目前語言。
+ * `notInPoints`（退回的「沒被標成重點」）只能在原因是 `wrong` 時為 true；`correction` 只能在通過（#161）。
  */
-export type DemoReview = { id: Id; decidedBy: Id; decidedAt: string; note?: LocalizedText } & (
-  | { verdict: "accepted"; reason?: undefined }
-  | { verdict: "returned"; reason: ReturnReason }
+export type DemoReview = { id: Id; decidedBy: Id; decidedAt: string; note?: LocalizedText; feedback?: DemoFeedback } & (
+  | { verdict: "accepted"; reason?: undefined; correction?: DemoCorrection }
+  | { verdict: "returned"; reason: ReturnReason; notInPoints?: boolean }
 );
 
 export interface DemoWork {

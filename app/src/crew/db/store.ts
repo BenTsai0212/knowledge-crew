@@ -12,7 +12,7 @@ import {
 } from "../guidelines/status";
 import { flowbackDocumentId, flowbackOwnerPendingId, OWNER_ENTITY_TYPE, toFlowbackDocument } from "../knowledge/flowback";
 import { guidelineDocumentId, identityName, toGuidelineDocument, type GuidelineDocument } from "../knowledge/guideline-document";
-import type { LevelDecision, LevelDecisionKind, ReturnReason, Review, Verdict, WorkChange, WorkCheck, WorkForReview } from "../trust/types";
+import type { Correction, LevelDecision, LevelDecisionKind, ReturnReason, Review, Verdict, WorkChange, WorkCheck, WorkForReview } from "../trust/types";
 
 /** 工作來源的類型（RFC 0001 的 2026-11-21 修訂）；repo 類的外部編號是 Issue／PR 編號。 */
 export type SourceKind = "repo" | "mailbox" | "social" | "knowledge_base";
@@ -58,8 +58,8 @@ export interface AssignmentSummary {
   latestVerdict: Verdict | null;
 }
 
-/** 一次驗收，加上所屬的工作、備註與驗收者。 */
-export type StoredReview = Review & { workId: string; note: string | null; decidedBy: string };
+/** 一次驗收，加上所屬的工作、備註、驗收者與退回時的「沒被標成重點」（crew 0009）。 */
+export type StoredReview = Review & { workId: string; note: string | null; decidedBy: string; notInPoints: boolean };
 
 /** 一份工作（＝PR）；可直接交給 rules.ts 的 reviewFocus()。`checks` 是每個檢查最新一筆的狀態。 */
 export interface StoredWork extends WorkForReview {
@@ -75,6 +75,10 @@ export interface StoredWork extends WorkForReview {
 export interface TrustInputs {
   reviews: Review[];
   decisions: LevelDecision[];
+  /** 事後更正（依更正時間排序，crew 0009） */
+  corrections: Correction[];
+  /** 交件（依交件時間、同時間依 id 排序）：抽查的序號用 */
+  works: { id: string; submittedAt: string }[];
 }
 
 const iso = (value: Date | string): string => new Date(value).toISOString();
@@ -125,12 +129,14 @@ interface ReviewRow {
   note: string | null;
   decidedBy: string;
   decidedAt: Date;
+  notInPoints: boolean;
 }
 
-const REVIEW_COLUMNS = `rv.id, rv.work_id AS "workId", rv.verdict, rv.reason, rv.note, rv.decided_by AS "decidedBy", rv.decided_at AS "decidedAt"`;
+const REVIEW_COLUMNS = `rv.id, rv.work_id AS "workId", rv.verdict, rv.reason, rv.note, rv.decided_by AS "decidedBy", rv.decided_at AS "decidedAt",
+  rv.not_in_points AS "notInPoints"`;
 
 function toStoredReview(r: ReviewRow): StoredReview {
-  const base = { id: r.id, workId: r.workId, note: r.note, decidedBy: r.decidedBy, decidedAt: iso(r.decidedAt) };
+  const base = { id: r.id, workId: r.workId, note: r.note, decidedBy: r.decidedBy, decidedAt: iso(r.decidedAt), notInPoints: r.notInPoints };
   // 資料表的 CHECK 保證 returned ⇔ reason 有值
   return r.verdict === "returned" ? { ...base, verdict: "returned", reason: r.reason! } : { ...base, verdict: "accepted", reason: null };
 }
@@ -187,7 +193,7 @@ export function listReviews(db: Database, identityId: string | null, filter: { a
   });
 }
 
-/** 某員工 × 某類工作的驗收與看重點的決定（依時間排序），直接交給 rules.ts。只含目前身分看得到的驗收。 */
+/** 某員工 × 某類工作的驗收、看重點的決定、事後更正與交件（依時間排序），直接交給 rules.ts。只含目前身分看得到的驗收。 */
 export function getTrustInputs(db: Database, identityId: string | null, employeeId: string, workTypeId: string): Promise<TrustInputs> {
   return read(db, identityId, async (tx) => {
     const reviews = await rows<ReviewRow>(
@@ -205,9 +211,28 @@ export function getTrustInputs(db: Database, identityId: string | null, employee
        WHERE employee_id = $1 AND work_type_id = $2 ORDER BY decided_at, id`,
       [employeeId, workTypeId],
     );
+    const corrections = await rows<Omit<Correction, "correctedAt"> & { correctedAt: Date }>(
+      tx,
+      `SELECT c.id, c.review_id AS "reviewId", c.corrected_at AS "correctedAt", c.not_in_points AS "notInPoints"
+       FROM crew.review_corrections c
+       JOIN crew.reviews rv ON rv.id = c.review_id
+       JOIN crew.works w ON w.id = rv.work_id
+       JOIN crew.assignments a ON a.id = w.assignment_id
+       WHERE a.employee_id = $1 AND a.work_type_id = $2
+       ORDER BY c.corrected_at, c.id`,
+      [employeeId, workTypeId],
+    );
+    const works = await rows<{ id: string; submittedAt: Date }>(
+      tx,
+      `SELECT w.id, w.submitted_at AS "submittedAt" FROM crew.works w JOIN crew.assignments a ON a.id = w.assignment_id
+       WHERE a.employee_id = $1 AND a.work_type_id = $2 ORDER BY w.submitted_at, w.id`,
+      [employeeId, workTypeId],
+    );
     return {
       reviews: reviews.map((r) => toReview(toStoredReview(r))),
       decisions: decisions.map((d) => ({ decision: d.decision, decidedAt: iso(d.decidedAt) })),
+      corrections: corrections.map((c) => ({ ...c, correctedAt: iso(c.correctedAt) })),
+      works: works.map((w) => ({ id: w.id, submittedAt: iso(w.submittedAt) })),
     };
   });
 }
@@ -325,10 +350,29 @@ export function createWork(db: Database, identityId: string | null, input: NewWo
  * `saveAsGuideline`：退回時把意見記成守則（ADR 0007 決定 2，人提＝確認）。原因是「流程上的小問題」或意見是空的時，
  * 拋出 GuidelineError（`not-eligible`），驗收也不寫入。
  */
-export type NewReview = { workId: string; note?: string } & (
+export type NewReview = { workId: string; note?: string; feedback?: NewFeedback } & (
   | { verdict: "accepted" }
-  | { verdict: "returned"; reason: ReturnReason; saveAsGuideline?: boolean }
+  | { verdict: "returned"; reason: ReturnReason; saveAsGuideline?: boolean; notInPoints?: boolean }
 );
+
+/** 重點的逐條回饋：沒問題／有問題（crew ADR 0008 第 12 點）。 */
+export type PointResult = "ok" | "problem";
+/** 守則的逐條回饋：做到／沒做到（第 13 點）。 */
+export type GuidelineResult = "done" | "not_done";
+
+/**
+ * 驗收時的逐條回饋（`crew.review_feedback`）：重點以序號（從 1 開始，`crew.work_points.ordinal`）指定，必須是該次交件的重點；
+ * 守則必須是該次交件依照的守則（`crew.work_guidelines`）；同一對象最多一筆。只能和驗收在同一交易寫入（crew 0009 的 policy）。
+ */
+export interface NewFeedback {
+  points?: { ordinal: number; result: PointResult }[];
+  guidelines?: { guidelineId: string; result: GuidelineResult }[];
+}
+
+export interface StoredFeedback {
+  points: { ordinal: number; result: PointResult }[];
+  guidelines: { guidelineId: string; result: GuidelineResult }[];
+}
 
 /**
  * 驗收「通過」時知識庫條目的回流（#92）：`flowed` 已收進知識庫；`not-applicable` 不需要回流（退回、來源沒有回流等級、
@@ -363,9 +407,11 @@ export function createReview(
   return db.withIdentity(identityId, async (tx) => {
     const id = crypto.randomUUID();
     const reason = input.verdict === "returned" ? input.reason : null;
-    await tx.query("INSERT INTO crew.reviews (id, work_id, verdict, reason, note) VALUES ($1, $2, $3, $4, $5)", [
-      id, input.workId, input.verdict, reason, input.note ?? null,
+    const notInPoints = input.verdict === "returned" && input.notInPoints === true;
+    await tx.query("INSERT INTO crew.reviews (id, work_id, verdict, reason, note, not_in_points) VALUES ($1, $2, $3, $4, $5, $6)", [
+      id, input.workId, input.verdict, reason, input.note ?? null, notInPoints,
     ]);
+    await insertFeedback(tx, id, input.workId, input.feedback);
     const flowback = input.verdict === "accepted" ? await flowBack(tx, id, input.workId, options) : "not-applicable";
     let guidelineId: string | null = null;
     let guidelineDocument: GuidelineDocumentOutcome = "not-applicable";
@@ -376,6 +422,94 @@ export function createReview(
       guidelineDocument = await documentGuideline(tx, guidelineId, confirmId, options);
     }
     return { id, flowback, guidelineId, guidelineDocument };
+  });
+}
+
+async function insertFeedback(tx: Transaction, reviewId: string, workId: string, feedback: NewFeedback = {}): Promise<void> {
+  for (const p of feedback.points ?? []) {
+    await tx.query(
+      "INSERT INTO crew.review_feedback (review_id, work_id, target_kind, point_ordinal, result) VALUES ($1, $2, 'point', $3, $4)",
+      [reviewId, workId, p.ordinal, p.result],
+    );
+  }
+  for (const g of feedback.guidelines ?? []) {
+    await tx.query(
+      "INSERT INTO crew.review_feedback (review_id, work_id, target_kind, guideline_id, result) VALUES ($1, $2, 'guideline', $3, $4)",
+      [reviewId, workId, g.guidelineId, g.result],
+    );
+  }
+}
+
+// ── 事後更正（crew ADR 0008 第 1～6、15 點，#161） ────────────────────────────
+
+export interface NewCorrection {
+  /** 被更正的驗收（只能是通過） */
+  reviewId: string;
+  note?: string;
+  /** 這個錯沒有被標成重點 */
+  notInPoints?: boolean;
+  /** 把備註記成守則（第 6 點，人提＝確認，比照 createReview()）；備註是空的時拋出 GuidelineError（`not-eligible`），更正也不寫入 */
+  saveAsGuideline?: boolean;
+}
+
+export interface StoredCorrection extends Correction {
+  note: string | null;
+  correctedBy: string;
+}
+
+/** 寫入事後更正；`saveAsGuideline` 時在同一交易寫入守則、確認與守則文件。更正的時間由資料庫預設（不早於驗收，RLS 檢查）。 */
+export function createCorrection(
+  db: Database,
+  identityId: string | null,
+  input: NewCorrection,
+  options: ReviewOptions = {},
+): Promise<{ id: string; guidelineId: string | null; guidelineDocument: GuidelineDocumentOutcome }> {
+  if (input.saveAsGuideline && (input.note ?? "").trim() === "") {
+    return Promise.reject(new GuidelineError("not-eligible", "only a correction with a non-empty note can become a guideline"));
+  }
+  return db.withIdentity(identityId, async (tx) => {
+    const id = crypto.randomUUID();
+    await tx.query("INSERT INTO crew.review_corrections (id, review_id, note, not_in_points) VALUES ($1, $2, $3, $4)", [
+      id, input.reviewId, input.note ?? null, input.notInPoints === true,
+    ]);
+    let guidelineId: string | null = null;
+    let guidelineDocument: GuidelineDocumentOutcome = "not-applicable";
+    if (input.saveAsGuideline) {
+      guidelineId = await insertGuideline(tx, input.reviewId, input.note!, "human", id);
+      const confirmId = crypto.randomUUID();
+      await tx.query("INSERT INTO crew.guideline_decisions (id, guideline_id, decision) VALUES ($1, $2, 'confirm')", [confirmId, guidelineId]);
+      guidelineDocument = await documentGuideline(tx, guidelineId, confirmId, options);
+    }
+    return { id, guidelineId, guidelineDocument };
+  });
+}
+
+/** 一次驗收的事後更正（沒有時是 null）與逐條回饋（依序號、守則 id 排序）；看不到驗收時是空的結果。 */
+export function getReviewDetails(
+  db: Database,
+  identityId: string | null,
+  reviewId: string,
+): Promise<{ correction: StoredCorrection | null; feedback: StoredFeedback }> {
+  return read(db, identityId, async (tx) => {
+    const [c] = await rows<Omit<StoredCorrection, "correctedAt"> & { correctedAt: Date }>(
+      tx,
+      `SELECT id, review_id AS "reviewId", note, not_in_points AS "notInPoints", corrected_by AS "correctedBy", corrected_at AS "correctedAt"
+       FROM crew.review_corrections WHERE review_id = $1`,
+      [reviewId],
+    );
+    const feedback = await rows<{ kind: "point" | "guideline"; ordinal: number | null; guidelineId: string | null; result: string }>(
+      tx,
+      `SELECT target_kind AS kind, point_ordinal AS ordinal, guideline_id AS "guidelineId", result FROM crew.review_feedback
+       WHERE review_id = $1 ORDER BY target_kind DESC, point_ordinal, guideline_id`,
+      [reviewId],
+    );
+    return {
+      correction: c ? { ...c, correctedAt: iso(c.correctedAt) } : null,
+      feedback: {
+        points: feedback.filter((f) => f.kind === "point").map((f) => ({ ordinal: f.ordinal!, result: f.result as PointResult })),
+        guidelines: feedback.filter((f) => f.kind === "guideline").map((f) => ({ guidelineId: f.guidelineId!, result: f.result as GuidelineResult })),
+      },
+    };
   });
 }
 
@@ -531,8 +665,12 @@ export interface StoredGuideline {
   sourceReviewId: string;
   sourceWorkId: string;
   sourceAssignmentId: string;
-  /** 來源退回；看不到來源交辦時是 null（守則的可見範圍是員工 × 工作類型，與交辦的來源無關） */
+  /** 來源是事後更正時的更正 id（crew 0009）；來源是退回時是 null */
+  sourceCorrectionId: string | null;
+  /** 來源退回（來源是更正時是被更正的那次通過）；看不到來源交辦時是 null（守則的可見範圍是員工 × 工作類型，與交辦的來源無關） */
   sourceReview: StoredReview | null;
+  /** 驗收的逐條回饋把這條守則標成「沒做到」的次數（目前身分看得到的驗收，crew ADR 0008 第 14 點） */
+  notDoneCount: number;
   proposerKind: ProposerKind;
   /** 人提時是提出的人；員工提出時是 null */
   proposedBy: string | null;
@@ -541,8 +679,9 @@ export interface StoredGuideline {
   decisions: StoredGuidelineDecision[];
 }
 
-// 來源的交件、交辦與員工 × 工作類型由來源退回查出（複合外鍵再檢查一次）；看不到或不能成為守則時拋出 GuidelineError
-async function insertGuideline(tx: Transaction, reviewId: string, text: string, proposer: ProposerKind): Promise<string> {
+// 來源的交件、交辦與員工 × 工作類型由來源退回查出（複合外鍵再檢查一次）；看不到或不能成為守則時拋出 GuidelineError。
+// correctionId：來源是事後更正（crew 0009）；能不能成為守則看更正的備註（呼叫端已檢查），source_eligible 是 NULL
+async function insertGuideline(tx: Transaction, reviewId: string, text: string, proposer: ProposerKind, correctionId: string | null = null): Promise<string> {
   const [source] = await rows<{ workId: string; assignmentId: string; employeeId: string; workTypeId: string; reason: ReturnReason | null; note: string | null }>(
     tx,
     `SELECT w.id AS "workId", a.id AS "assignmentId", a.employee_id AS "employeeId", a.work_type_id AS "workTypeId", rv.reason, rv.note
@@ -551,12 +690,15 @@ async function insertGuideline(tx: Transaction, reviewId: string, text: string, 
     [reviewId],
   );
   if (!source) throw new GuidelineError("not-found", `review ${reviewId} not found`);
-  if (!canBeGuideline(source.reason, source.note)) throw new GuidelineError("not-eligible", `review ${reviewId} cannot become a guideline`);
+  if (correctionId === null && !canBeGuideline(source.reason, source.note)) {
+    throw new GuidelineError("not-eligible", `review ${reviewId} cannot become a guideline`);
+  }
   const id = crypto.randomUUID();
   await tx.query(
-    `INSERT INTO crew.guidelines (id, employee_id, work_type_id, text, source_review_id, source_work_id, source_assignment_id, proposer_kind, proposed_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CASE WHEN $8 = 'human' THEN kk.current_identity_id() END)`,
-    [id, source.employeeId, source.workTypeId, text, reviewId, source.workId, source.assignmentId, proposer],
+    `INSERT INTO crew.guidelines (id, employee_id, work_type_id, text, source_review_id, source_work_id, source_assignment_id, proposer_kind, proposed_by,
+                                  source_correction_id, source_eligible)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CASE WHEN $8 = 'human' THEN kk.current_identity_id() END, $9::text, CASE WHEN $9::text IS NULL THEN true END)`,
+    [id, source.employeeId, source.workTypeId, text, reviewId, source.workId, source.assignmentId, proposer, correctionId],
   );
   return id;
 }
@@ -613,13 +755,15 @@ async function documentGuideline(tx: Transaction, guidelineId: string, confirmId
   }>(
     tx,
     `SELECT g.text, g.proposer_kind AS "proposerKind", e.display_name AS "employeeName", g.work_type_id AS "workTypeId",
-            s.project_id AS "projectId", s.guideline_visibility_level_id AS level, rv.reason, rv.decided_at AS "returnedAt",
+            s.project_id AS "projectId", s.guideline_visibility_level_id AS level,
+            coalesce(rv.reason, 'wrong') AS reason, coalesce(c.corrected_at, rv.decided_at) AS "returnedAt",
             gd.revised_text AS "revisedText", gd.decided_by AS "confirmedBy", gd.decided_at AS "confirmedAt"
      FROM crew.guidelines g
      JOIN crew.employees e ON e.id = g.employee_id
      JOIN crew.assignments a ON a.id = g.source_assignment_id
      JOIN crew.sources s ON s.id = a.source_id
      JOIN crew.reviews rv ON rv.id = g.source_review_id
+     LEFT JOIN crew.review_corrections c ON c.id = g.source_correction_id
      JOIN crew.guideline_decisions gd ON gd.guideline_id = g.id AND gd.id = $2 AND gd.decision = 'confirm'
      WHERE g.id = $1`,
     [guidelineId, confirmId],
@@ -686,8 +830,9 @@ async function loadGuidelines(tx: Transaction, where: string, params: unknown[])
   const found = await rows<Omit<StoredGuideline, "currentText" | "status" | "sourceReview" | "decisions" | "proposedAt"> & { proposedAt: Date }>(
     tx,
     `SELECT g.id, g.employee_id AS "employeeId", g.work_type_id AS "workTypeId", g.text, g.source_review_id AS "sourceReviewId",
-            g.source_work_id AS "sourceWorkId", g.source_assignment_id AS "sourceAssignmentId", g.proposer_kind AS "proposerKind",
-            g.proposed_by AS "proposedBy", g.proposed_at AS "proposedAt"
+            g.source_work_id AS "sourceWorkId", g.source_assignment_id AS "sourceAssignmentId", g.source_correction_id AS "sourceCorrectionId",
+            g.proposer_kind AS "proposerKind", g.proposed_by AS "proposedBy", g.proposed_at AS "proposedAt",
+            (SELECT count(*)::int FROM crew.review_feedback f WHERE f.guideline_id = g.id AND f.result = 'not_done') AS "notDoneCount"
      FROM crew.guidelines g WHERE ${where} ORDER BY g.proposed_at, g.id`,
     params,
   );
