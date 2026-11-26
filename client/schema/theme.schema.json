@@ -50,6 +50,7 @@
         "text": { "$ref": "#/definitions/Color" },
         "textMuted": { "$ref": "#/definitions/Color" },
         "border": { "$ref": "#/definitions/Color" },
+        "borderStrong": { "description": "選填：輸入框、按鈕、徽章等元件的外框（對 surface 與 background 至少 3:1）；沒有設定時用 textMuted", "$ref": "#/definitions/Color" },
         "danger": { "$ref": "#/definitions/Color" },
         "warning": { "$ref": "#/definitions/Color" },
         "success": { "$ref": "#/definitions/Color" },

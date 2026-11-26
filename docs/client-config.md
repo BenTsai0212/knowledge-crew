@@ -128,6 +128,7 @@ npm run check:client
 | `colors.text` | 是 | `#RRGGBB` | 主要文字 |
 | `colors.textMuted` | 是 | `#RRGGBB` | 次要文字 |
 | `colors.border` | 是 | `#RRGGBB` | 邊框與分隔線 |
+| `colors.borderStrong` | 否 | `#RRGGBB` | 元件的外框：輸入框、按鈕、徽章（`app/src/ui/ui.css`，#178）。沒有設定時用 `textMuted` |
 | `colors.danger` | 是 | `#RRGGBB` | 錯誤：錯誤文字、錯誤提示框的邊框與圖示 |
 | `colors.warning` | 是 | `#RRGGBB` | 警告：警告標籤的文字與邊框、警告提示框 |
 | `colors.success` | 是 | `#RRGGBB` | 成功狀態 |
@@ -146,7 +147,7 @@ npm run check:client
 | `colors.conflict` | 是 | `#RRGGBB` | 說法不同：圖示、框線、文字（待審的並列段落、段落旁標示的框線） |
 | `colors.conflictSoft` | 是 | `#RRGGBB` | 說法不同的底色 |
 | `colors.conflictText` | 是 | `#RRGGBB` | `conflictSoft` 上的文字（時間軸與原文面板中段落旁的標示） |
-| `darkColors.<鍵>` | 是 | 同 `colors` | 深色模式的色票，鍵與 `colors` 完全相同（Schema 以 `$ref` 共用同一份定義），全部必填 |
+| `darkColors.<鍵>` | 是 | 同 `colors` | 深色模式的色票，鍵與 `colors` 完全相同（Schema 以 `$ref` 共用同一份定義），除了 `borderStrong` 全部必填 |
 | `radius.small` | 是 | 長度（`px` 或 `rem`，或 `0`） | 小圓角：引用編號按鈕 |
 | `radius.medium` | 是 | 同上 | 一般圓角：按鈕、輸入框、提示框、待審卡片 |
 | `radius.large` | 是 | 同上 | 大圓角：卡片、確認視窗、上傳區 |
@@ -183,6 +184,7 @@ npm run check:client
 | `conflict` | `surface`、`background` | 4.5:1 |
 | `conflictText` | `conflictSoft` | 4.5:1 |
 | `focus`（焦點框，非文字） | `surface`、`background` | 3:1 |
+| `borderStrong`（元件外框，非文字；有設定時） | `surface`、`background` | 3:1 |
 | `text` | 各可見等級的淡色底（`access.json` 的 `color` 14%，等級標籤） | 4.5:1 |
 | 實體類型的 `color`（圖例、時間軸的類型標示，非文字） | `background`、`surface` | 3:1 |
 | `surface`（圖譜節點的圖示，非文字） | 各實體類型的節點填色（淺色：`color`；深色：`color` 75% + `text`） | 3:1 |

@@ -8,8 +8,10 @@ export const SCHEME_ATTRIBUTE = "data-scheme";
 // app.css 的深色規則都寫在這個選擇器的巢狀區塊內
 export const DARK_SELECTOR = `:root[${SCHEME_ATTRIBUTE}="dark"]`;
 
+// borderStrong 是選填（#178）：沒有設定時用 textMuted，--color-borderStrong 一律有值
 function colorVariables(colors: ThemeColors): Record<string, string> {
-  return Object.fromEntries(Object.entries(colors).map(([name, value]) => [`--color-${name}`, value]));
+  const filled: Required<ThemeColors> = { ...colors, borderStrong: colors.borderStrong ?? colors.textMuted };
+  return Object.fromEntries(Object.entries(filled).map(([name, value]) => [`--color-${name}`, value]));
 }
 
 // 淺色的所有變數

@@ -35,7 +35,7 @@ describe("crew 的 CSS", () => {
   });
 });
 
-// #153 第 3 點（WCAG 1.4.11）：crew 頁內輸入框、下拉選單、多行輸入的邊框改用 textMuted，Light／Dark 對表單底色（surface）與頁面底色都 ≥ 3:1
+// #153 第 3 點（WCAG 1.4.11）：crew 頁內輸入框、下拉選單、多行輸入的邊框改用 borderStrong（#178；沒有設定時是 textMuted），Light／Dark 對表單底色（surface）與頁面底色都 ≥ 3:1
 describe("crew 頁表單元件的邊框", () => {
   const luminance = (hex: string) => {
     const [r, g, b] = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
@@ -46,9 +46,18 @@ describe("crew 頁表單元件的邊框", () => {
     return (hi + 0.05) / (lo + 0.05);
   };
 
-  it("CrewPage.css 在 .crew-page 之下改用 var(--color-textMuted)（不含核取方塊與單選鈕）", () => {
+  it("CrewPage.css 在 .crew-page 之下改用 var(--color-borderStrong)（不含核取方塊與單選鈕）", () => {
     const css = strip(files["./CrewPage.css"]);
-    expect(css).toMatch(/\.crew-page input:not\(\[type="checkbox"\], \[type="radio"\]\),\s*\.crew-page select,\s*\.crew-page textarea\s*\{\s*border-color: var\(--color-textMuted\);/);
+    expect(css).toMatch(/\.crew-page input:not\(\[type="checkbox"\], \[type="radio"\]\),\s*\.crew-page select,\s*\.crew-page textarea\s*\{\s*border-color: var\(--color-borderStrong\);/);
+  });
+
+  it("參考情境的 borderStrong 是 #7E8691／#5A6782，對 surface、background 都 ≥ 3:1", () => {
+    expect([clientConfig.theme.colors.borderStrong, clientConfig.theme.darkColors.borderStrong]).toEqual(["#7E8691", "#5A6782"]);
+    for (const [scheme, colors] of [["light", clientConfig.theme.colors], ["dark", clientConfig.theme.darkColors]] as const) {
+      for (const behind of ["surface", "background"] as const) {
+        expect(contrast(colors.borderStrong!, colors[behind]), `${scheme} ${behind}`).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 
   it("Light、Dark 的 textMuted 對 surface、background、surfaceRaised 都 ≥ 3:1", () => {

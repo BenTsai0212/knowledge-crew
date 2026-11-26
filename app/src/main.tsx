@@ -7,6 +7,8 @@ import { crossFade } from "./ui/cross-fade";
 import { markPresentation, presentationMode } from "./ui/online-demo";
 import { startColorScheme, themeStyleSheet } from "./ui/theme";
 import "./ui/app.css";
+// 共用元件（#178）：在 app.css 之後載入
+import "./ui/ui.css";
 
 // client/theme.json 的顏色（淺色與深色）、圓角與字型
 const style = document.createElement("style");

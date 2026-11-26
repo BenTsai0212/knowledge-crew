@@ -91,6 +91,23 @@ describe("check-client", () => {
     ]);
   });
 
+  it("borderStrong（選填，#178）：有設定時檢查對 surface、background 至少 3:1；沒有設定時不檢查", () => {
+    const files = example();
+    files["theme.json"].colors.borderStrong = "#B8BEC6";
+    files["theme.json"].darkColors.borderStrong = "#2A3448";
+    const errors = validateClient(files);
+    expect(errors.map((e) => `${e.path} ${e.message.split(" 的對比")[0]}`)).toEqual([
+      "/colors/borderStrong 與 surface",
+      "/colors/borderStrong 與 background",
+      "/darkColors/borderStrong 與 surface",
+      "/darkColors/borderStrong 與 background",
+    ]);
+    expect(errors.every((e) => e.message.endsWith(`需要 ${GRAPHIC_CONTRAST}:1`))).toBe(true);
+    delete files["theme.json"].colors.borderStrong;
+    delete files["theme.json"].darkColors.borderStrong;
+    expect(validateClient(files)).toEqual([]);
+  });
+
   it("深色的引用標號：內框與 hover 色依 color-mix 的比例算出後檢查", () => {
     const files = example();
     files["theme.json"].darkColors.mark = "#9A6A20";

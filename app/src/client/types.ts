@@ -86,6 +86,8 @@ export interface ThemeColors {
   text: string;
   textMuted: string;
   border: string;
+  // 輸入框、按鈕、徽章等元件的外框（WCAG 1.4.11：對 surface 與 background 至少 3:1）。選填，沒有設定時用 textMuted（app/src/ui/theme.ts）
+  borderStrong?: string;
   // 狀態的文字、邊框與圖示底色
   danger: string;
   warning: string;

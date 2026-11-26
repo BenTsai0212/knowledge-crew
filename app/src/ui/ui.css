@@ -1,0 +1,843 @@
+/* 共用元件（#178，Epic #176）：設計規格 v4 第 5 節「元件」、v5 第 5 節「和 v4 不同的元件」，數值照 docs/crew/design/v5/screens/v4.css。
+   class 一律以 ui- 開頭；app.css 與 crew 既有的 class 不改，各畫面在之後的 Issue 換用。
+   顏色、圓角、字型只用 theme 的變數（--color-*、--radius-*、--font-*），不寫死顏色。深色模式由 theme.ts 換變數的值（:root[data-scheme="dark"]），這裡不另寫深色規則。
+   v4.css 的對照：--bg→background、--surface→surface、--raised→surfaceRaised、--fg→text、--muted→textMuted、--border→border、--border-strong→borderStrong；
+   --r-s/m/l/pill→--radius-small/medium/large/pill；--f-body/head/mono/display→--font-body/heading/mono/display。
+   清單列說明之間的分隔用中性的「·」，表格欄名不接冒號（v4.css 是「・」「：」，介面文字一律在 client/i18n/）。
+   v4.css 中不是 token 的圓角（手機卡片 14px、手機底部面板 20px、AI 標記 4px）改用最接近的 --radius-*。 */
+
+/* 點擊目標的高度：桌機 40px，觸控 44px（v4.css 的 --hit） */
+:root {
+  --ui-hit: 40px;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --ui-hit: 44px;
+  }
+}
+
+/* ---------- 焦點框（v4.css 的 :focus-visible） ---------- */
+:is(.ui-btn, .ui-seg button, .ui-input, .ui-textarea, .ui-choice, .ui-disc > summary, .ui-qmark, .ui-tip > summary, a.ui-row, button.ui-row):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- 卡片 ---------- */
+.ui-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ui-card--tight {
+  padding: 16px;
+}
+
+.ui-card--flush {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.ui-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.ui-card-head h2,
+.ui-card-head h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.ui-card-head__meta {
+  color: var(--color-textMuted);
+  font-size: 13px;
+}
+
+.ui-card--flush > .ui-card-head {
+  padding: 16px 24px 12px;
+}
+
+/* ---------- 清單列：主文字一行＋說明一行＋尾端；列間 1px 分隔線，選取時左側 3px 墨色線 ---------- */
+.ui-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--color-border);
+  min-height: 56px;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+}
+
+.ui-list > li:first-child > .ui-row,
+.ui-list > .ui-row:first-child {
+  border-top: 0;
+}
+
+a.ui-row:hover,
+button.ui-row:hover {
+  background: var(--color-surfaceRaised);
+  text-decoration: none;
+}
+
+.ui-row--sel {
+  background: var(--color-surfaceRaised);
+  box-shadow: inset 3px 0 0 var(--color-text);
+}
+
+.ui-row__lead {
+  flex: none;
+  width: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.ui-row__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ui-row__title {
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ui-row__meta {
+  color: var(--color-textMuted);
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 8px;
+  row-gap: 0;
+}
+
+.ui-row__meta > * + *::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--color-borderStrong);
+}
+
+.ui-row__status {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ui-row__trail {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- 數字徽章：中性＝計數；需要你＝主色 ---------- */
+.ui-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surfaceRaised);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-count--you {
+  background: var(--color-primary);
+  color: var(--color-onPrimary);
+}
+
+/* ---------- 外框 pill 徽章；抽查是墨色虛線框 ---------- */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  min-height: 22px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-borderStrong);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--color-text);
+  background: transparent;
+}
+
+.ui-badge svg {
+  flex: none;
+}
+
+.ui-badge--quiet {
+  border-color: transparent;
+  background: var(--color-surfaceRaised);
+}
+
+.ui-badge--ok {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.ui-badge--bad {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.ui-badge--wait {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.ui-badge--item {
+  border-color: var(--color-textMuted);
+}
+
+.ui-badge--light {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.ui-badge--spot {
+  border: 1px dashed var(--color-text);
+  font-weight: 700;
+}
+
+/* AI 標記 */
+.ui-ai {
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-small);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  vertical-align: 1px;
+  margin-right: 4px;
+  line-height: 1;
+}
+
+/* 期限 */
+.ui-due {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ui-due--over {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.ui-due--soon {
+  color: var(--color-warning);
+  font-weight: 700;
+}
+
+/* ---------- 按鈕：高度 40，觸控 44 ---------- */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--ui-hit);
+  padding: 0 16px;
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--color-borderStrong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ui-btn:hover {
+  border-color: var(--color-text);
+  text-decoration: none;
+}
+
+.ui-btn--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-onPrimary);
+}
+
+.ui-btn--primary:hover {
+  border-color: var(--color-primary);
+  filter: brightness(1.08);
+}
+
+.ui-btn--ink {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-background);
+}
+
+.ui-btn--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-primary);
+}
+
+.ui-btn--ghost:hover {
+  background: var(--color-surfaceRaised);
+  border-color: transparent;
+}
+
+.ui-btn--sm {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+@media (pointer: coarse) {
+  .ui-btn--sm {
+    min-height: 44px;
+  }
+}
+
+.ui-btn--icon {
+  width: var(--ui-hit);
+  padding: 0;
+}
+
+/* ---------- 分段按鈕：按下＝墨色底 ---------- */
+.ui-seg {
+  display: inline-flex;
+  border: 1px solid var(--color-borderStrong);
+  border-radius: var(--radius-medium);
+  overflow: hidden;
+}
+
+.ui-seg button {
+  border: 0;
+  background: var(--color-surface);
+  padding: 0 12px;
+  min-height: 32px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.ui-seg button + button {
+  border-left: 1px solid var(--color-borderStrong);
+}
+
+.ui-seg button[aria-pressed="true"] {
+  background: var(--color-text);
+  color: var(--color-background);
+  font-weight: 700;
+}
+
+@media (pointer: coarse) {
+  .ui-seg button {
+    min-height: 44px;
+  }
+}
+
+/* ---------- 審查方式開關（v5）：兩格 pill，全部看＝墨色、只看標記處＝success ---------- */
+.ui-way {
+  display: inline-flex;
+  border: 1px solid var(--color-borderStrong);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+  gap: 2px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ui-way__opt {
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  color: var(--color-textMuted);
+}
+
+.ui-way__opt--all {
+  background: var(--color-text);
+  color: var(--color-background);
+  font-weight: 700;
+}
+
+.ui-way__opt--mark {
+  background: var(--color-success);
+  color: var(--color-surface);
+  font-weight: 700;
+}
+
+/* ---------- 驗收面板的狀態列 ---------- */
+.ui-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 14px;
+  min-height: var(--ui-hit);
+}
+
+.ui-mode--light {
+  border-color: var(--color-success);
+}
+
+.ui-mode--spot {
+  border: 1px dashed var(--color-text);
+}
+
+.ui-mode > svg {
+  flex: none;
+}
+
+.ui-mode__text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.ui-mode details {
+  flex-basis: 100%;
+}
+
+/* ---------- 系統檢查標籤（v5） ---------- */
+.ui-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ui-check--bad {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.ui-check--ok {
+  color: var(--color-success);
+}
+
+.ui-check--wait {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+/* ---------- 表單：輸入框邊框用 borderStrong ---------- */
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ui-field__label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ui-field__hint {
+  font-size: 13px;
+  color: var(--color-textMuted);
+}
+
+.ui-field__error {
+  font-size: 13px;
+  color: var(--color-danger);
+  font-weight: 700;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.ui-input,
+.ui-textarea {
+  font: inherit;
+  font-size: 15px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-borderStrong);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: 100%;
+}
+
+.ui-textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.ui-input::placeholder,
+.ui-textarea::placeholder {
+  color: var(--color-textMuted);
+}
+
+.ui-field--error .ui-input,
+.ui-field--error .ui-textarea,
+.ui-field--error .ui-choice-group {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 1px var(--color-danger);
+}
+
+.ui-error-summary {
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-medium);
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ui-error-summary ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+/* 單選卡 */
+.ui-choice-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 8px;
+  border-radius: var(--radius-medium);
+}
+
+.ui-choice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  cursor: pointer;
+  background: var(--color-surface);
+  min-width: 0;
+}
+
+.ui-choice:hover {
+  border-color: var(--color-text);
+}
+
+.ui-choice input {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  flex: none;
+}
+
+.ui-choice--on {
+  border-color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-text);
+}
+
+/* ---------- 揭露列（details/summary：一行摘要，需要時展開） ---------- */
+.ui-disc {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+}
+
+.ui-disc > summary {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: var(--ui-hit);
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.ui-disc > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ui-disc__chev {
+  flex: none;
+  color: var(--color-textMuted);
+  transition: transform 0.15s;
+}
+
+.ui-disc[open] > summary .ui-disc__chev {
+  transform: rotate(90deg);
+}
+
+.ui-disc__body {
+  padding: 0 16px 16px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-disc__chev {
+    transition: none;
+  }
+}
+
+/* ---------- 空狀態 ---------- */
+.ui-empty {
+  border: 1px dashed var(--color-borderStrong);
+  border-radius: var(--radius-large);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.ui-empty strong {
+  font-size: 15px;
+}
+
+.ui-empty--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 8px 12px;
+  border-radius: var(--radius-medium);
+  font-size: 14px;
+  color: var(--color-textMuted);
+}
+
+.ui-empty--inline strong {
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+/* ---------- 表格：720px 以下每列一張（td 的 data-label 當欄名） ---------- */
+.ui-tbl-wrap {
+  overflow-x: auto;
+}
+
+.ui-tbl {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+
+.ui-tbl th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-textMuted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-text);
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.ui-tbl td {
+  padding: 12px;
+  border-top: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.ui-tbl tr:first-child td {
+  border-top: 0;
+}
+
+.ui-tbl td.num,
+.ui-tbl th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 對話框；手機為底部面板 ---------- */
+.ui-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ui-dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  width: min(560px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 50px -20px var(--color-overlay);
+}
+
+.ui-dialog h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 20px;
+}
+
+.ui-dialog__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ---------- 「?」說明按鈕與泡泡（details/summary） ---------- */
+.ui-qmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-borderStrong);
+  font-size: 11px;
+  color: var(--color-textMuted);
+  background: var(--color-surface);
+  cursor: pointer;
+  vertical-align: 1px;
+  padding: 0;
+}
+
+.ui-tip {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.ui-tip > summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.ui-tip > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ui-tip__body {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(300px, 80vw);
+  background: var(--color-surface);
+  border: 1px solid var(--color-borderStrong);
+  border-radius: var(--radius-medium);
+  box-shadow: 0 12px 30px -14px var(--color-overlay);
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--color-text);
+}
+
+.ui-tip--r .ui-tip__body {
+  left: auto;
+  right: 0;
+}
+
+/* ---------- 手機（< 720px） ---------- */
+@media (max-width: 719px) {
+  .ui-card {
+    padding: 16px;
+  }
+
+  .ui-card--flush {
+    padding: 0;
+  }
+
+  .ui-card--flush > .ui-card-head {
+    padding: 16px 16px 8px;
+  }
+
+  .ui-row {
+    padding: 12px 16px;
+  }
+
+  .ui-tbl thead {
+    display: none;
+  }
+
+  .ui-tbl,
+  .ui-tbl tbody,
+  .ui-tbl tr,
+  .ui-tbl td {
+    display: block;
+    width: 100%;
+  }
+
+  .ui-tbl tr {
+    padding: 12px 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .ui-tbl tr:first-child {
+    border-top: 0;
+  }
+
+  .ui-tbl td {
+    border: 0;
+    padding: 2px 0;
+    text-align: left !important;
+  }
+
+  /* 欄名後不接標點（介面文字放在 client/i18n/，CSS 不寫特定語言的冒號） */
+  .ui-tbl td[data-label]::before {
+    content: attr(data-label);
+    margin-right: 8px;
+    color: var(--color-textMuted);
+    font-size: 12px;
+  }
+
+  .ui-scrim {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .ui-dialog {
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    width: 100%;
+    max-height: 88vh;
+  }
+}

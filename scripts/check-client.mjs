@@ -492,6 +492,8 @@ function checkContrast(valid) {
       ["conflict", "surface", c.surface],
       ["conflict", "background", c.background],
       ["conflictText", "conflictSoft", c.conflictSoft],
+      // 元件外框（#178，WCAG 1.4.11）：選填，沒有設定時用 textMuted（上面已檢查 4.5:1）
+      ...(c.borderStrong ? ["surface", "background"].map((bg) => ["borderStrong", bg, c[bg], GRAPHIC_CONTRAST]) : []),
       ...citationPairs(scheme, c),
     ];
     for (const [fg, bg, color, min = TEXT_CONTRAST, fgColor = c[fg]] of pairs) {
