@@ -63,7 +63,7 @@ AI 員工（虛構的 Rowan、Sorrel、Linden、Juniper）各負責一種工作�
 
 - **「看重點」一定要人同意，可以隨時收回**：信任建議錯了（讓人漏看了該看的東西）是最嚴重的後果，所以平台只提出建議，放不放手由人決定；這是 [RFC 0001](docs/crew/rfcs/0001-project-charter.md)「必要功能」的一項，不能拿掉。
 - **一次「做錯了」就改回逐項看**：出過錯的工作寧可多看幾次。退回原因分三種，只有「做錯了」影響信任，「我想要不一樣的做法」這類偏好不算錯（[RFC 0001](docs/crew/rfcs/0001-project-charter.md)「必要功能」、設計規格第 6.2、6.4 節）。
-- **放手之後仍有退路**：看重點期間的抽查列為必要功能，不能關掉；通過後才發現的錯也算進信任。信任建議錯了是最嚴重的後果，所以放手要有持續的檢驗（[ADR 0008](docs/crew/adr/0008-letting-go.md)、[專家檢視](docs/crew/research/expert-review.md)）。
+- **放手之後仍有退路**：看重點期間的抽查列為必要功能，不能關掉；通過後才發現的錯也算進信任。信任建議錯了是最嚴重的後果，所以放手要有持續的檢驗（[RFC 0001](docs/crew/rfcs/0001-project-charter.md)「必要功能」、[ADR 0008](docs/crew/adr/0008-letting-go.md)、[專家檢視](docs/crew/research/expert-review.md)）。
 - **建立在 knowledge-kit 之上**：知識庫、問答、圖譜與 CI 直接沿用，以 merge commit 持續同步上游；AI 員工的程式放在自己的目錄，減少同步時的衝突（[ADR 0002](docs/crew/adr/0002-knowledge-kit-upstream.md)）。
 - **線上 demo 不呼叫模型**：AI 員工全部在瀏覽器內以虛構資料執行，不需要 Worker、secret 與邀請碼，任何人都能直接體驗（[ADR 0005](docs/crew/adr/0005-crew-only-demo.md)）。
 
