@@ -20,6 +20,7 @@ import { trustReport, type TrustReportRow } from "./trust-report";
 import {
   agreeRelax,
   decidedSpotChecks,
+  hasMisses,
   isSameDay,
   readTrust,
   revokeRelax,
@@ -141,6 +142,8 @@ export function TrustView({ db, identity, language, onChanged, navigate }: CrewS
               {decidedSpotChecks(row.spotChecks) > 0 && (
                 <p className="crew-trust__note crew-trust__spot">{fill(t.spotSummary, { ...row.spotChecks, count: decidedSpotChecks(row.spotChecks) }, language)}</p>
               )}
+              {/* 事後更正與沒標成重點的錯（#168）：至少一次時才列出 */}
+              {hasMisses(row.misses) && <p className="crew-trust__note crew-trust__miss">{fill(t.missSummary, row.misses, language)}</p>}
               {!trust.canReview && <p className="muted crew-trust__note">{t.noteViewOnly}</p>}
               {suggestion && (
                 <button type="button" disabled={busy} onClick={() => write(row, () => agreeRelax(db, identity, { ...row, suggestion }))}>

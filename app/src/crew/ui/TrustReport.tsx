@@ -31,6 +31,10 @@ const CHANGE_TEXT = {
   autoReset: "reportChangeAutoReset",
 } as const satisfies Record<LevelChangeKind, keyof T>;
 
+/** 最近一次層級變化的文字：由事後更正觸發的改回逐項看另用一句（#168） */
+const changeText = (change: NonNullable<TrustReportRow["lastChange"]>, t: T): string =>
+  change.kind === "autoReset" && change.byCorrection ? t.reportChangeAutoResetCorrection : t[CHANGE_TEXT[change.kind]];
+
 interface Props {
   rows: readonly TrustReportRow[];
   language: LanguageCode;
@@ -66,6 +70,9 @@ export function TrustReport({ rows, language, openLedger }: Props) {
             ))}
             <th scope="col" className="crew-trust-report__num" title={t.reportColumnSpot} aria-label={t.reportColumnSpot}>
               {t.reportHeadSpot}
+            </th>
+            <th scope="col" className="crew-trust-report__num" title={t.reportColumnNotInPoints} aria-label={t.reportColumnNotInPoints}>
+              {t.reportHeadNotInPoints}
             </th>
             <th scope="col">{t.reportColumnLevel}</th>
             <th scope="col">{t.reportColumnChanges}</th>
@@ -128,6 +135,10 @@ export function TrustReport({ rows, language, openLedger }: Props) {
                 <Cell label={t.reportColumnSpot} num>
                   {row.spot === null ? t.reportNone : fill(t.reportSpot, row.spot)}
                 </Cell>
+                {/* 錯在沒標成重點的地方（#168）：0 也顯示，比照退回原因 */}
+                <Cell label={t.reportColumnNotInPoints} num>
+                  {row.notInPoints}
+                </Cell>
                 <Cell label={t.reportColumnLevel}>
                   <LevelBadge level={row.level}>{levelText(row)}</LevelBadge>
                 </Cell>
@@ -137,7 +148,7 @@ export function TrustReport({ rows, language, openLedger }: Props) {
                     <span className="muted">
                       {row.lastChange === null
                         ? t.reportNoChange
-                        : fill(t.reportLastChange, { date: shortDate(row.lastChange.at, language), change: t[CHANGE_TEXT[row.lastChange.kind]] })}
+                        : fill(t.reportLastChange, { date: shortDate(row.lastChange.at, language), change: changeText(row.lastChange, t) })}
                     </span>
                   </span>
                 </Cell>

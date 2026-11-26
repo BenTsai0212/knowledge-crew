@@ -102,6 +102,7 @@ describe("groupEmployees", () => {
     timeline: { cells: [], empty: 0, events: [{ column: 0, items: [{ kind: "relax" as const, at: "2026-10-13T00:00:00Z" }, reset] }] },
     note: null,
     spotChecks: { total: 0, accepted: 0, wrong: 0, other: 0 },
+    misses: { corrections: 0, notInPoints: 0 },
   };
   const assignment = (sourceId: string, latestRound: number | null, latestVerdict: "accepted" | null, workTypeId = "docs") => ({
     employeeId: "basil",
@@ -134,16 +135,16 @@ describe("readEmployees：守則（#145）", () => {
   const ids = (g: { id: string }[]) => g.map((x) => x.id);
   const guidelinesOf = (list: Awaited<ReturnType<typeof readEmployees>>, id: string) => list.find((e) => e.id === id)!.guidelines;
 
-  it("manager：等確認、生效、已收回與不採用分開；文字、來歷的日期與之後依照的次數", async () => {
+  it("manager：等確認、生效、已收回與不採用分開；文字、來歷的日期之後依照的次數與被標沒做到的次數（#168）", async () => {
     const list = await readEmployees(db, "manager", lang, true);
     const rowan = guidelinesOf(list, "rowan");
     expect([ids(rowan.pending), ids(rowan.active), ids(rowan.closed)]).toEqual([["g02"], ["g01"], []]);
     const g01 = rowan.active[0];
-    expect(g01).toMatchObject({ proposerKind: "human", status: "active", revised: false, followed: 14, sourceAssignmentId: "s05", closedAt: null });
+    expect(g01).toMatchObject({ proposerKind: "human", status: "active", revised: false, followed: 14, notDone: 1, sourceAssignmentId: "s05", closedAt: null });
     expect(g01.text).toBe(demo("g01").text[lang]);
     expect(g01.confirmedAt).toBe(g01.proposedAt);
     const g02 = rowan.pending[0];
-    expect(g02).toMatchObject({ proposerKind: "employee", confirmedAt: null, followed: 0, sourceAssignmentId: "s12" });
+    expect(g02).toMatchObject({ proposerKind: "employee", confirmedAt: null, followed: 0, notDone: 0, sourceAssignmentId: "s12" });
     // 員工提的守則，來歷是那次退回的日期
     expect(Date.parse(g02.returnedAt)).toBeLessThan(Date.parse(g02.proposedAt));
 

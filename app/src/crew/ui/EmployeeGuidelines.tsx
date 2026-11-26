@@ -124,6 +124,10 @@ function GuidelineItem({ g, employee, canReview, saving, language, decide, openR
           {g.revised && t.guidelineRevised}
         </span>
         {g.status === "active" && <span>{fill(t.guidelineFollowed, { count: g.followed }, language)}</span>}
+        {/* 逐條回饋（#168，ADR 0008 第 14 點）：生效中且被標過沒做到時才列出 */}
+        {g.status === "active" && g.notDone > 0 && (
+          <span className="crew-employees__guideline-not-done">{fill(t.guidelineNotDone, { count: g.notDone }, language)}</span>
+        )}
         {closedAt && <span>{closedAt}</span>}
       </p>
       <div className="crew-employees__guideline-actions">

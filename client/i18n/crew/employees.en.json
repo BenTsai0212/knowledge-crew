@@ -47,5 +47,6 @@
   "guidelineEditEmpty": "The guideline text can’t be empty.",
   "guidelineStale": "This guideline’s status has changed. Reload the page.",
   "linkTrust": "View trust record",
-  "linkAssign": "Assign to {employee}"
+  "linkAssign": "Assign to {employee}",
+  "guidelineNotDone": "Marked not followed {count, plural, one {# time} other {# times}}"
 }

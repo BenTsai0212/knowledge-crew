@@ -47,5 +47,6 @@
   "guidelineEditEmpty": "守則的文字不能是空的。",
   "guidelineStale": "這條守則的狀態已經改變，請重新整理。",
   "linkTrust": "看信任紀錄",
-  "linkAssign": "交辦給 {employee}"
+  "linkAssign": "交辦給 {employee}",
+  "guidelineNotDone": "被標沒做到 {count} 次"
 }

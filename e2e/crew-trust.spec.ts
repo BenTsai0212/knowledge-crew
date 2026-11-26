@@ -228,6 +228,7 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
       ct.trust.reportHeadDifferent,
       ct.trust.reportHeadProcess,
       ct.trust.reportHeadSpot,
+      ct.trust.reportHeadNotInPoints,
       ct.trust.reportColumnLevel,
       ct.trust.reportColumnChanges,
     ];
@@ -265,6 +266,8 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
       "0",
       // #166：s12-1 是抽查時做錯了
       crewFill(ct.trust.reportSpot, { count: 1, wrong: 1 }),
+      // #168：s12-1 退回時勾了「沒被標成重點」
+      "1",
       ct.trust.levelItem,
       /.+/,
     ]);

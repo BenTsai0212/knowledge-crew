@@ -21,9 +21,11 @@ export interface TrustReportRow {
   /** 層級變化的次數 */
   levelChanges: number;
   /** 最近一次層級變化；沒有時是 null */
-  lastChange: { kind: LevelChangeKind; at: string } | null;
+  lastChange: { kind: LevelChangeKind; at: string; byCorrection?: true } | null;
   /** 已驗收的抽查次數與其中做錯了的次數（#166）；沒有已驗收的抽查時是 null。抽查不記在帳本，取自 readTrust() 的列 */
   spot: { count: number; wrong: number } | null;
+  /** 錯在沒標成重點的地方的次數（#168；退回＋事後更正）。不記在帳本，取自 readTrust() 的列 */
+  notInPoints: number;
 }
 
 const LEVEL_CHANGES: ReadonlySet<string> = new Set<LevelChangeKind>(["relax", "revoke", "autoReset"]);
@@ -48,7 +50,8 @@ export function trustReport(rows: readonly TrustRow[], events: readonly LedgerEv
       } else if (LEVEL_CHANGES.has(e.kind)) {
         levelChanges += 1;
         // 新到舊：第一筆就是最近一次
-        lastChange ??= { kind: e.kind as LevelChangeKind, at: e.at };
+        // 由事後更正觸發的改回逐項看另外標出（#168）
+        lastChange ??= { kind: e.kind as LevelChangeKind, at: e.at, ...(e.byCorrection ? { byCorrection: true as const } : {}) };
       }
     }
     const passed = [...firstRound.values()].filter(Boolean).length;
@@ -62,6 +65,7 @@ export function trustReport(rows: readonly TrustRow[], events: readonly LedgerEv
       levelChanges,
       lastChange,
       spot: decidedSpotChecks(row.spotChecks) === 0 ? null : { count: decidedSpotChecks(row.spotChecks), wrong: row.spotChecks.wrong },
+      notInPoints: row.misses.notInPoints,
     };
   });
 }

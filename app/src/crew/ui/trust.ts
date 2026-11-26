@@ -45,6 +45,8 @@ export interface TrustRow {
   note: TrustNote | null;
   /** 抽查的次數與結果（#166，crew ADR 0008 第 9 點）；還沒驗收的抽查只算在 `total` */
   spotChecks: TrustStats["spotChecks"];
+  /** 事後更正與「錯在沒標成重點的地方」的次數（#168，crew ADR 0008 第 15 點） */
+  misses: Pick<TrustStats, "corrections" | "notInPoints">;
 }
 
 /** 時間軸的一格：一次驗收的圓點、時間與當時的層級。 */
@@ -136,6 +138,7 @@ export async function readTrust(
       timeline,
       note: trustNote(reviews, decisions, level, suggestion !== null, params, corrections),
       spotChecks: stats.spotChecks,
+      misses: { corrections: stats.corrections, notInPoints: stats.notInPoints },
     });
   }
   return { canReview, employees, rows };
@@ -143,6 +146,9 @@ export async function readTrust(
 
 /** 已驗收的抽查次數（#166：`spotSummary` 與報表的抽查欄只算這些；還沒驗收的不算） */
 export const decidedSpotChecks = (spot: TrustStats["spotChecks"]): number => spot.accepted + spot.wrong + spot.other;
+
+/** 信任頁的 `missSummary`（#168）：事後更正或沒標成重點的錯至少一次時才列出 */
+export const hasMisses = (misses: TrustRow["misses"]): boolean => misses.corrections > 0 || misses.notInPoints > 0;
 
 const time = (iso: string): number => Date.parse(iso);
 

@@ -14,7 +14,7 @@ import { DEMO_PARAMS } from "../trust/demo-params";
 import { workTypeLabel } from "./labels";
 import { canReviewOf } from "./today";
 import type { LevelDecision, Review } from "../trust/types";
-import { agreeRelax, decidedSpotChecks, isSameDay, readTrust, revokeRelax, shortDate, trustNote, trustTimeline, type Trust, type TrustRow } from "./trust";
+import { agreeRelax, decidedSpotChecks, hasMisses, isSameDay, readTrust, revokeRelax, shortDate, trustNote, trustTimeline, type Trust, type TrustRow } from "./trust";
 
 const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
@@ -236,6 +236,17 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
     const sorrel = row(t, "sorrel", "content");
     expect(spotCells(sorrel)).toEqual([]);
     expect(decidedSpotChecks(sorrel.spotChecks)).toBe(0);
+  });
+
+  // #168（crew ADR 0008 第 15 點）：信任頁的 missSummary 只在有事後更正或沒標成重點的錯時列出
+  it("事後更正與沒標成重點的錯：Rowan 0／1、Linden 1／1；Juniper、Sorrel 都是 0，不列出", async () => {
+    const t = await read(db, "manager");
+    const misses = (employeeId: string, workTypeId: string) => row(t, employeeId, workTypeId).misses;
+    expect(misses("rowan", "support")).toEqual({ corrections: 0, notInPoints: 1 });
+    expect(misses("linden", "knowledge")).toEqual({ corrections: 1, notInPoints: 1 });
+    expect(misses("juniper", "dev")).toEqual({ corrections: 0, notInPoints: 0 });
+    expect(misses("sorrel", "content")).toEqual({ corrections: 0, notInPoints: 0 });
+    expect([["rowan", "support"], ["linden", "knowledge"], ["juniper", "dev"], ["sorrel", "content"]].map(([e, w]) => hasMisses(misses(e, w)))).toEqual([true, true, false, false]);
   });
 
   it("Linden 的 k17（抽查）通過後：最後一格是抽查、已驗收的抽查是通過 1", { timeout: DB_TIMEOUT }, async () => {
