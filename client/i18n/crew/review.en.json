@@ -127,5 +127,16 @@
   "spotTag": "Spot check",
   "fullOnce": "Review every item this time",
   "fullOnceBack": "Back to key points",
-  "fullOnceNote": "Only changes how you view this one. It isn't recorded and doesn't affect trust."
+  "fullOnceNote": "Only changes how you view this one. It isn't recorded and doesn't affect trust.",
+  "groupSelf": "What the employee reports",
+  "groupSelfHint": "The points to check and the guidelines followed are marked by the employee.",
+  "groupIndependent": "Independent checks",
+  "groupIndependentHint": "Run automatically by the system, not reported by the employee.",
+  "feedbackHint": "Optional: your marks are saved with your decision and don't affect trust.",
+  "feedbackFor": "Feedback on \"{item}\"",
+  "feedbackPointOk": "Fine",
+  "feedbackPointProblem": "Problem",
+  "feedbackGuidelineDone": "Followed",
+  "feedbackGuidelineNotDone": "Not followed",
+  "notInPointsShown": "This mistake wasn't marked as a point to review"
 }

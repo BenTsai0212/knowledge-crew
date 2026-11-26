@@ -43,7 +43,9 @@ async function openWork(page: Page, id: string): Promise<Locator> {
   return panel;
 }
 
-const pointsCard = (panel: Locator) => panel.locator("section").filter({ has: panel.page().getByRole("heading", { name: ct.review.points, exact: true }) });
+// 重點卡（#168 起包在「員工自己說的」分區裡，所以只找卡片）；重點的按鈕不含逐條回饋的切換按鈕
+const pointsCard = (panel: Locator) => panel.locator("section.card").filter({ has: panel.page().getByRole("heading", { name: ct.review.points, exact: true }) });
+const pointButtons = (panel: Locator) => pointsCard(panel).locator("button.crew-review__point");
 
 test.beforeEach(async ({ page }) => {
   await openApp(page);
@@ -82,7 +84,7 @@ test("重點：重點卡列出內容中的位置，內容中的對應文字有�
 
 test("點重點：按鈕變成 aria-pressed，內容中的對應位置是 surfaceRaised 底，再點一次取消；鍵盤也能操作", async ({ page }) => {
   const panel = await openWork(page, "s14");
-  const buttons = pointsCard(panel).getByRole("button");
+  const buttons = pointButtons(panel);
   await expect(buttons).toHaveCount(2);
   const [first, second] = [buttons.nth(0), buttons.nth(1)];
   const body = panel.getByRole("article", { name: ct.review.deliverableReply });
@@ -100,8 +102,9 @@ test("點重點：按鈕變成 aria-pressed，內容中的對應位置是 surfac
   await expect(first).toHaveAttribute("aria-pressed", "false");
   await expect(spot(1)).toHaveCSS("background-color", transparent);
 
+  // 每個重點後面是逐條回饋的兩個切換按鈕（#168），Tab 三次才到下一個重點
   await first.focus();
-  await page.keyboard.press("Tab");
+  for (let i = 0; i < 3; i++) await page.keyboard.press("Tab");
   await expect(second).toBeFocused();
   await page.keyboard.press("Space");
   await expect(second).toHaveAttribute("aria-pressed", "true");
@@ -179,7 +182,7 @@ test("程式修改：檔案清單，PR 描述預設收起、點到其中的重�
   const details = body.locator("details");
   await expect(details).toHaveJSProperty("open", false);
   await expect(body.locator('[data-point~="2"]').first()).toBeHidden();
-  await pointsCard(panel).getByRole("button").nth(1).click();
+  await pointButtons(panel).nth(1).click();
   await expect(details).toHaveJSProperty("open", true);
   await expect(body.locator('[data-point~="2"]').first()).toBeVisible();
   await expect(body.locator('[data-point~="2"]').first()).toHaveCSS("background-color", rgb(theme.colors.surfaceRaised));

@@ -127,5 +127,16 @@
   "spotTag": "抽查",
   "fullOnce": "這次逐項看",
   "fullOnceBack": "回到看重點",
-  "fullOnceNote": "只影響這次怎麼看，不會記錄，也不影響信任。"
+  "fullOnceNote": "只影響這次怎麼看，不會記錄，也不影響信任。",
+  "groupSelf": "員工自己說的",
+  "groupSelfHint": "要看的重點和依照的守則，都是員工自己標出來的。",
+  "groupIndependent": "獨立檢查",
+  "groupIndependentHint": "由系統自動執行，不是員工自己說的。",
+  "feedbackHint": "選填：逐條標記會和你的決定一起記下，不影響信任。",
+  "feedbackFor": "對「{item}」的回饋",
+  "feedbackPointOk": "沒問題",
+  "feedbackPointProblem": "有問題",
+  "feedbackGuidelineDone": "做到",
+  "feedbackGuidelineNotDone": "沒做到",
+  "notInPointsShown": "這個錯沒有被標成重點"
 }

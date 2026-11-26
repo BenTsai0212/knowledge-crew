@@ -288,11 +288,12 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/review/conclusion.ts`：驗收面板 v3 的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`conclusionOf()`：結論列；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
 - `ui/review/Correction.tsx`：驗收面板的事後更正（#164，crew ADR 0008）：「已通過」下方的「通過後發現有錯」按鈕與展開的表單（發現的問題、沒被標成重點、記成守則、送出前的提醒），已有更正時顯示日期與備註
 - `ui/review/Deliverables.tsx`：驗收面板 v3 的四種交件（回信、貼文、知識庫條目、程式修改）依原本的樣子呈現（測試在 `Deliverables.test.ts`）
+- `ui/review/feedback.ts`、`ui/review/FeedbackMarks.tsx`：驗收面板的逐條回饋（#168，crew ADR 0008 第 12～14 點）：選取的狀態與送出時的 `feedback`（`toggled()`、`feedbackInput()`、`storedMarks()`、組名的 `feedbackItem()`），重點與守則旁的切換按鈕（`aria-pressed`）與已驗收的唯讀標籤（測試在 `ui/review-feedback.test.ts`）
 - `ui/review/followed.ts`：驗收面板的「這次依照的守則」（#147）：`followedGuidelines()`（交件當時的文字、來歷的日期、之後已收回）與 `pendingGuidelineCount()`（等確認的守則數，只給能驗收的身分；測試在 `followed.test.ts`）
 - `ui/review/light.ts`：驗收面板的看重點（#102，規格 6.3）：「為什麼是看重點」的日期與次數（`lightReason()`，取自既有的驗收紀錄與層級決定）與收起的規則（`keptInLight()`、`splitFields()`：有重點與空白的欄位照樣顯示，其他欄位收起；測試在 `light.test.ts`）
 - `ui/review/marked.ts`：驗收面板 v3 的重點標記（`segments()`：依標記切片段；`canMark()`：能不能在內容中標出重點；測試在 `marked.test.ts`）
 - `ui/review/parts.tsx`：驗收面板 v3 的交件內容共用的小元件（上標的重點編號、依標記切開的內容、區塊的名稱欄與內容；四種交件與一般的寫法共用）
-- `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列、重點＋這次依照的守則（員工自述，與等確認的守則的「到員工頁確認」，#147）＋自動檢查（並排，窄螢幕堆疊）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡、「記成 ○○ 的守則」的勾選框（#145，「流程上的小問題」不顯示，意見是空的時顯示錯誤）；手機展開退回原因時取消固定並捲進畫面，#103）；看重點時另有「為什麼是看重點」說明卡（#102）
+- `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列（退回原因與「沒被標成重點」，#168）、「員工自己說的」分區（重點＋這次依照的守則，#147；逐條回饋，#168）與「獨立檢查」分區（自動檢查；crew ADR 0008 第 16 點）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡、「做錯了」時的「沒被標成重點」、「記成 ○○ 的守則」，#145、#168；手機展開退回原因時捲進畫面，#103）；看重點時另有說明卡（#102）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上；手機的決定列固定在底部分頁列之上，#103）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆（從原文的來源或首頁的今天的工作切過來時選那一件，#92、#96）；已回流的工作顯示「已收進知識庫」與「打開原文」，沒有上傳權限而沒有回流時註明原因；「通過」「退回」只給能驗收的身分，寫入後重新讀取（並通知 App 更新首頁與側欄的待驗收件數，#96）
 - `ui/section-counts.ts`：子導覽的數字（`sectionCounts()`：等確認的守則數、待驗收件數與待決定的看重點的建議數，只給能驗收的身分）與目前子頁的橫向捲動量（`scrollDelta()`；測試在 `section-counts.test.ts`，#103）
