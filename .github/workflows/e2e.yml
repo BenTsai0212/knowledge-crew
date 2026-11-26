@@ -135,7 +135,7 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # 只展示 AI 員工的設定（#84，crew ADR 0005）：參考情境以 VITE_CREW_ONLY=1 build，只執行 e2e/crew-only.spec.ts（playwright.config.ts）。
+  # 只展示 AI 員工的設定（#84，crew ADR 0005）：參考情境以 VITE_CREW_ONLY=1 build，只執行 e2e/crew-only.spec.ts 與 e2e/crew-a11y.spec.ts（playwright.config.ts）。
   # 另以 --dry-run 確認 wrangler.crew-demo.jsonc 有效（不需登入、不上傳）。先不設為 main 的必要檢查（由人決定）
   crew-only:
     runs-on: ubuntu-latest
