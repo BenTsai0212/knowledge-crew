@@ -12,6 +12,16 @@ export type Review =
   | { id: string; verdict: "accepted"; reason: null; decidedAt: string }
   | { id: string; verdict: "returned"; reason: ReturnReason; decidedAt: string };
 
+/** 事後更正（`crew.review_corrections` 的一列，crew ADR 0008）：在 `correctedAt` 算一次 `wrong`；原本那次驗收仍是通過。 */
+export interface Correction {
+  id: string;
+  /** 被更正的那次驗收（一定是通過） */
+  reviewId: string;
+  correctedAt: string;
+  /** 這個錯沒有被標成重點 */
+  notInPoints: boolean;
+}
+
 /** 人對「看重點」的決定：`crew.level_decisions.decision`。 */
 export type LevelDecisionKind = "relax" | "revoke";
 

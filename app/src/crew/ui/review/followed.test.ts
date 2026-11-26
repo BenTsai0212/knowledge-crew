@@ -32,6 +32,8 @@ const guideline = (over: Partial<StoredGuideline>): StoredGuideline => ({
   sourceReviewId: "r",
   sourceWorkId: "w1",
   sourceAssignmentId: "a",
+  sourceCorrectionId: null,
+  notDoneCount: 0,
   sourceReview: null,
   proposerKind: "employee",
   proposedBy: null,

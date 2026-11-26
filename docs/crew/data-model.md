@@ -5,7 +5,7 @@ knowledge-crew 的資料表都在 schema `crew`（crew ADR 0004），migration �
 共同的規則：
 
 - 全部屬於 `kk_owner`，ENABLE＋FORCE RLS；`kk_app` 只有 SELECT 與欄位層級的 INSERT（不含時間欄位），沒有 UPDATE、DELETE：只新增不修改，目前狀態由紀錄推算。
-- policy 以呼叫者權限執行，不使用 SECURITY DEFINER、不建函式與觸發器。寫入要求 `kk.identities.can_review`、看得到範圍，且身分欄位（`assigned_by`、`decided_by`、`proposed_by`）等於目前身分。
+- policy 以呼叫者權限執行，不使用 SECURITY DEFINER、不建函式與觸發器。寫入要求 `kk.identities.can_review`、看得到範圍，且身分欄位（`assigned_by`、`decided_by`、`proposed_by`、`corrected_by`）等於目前身分。
 - 讀寫一律經 `app/src/crew/db/store.ts`（`withIdentity()`）；越權測試在 `app/tests/crew/`，約束測試在 `app/src/crew/db/constraints.test.ts`。
 
 ## 資料表
@@ -16,11 +16,12 @@ knowledge-crew 的資料表都在 schema `crew`（crew ADR 0004），migration �
 | `employees`、`work_types` | AI 員工與工作類型 | 0001 |
 | `assignments` | 交辦：來源、員工、工作類型、到期日與優先順序 | 0002、0004、0006 |
 | `works`、`work_points`、`work_changes`、`work_checks` | 交件（每輪一筆）、要看的重點、變更、自動檢查 | 0002、0004 |
-| `reviews` | 驗收：通過或退回，退回的原因與意見；`can_be_guideline` 是能不能成為守則（產生欄位） | 0002、0007 |
+| `reviews` | 驗收：通過或退回，退回的原因與意見；`can_be_guideline` 是能不能成為守則（產生欄位）；`not_in_points` 是退回時「這個錯沒有被標成重點」 | 0002、0007、0009 |
 | `level_decisions` | 人對「少看」的同意與收回；看得到同一員工 × 同一工作類型的交辦才看得到 | 0002、0003 |
 | `knowledge_flowbacks` | 哪一次驗收回流成知識庫的哪一份文件 | 0005 |
 | `guidelines`、`guideline_decisions`、`work_guidelines` | 守則、人的決定、一次交件依照的守則（下節） | 0007 |
 | `guideline_documents` | 哪一條守則寫成知識庫的哪一份文件（下節「守則進知識庫」） | 0008 |
+| `review_corrections`、`review_feedback` | 事後更正、驗收時的逐條回饋（「讓放手站得住」一節） | 0009 |
 
 ## 守則（crew ADR 0007、#142）
 
@@ -56,3 +57,19 @@ knowledge-crew 的資料表都在 schema `crew`（crew ADR 0004），migration �
 - 退回的意見是 `assignments[].works[].review.note`（雙語）；守則是最上層的 `guidelines[]`（依提出時間），決定寫在各守則的 `decisions[]`（id 由 seed 產生：`<守則 id>-d<序號>`），交件依照的守則是 `works[].guidelines`。
 - `app/src/crew/demo/validate.ts` 在匯入前檢查：來源是同一員工 × 工作類型、原因不是 `process`、有意見的退回；人提的守則提出時間與文字等於那次退回、第一筆決定是同時間的確認、確認者是那次的驗收者；員工提出晚於來源退回；決定的順序（`canDecide()`）與時間；修改的文字只出現在確認；依照的守則在交件時生效（`activeAt()`）。
 - `app/src/crew/demo/seed.ts` 在驗收與看重點的決定之後依序寫入守則 → 決定 → 守則的文件 → 依照的守則；守則與意見不進信任的計算，層級、建議與報表數字不變。四個來源的 `guidelineVisibility` 都是 `internal`，所以 g01、g03、g04（之後收回）、g05 有文件，等確認的 g02、不採用的 g06 沒有。
+
+## 讓放手站得住（crew ADR 0008、#161）
+
+事後更正、逐條回饋與「沒被標成重點」存在資料表；**抽查不存**，由信任規則從交件、驗收、層級決定與更正推算（ADR 0008 第 7 點）。讀取比照 `reviews`：看得到該次驗收才看得到。
+
+- **`review_corrections`**：被更正的驗收（UNIQUE：一次驗收最多一筆）、備註、`not_in_points`、更正者、更正時間。
+  - 只能更正通過的驗收：`review_verdict` 固定是 `accepted`，與 `review_id` 組成複合外鍵指向 `reviews (id, verdict)`。
+  - 時間不能早於該次驗收：由寫入 policy 守住（`kk_app` 的時間一律是 `now()`）；demo 以 superuser 匯入時由 `validate.ts` 檢查。
+  - `can_be_guideline`（產生欄位）：備註不是空白，供「更正記成守則」的複合外鍵。
+- **`review_feedback`**：驗收、交件、對象種類（`point`／`guideline`）、重點序號或守則、結果（重點：`ok`／`problem`；守則：`done`／`not_done`）。
+  - 重點以外鍵指向 `work_points (work_id, ordinal)`，守則指向 `work_guidelines (work_id, guideline_id)`，驗收與交件指向 `reviews (id, work_id)`：對象一定屬於該次交件。同一對象最多一筆（兩個部分唯一索引）。
+  - 只能和驗收在同一交易寫入：寫入 policy 要求驗收是自己寫的、`decided_at = now()`，之後不能補。
+- **`reviews.not_in_points`**：退回時「這個錯沒有被標成重點」，CHECK 只在原因是 `wrong` 時可以為 true；既有的列是 false。
+- **更正記成守則**（第 6 點）：`guidelines` 的來源可以是退回或事後更正。更正來源時 `source_correction_id` 有值、`source_eligible` 是 NULL（0007 的「來源是能成為守則的退回」外鍵不檢查），改以 `(source_correction_id, source_review_id, source_correction_eligible)` 指向 `review_corrections (id, review_id, can_be_guideline)`；另以外鍵保住 `(source_review_id, source_work_id)` 的對應。守則文件把更正當成一次做錯了，日期是更正的日期。
+- 存取函式（`store.ts`）：`createCorrection()`（`saveAsGuideline` 在同一交易寫入守則、確認與文件）、`createReview()` 的 `feedback` 與 `notInPoints`、`getReviewDetails()`（更正與逐條回饋）；`getTrustInputs()` 另回傳 `corrections` 與 `works`（抽查的序號用），`listGuidelines()` 的每條守則附 `notDoneCount` 與 `sourceCorrectionId`。
+- demo 資料：`works[].review.notInPoints`、`works[].review.feedback`（重點是 `points` 的序號、守則是該次交件 `guidelines` 的 id）、通過時的 `works[].review.correction`（id、更正者、時間、雙語備註、`notInPoints`）；seed 在依照的守則之後寫入。

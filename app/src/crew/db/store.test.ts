@@ -112,7 +112,7 @@ describe("讀取（匯入 demo.json 後）", () => {
     expect(t.dots).toHaveLength(10);
     expect(t.dots.filter((d) => d === "neutral")).toHaveLength(2);
     expect(t.dots).not.toContain("wrong");
-    expect(await getTrustInputs(db, "staff", "linden", "knowledge")).toEqual({ reviews: [], decisions: [] });
+    expect(await getTrustInputs(db, "staff", "linden", "knowledge")).toEqual({ reviews: [], decisions: [], corrections: [], works: [] });
   });
 
   it("Rowan × support：看重點期間做錯了改回 item，autoResets 一筆（manager 與 staff 相同）", async () => {
@@ -148,7 +148,7 @@ describe("讀取（匯入 demo.json 後）", () => {
 
   it("guest 與沒有身分讀不到信任的輸入", async () => {
     for (const identity of ["guest", null]) {
-      expect(await getTrustInputs(db, identity, "rowan", "support")).toEqual({ reviews: [], decisions: [] });
+      expect(await getTrustInputs(db, identity, "rowan", "support")).toEqual({ reviews: [], decisions: [], corrections: [], works: [] });
     }
   });
 });

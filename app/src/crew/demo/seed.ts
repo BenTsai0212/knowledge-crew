@@ -7,6 +7,7 @@
 // 時間條件（交件當時生效、決定晚於提出）不套用 RLS，由 validateDemo() 在匯入前檢查。
 // 確認的守則以 decideGuideline() 相同的規則寫成知識庫文件（writeGuidelineDocument()，#149）：來源有守則等級、確認者能上傳；
 // 之後收回的守則文件照樣寫入（收回不刪文件）。
+// 事後更正與逐條回饋（#161）最後寫入；「更正晚於驗收」等時間條件同樣由 validateDemo() 檢查。
 import type { PGliteInterface } from "@electric-sql/pglite";
 import type { AccessFile, LanguageCode } from "../../client/types";
 import { writeFlowback, writeGuidelineDocument } from "../db/store";
@@ -65,8 +66,8 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
         if (r) {
           await insert(
             "reviews",
-            ["id", "work_id", "verdict", "reason", "note", "decided_by", "decided_at"],
-            [r.id, workId, r.verdict, r.reason ?? null, r.note?.[language] ?? null, r.decidedBy, r.decidedAt],
+            ["id", "work_id", "verdict", "reason", "note", "not_in_points", "decided_by", "decided_at"],
+            [r.id, workId, r.verdict, r.reason ?? null, r.note?.[language] ?? null, r.verdict === "returned" && r.notInPoints === true, r.decidedBy, r.decidedAt],
           );
         }
       }
@@ -142,6 +143,25 @@ async function insertDemo(pg: PGliteInterface, demo: DemoFile, language: Languag
         for (const guidelineId of w.guidelines ?? []) {
           await insert("work_guidelines", ["work_id", "guideline_id", "assignment_id", "employee_id", "work_type_id"], [
             demoWorkId(a.id, w.round), guidelineId, a.id, a.employee, a.workType,
+          ]);
+        }
+      }
+    }
+    for (const a of demo.assignments) {
+      for (const w of a.works) {
+        const r = w.review;
+        if (!r) continue;
+        const workId = demoWorkId(a.id, w.round);
+        for (const p of r.feedback?.points ?? []) {
+          await insert("review_feedback", ["review_id", "work_id", "target_kind", "point_ordinal", "result"], [r.id, workId, "point", p.ordinal, p.result]);
+        }
+        for (const g of r.feedback?.guidelines ?? []) {
+          await insert("review_feedback", ["review_id", "work_id", "target_kind", "guideline_id", "result"], [r.id, workId, "guideline", g.guideline, g.result]);
+        }
+        const c = r.verdict === "accepted" ? r.correction : undefined;
+        if (c) {
+          await insert("review_corrections", ["id", "review_id", "note", "not_in_points", "corrected_by", "corrected_at"], [
+            c.id, r.id, c.note?.[language] ?? null, c.notInPoints === true, c.correctedBy, c.correctedAt,
           ]);
         }
       }

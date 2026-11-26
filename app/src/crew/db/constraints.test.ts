@@ -1,4 +1,4 @@
-// crew 0002 的 CHECK 與 UNIQUE（#26）、0004 的工作來源與外部編號（#57）、0005 的知識庫回流（#92）、0007 的守則（#142）與 0008 的守則文件（#149）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
+// crew 0002 的 CHECK 與 UNIQUE（#26）、0004 的工作來源與外部編號（#57）、0005 的知識庫回流（#92）、0007 的守則（#142）與 0008 的守則文件（#149）與 0009 的事後更正、逐條回饋（#161）。superuser 的 PGlite，寫法同 migrate.test.ts 的 bare()。
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyMigrations } from "../../db/migrate";
@@ -281,5 +281,89 @@ describe("crew 0007 的守則（#142）", () => {
         { g: "g1", d: "confirm" }, { g: "g3", d: "confirm" },
       ]);
     });
+  });
+});
+
+describe("crew 0009 的事後更正、逐條回饋與「沒被標成重點」（#161）", () => {
+  // 沿用 0007 的資料：ga（gw5 通過，有意見）、gv1（gw1 做錯了）、gv2（gw2 不一樣的做法，gw2 依照 g3）、r2（w2 通過）
+  beforeAll(async () => {
+    await pg.exec(`
+      INSERT INTO crew.works (id, assignment_id, round, summary) VALUES ('gw6', 'ga1', 6, 'X'), ('gw7', 'ga1', 7, 'X'), ('gw8', 'ga1', 8, 'X');
+      INSERT INTO crew.work_points (work_id, ordinal, text) VALUES ('gw2', 1, 'P1'), ('gw2', 2, 'P2'), ('gw1', 1, 'P1');
+      INSERT INTO crew.reviews (id, work_id, verdict, reason, note, decided_by) VALUES ('ga2', 'gw8', 'accepted', NULL, NULL, 'manager');
+    `);
+  });
+
+  const reviewWith = (id: string, work: string, verdict: string, reason: string | null, notInPoints: boolean) =>
+    `INSERT INTO crew.reviews (id, work_id, verdict, reason, not_in_points, decided_by) VALUES ('${id}', '${work}', '${verdict}', ${reason === null ? "NULL" : `'${reason}'`}, ${notInPoints}, 'manager')`;
+  const correction = (id: string, review: string, note: string | null, verdict?: string) =>
+    `INSERT INTO crew.review_corrections (id, review_id, note, corrected_by${verdict ? ", review_verdict" : ""}) VALUES ('${id}', '${review}', ${note === null ? "NULL" : `'${note}'`}, 'manager'${verdict ? `, '${verdict}'` : ""})`;
+  const feedback = (review: string, work: string, kind: string, ordinal: number | null, guideline: string | null, result: string) =>
+    `INSERT INTO crew.review_feedback (review_id, work_id, target_kind, point_ordinal, guideline_id, result) VALUES ('${review}', '${work}', '${kind}', ${ordinal ?? "NULL"}, ${guideline === null ? "NULL" : `'${guideline}'`}, '${result}')`;
+  const fromCorrection = (id: string, c: string | null, review: string, work: string, eligible: "NULL" | "true" | "DEFAULT" = "NULL") =>
+    `INSERT INTO crew.guidelines (id, employee_id, work_type_id, text, source_review_id, source_work_id, source_assignment_id, proposer_kind, proposed_by, source_correction_id, source_eligible)
+     VALUES ('${id}', 'juniper', 'ui', '守則', '${review}', '${work}', 'ga1', 'human', 'manager', ${c === null ? "NULL" : `'${c}'`}, ${eligible})`;
+
+  it("沒被標成重點：既有的驗收是 false；只有退回且原因是做錯了時可以是 true", async () => {
+    expect((await pg.query("SELECT DISTINCT not_in_points AS v FROM crew.reviews")).rows).toEqual([{ v: false }]);
+    await pg.exec(reviewWith("np1", "gw6", "returned", "wrong", true));
+    await expect(pg.exec(reviewWith("np2", "gw7", "returned", "different_approach", true))).rejects.toThrow(/check constraint/);
+    await expect(pg.exec(reviewWith("np2", "gw7", "returned", "process", true))).rejects.toThrow(/check constraint/);
+    await expect(pg.exec(reviewWith("np2", "gw7", "accepted", null, true))).rejects.toThrow(/check constraint/);
+  });
+
+  it("事後更正：只能更正通過的驗收，一次驗收最多一筆；can_be_guideline 由備註推算", async () => {
+    await pg.exec(correction("c1", "ga", "其實漏了退款條件"));
+    await pg.exec(correction("c2", "ga2", "  "));
+    await expect(pg.exec(correction("c3", "ga", "再一次"))).rejects.toThrow(/unique|duplicate key/);
+    await expect(pg.exec(correction("c3", "gv1", "退回不能更正"))).rejects.toThrow(/foreign key/);
+    await expect(pg.exec(correction("c3", "gv1", "假裝是通過", "returned"))).rejects.toThrow(/check constraint/);
+    await expect(pg.exec(correction("c3", "nowhere", "X"))).rejects.toThrow(/foreign key/);
+    const rows = (await pg.query<{ id: string; g: boolean; n: boolean }>(
+      "SELECT id, can_be_guideline AS g, not_in_points AS n FROM crew.review_corrections ORDER BY id",
+    )).rows;
+    expect(rows).toEqual([{ id: "c1", g: true, n: false }, { id: "c2", g: false, n: false }]);
+  });
+
+  it("逐條回饋：合法的重點與守則；同一對象最多一筆", async () => {
+    await pg.exec(feedback("gv2", "gw2", "point", 1, null, "ok"));
+    await pg.exec(feedback("gv2", "gw2", "point", 2, null, "problem"));
+    await pg.exec(feedback("gv2", "gw2", "guideline", null, "g3", "not_done"));
+    await expect(pg.exec(feedback("gv2", "gw2", "point", 1, null, "problem"))).rejects.toThrow(/unique|duplicate key/);
+    await expect(pg.exec(feedback("gv2", "gw2", "guideline", null, "g3", "done"))).rejects.toThrow(/unique|duplicate key/);
+  });
+
+  it.each([
+    ["重點不是該次交件的", feedback("gv1", "gw1", "point", 2, null, "ok"), /foreign key/],
+    ["守則不是該次交件依照的", feedback("gv1", "gw1", "guideline", null, "g3", "done"), /foreign key/],
+    ["交件不是該次驗收的", feedback("gv1", "gw2", "point", 1, null, "ok"), /foreign key/],
+    ["種類是 change", feedback("gv2", "gw2", "change", 1, null, "ok"), /check constraint/],
+    ["重點卻沒有序號", feedback("gv2", "gw2", "point", null, null, "ok"), /check constraint/],
+    ["重點卻帶守則", feedback("gv2", "gw2", "point", 1, "g3", "ok"), /check constraint/],
+    ["守則卻帶序號", feedback("gv2", "gw2", "guideline", 1, "g3", "done"), /check constraint/],
+    ["重點的結果是 done", feedback("gv2", "gw2", "point", 1, null, "done"), /check constraint/],
+    ["守則的結果是 ok", feedback("gv2", "gw2", "guideline", null, "g3", "ok"), /check constraint/],
+  ])("逐條回饋：%s 被拒", async (_name, sql, error) => {
+    await expect(pg.exec(sql)).rejects.toThrow(error);
+  });
+
+  it("更正記成守則：source_eligible 是 NULL、更正有備註、驗收與交件對得上", async () => {
+    await pg.exec(fromCorrection("gc1", "c1", "ga", "gw5"));
+    expect((await pg.query("SELECT source_eligible AS e, source_correction_eligible AS c FROM crew.guidelines WHERE id = 'gc1'")).rows)
+      .toEqual([{ e: null, c: true }]);
+    // 0007 的守則不受影響：source_eligible 是 true、source_correction_id 是 NULL
+    expect((await pg.query("SELECT DISTINCT source_eligible AS e FROM crew.guidelines WHERE source_correction_id IS NULL")).rows)
+      .toEqual([{ e: true }]);
+  });
+
+  it.each([
+    ["更正的備註是空白", fromCorrection("x", "c2", "ga2", "gw8"), /foreign key/],
+    ["更正不是那次驗收的", fromCorrection("x", "c1", "ga2", "gw8"), /foreign key/],
+    ["驗收不是那次交件的", fromCorrection("x", "c1", "ga", "gw8"), /foreign key/],
+    ["更正來源卻帶 source_eligible", fromCorrection("x", "c1", "ga", "gw5", "true"), /check constraint/],
+    ["退回來源卻沒有 source_eligible", fromCorrection("x", null, "gv1", "gw1"), /check constraint/],
+    ["更正不存在", fromCorrection("x", "nowhere", "ga", "gw5"), /foreign key/],
+  ])("更正來源的守則：%s 被拒", async (_name, sql, error) => {
+    await expect(pg.exec(sql)).rejects.toThrow(error);
   });
 });
