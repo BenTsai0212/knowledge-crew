@@ -137,6 +137,16 @@ async function walk(page: Page): Promise<void> {
   ).toBeVisible();
   await scan(page, scans, "工作與驗收（事後更正表單打開）", CREW);
 
+  // 抽查（#166）：k17 的「這次抽查」卡片、k13 按下「這次逐項看」後各掃一次
+  const workList = page.getByRole("navigation", { name: ct.review.listLabel });
+  await workList.getByRole("button").filter({ hasText: assignmentTitle("k17") }).click();
+  await expect(content.getByRole("region", { name: ct.review.spotTitle })).toBeVisible();
+  await scan(page, scans, "工作與驗收（抽查）", CREW);
+  await workList.getByRole("button").filter({ hasText: assignmentTitle("k13") }).click();
+  await content.getByRole("button", { name: ct.review.fullOnce, exact: true }).click();
+  await expect(content.getByRole("button", { name: ct.review.fullOnceBack, exact: true })).toBeVisible();
+  await scan(page, scans, "工作與驗收（這次逐項看）", CREW);
+
   for (const [name, section] of [
     ["信任", ct.common.sectionTrust],
     ["工作帳本", ct.common.sectionLedger],

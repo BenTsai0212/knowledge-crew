@@ -2,7 +2,7 @@
 // 驗收次數、第一次就通過的比例、三種退回原因各幾次、目前層級與層級變化。
 // 計數一律由工作帳本的事件（ledger.ts）算出，與帳本一致；目前層級沿用 readTrust() 的結果（rules.ts）。
 import type { ReturnReason, ReviewLevel } from "../trust/types";
-import type { CrewEmployee, TrustRow } from "./trust";
+import { decidedSpotChecks, type CrewEmployee, type TrustRow } from "./trust";
 import type { LedgerEvent } from "./ledger";
 
 /** 層級變化：同意改看重點、收回看重點、做錯了自動改回逐項看（帳本的種類）。 */
@@ -22,6 +22,8 @@ export interface TrustReportRow {
   levelChanges: number;
   /** 最近一次層級變化；沒有時是 null */
   lastChange: { kind: LevelChangeKind; at: string } | null;
+  /** 已驗收的抽查次數與其中做錯了的次數（#166）；沒有已驗收的抽查時是 null。抽查不記在帳本，取自 readTrust() 的列 */
+  spot: { count: number; wrong: number } | null;
 }
 
 const LEVEL_CHANGES: ReadonlySet<string> = new Set<LevelChangeKind>(["relax", "revoke", "autoReset"]);
@@ -59,6 +61,7 @@ export function trustReport(rows: readonly TrustRow[], events: readonly LedgerEv
       level: row.level,
       levelChanges,
       lastChange,
+      spot: decidedSpotChecks(row.spotChecks) === 0 ? null : { count: decidedSpotChecks(row.spotChecks), wrong: row.spotChecks.wrong },
     };
   });
 }

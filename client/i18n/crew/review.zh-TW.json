@@ -120,5 +120,12 @@
   "correctionConsequenceItem": "會算一次「做錯了」。這筆更正不能撤回。",
   "correctionSubmit": "記下更正",
   "correctionDone": "通過後發現有錯（{date}）",
-  "correctionNoteShown": "發現的問題：{note}"
+  "correctionNoteShown": "發現的問題：{note}",
+  "spotTitle": "這次抽查",
+  "spotWhy": "看重點期間每 {every} 件抽 1 件逐項看，這是同意後的第 {ordinal} 件。",
+  "spotRule": "這次內容全部列出。判定「做錯了」一樣會改回逐項看；通過就是一般的通過。",
+  "spotTag": "抽查",
+  "fullOnce": "這次逐項看",
+  "fullOnceBack": "回到看重點",
+  "fullOnceNote": "只影響這次怎麼看，不會記錄，也不影響信任。"
 }

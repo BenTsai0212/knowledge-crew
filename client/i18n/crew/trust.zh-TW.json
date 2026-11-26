@@ -80,5 +80,11 @@
   "reportChangeAutoReset": "做錯了自動改回逐項看",
   "reportNoChange": "沒有變化",
   "dotCorrected": "通過，{date} 事後更正為做錯了",
-  "dotLegendCorrected": "中空＝通過後事後更正"
+  "dotLegendCorrected": "中空＝通過後事後更正",
+  "dotSpot": "{result}（抽查），{date}",
+  "dotLegendSpot": "藍框＝抽查",
+  "spotSummary": "抽查 {count} 次：通過 {accepted}・做錯了 {wrong}・其他退回 {other}",
+  "reportColumnSpot": "抽查（其中做錯了）",
+  "reportHeadSpot": "抽查",
+  "reportSpot": "{count}（{wrong}）"
 }

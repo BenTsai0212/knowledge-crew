@@ -9,7 +9,7 @@ import type { LanguageCode } from "../../client/types";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import type { Dot, ReviewLevel } from "../trust/types";
 import { crewStrings, type CrewTexts } from "../i18n";
-import { DotLegendCorrected, DotMark, dotCorrectedText, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
+import { DotLegendCorrected, DotLegendSpot, DotMark, dotCorrectedText, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
 import { workTypeLabel } from "./labels";
 import type { CrewScreenProps } from "./sections";
 import { actorName, readLedger, type LedgerEvent } from "./ledger";
@@ -19,6 +19,7 @@ import { TrustReport } from "./TrustReport";
 import { trustReport, type TrustReportRow } from "./trust-report";
 import {
   agreeRelax,
+  decidedSpotChecks,
   isSameDay,
   readTrust,
   revokeRelax,
@@ -136,6 +137,10 @@ export function TrustView({ db, identity, language, onChanged, navigate }: CrewS
             />
             <div className="crew-trust__footer">
               {row.note !== null && <p className="crew-trust__note">{noteText(row.note, row, t, language)}</p>}
+              {/* 抽查（#166）：有已驗收的抽查時才列出 */}
+              {decidedSpotChecks(row.spotChecks) > 0 && (
+                <p className="crew-trust__note crew-trust__spot">{fill(t.spotSummary, { ...row.spotChecks, count: decidedSpotChecks(row.spotChecks) }, language)}</p>
+              )}
               {!trust.canReview && <p className="muted crew-trust__note">{t.noteViewOnly}</p>}
               {suggestion && (
                 <button type="button" disabled={busy} onClick={() => write(row, () => agreeRelax(db, identity, { ...row, suggestion }))}>
@@ -241,9 +246,12 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
         {cells.map((c, i) => {
           // 被事後更正的那一格（#164）：中空，名稱與提示是「通過，MM/DD 事後更正為做錯了」
           const corrected = c.correctedAt === null ? undefined : dotCorrectedText(c.correctedAt, language);
+          // 抽查的那一格（#166）：藍框，名稱與提示是「（原本的結果）（抽查），MM/DD」
+          const values = { result: corrected ?? t[DOT_TEXT[c.dot]], date: date(c.at) };
+          const label = fill(c.spot ? t.dotSpot : t.dotCell, values);
           return (
-            <li key={i} className="crew-trust__cell" aria-label={fill(t.dotCell, { result: corrected ?? t[DOT_TEXT[c.dot]], date: date(c.at) })}>
-              <DotMark dot={c.dot} className="crew-trust__dot" corrected={corrected !== undefined} title={corrected} />
+            <li key={i} className="crew-trust__cell" aria-label={label}>
+              <DotMark dot={c.dot} className="crew-trust__dot" corrected={corrected !== undefined} spot={c.spot} title={c.spot ? label : corrected} />
               <span className="crew-trust__date" aria-hidden="true">
                 {/* 窄螢幕時在斜線後換行，不把數字拆開 */}
                 {date(c.at).split("/").map((part, j) => (
@@ -279,6 +287,7 @@ function Timeline({ timeline, t, language, now }: { timeline: TrustTimeline; t: 
           </span>
         )}
       </div>
+      {cells.some((c) => c.spot) && <DotLegendSpot language={language} />}
       {cells.some((c) => c.correctedAt !== null) && <DotLegendCorrected language={language} />}
     </div>
   );

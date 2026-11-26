@@ -115,9 +115,17 @@ describe("readWorkList：匯入虛構資料後", () => {
       dueAt: "2026-11-18",
       priority: "high",
       due: "overdue",
+      spotCheck: false,
     });
     expect(awaiting.find((a) => a.id === "j06")).toMatchObject({ sourceName: "example-org/company-site", externalRef: "26", workRef: "38", workTypeId: "dev" });
     expect(awaiting.find((a) => a.id === "c11")).toMatchObject({ sourceKind: "social", sourceName: label("social-account"), externalRef: null, workRef: null });
+  });
+
+  // 抽查（#166）：待驗收中只有 k17（Linden 同意看重點後的第 5 件）是抽查；已驗收的不標
+  it("待驗收中只有 k17 標成抽查；最近驗收過都不標", async () => {
+    const { awaiting, recent } = await list(db, "manager");
+    expect(awaiting.filter((i) => i.spotCheck).map((i) => i.id)).toEqual(["k17"]);
+    expect(recent.every((i) => !i.spotCheck)).toBe(true);
   });
 
   it("多輪的交辦顯示最新一輪的輪次與 PR 編號", async () => {
@@ -157,6 +165,25 @@ describe("readReviewPanel：匯入虛構資料後", () => {
     const k13 = (await panel(db, "manager", "k13"))!;
     expect(k13.focus.spotCheck).toBeUndefined();
     expect(k13.focus.changes.mode).toBe("summary");
+  });
+
+  // #166：k17 是「這次抽查」卡片、沒有「這次逐項看」；k13 是「為什麼是看重點」＋「這次逐項看」（aria-pressed）
+  it("面板：k17 是「這次抽查」卡片（第 5 件），k13 是「為什麼是看重點」與「這次逐項看」", async () => {
+    const t = crewStrings("review", lang);
+    const html = async (id: string) =>
+      renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: (await panel(db, "manager", id))!, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
+    const k17 = await html("k17");
+    expect(k17).toContain(t.spotTitle);
+    expect(k17).toContain(t.spotRule);
+    expect(k17).toContain(t.spotWhy.replace("{every}", "5").replace("{ordinal}", "5"));
+    expect(k17).not.toContain(t.lightTitle);
+    expect(k17).not.toContain(t.fullOnce);
+    expect(k17).toContain(`data-level="light"`);
+    const k13 = await html("k13");
+    expect(k13).toContain(t.lightTitle);
+    expect(k13).not.toContain(t.spotTitle);
+    expect(k13).toContain(`aria-pressed="false">${t.fullOnce}</button>`);
+    expect(k13).not.toContain(t.fullOnceNote);
   });
 
   it("manager 打開 k13（Linden × 知識庫整理，看重點）：變更收成摘要、全文收起、可以驗收", async () => {

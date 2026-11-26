@@ -227,6 +227,7 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
       ct.trust.reportHeadWrong,
       ct.trust.reportHeadDifferent,
       ct.trust.reportHeadProcess,
+      ct.trust.reportHeadSpot,
       ct.trust.reportColumnLevel,
       ct.trust.reportColumnChanges,
     ];
@@ -262,6 +263,8 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
       "1",
       "2",
       "0",
+      // #166：s12-1 是抽查時做錯了
+      crewFill(ct.trust.reportSpot, { count: 1, wrong: 1 }),
       ct.trust.levelItem,
       /.+/,
     ]);

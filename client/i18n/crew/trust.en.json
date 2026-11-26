@@ -80,5 +80,11 @@
   "reportChangeAutoReset": "mistake, back to every item",
   "reportNoChange": "No changes",
   "dotCorrected": "Approved; corrected to a mistake on {date}",
-  "dotLegendCorrected": "Hollow = corrected after approval"
+  "dotLegendCorrected": "Hollow = corrected after approval",
+  "dotSpot": "{result} (spot check), {date}",
+  "dotLegendSpot": "Blue ring = spot check",
+  "spotSummary": "Spot checks {count}: passed {accepted} · mistakes {wrong} · other returns {other}",
+  "reportColumnSpot": "Spot checks (mistakes)",
+  "reportHeadSpot": "Spot checks",
+  "reportSpot": "{count} ({wrong})"
 }

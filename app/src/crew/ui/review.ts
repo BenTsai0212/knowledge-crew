@@ -42,6 +42,8 @@ export interface WorkListItem {
   priority: Priority;
   /** 畫面標示的到期狀態（shownDueStatus()；已通過的不標逾期） */
   due: DueStatus;
+  /** 最新一輪是抽查（#166）：只在待驗收的清單與驗收面板算出，其他情況是 false */
+  spotCheck: boolean;
 }
 
 export interface WorkList {
@@ -94,6 +96,7 @@ const EMPTY: WorkList = { awaiting: [], recent: [] };
 /** 每個交辦最新一輪的 PR 編號與驗收時間（AssignmentSummary 沒有這兩項） */
 interface LatestRow {
   assignmentId: string;
+  workId: string;
   workRef: string | null;
   decidedAt: Date | null;
 }
@@ -102,7 +105,7 @@ function readLatest(db: Database, identity: string): Promise<LatestRow[]> {
   return db.withIdentity(identity, async (tx) =>
     (
       await tx.query<LatestRow>(
-        `SELECT DISTINCT ON (w.assignment_id) w.assignment_id AS "assignmentId", w.external_ref AS "workRef", rv.decided_at AS "decidedAt"
+        `SELECT DISTINCT ON (w.assignment_id) w.assignment_id AS "assignmentId", w.id AS "workId", w.external_ref AS "workRef", rv.decided_at AS "decidedAt"
          FROM crew.works w LEFT JOIN crew.reviews rv ON rv.work_id = w.id
          ORDER BY w.assignment_id, w.round DESC`,
       )
@@ -110,7 +113,7 @@ function readLatest(db: Database, identity: string): Promise<LatestRow[]> {
   );
 }
 
-type Sortable = WorkListItem & { decidedAt: number };
+type Sortable = WorkListItem & { decidedAt: number; workId: string };
 
 async function readItems(db: Database, identity: string, language: LanguageCode, today: string): Promise<Sortable[]> {
   const [assignments, employees, latest] = await Promise.all([
@@ -125,7 +128,7 @@ async function readItems(db: Database, identity: string, language: LanguageCode,
   for (const a of [...assignments].reverse()) {
     const l = byAssignment.get(a.id);
     if (a.latestRound === null || !l) continue;
-    items.push({ ...toItem(a, a.latestRound, l.workRef, names, language, today), decidedAt: l.decidedAt ? new Date(l.decidedAt).getTime() : 0 });
+    items.push({ ...toItem(a, a.latestRound, l.workRef, names, language, today), decidedAt: l.decidedAt ? new Date(l.decidedAt).getTime() : 0, workId: l.workId });
   }
   return items;
 }
@@ -147,10 +150,22 @@ function toItem(a: AssignmentSummary, round: number, workRef: string | null, nam
     dueAt: a.dueAt,
     priority: a.priority,
     due: shownDueStatus(a.dueAt, today, a.latestVerdict === "accepted"),
+    spotCheck: false,
   };
 }
 
-const strip = ({ decidedAt: _, ...item }: Sortable): WorkListItem => item;
+const strip = ({ decidedAt: _, workId: __, ...item }: Sortable): WorkListItem => item;
+
+/** 待驗收的件標出抽查（#166）：依「員工 × 工作類型」各讀一次抽查（getTrustSummary()），最新一輪被抽到的標為 true */
+async function markSpotChecks(db: Database, identity: string, items: Sortable[]): Promise<Sortable[]> {
+  const spots = new Map<string, Promise<ReadonlySet<string>>>();
+  const of = (i: Sortable) => {
+    const key = `${i.employee.id}\u0000${i.workTypeId}`;
+    if (!spots.has(key)) spots.set(key, getTrustSummary(db, identity, i.employee.id, i.workTypeId, DEMO_PARAMS).then((s) => new Set(s.spotChecks.keys())));
+    return spots.get(key)!;
+  };
+  return Promise.all(items.map(async (i) => ({ ...i, spotCheck: (await of(i)).has(i.workId) })));
+}
 
 /**
  * `today` 是到期狀態的「今天」（YYYY-MM-DD）：預設是 demo 的 today，沒有時是目前的日期（#133）。
@@ -172,7 +187,8 @@ export async function readWorkList(
   const recent = reviewed.slice(0, RECENT_LIMIT);
   const extra = reviewed.slice(RECENT_LIMIT).find((i) => i.id === pinned);
   if (extra) recent.push(extra);
-  return { awaiting: items.filter((i) => i.verdict === null).map(strip), recent: recent.map(strip) };
+  const awaiting = await markSpotChecks(db, identity, items.filter((i) => i.verdict === null));
+  return { awaiting: awaiting.map(strip), recent: recent.map(strip) };
 }
 
 /** 進入畫面時的選取：待驗收的第一筆；沒有待驗收時不選取（#39 的 `## 決定` 1） */
@@ -198,6 +214,7 @@ export async function readReviewPanel(
   const { inputs, spotChecks } = await getTrustSummary(db, identity, item.employee.id, item.workTypeId, DEMO_PARAMS);
   const { reviews, decisions, corrections } = inputs;
   const level = reviewLevel(reviews, decisions, corrections);
+  const spotCheck = spotChecks.get(current.id) ?? null;
   const accepted = current.review?.verdict === "accepted" ? current.review : null;
   const stored = accepted && (await getReviewDetails(db, identity, accepted.id)).correction;
   const correction = stored ? { correctedAt: stored.correctedAt, note: stored.note } : null;
@@ -206,9 +223,9 @@ export async function readReviewPanel(
     canReview ? listGuidelines(db, identity, { employeeId: item.employee.id, workTypeId: item.workTypeId }) : Promise.resolve([]),
   ]);
   return {
-    item,
-    // 抽查（#161）：被抽到的那件逐項列出變更；畫面的標示在後續的 Issue
-    focus: reviewFocus(current, level, { spotCheck: spotChecks.get(current.id) ?? null }),
+    item: { ...item, spotCheck: spotCheck !== null },
+    // 抽查（#161）：被抽到的那件逐項列出變更；面板以「這次抽查」卡片標示（#166）
+    focus: reviewFocus(current, level, { spotCheck }),
     current: { id: current.id, round: current.round, externalRef: current.externalRef, summary: current.summary, submittedAt: current.submittedAt },
     earlier: works.slice(0, -1).map((w) => ({
       round: w.round,

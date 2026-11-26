@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
 import type { createReview } from "../../db/store";
-import type { ReturnReason } from "../../trust/types";
+import type { ChangesView, ReturnReason, SpotCheck } from "../../trust/types";
 import { crewStrings, type CrewTexts } from "../../i18n";
 import { CheckRow, ConclusionRow, LevelBadge, ScheduleLine, withEmployee } from "../components";
 import type { ReviewPanel as PanelData, WorkListItem } from "../review";
@@ -59,6 +59,9 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
   const { item, focus, current, earlier, body, deliverable } = panel;
   // 選中的重點只存在元件 state；換一筆工作時（key 改變）重設
   const [active, setActive] = useState<ActivePoint>(null);
+  // 「這次逐項看」（#166，crew ADR 0008 第 10 點）：只存在元件 state，不寫入資料；換一筆工作時（key 改變）回到預設
+  const [fullOnce, setFullOnce] = useState(false);
+  const changes: ChangesView = fullOnce && focus.changes.mode === "summary" ? { mode: "items", items: [...panel.changeItems] } : focus.changes;
   const bodyRef = useRef<HTMLDivElement>(null);
   const toggle = (n: number) => {
     const next = active === n ? null : n;
@@ -125,8 +128,22 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
           />
         )}
       </header>
-      {focus.level === "light" && panel.light && (
-        <LightCard reason={panel.light} employee={item.employee.displayName} workType={workType} language={language} onOpenTrust={onOpenTrust} t={t} />
+      {focus.spotCheck ? (
+        <SpotCard spot={focus.spotCheck} onOpenTrust={onOpenTrust} t={t} />
+      ) : (
+        focus.level === "light" &&
+        panel.light && (
+          <LightCard
+            reason={panel.light}
+            employee={item.employee.displayName}
+            workType={workType}
+            language={language}
+            onOpenTrust={onOpenTrust}
+            // 變更已逐項列出（沒標重點）時不需要「這次逐項看」
+            fullOnce={focus.changes.mode === "summary" ? { on: fullOnce, toggle: () => setFullOnce(!fullOnce) } : undefined}
+            t={t}
+          />
+        )
       )}
 
       <div className="crew-review__pair">
@@ -170,7 +187,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
           name={name}
           body={body}
           raw={focus.body.text}
-          changes={focus.changes}
+          changes={changes}
           changeItems={panel.changeItems}
           language={language}
           active={active}
@@ -230,11 +247,38 @@ interface LightCardProps {
   workType: string;
   language: LanguageCode;
   onOpenTrust?: () => void;
+  /** 「這次逐項看」的狀態與切換（#166）；沒有時不顯示按鈕 */
+  fullOnce?: { on: boolean; toggle: () => void };
   t: Texts;
 }
 
+const TrustLink = ({ onOpenTrust, t }: { onOpenTrust?: () => void; t: Texts }) =>
+  onOpenTrust ? (
+    <button type="button" className="link" onClick={onOpenTrust}>
+      {t.lightTrust}
+    </button>
+  ) : null;
+
+/** 這次抽查（#166，crew ADR 0008 第 8、9 點）：warning 1px 框、警示圖示；每 N 件抽 1 件、這是第幾件、判定的規則 */
+function SpotCard({ spot, onOpenTrust, t }: { spot: SpotCheck; onOpenTrust?: () => void; t: Texts }) {
+  return (
+    <section className="crew-review__light crew-review__spot" aria-labelledby="crew-review-spot-title">
+      <svg className="crew-icon crew-review__light-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 3l9.5 17h-19z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M12 10v4M12 17v.01" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+      <div className="crew-review__light-text">
+        <h4 id="crew-review-spot-title">{t.spotTitle}</h4>
+        <p>{fill(t.spotWhy, { every: spot.every, ordinal: spot.ordinal })}</p>
+        <p>{t.spotRule}</p>
+        <TrustLink onOpenTrust={onOpenTrust} t={t} />
+      </div>
+    </section>
+  );
+}
+
 /** 為什麼是看重點（規格 6.3）：success 1px 框、盾牌圖示；何時同意、最近幾次沒有做錯、收起什麼、一次做錯了就改回逐項看 */
-function LightCard({ reason, employee, workType, language, onOpenTrust, t }: LightCardProps) {
+function LightCard({ reason, employee, workType, language, onOpenTrust, fullOnce, t }: LightCardProps) {
   const since = withEmployee(t.lightSince, { date: formatDate(reason.relaxedAt, language), workType, count: reason.recent }, employee, language);
   return (
     <section className="crew-review__light" aria-labelledby="crew-review-light-title">
@@ -246,10 +290,18 @@ function LightCard({ reason, employee, workType, language, onOpenTrust, t }: Lig
         <h4 id="crew-review-light-title">{t.lightTitle}</h4>
         <p>{since}</p>
         <p>{t.lightRule}</p>
-        {onOpenTrust && (
-          <button type="button" className="link" onClick={onOpenTrust}>
-            {t.lightTrust}
-          </button>
+        <TrustLink onOpenTrust={onOpenTrust} t={t} />
+        {fullOnce && (
+          <div className="crew-review__full-once">
+            <button type="button" className="secondary" aria-pressed={fullOnce.on} onClick={fullOnce.toggle}>
+              {fullOnce.on ? t.fullOnceBack : t.fullOnce}
+            </button>
+            {fullOnce.on && (
+              <span className="muted" role="status">
+                {t.fullOnceNote}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </section>

@@ -64,6 +64,9 @@ export function TrustReport({ rows, language, openLedger }: Props) {
                 </span>
               </th>
             ))}
+            <th scope="col" className="crew-trust-report__num" title={t.reportColumnSpot} aria-label={t.reportColumnSpot}>
+              {t.reportHeadSpot}
+            </th>
             <th scope="col">{t.reportColumnLevel}</th>
             <th scope="col">{t.reportColumnChanges}</th>
           </tr>
@@ -121,6 +124,10 @@ export function TrustReport({ rows, language, openLedger }: Props) {
                     </Cell>
                   );
                 })}
+                {/* 抽查（#166）：已驗收的抽查次數（其中做錯了） */}
+                <Cell label={t.reportColumnSpot} num>
+                  {row.spot === null ? t.reportNone : fill(t.reportSpot, row.spot)}
+                </Cell>
                 <Cell label={t.reportColumnLevel}>
                   <LevelBadge level={row.level}>{levelText(row)}</LevelBadge>
                 </Cell>

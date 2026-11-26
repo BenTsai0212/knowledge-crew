@@ -169,6 +169,17 @@
   background: transparent;
 }
 
+/* 抽查（#166）：外加 primary 色的外框，可與中空、× 同時出現 */
+.crew-dot[data-spot] {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 圖例的抽查記號：外框不貼著文字 */
+.crew-dots-legend .crew-dot[data-spot] {
+  margin-inline: 0.2rem;
+}
+
 .crew-dot[data-dot="wrong"] {
   color: var(--color-danger);
   font-size: 1rem;
