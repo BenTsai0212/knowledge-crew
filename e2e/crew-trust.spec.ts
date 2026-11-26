@@ -171,11 +171,6 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   for (const band of await page.locator(".crew-trust__band").all()) {
     expect(await band.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
   }
-  // Juniper 的「看重點」只有一格：看得到短名，不是空框（#131）
-  const narrow = trustRow(page, "juniper", "dev").locator('.crew-trust__band[data-level="light"][data-span="1"]');
-  await expect(narrow.locator(".crew-trust__band-short")).toBeVisible();
-  await expect(narrow.locator(".crew-trust__band-short")).toHaveText(ct.trust.levelLightShort);
-  await expect(narrow).toContainText(ct.trust.levelLight);
   // 建議的經過與依據在卡片內（#125）
   for (const [employee, workType] of [["juniper", "dev"], ["sorrel", "content"]]) {
     const r = trustRow(page, employee, workType);
@@ -186,6 +181,27 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   await trustRow(page, "sorrel", "content").getByText(crewFill(ct.trust.basisSummary, { count: 10, from: "09/09", to: "10/27" }), { exact: true }).click();
   await expect(trustRow(page, "sorrel", "content").getByRole("list", { name: ct.trust.basisLabel })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+// 一格的「看重點」顯示短名（#131）。#161 之後 demo 沒有一格的看重點（Juniper 看重點驗收了 5 次），
+// 這裡讓 Sorrel 同意改看重點、再通過 c11，最後一格就是只有一格的看重點
+test("手機 390：只有一格的「看重點」看得到短名，不是空框（#131）", async ({ page }) => {
+  await openTrustAs(page, "manager");
+  await trustRow(page, "sorrel", "content").getByRole("button", { name: ct.trust.agreeRelax, exact: true }).click();
+  await expect(trustRow(page, "sorrel", "content").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
+  await gotoCrewSection(page, ct.common.sectionWorks);
+  const title = assignmentTitle("c11");
+  await page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").filter({ hasText: title }).click();
+  const panel = page.getByRole("article", { name: title });
+  await panel.getByRole("button", { name: ct.review.accept, exact: true }).click();
+  await expect(panel.getByRole("button", { name: ct.review.accept, exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoCrewSection(page, ct.common.sectionTrust);
+  const narrow = trustRow(page, "sorrel", "content").locator('.crew-trust__band[data-level="light"][data-span="1"]');
+  await expect(narrow.locator(".crew-trust__band-short")).toBeVisible();
+  await expect(narrow.locator(".crew-trust__band-short")).toHaveText(ct.trust.levelLightShort);
+  await expect(narrow).toContainText(ct.trust.levelLight);
+  expect(await narrow.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
 });
 
 // ---- 總覽報表（#121） ----
