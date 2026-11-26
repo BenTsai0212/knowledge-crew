@@ -1,12 +1,12 @@
 // AI 員工的 README 截圖（knowledge-crew #106）：桌機 1440×900 的首頁今天的工作、總覽（#134）、驗收面板（Rowan 的回信）、信任時間軸、
-// 員工頁 Rowan 的卡（守則：一條等確認、一條生效）與守則文件的原文面板（這條守則的來歷）（#151），與手機 390×844 的驗收面板（固定的決定列）與總覽（#134），寫到 docs/crew/images/<名稱>.png。
+// 員工頁 Rowan 的卡（守則：一條等確認、一條生效）與守則文件的原文面板（這條守則的來歷）（#151）、k17 的「這次抽查」與 k01 的事後更正（#171），與手機 390×844 的驗收面板（固定的決定列）與總覽（#134），寫到 docs/crew/images/<名稱>.png。
 // 不是測試，預設不執行：KC_README_SHOTS=1 時 playwright.config.ts 只執行這個檔案（重新產生的方式見 docs/testing.md「AI 員工的 README 截圖」）。
 // 參考情境（client/）的虛構資料、預設語言、主管身分、Light 模式、減少動態效果；/api/ask 是 openApp() 的假回應（不呼叫模型）；
 // openApp() 以邀請碼登入後才截圖，截圖中沒有登入頁與邀請碼。
 import { expect, test, type Page } from "@playwright/test";
 import { expandTimelineEntry, gotoView, openApp, s, switchIdentity } from "./support/app";
 import { access, language, readClientJson } from "./support/client";
-import { ct, employeeName, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel, trustRow } from "./support/crew";
+import { crewContent, ct, employeeName, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel, trustRow } from "./support/crew";
 
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
@@ -14,9 +14,9 @@ const shotPath = (name: string) => `docs/crew/images/${name}.png`;
 const manager = access.roles.find((r) => r.canReview && r.canUpload);
 
 // Rowan 待驗收的回信（虛構資料的 s14）
-const rowanReply = hasCrewDemo
-  ? readClientJson<{ assignments: { id: string; title: Record<string, string> }[] }>("crew/demo.json").assignments.find((a) => a.id === "s14")!.title[language]
-  : "";
+const demoTitle = (id: string) =>
+  hasCrewDemo ? readClientJson<{ assignments: { id: string; title: Record<string, string> }[] }>("crew/demo.json").assignments.find((a) => a.id === id)!.title[language] : "";
+const rowanReply = demoTitle("s14");
 
 test.use({ colorScheme: "light", reducedMotion: "reduce" });
 
@@ -28,6 +28,15 @@ test.beforeEach(() => {
 async function start(page: Page): Promise<void> {
   await openApp(page);
   await switchIdentity(page, manager!.id);
+}
+
+// 「工作與驗收」以標題在清單選取虛構資料的一件交辦（待驗收或最近驗收過的）
+async function openWork(page: Page, id: string): Promise<void> {
+  const title = demoTitle(id);
+  await openCrew(page);
+  await gotoCrewSection(page, ct.common.sectionWorks);
+  await page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").filter({ hasText: title }).click();
+  await expect(reviewPanel(page, title)).toBeVisible();
 }
 
 async function openRowanReply(page: Page): Promise<void> {
@@ -59,6 +68,25 @@ test.describe("桌機", () => {
     await gotoCrewSection(page, ct.common.sectionTrust);
     await expect(trustRow(page, "rowan", "support")).toBeVisible();
     await page.screenshot({ path: shotPath("trust") });
+  });
+
+  test("抽查（k17 的「這次抽查」卡）、事後更正（k01 的「通過後發現有錯」）（#171）", async ({ page }) => {
+    await start(page);
+    await openWork(page, "k17");
+    await expect(page.locator(".crew-review__spot")).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: shotPath("spot-check") });
+
+    // k01 較早驗收、不在最近驗收過的清單：從工作帳本的「事後更正」點進去
+    await gotoCrewSection(page, ct.common.sectionLedger);
+    await crewContent(page).getByRole("combobox", { name: new RegExp(`^${ct.ledger.filterEvent}`) }).selectOption({ label: ct.ledger.eventReturned });
+    const row = page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row").filter({ hasText: ct.ledger.kindCorrected });
+    await row.getByRole("button", { name: demoTitle("k01"), exact: true }).click();
+    await expect(reviewPanel(page, demoTitle("k01"))).toBeVisible();
+    const correction = page.locator(".crew-review__correction");
+    await expect(correction).toBeVisible();
+    await correction.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: shotPath("correction") });
   });
 
   test("員工頁 Rowan 的守則、守則文件的原文面板（#151）", async ({ page }) => {

@@ -27,9 +27,26 @@ const lang = clientConfig.client.defaultLanguage;
 const DB_TIMEOUT = 20_000;
 
 describe("TOUR_STEPS", () => {
-  it("6 步：今天的工作 → 驗收面板 → 退回原因 → 守則 → 信任 → 回流知識庫", () => {
-    expect(TOUR_STEPS.map((s) => s.id)).toEqual(["today", "review", "return", "guidelines", "trust", "flowback"]);
-    expect(TOUR_STEPS.map((s) => s.go.kind)).toEqual(["home", "crew", "crew", "crew", "crew", "flowback"]);
+  it("8 步：今天的工作 → 驗收面板 → 退回原因 → 守則 → 信任 → 抽查 → 事後更正 → 回流知識庫（#171）", () => {
+    expect(TOUR_STEPS.map((s) => s.id)).toEqual(["today", "review", "return", "guidelines", "trust", "spot", "correction", "flowback"]);
+    expect(TOUR_STEPS.map((s) => s.go.kind)).toEqual(["home", "crew", "crew", "crew", "crew", "crew", "crew", "flowback"]);
+  });
+
+  it("抽查與事後更正切到「工作與驗收」並選取 demo 的 k17、k01，退路是驗收面板（#171）", () => {
+    const spot = TOUR_STEPS.find((s) => s.id === "spot")!;
+    expect(spot.go).toEqual({ kind: "crew", target: { section: "works", assignmentId: "k17" } });
+    expect(spot.targets).toEqual([".crew-review__spot", ".crew-review__panel"]);
+    const correction = TOUR_STEPS.find((s) => s.id === "correction")!;
+    expect(correction.go).toEqual({ kind: "crew", target: { section: "works", assignmentId: "k01" } });
+    expect(correction.targets).toEqual([".crew-review__correction", ".crew-review__panel"]);
+  });
+
+  it("入口小卡寫的步數與步驟數相同（#171）", () => {
+    expect(TOUR_STEPS).toHaveLength(8);
+    const stepCount: Record<string, RegExp> = { "zh-TW": /(^|\D)8 步/, en: /^Eight steps/ };
+    for (const language of clientConfig.client.languages) {
+      if (stepCount[language]) expect(crewStrings("tour", language).cardBody, language).toMatch(stepCount[language]);
+    }
   });
 
   it("守則一步切到「員工」，先標出有等確認守則的區塊（#151）", () => {
