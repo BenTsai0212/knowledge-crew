@@ -2,10 +2,11 @@
 // 驗收次數、最近一次改回逐項看與建議改看重點，以及信任頁的時間軸與說明（#75）。只用 store.ts 與 rules.ts，可見範圍由 RLS 決定。
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
-import { createLevelDecision, getTrustInputs, listAssignments, listEmployees, type StoredEmployee } from "../db/store";
+import { createLevelDecision, getTrustSummary, listAssignments, listEmployees, type StoredEmployee } from "../db/store";
 import { demoText } from "../demo/texts";
 import { DEMO_PARAMS } from "../trust/demo-params";
 import { autoResets, dotOf, recentDotEntries, relaxSuggestion, reviewLevel } from "../trust/rules";
+import type { TrustStats } from "../trust/spot-check";
 import type { Correction, Dot, LevelDecision, Review, ReviewLevel, TrustParams } from "../trust/types";
 
 export interface CrewEmployee {
@@ -42,6 +43,8 @@ export interface TrustRow {
   timeline: TrustTimeline;
   /** 卡片下方的說明（#75）；沒有時是 null */
   note: TrustNote | null;
+  /** 抽查的次數與結果（#166，crew ADR 0008 第 9 點）；還沒驗收的抽查只算在 `total` */
+  spotChecks: TrustStats["spotChecks"];
 }
 
 /** 時間軸的一格：一次驗收的圓點、時間與當時的層級。 */
@@ -51,6 +54,8 @@ export interface TimelineCell {
   level: ReviewLevel;
   /** 這次驗收（通過）被事後更正的時間（#164）；沒有更正時是 null */
   correctedAt: string | null;
+  /** 這次驗收的交件是抽查（#166） */
+  spot: boolean;
 }
 
 /** 層級改變的事件：同意改看重點、收回看重點、因做錯了自動改回逐項看。 */
@@ -108,11 +113,14 @@ export async function readTrust(
   );
   const rows: TrustRow[] = [];
   for (const { employeeId, workTypeId } of sorted) {
-    const { reviews, decisions, corrections } = await getTrustInputs(db, identity, employeeId, workTypeId);
+    const { inputs, spotChecks, stats } = await getTrustSummary(db, identity, employeeId, workTypeId, params);
+    const { reviews, decisions, corrections } = inputs;
+    // 被抽查的交件的驗收 id（#166）：時間軸的那一格加上抽查記號
+    const spotReviews = new Set(inputs.works.filter((w) => w.reviewId !== null && spotChecks.has(w.id)).map((w) => w.reviewId!));
     // 建議只給能驗收的身分（只有他們能同意改看重點），與首頁的今天的工作一致
     const suggestion = canReview ? relaxSuggestion(reviews, decisions, params, corrections) : null;
     const level = reviewLevel(reviews, decisions, corrections);
-    const timeline = trustTimeline(reviews, decisions, params, corrections);
+    const timeline = trustTimeline(reviews, decisions, params, corrections, spotReviews);
     const entries = recentDotEntries(reviews, corrections, params.dots);
     rows.push({
       employee: byId.get(employeeId) ?? { id: employeeId, displayName: employeeId, roleNote: null },
@@ -127,10 +135,14 @@ export async function readTrust(
         : null,
       timeline,
       note: trustNote(reviews, decisions, level, suggestion !== null, params, corrections),
+      spotChecks: stats.spotChecks,
     });
   }
   return { canReview, employees, rows };
 }
+
+/** 已驗收的抽查次數（#166：`spotSummary` 與報表的抽查欄只算這些；還沒驗收的不算） */
+export const decidedSpotChecks = (spot: TrustStats["spotChecks"]): number => spot.accepted + spot.wrong + spot.other;
 
 const time = (iso: string): number => Date.parse(iso);
 
@@ -142,12 +154,14 @@ const byTime = <T extends { decidedAt: string }>(items: readonly T[]): T[] =>
  * 時間軸（#75）：最近 params.dots 次驗收的圓點與當時的層級，以及層級改變的事件。
  * 當時的層級＝該次驗收之前的驗收與不晚於它的決定（同時間決定在先，與 rules.ts 一致）算出的層級。
  * 事件早於顯示範圍時不列出。事後更正（#161）在更正的時間算一次做錯了：由它觸發的改回放在更正時間以前最後一次驗收的那一格。
+ * `spotReviews` 是被抽查的交件的驗收 id（#166）：那一格的 `spot` 為 true。
  */
 export function trustTimeline(
   reviews: readonly Review[],
   decisions: readonly LevelDecision[],
   params: Pick<TrustParams, "dots">,
   corrections: readonly Correction[] = [],
+  spotReviews: ReadonlySet<string> = new Set(),
 ): TrustTimeline {
   const all = byTime(reviews);
   const sorted = byTime(decisions);
@@ -160,7 +174,7 @@ export function trustTimeline(
       corrections.filter((c) => time(c.correctedAt) < time(review.decidedAt)),
     );
     const correctedAt = corrections.find((c) => c.reviewId === review.id)?.correctedAt ?? null;
-    return { dot: dotOf(review), at: review.decidedAt, level, correctedAt };
+    return { dot: dotOf(review), at: review.decidedAt, level, correctedAt, spot: spotReviews.has(review.id) };
   });
   const located: { index: number; event: TimelineEvent }[] = [
     ...sorted.map((d) => {

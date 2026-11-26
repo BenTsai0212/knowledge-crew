@@ -101,6 +101,7 @@ describe("groupEmployees", () => {
     suggestion: null,
     timeline: { cells: [], empty: 0, events: [{ column: 0, items: [{ kind: "relax" as const, at: "2026-10-13T00:00:00Z" }, reset] }] },
     note: null,
+    spotChecks: { total: 0, accepted: 0, wrong: 0, other: 0 },
   };
   const assignment = (sourceId: string, latestRound: number | null, latestVerdict: "accepted" | null, workTypeId = "docs") => ({
     employeeId: "basil",

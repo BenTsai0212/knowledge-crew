@@ -127,13 +127,15 @@ export function dotsSummary(dots: readonly Dot[], language: LanguageCode): strin
 /**
  * 一個圓點（設計規格 v3 第 4 節）：通過＝success 實心圓、做錯了＝danger 粗體 ×、其他退回＝textMuted 虛線空心圓；none 是不足的空格。
  * 通過後事後更正（#164，crew ADR 0008 第 3 點）：仍是 success，但改成中空的圓（`corrected`）；`title` 是滑過時的提示。
+ * 抽查（#166，第 9 點）：外加 primary 色的外框（`spot`），可與中空、× 同時出現。
  */
-export function DotMark({ dot, className, corrected = false, title }: { dot: Dot | "none"; className?: string; corrected?: boolean; title?: string }) {
+export function DotMark({ dot, className, corrected = false, spot = false, title }: { dot: Dot | "none"; className?: string; corrected?: boolean; spot?: boolean; title?: string }) {
   return (
     <span
       className={className === undefined ? "crew-dot" : `crew-dot ${className}`}
       data-dot={dot}
       data-corrected={corrected || undefined}
+      data-spot={spot || undefined}
       title={title}
       aria-hidden="true"
     >
@@ -167,6 +169,16 @@ export function DotRow({ dots, corrected = [], language }: { dots: readonly Dot[
       {dotRow}
       <DotLegendCorrected language={language} />
     </>
+  );
+}
+
+/** 「藍框＝抽查」的圖例（#166）：只在這一列有抽查的格子時放；圓點只是裝飾，文字就是說明。 */
+export function DotLegendSpot({ language }: { language: LanguageCode }) {
+  return (
+    <span className="muted crew-dots-legend">
+      <DotMark dot="ok" spot />
+      {crewStrings("trust", language).dotLegendSpot}
+    </span>
   );
 }
 

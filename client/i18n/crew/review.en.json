@@ -120,5 +120,12 @@
   "correctionConsequenceItem": "This counts as a mistake. You can't undo this correction.",
   "correctionSubmit": "Record correction",
   "correctionDone": "Found wrong after approval ({date})",
-  "correctionNoteShown": "What was wrong: {note}"
+  "correctionNoteShown": "What was wrong: {note}",
+  "spotTitle": "Spot check",
+  "spotWhy": "While reviewing key points, 1 in every {every} pieces of work is reviewed item by item. This is number {ordinal} since you agreed.",
+  "spotRule": "Everything is listed this time. Marking it as a mistake still switches back to reviewing every item; approving it counts as a normal approval.",
+  "spotTag": "Spot check",
+  "fullOnce": "Review every item this time",
+  "fullOnceBack": "Back to key points",
+  "fullOnceNote": "Only changes how you view this one. It isn't recorded and doesn't affect trust."
 }

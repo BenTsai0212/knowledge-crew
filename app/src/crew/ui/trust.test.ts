@@ -14,7 +14,7 @@ import { DEMO_PARAMS } from "../trust/demo-params";
 import { workTypeLabel } from "./labels";
 import { canReviewOf } from "./today";
 import type { LevelDecision, Review } from "../trust/types";
-import { agreeRelax, isSameDay, readTrust, revokeRelax, shortDate, trustNote, trustTimeline, type Trust, type TrustRow } from "./trust";
+import { agreeRelax, decidedSpotChecks, isSameDay, readTrust, revokeRelax, shortDate, trustNote, trustTimeline, type Trust, type TrustRow } from "./trust";
 
 const demo = DEMO_RAW as DemoFile;
 const lang = clientConfig.client.defaultLanguage;
@@ -219,6 +219,39 @@ describe("時間軸與說明：匯入虛構資料後（設計規格 v3 第 6.4 �
     expect(r.note).toBe("revoked");
   });
 
+  // 抽查（#166，crew ADR 0008 第 9 點）：s12-1（抽查時做錯了）、j15-1（抽查通過）；Linden 的 k17 抽查還沒驗收
+  it("抽查記號與統計：Rowan 做錯了那格、Juniper 的 j15 那格是抽查；Linden 沒有已驗收的抽查；Sorrel 沒有抽查", async () => {
+    const t = await read(db, "manager");
+    const spotCells = (r: TrustRow) => r.timeline.cells.flatMap((c, i) => (c.spot ? [[i, c.dot]] : []));
+    const rowan = row(t, "rowan", "support");
+    expect(spotCells(rowan)).toEqual([[6, "wrong"]]);
+    expect(rowan.spotChecks).toEqual({ total: 1, accepted: 0, wrong: 1, other: 0 });
+    const juniper = row(t, "juniper", "dev");
+    expect(spotCells(juniper)).toEqual([[9, "ok"]]);
+    expect(juniper.spotChecks).toEqual({ total: 1, accepted: 1, wrong: 0, other: 0 });
+    const linden = row(t, "linden", "knowledge");
+    expect(spotCells(linden)).toEqual([]);
+    expect(linden.spotChecks.total).toBe(1);
+    expect(decidedSpotChecks(linden.spotChecks)).toBe(0);
+    const sorrel = row(t, "sorrel", "content");
+    expect(spotCells(sorrel)).toEqual([]);
+    expect(decidedSpotChecks(sorrel.spotChecks)).toBe(0);
+  });
+
+  it("Linden 的 k17（抽查）通過後：最後一格是抽查、已驗收的抽查是通過 1", { timeout: DB_TIMEOUT }, async () => {
+    const own = await open();
+    try {
+      const work = (await getAssignmentWorks(own, "manager", "k17")).at(-1)!;
+      await createReview(own, "manager", { workId: work.id, verdict: "accepted" });
+      const linden = row(await read(own, "manager"), "linden", "knowledge");
+      expect(linden.timeline.cells.at(-1)).toMatchObject({ dot: "ok", spot: true });
+      expect(linden.spotChecks).toEqual({ total: 1, accepted: 1, wrong: 0, other: 0 });
+      expect(decidedSpotChecks(linden.spotChecks)).toBe(1);
+    } finally {
+      await own.close();
+    }
+  });
+
   it("Sorrel 同意改看重點後：事件在最後一格；收回後說明是 revoked", { timeout: DB_TIMEOUT }, async () => {
     const own = await open();
     try {
@@ -261,6 +294,13 @@ describe("trustTimeline／trustNote（純函式）", () => {
     const corrections = [{ id: "c1", reviewId: "b", correctedAt: at(4), notInPoints: false }];
     const t = trustTimeline([ok("a", 1), ok("b", 2), ok("c", 3)], [], { dots: 5 }, corrections);
     expect(t.cells.map((c) => [c.dot, c.correctedAt])).toEqual([["ok", null], ["ok", at(4)], ["ok", null]]);
+  });
+
+  it("抽查（#166）：spotReviews 裡的驗收那一格 spot 為 true，可與事後更正同時成立；預設都是 false", () => {
+    const corrections = [{ id: "c1", reviewId: "b", correctedAt: at(4), notInPoints: false }];
+    const t = trustTimeline([ok("a", 1), ok("b", 2), ok("c", 3)], [], { dots: 5 }, corrections, new Set(["b"]));
+    expect(t.cells.map((c) => [c.spot, c.correctedAt])).toEqual([[false, null], [true, at(4)], [false, null]]);
+    expect(trustTimeline([ok("a", 1)], [], { dots: 5 }).cells[0].spot).toBe(false);
   });
 
   it("沒有驗收時沒有格與事件", () => {

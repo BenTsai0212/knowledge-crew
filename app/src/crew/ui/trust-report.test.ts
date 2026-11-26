@@ -85,6 +85,15 @@ describe("trustReport：匯入虛構資料後", () => {
     });
   });
 
+  // 抽查（#166）：s12-1 抽查時做錯了、j15 抽查通過；Linden 的 k17 抽查還沒驗收；Sorrel 沒有看重點過
+  it("manager：抽查欄是已驗收的抽查次數與其中做錯了的次數；沒有時是 null", async () => {
+    const { report } = await read("manager");
+    expect(find(report, "rowan", "support").spot).toEqual({ count: 1, wrong: 1 });
+    expect(find(report, "juniper", "dev").spot).toEqual({ count: 1, wrong: 0 });
+    expect(find(report, "linden", "knowledge").spot).toBeNull();
+    expect(find(report, "sorrel", "content").spot).toBeNull();
+  });
+
   it("staff：只有自己專案看得到的兩列，數字與主管看到的相同", async () => {
     const staff = (await read("staff")).report;
     const manager = (await read("manager")).report;
@@ -99,7 +108,7 @@ describe("trustReport：匯入虛構資料後", () => {
 });
 
 describe("trustReport／firstPassPercent（純函式）", () => {
-  const trustRow = (employeeId: string, workTypeId: string): TrustRow => ({
+  const trustRow = (employeeId: string, workTypeId: string, spotChecks: TrustRow["spotChecks"] = { total: 0, accepted: 0, wrong: 0, other: 0 }): TrustRow => ({
     employee: { id: employeeId, displayName: employeeId, roleNote: null },
     workTypeId,
     dots: [],
@@ -110,6 +119,7 @@ describe("trustReport／firstPassPercent（純函式）", () => {
     suggestion: null,
     timeline: { cells: [], empty: 0, events: [] },
     note: null,
+    spotChecks,
   });
   const event = (
     kind: LedgerKind,
@@ -154,6 +164,13 @@ describe("trustReport／firstPassPercent（純函式）", () => {
     const [row] = trustReport([trustRow("basil", "docs")], events);
     expect(row.levelChanges).toBe(3);
     expect(row.lastChange).toEqual({ kind: "revoke", at: "2026-10-03T00:00:00.000Z" });
+  });
+
+  it("抽查欄只算已驗收的抽查（還沒驗收的不算），做錯了另外計數", () => {
+    const [none] = trustReport([trustRow("basil", "docs", { total: 1, accepted: 0, wrong: 0, other: 0 })], []);
+    expect(none.spot).toBeNull();
+    const [some] = trustReport([trustRow("basil", "docs", { total: 5, accepted: 2, wrong: 1, other: 1 })], []);
+    expect(some.spot).toEqual({ count: 4, wrong: 1 });
   });
 
   it("沒有事件：全部是 0，比例是 null", () => {

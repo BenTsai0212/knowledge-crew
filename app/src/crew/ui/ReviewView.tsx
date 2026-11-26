@@ -199,6 +199,8 @@ function ListGroup({ title, count, empty, items, selected, select, t, language }
                 onClick={() => select(item.id)}
               >
                 <span className="crew-review__item-title">{item.title}</span>
+                {/* 抽查（#166）：比照優先順序的標籤 */}
+                {item.spotCheck && <span className="badge crew-priority crew-review__spot-tag">{t.spotTag}</span>}
                 <span className="muted crew-review__ref">{itemRef(item, t, language)}</span>
                 <ScheduleLine item={item} language={language} />
                 <span className="muted">{itemMeta(item, t, language)}</span>

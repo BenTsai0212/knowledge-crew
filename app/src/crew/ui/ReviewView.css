@@ -392,6 +392,25 @@ button.crew-review__point[aria-pressed="true"] {
   margin: 0 0 0.25rem;
 }
 
+/* 這次抽查（#166）：與「為什麼是看重點」同版面，改用 warning */
+.crew-review__spot {
+  border-color: var(--color-warning);
+}
+
+.crew-review__spot .crew-review__light-icon,
+.crew-review__spot .crew-review__light-text h4 {
+  color: var(--color-warning);
+}
+
+/* 這次逐項看（#166） */
+.crew-review__full-once {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
 .crew-review__decision-row {
   display: flex;
   flex-wrap: wrap;
