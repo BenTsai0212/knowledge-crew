@@ -232,12 +232,13 @@ describe("actorName", () => {
 describe("readLedger：匯入虛構資料後", () => {
   it("manager：四個來源的全部事件，含 Rowan、Linden、Juniper 的同意改看重點、Juniper 的收回、Rowan 的改回逐項看與提出看重點的建議", async () => {
     const events = await readLedger(db, "manager", lang);
-    // #134 加了交辦 6、交件 4、退回 2（s16-1、k15-1）；#145 加了守則的事件 9（demo 的六條守則與其決定）
+    // #134 加了交辦 6、交件 4、退回 2（s16-1、k15-1）；#145 加了守則的事件 9（demo 的六條守則與其決定）；
+    // #161 加了交辦 10、交件 10、通過 9（s17～s20、j12～j15、k16；k17 待驗收）
     expect(countKinds(events)).toEqual({
-      assigned: 54, submitted: 60, accepted: 44, returned: 10, proposed: 4, relax: 3, revoke: 1, autoReset: 1,
+      assigned: 64, submitted: 70, accepted: 53, returned: 10, proposed: 4, relax: 3, revoke: 1, autoReset: 1,
       guidelineSaved: 3, guidelineProposed: 3, guidelineEdited: 1, guidelineRejected: 1, guidelineRetired: 1,
     });
-    expect(events).toHaveLength(186);
+    expect(events).toHaveLength(215);
     expect(new Set(events.map((e) => e.assignment?.sourceName).filter((n) => n !== undefined))).toEqual(new Set(SOURCE_NAMES));
     const relax = events.filter((e) => e.kind === "relax");
     expect(relax.map((e) => [e.employee.id, e.workTypeId, e.actor])).toEqual([
@@ -257,10 +258,11 @@ describe("readLedger：匯入虛構資料後", () => {
 
   it("staff：只看到青翼專案（客服信箱、官方社群帳號）的事件", async () => {
     const events = await readLedger(db, "staff", lang);
-    // #134 加了青翼專案的交辦 3（s15、s16、c12）、交件 2、退回 1（s16-1）；#145 加了 Rowan、Sorrel 的守則事件 3
-    expect(events).toHaveLength(94);
+    // #134 加了青翼專案的交辦 3（s15、s16、c12）、交件 2、退回 1（s16-1）；#145 加了 Rowan、Sorrel 的守則事件 3；
+    // #161 加了 s17～s20 的交辦、交件、通過各 4
+    expect(events).toHaveLength(106);
     expect(countKinds(events)).toEqual({
-      assigned: 28, submitted: 31, accepted: 23, returned: 5, proposed: 2, relax: 1, autoReset: 1, guidelineSaved: 2, guidelineProposed: 1,
+      assigned: 32, submitted: 35, accepted: 27, returned: 5, proposed: 2, relax: 1, autoReset: 1, guidelineSaved: 2, guidelineProposed: 1,
     });
     expect(events.filter((e) => e.kind === "relax").map((e) => e.employee.id)).toEqual(["rowan"]);
     expect(events.filter((e) => e.kind === "proposed").map((e) => e.id)).toEqual(["proposed:c09-1", "proposed:s09-1"]);

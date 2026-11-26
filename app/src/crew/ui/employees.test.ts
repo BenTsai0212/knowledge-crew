@@ -69,15 +69,15 @@ describe("readEmployees：員工卡（#83）", () => {
     const work = (id: string) => list.find((e) => e.id === id)!.workTypes[0];
     expect(work("rowan").source).toEqual({ label: sourceLabel("support-inbox", "Support inbox", lang), kind: "mailbox" });
     expect(work("juniper").source?.kind).toBe("repo");
-    // #134 加了待驗收的 j11（Juniper）、c12（Sorrel）
-    expect(list.map((e) => e.workTypes[0].awaiting)).toEqual([2, 1, 1, 2]);
+    // #134 加了待驗收的 j11（Juniper）、c12（Sorrel）；#161 加了 k17（Linden）
+    expect(list.map((e) => e.workTypes[0].awaiting)).toEqual([2, 2, 1, 2]);
     expect(work("rowan").dots).toHaveLength(10);
     expect(work("rowan").dots.filter((d) => d === "wrong")).toHaveLength(1);
     expect(work("juniper").dots).toHaveLength(10);
     expect(work("sorrel").note).toEqual({ kind: "suggestion" });
     expect(work("rowan").note).toMatchObject({ kind: "event", event: { kind: "reset" } });
     expect(work("linden").note).toMatchObject({ kind: "event", event: { kind: "relax" } });
-    expect(work("juniper").note).toEqual({ kind: "event", event: { kind: "revoke", at: "2026-10-24T02:00:00.000Z" } });
+    expect(work("juniper").note).toEqual({ kind: "event", event: { kind: "revoke", at: "2026-11-10T02:00:00.000Z" } });
   });
 
   it("不能驗收時沒有看重點的建議", async () => {
@@ -137,7 +137,7 @@ describe("readEmployees：守則（#145）", () => {
     const rowan = guidelinesOf(list, "rowan");
     expect([ids(rowan.pending), ids(rowan.active), ids(rowan.closed)]).toEqual([["g02"], ["g01"], []]);
     const g01 = rowan.active[0];
-    expect(g01).toMatchObject({ proposerKind: "human", status: "active", revised: false, followed: 10, sourceAssignmentId: "s05", closedAt: null });
+    expect(g01).toMatchObject({ proposerKind: "human", status: "active", revised: false, followed: 14, sourceAssignmentId: "s05", closedAt: null });
     expect(g01.text).toBe(demo("g01").text[lang]);
     expect(g01.confirmedAt).toBe(g01.proposedAt);
     const g02 = rowan.pending[0];
@@ -147,7 +147,7 @@ describe("readEmployees：守則（#145）", () => {
 
     const linden = guidelinesOf(list, "linden");
     expect([ids(linden.pending), ids(linden.active), ids(linden.closed)]).toEqual([[], ["g05"], ["g04"]]);
-    expect(linden.active[0]).toMatchObject({ revised: true, followed: 7, text: demo("g05").decisions[0].revisedText![lang], proposedText: demo("g05").text[lang] });
+    expect(linden.active[0]).toMatchObject({ revised: true, followed: 9, text: demo("g05").decisions[0].revisedText![lang], proposedText: demo("g05").text[lang] });
     expect(linden.closed[0]).toMatchObject({ status: "revoked", closedAt: "2026-10-20T02:00:00.000Z" });
     expect(guidelinesOf(list, "juniper").closed.map((g) => [g.id, g.status])).toEqual([["g06", "rejected"]]);
     expect(ids(guidelinesOf(list, "sorrel").active)).toEqual(["g03"]);

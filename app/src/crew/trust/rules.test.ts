@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_PARAMS } from "./demo-params";
-import { autoResets, recentDots, relaxSuggestion, reviewFocus, reviewLevel } from "./rules";
-import type { LevelDecision, ReturnReason, Review, WorkForReview } from "./types";
+import { autoResets, lightPeriods, recentDotEntries, recentDots, relaxSuggestion, reviewFocus, reviewLevel } from "./rules";
+import type { Correction, LevelDecision, ReturnReason, Review, WorkForReview } from "./types";
 
 // 第 i 天的時間；同一天的驗收與決定用小時區分
 const at = (day: number, hour = 12) => new Date(Date.UTC(2026, 0, day, hour)).toISOString();
@@ -17,8 +17,8 @@ const oks = (from: number, to: number) => Array.from({ length: to - from + 1 }, 
 const params = { window: 10, min: 10 };
 
 describe("demo-params", () => {
-  it("是第 0 階段的示範值", () => {
-    expect(DEMO_PARAMS).toEqual({ dots: 10, window: 10, min: 10 });
+  it("是第 0 階段的示範值（第 5 階段加上抽查的 N，#161）", () => {
+    expect(DEMO_PARAMS).toEqual({ dots: 10, window: 10, min: 10, spotEvery: 5 });
   });
 });
 
@@ -221,5 +221,102 @@ describe("reviewFocus", () => {
     const focus = reviewFocus(work, "item");
     focus.points.push("x");
     expect(work).toEqual(copy);
+  });
+});
+
+// ── 事後更正（crew ADR 0008 第 2、3 點，#161） ────────────────────────────
+
+const correct = (review: Review, day: number, hour = 12, notInPoints = false): Correction => ({
+  id: `c-${review.id}`, reviewId: review.id, correctedAt: at(day, hour), notInPoints,
+});
+
+describe("事後更正", () => {
+  it("看重點期間的更正在更正的時間改回逐項看，事件與一般的做錯了相同，附被更正的驗收與更正", () => {
+    const reviews = oks(1, 12);
+    const c = correct(reviews[11]!, 14);
+    expect(reviewLevel(reviews, [relax(10)], [c])).toBe("item");
+    expect(autoResets(reviews, [relax(10)], [c])).toEqual([{ review: reviews[11], at: at(14), correction: c }]);
+    // 沒有更正時不變（既有的呼叫不受影響）
+    expect(reviewLevel(reviews, [relax(10)])).toBe("light");
+    expect(autoResets(reviews, [relax(10)])).toEqual([]);
+  });
+
+  it("算在更正的時間：更正之前的驗收不受影響、更正之前的 relax 無效、之後的 relax 有效", () => {
+    const reviews = oks(1, 12);
+    const c = correct(reviews[0]!, 11);
+    // 驗收在第 1 天，更正在第 11 天：第 10 天的 relax 被更正改回
+    expect(reviewLevel(reviews, [relax(10)], [c])).toBe("item");
+    expect(reviewLevel(reviews, [relax(11, 18)], [c])).toBe("light");
+  });
+
+  it("同一時間的順序：決定 → 驗收 → 更正（與更正同時的 relax 不算在更正之後）", () => {
+    const reviews = oks(1, 12);
+    expect(reviewLevel(reviews, [relax(13, 12)], [correct(reviews[5]!, 13, 12)])).toBe("item");
+    expect(reviewLevel(reviews, [relax(13, 12)], [correct(reviews[5]!, 13, 11)])).toBe("light");
+  });
+
+  it("逐項看期間的更正不產生改回事件", () => {
+    const reviews = oks(1, 12);
+    expect(autoResets(reviews, [], [correct(reviews[3]!, 5)])).toEqual([]);
+    expect(reviewLevel(reviews, [], [correct(reviews[3]!, 5)])).toBe("item");
+  });
+
+  it("建議的依據期間有更正時不建議；更正之後累積 window 次才建議（次數只算驗收）", () => {
+    const reviews = oks(1, 20);
+    // 第 3 天的驗收在第 15 天更正：依據（第 11～20 天）之中有更正
+    expect(relaxSuggestion(reviews, [], params, [correct(reviews[2]!, 15)])).toBeNull();
+    // 第 10 天以前更正：依據（第 11～20 天）之前，照常建議
+    expect(relaxSuggestion(reviews, [], params, [correct(reviews[2]!, 10, 18)])?.basis).toEqual(reviews.slice(10));
+    // 更正在最新決定之前：不擋（決定之後重新累積）
+    expect(relaxSuggestion([...reviews, ...oks(21, 30)], [revoke(20, 18)], params, [correct(reviews[2]!, 20, 13)])?.basis).toEqual(oks(21, 30));
+  });
+});
+
+describe("recentDotEntries", () => {
+  it("更正過的那次仍是 ok，correction 不是 null；其他是 null", () => {
+    const reviews = [ok(1), ret("wrong", 2), ok(3)];
+    const c = correct(reviews[0]!, 4);
+    expect(recentDotEntries(reviews, [c], 10)).toEqual([
+      { review: reviews[0], dot: "ok", correction: c },
+      { review: reviews[1], dot: "wrong", correction: null },
+      { review: reviews[2], dot: "ok", correction: null },
+    ]);
+    expect(recentDotEntries(reviews, [c], 2).map((e) => e.dot)).toEqual(recentDots(reviews, 2));
+    expect(recentDotEntries(reviews, [], 0)).toEqual([]);
+  });
+});
+
+describe("lightPeriods", () => {
+  it("relax 開始，revoke、下一筆 relax、做錯了或更正結束；仍在看重點時 end 是 null", () => {
+    const reviews = [...oks(1, 5), ret("wrong", 8), ok(12)];
+    const c = correct(reviews[6]!, 14);
+    expect(lightPeriods(reviews, [relax(2), relax(4), revoke(6), relax(7), relax(10), relax(15)], [c])).toEqual([
+      { start: at(2, 18), end: at(4, 18) },
+      { start: at(4, 18), end: at(6, 18) },
+      { start: at(7, 18), end: at(8) },
+      { start: at(10, 18), end: at(14) },
+      { start: at(15, 18), end: null },
+    ]);
+  });
+});
+
+describe("reviewFocus 的抽查", () => {
+  const work: WorkForReview = {
+    points: ["p"],
+    checks: [],
+    changes: [{ path: "a", summary: "A" }, { path: "b", summary: "B" }],
+    body: "全文",
+  };
+
+  it("看重點時被抽查：變更清單逐項列出，層級不變，結果帶 spotCheck", () => {
+    const focus = reviewFocus(work, "light", { spotCheck: { ordinal: 5, every: 5 } });
+    expect(focus.level).toBe("light");
+    expect(focus.changes).toEqual({ mode: "items", items: work.changes });
+    expect(focus.spotCheck).toEqual({ ordinal: 5, every: 5 });
+  });
+
+  it("不是抽查時沒有 spotCheck 欄位，結果與不傳選項相同", () => {
+    expect(reviewFocus(work, "light", { spotCheck: null })).toEqual(reviewFocus(work, "light"));
+    expect("spotCheck" in reviewFocus(work, "light")).toBe(false);
   });
 });

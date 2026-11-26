@@ -366,8 +366,8 @@ export async function readLedgerSources(
   const pairs = new Map(assignments.map((a) => [pairKey(a.employeeId, a.workTypeId), a]));
   for (const { employeeId, workTypeId } of pairs.values()) {
     const inputs = await getTrustInputs(db, identity, employeeId, workTypeId);
-    for (const r of autoResets(inputs.reviews, inputs.decisions)) resets.push({ reviewId: r.review.id, at: r.at });
-    for (const p of relaxProposals(inputs.reviews, inputs.decisions, params)) {
+    for (const r of autoResets(inputs.reviews, inputs.decisions, inputs.corrections)) resets.push({ reviewId: r.review.id, at: r.at });
+    for (const p of relaxProposals(inputs.reviews, inputs.decisions, params, inputs.corrections)) {
       proposals.push({ reviewId: p.review.id, at: p.at, basis: p.basis.map((r) => r.id) });
     }
   }

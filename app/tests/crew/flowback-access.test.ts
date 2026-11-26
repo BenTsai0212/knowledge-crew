@@ -18,6 +18,7 @@ const WORK = "k13-w1"; // demo.json 待驗收的知識庫條目（公司知識�
 const DOC = `crew-${WORK}`;
 const OWNER = `pe-crew-${WORK}-owner`; // #owner 的待審實體；新建的部門實體 id 相同（第 1 筆決定的 id，0009）
 const SEEDED = "crew-k12-w1"; // demo.json 已通過的 k12：seed 時就回流（#92 的計畫第 5 節）
+const CORRECTED = "crew-k01-w2"; // demo.json 已通過的 k01-2：seed 時回流，之後事後更正（#161，crew ADR 0008 第 5 點）
 
 // 只在這個測試中的虛構身分（client/access.json 不改），都屬長堤專案、能驗收：
 // clerk 沒有上傳權限；junior 能上傳但只看得到公開等級（寫不進 internal 的文件）
@@ -133,7 +134,7 @@ describe("驗收通過時回流", { timeout: 60_000 }, () => {
     expect(pending).toHaveLength(1);
     expect(await createReview(db, "manager", { workId: pending[0], verdict: "accepted" })).toMatchObject({ flowback: "not-applicable" });
     expect(await ids(null, "SELECT 1::text AS k FROM crew.knowledge_flowbacks")).toEqual([]);
-    expect(await ids("manager", "SELECT document_id AS k FROM crew.knowledge_flowbacks")).toEqual([SEEDED]);
+    expect(await ids("manager", "SELECT document_id AS k FROM crew.knowledge_flowbacks")).toEqual([CORRECTED, SEEDED]);
   });
 
   it("驗收者沒有上傳權限：驗收照常通過、不回流", async () => {
@@ -295,8 +296,13 @@ describe("回流的來源", { timeout: 60_000 }, () => {
       assignmentId: "k12", title: (DEMO_RAW as DemoFile).assignments.find((a) => a.id === "k12")!.title[lang], employeeName: "Linden",
       decidedAt: new Date("2026-10-27T15:00:00+08:00").toISOString(),
       // 知識的來歷（#147）：驗收者、當時看重點、第一次就通過、檢查 2/2、依照守則 1 條（g05）
-      decidedBy: "manager", level: "light", returned: 0, checks: { passed: 2, total: 2 }, guidelines: 1,
+      decidedBy: "manager", level: "light", returned: 0, checks: { passed: 2, total: 2 }, guidelines: 1, correctedAt: null,
     });
+    // 事後更正過的 k01-2（#161）：通過那時是逐項看、退回 1 次後通過；「通過後發現有錯（日期）」是更正的時間
+    expect(await origin("manager", CORRECTED)).toMatchObject({
+      assignmentId: "k01", employeeName: "Linden", level: "item", returned: 1, correctedAt: new Date("2026-09-04T16:00:00+08:00").toISOString(),
+    });
+    expect(await origin("staff", CORRECTED)).toBeNull();
     expect(await readFlowbackPassage(db, "manager", "k12-w1")).toBe(`${SEEDED}-1`);
     for (const identity of ["staff", "guest", null]) {
       expect(await origin(identity, SEEDED), String(identity)).toBeNull();

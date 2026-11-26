@@ -48,7 +48,7 @@ test.describe("員工卡（主管，桌機 1280）", () => {
   test("Sorrel 有看重點的建議；Juniper 10 個圓點，同意改看重點後又收回（#125）", async ({ page }) => {
     await expect(card(page, "sorrel").getByText(ct.employees.noteSuggestion, { exact: true })).toBeVisible();
     await expect(dots(card(page, "juniper")).locator(".crew-dot")).toHaveCount(10);
-    await expect(card(page, "juniper").getByText(crewFill(ct.employees.noteRevoke, { date: "10/24" }), { exact: true })).toBeVisible();
+    await expect(card(page, "juniper").getByText(crewFill(ct.employees.noteRevoke, { date: "11/10" }), { exact: true })).toBeVisible();
   });
 
   test("「交辦給 Linden」切到交辦頁並預選 Linden 與平常的來源", async ({ page }) => {

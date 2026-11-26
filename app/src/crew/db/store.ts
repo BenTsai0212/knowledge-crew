@@ -12,7 +12,10 @@ import {
 } from "../guidelines/status";
 import { flowbackDocumentId, flowbackOwnerPendingId, OWNER_ENTITY_TYPE, toFlowbackDocument } from "../knowledge/flowback";
 import { guidelineDocumentId, identityName, toGuidelineDocument, type GuidelineDocument } from "../knowledge/guideline-document";
-import type { Correction, LevelDecision, LevelDecisionKind, ReturnReason, Review, Verdict, WorkChange, WorkCheck, WorkForReview } from "../trust/types";
+import { spotChecks, trustStats, type TrustStats } from "../trust/spot-check";
+import type {
+  Correction, LevelDecision, LevelDecisionKind, ReturnReason, Review, SpotCheck, TrustParams, Verdict, WorkChange, WorkCheck, WorkForReview,
+} from "../trust/types";
 
 /** 工作來源的類型（RFC 0001 的 2026-11-21 修訂）；repo 類的外部編號是 Issue／PR 編號。 */
 export type SourceKind = "repo" | "mailbox" | "social" | "knowledge_base";
@@ -77,8 +80,8 @@ export interface TrustInputs {
   decisions: LevelDecision[];
   /** 事後更正（依更正時間排序，crew 0009） */
   corrections: Correction[];
-  /** 交件（依交件時間、同時間依 id 排序）：抽查的序號用 */
-  works: { id: string; submittedAt: string }[];
+  /** 交件（依交件時間、同時間依 id 排序）與這一輪的驗收（還沒驗收時是 null）：抽查的序號用 */
+  works: { id: string; submittedAt: string; reviewId: string | null }[];
 }
 
 const iso = (value: Date | string): string => new Date(value).toISOString();
@@ -222,9 +225,11 @@ export function getTrustInputs(db: Database, identityId: string | null, employee
        ORDER BY c.corrected_at, c.id`,
       [employeeId, workTypeId],
     );
-    const works = await rows<{ id: string; submittedAt: Date }>(
+    const works = await rows<{ id: string; submittedAt: Date; reviewId: string | null }>(
       tx,
-      `SELECT w.id, w.submitted_at AS "submittedAt" FROM crew.works w JOIN crew.assignments a ON a.id = w.assignment_id
+      `SELECT w.id, w.submitted_at AS "submittedAt", rv.id AS "reviewId"
+       FROM crew.works w JOIN crew.assignments a ON a.id = w.assignment_id
+       LEFT JOIN crew.reviews rv ON rv.work_id = w.id
        WHERE a.employee_id = $1 AND a.work_type_id = $2 ORDER BY w.submitted_at, w.id`,
       [employeeId, workTypeId],
     );
@@ -232,9 +237,46 @@ export function getTrustInputs(db: Database, identityId: string | null, employee
       reviews: reviews.map((r) => toReview(toStoredReview(r))),
       decisions: decisions.map((d) => ({ decision: d.decision, decidedAt: iso(d.decidedAt) })),
       corrections: corrections.map((c) => ({ ...c, correctedAt: iso(c.correctedAt) })),
-      works: works.map((w) => ({ id: w.id, submittedAt: iso(w.submittedAt) })),
+      works: works.map((w) => ({ id: w.id, submittedAt: iso(w.submittedAt), reviewId: w.reviewId })),
     };
   });
+}
+
+/** 某員工 × 某類工作的抽查與統計（crew ADR 0008 第 7～9、15 點，#161）：抽查不存，由 getTrustInputs() 的結果推算。 */
+export interface TrustSummary {
+  inputs: TrustInputs;
+  /** 被抽查的交件 id → 序號與 N（驗收面板的「這次抽查」與原因） */
+  spotChecks: Map<string, SpotCheck>;
+  /** 抽查次數與結果、更正次數、「沒被標成重點」次數（信任頁與報表） */
+  stats: TrustStats;
+}
+
+export async function getTrustSummary(
+  db: Database,
+  identityId: string | null,
+  employeeId: string,
+  workTypeId: string,
+  params: Pick<TrustParams, "spotEvery">,
+): Promise<TrustSummary> {
+  const inputs = await getTrustInputs(db, identityId, employeeId, workTypeId);
+  const notInPoints = new Set(
+    (
+      await read(db, identityId, (tx) =>
+        rows<{ id: string }>(
+          tx,
+          `SELECT rv.id FROM crew.reviews rv JOIN crew.works w ON w.id = rv.work_id JOIN crew.assignments a ON a.id = w.assignment_id
+           WHERE a.employee_id = $1 AND a.work_type_id = $2 AND rv.not_in_points`,
+          [employeeId, workTypeId],
+        ),
+      )
+    ).map((r) => r.id),
+  );
+  const reviews = inputs.reviews.map((r) => ({ ...r, notInPoints: notInPoints.has(r.id) }));
+  return {
+    inputs,
+    spotChecks: spotChecks(inputs.works, inputs.reviews, inputs.decisions, inputs.corrections, params),
+    stats: trustStats({ ...inputs, reviews }, params),
+  };
 }
 
 // repo 類的外部編號：數字文字的最大值 ＋1（沒有時是 1）；不是數字的值不轉型、不計入

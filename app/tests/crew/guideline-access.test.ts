@@ -135,14 +135,14 @@ describe("寫入：只限能驗收的身分，不能冒名", () => {
 });
 
 describe("demo.json 的守則（#142 PR 2）：讀取範圍同上", () => {
-  it("manager 看得到 6 條守則與全部的決定、37 次依照；staff 只看得到青翼專案的員工 × 工作類型；guest 看不到", async () => {
+  it("manager 看得到 6 條守則與全部的決定、44 次依照（#161 加了 7 次）；staff 只看得到青翼專案的員工 × 工作類型；guest 看不到", async () => {
     const guidelines = (identity: string | null) => demoIds(identity, "SELECT id FROM crew.guidelines WHERE id");
     const decisions = (identity: string | null) => demoIds(identity, "SELECT DISTINCT guideline_id AS id FROM crew.guideline_decisions WHERE guideline_id");
     const follows = async (identity: string | null) =>
       (await demoIds(identity, "SELECT work_id || '/' || guideline_id AS id FROM crew.work_guidelines WHERE guideline_id")).length;
     expect(await guidelines("manager")).toEqual(["g01", "g02", "g03", "g04", "g05", "g06"]);
     expect(await decisions("manager")).toEqual(["g01", "g03", "g04", "g05", "g06"]);
-    expect(await follows("manager")).toBe(37);
+    expect(await follows("manager")).toBe(44);
     // Rowan × support、Sorrel × content 在青翼專案；Linden、Juniper 在長堤專案
     expect(await guidelines("staff")).toEqual(["g01", "g02", "g03"]);
     expect(await guidelines("guest")).toEqual([]);

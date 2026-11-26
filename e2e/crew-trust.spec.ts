@@ -91,7 +91,8 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(steps).toHaveCount(4);
     await expect(steps.nth(0)).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/03", count: 10, from: "09/01", to: "10/03" }));
     await expect(steps.nth(1)).toHaveText(crewFill(ct.trust.historyRelax, { date: "10/09", actor: roleName("manager") }));
-    await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/15" }));
+    // #161：同意後的第一次驗收是 s17（10/10）；做錯了的 s12 是同意後的第 5 件（抽查）
+    await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/10" }));
     await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyReset, { date: "10/15", title: assignmentTitle("s12") }));
   });
 
@@ -99,10 +100,11 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     const row = trustRow(page, "juniper", "dev");
     await expect(dots(row).getByRole("listitem")).toHaveCount(10);
     await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
-    const event = row.getByText(crewFill(ct.trust.eventRelax, { date: "10/19" }) + ct.trust.eventSeparator + crewFill(ct.trust.eventRevoke, { date: "10/24" }), { exact: true });
-    await expect(event).toBeVisible();
+    // #161：同意與收回（改為 11/10）之間看重點驗收 5 次，兩個事件在不同的格
+    const events = [crewFill(ct.trust.eventRelax, { date: "10/19" }), crewFill(ct.trust.eventRevoke, { date: "11/10" })].map((text) => row.getByText(text, { exact: true }));
+    for (const event of events) await expect(event).toBeVisible();
     // 1280 時每個事件各自一行（不從「改回逐項看」的中間斷開，#131）
-    for (const item of await event.locator(".crew-trust__event-item").all()) {
+    for (const item of await row.locator(".crew-trust__event-item").all()) {
       expect(await item.evaluate((el) => Math.round(el.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(el).lineHeight)))).toBe(1);
     }
     await expect(row.getByText(ct.trust.noteRevoked, { exact: true })).toBeVisible();
@@ -111,7 +113,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(steps.nth(0)).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/16", count: 10, from: "09/04", to: "10/16" }));
     await expect(steps.nth(1)).toHaveText(crewFill(ct.trust.historyRelax, { date: "10/19", actor: roleName("manager") }));
     await expect(steps.nth(2)).toContainText(crewFill(ct.trust.historyEffective, { date: "10/22" }));
-    await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyRevoke, { date: "10/24", actor: roleName("manager") }));
+    await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyRevoke, { date: "11/10", actor: roleName("manager") }));
     // 沒有看重點的建議（收回後要重新累積），只有打開那一件的按鈕
     await expect(row.getByRole("button", { name: ct.trust.agreeRelax, exact: true })).toHaveCount(0);
     await steps.nth(2).getByRole("button", { name: crewFill(ct.trust.historyOpenWork, { title: assignmentTitle("j05") }), exact: true }).click();
@@ -169,11 +171,6 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   for (const band of await page.locator(".crew-trust__band").all()) {
     expect(await band.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
   }
-  // Juniper 的「看重點」只有一格：看得到短名，不是空框（#131）
-  const narrow = trustRow(page, "juniper", "dev").locator('.crew-trust__band[data-level="light"][data-span="1"]');
-  await expect(narrow.locator(".crew-trust__band-short")).toBeVisible();
-  await expect(narrow.locator(".crew-trust__band-short")).toHaveText(ct.trust.levelLightShort);
-  await expect(narrow).toContainText(ct.trust.levelLight);
   // 建議的經過與依據在卡片內（#125）
   for (const [employee, workType] of [["juniper", "dev"], ["sorrel", "content"]]) {
     const r = trustRow(page, employee, workType);
@@ -184,6 +181,27 @@ test("手機 390：沒有水平捲動，時間軸在卡片內", async ({ page })
   await trustRow(page, "sorrel", "content").getByText(crewFill(ct.trust.basisSummary, { count: 10, from: "09/09", to: "10/27" }), { exact: true }).click();
   await expect(trustRow(page, "sorrel", "content").getByRole("list", { name: ct.trust.basisLabel })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+// 一格的「看重點」顯示短名（#131）。#161 之後 demo 沒有一格的看重點（Juniper 看重點驗收了 5 次），
+// 這裡讓 Sorrel 同意改看重點、再通過 c11，最後一格就是只有一格的看重點
+test("手機 390：只有一格的「看重點」看得到短名，不是空框（#131）", async ({ page }) => {
+  await openTrustAs(page, "manager");
+  await trustRow(page, "sorrel", "content").getByRole("button", { name: ct.trust.agreeRelax, exact: true }).click();
+  await expect(trustRow(page, "sorrel", "content").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
+  await gotoCrewSection(page, ct.common.sectionWorks);
+  const title = assignmentTitle("c11");
+  await page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").filter({ hasText: title }).click();
+  const panel = page.getByRole("article", { name: title });
+  await panel.getByRole("button", { name: ct.review.accept, exact: true }).click();
+  await expect(panel.getByRole("button", { name: ct.review.accept, exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoCrewSection(page, ct.common.sectionTrust);
+  const narrow = trustRow(page, "sorrel", "content").locator('.crew-trust__band[data-level="light"][data-span="1"]');
+  await expect(narrow.locator(".crew-trust__band-short")).toBeVisible();
+  await expect(narrow.locator(".crew-trust__band-short")).toHaveText(ct.trust.levelLightShort);
+  await expect(narrow).toContainText(ct.trust.levelLight);
+  expect(await narrow.evaluate((b) => b.scrollWidth <= b.clientWidth && b.scrollHeight <= b.clientHeight)).toBe(true);
 });
 
 // ---- 總覽報表（#121） ----
@@ -238,9 +256,9 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
     expect(reportBox.y).toBeLessThan(firstCard.y);
     const rowan = reportRow(page, "rowan", "support");
     await expect(rowan.getByRole("cell")).toHaveText([
-      // #134：s16 的退回（我想要不一樣的做法）加了一次驗收
-      "16",
-      crewFill(ct.trust.reportFirstPass, { percent: 79, passed: 11, total: 14 }),
+      // #134：s16 的退回（我想要不一樣的做法）加了一次驗收；#161 加了 s17～s20 四次通過
+      "20",
+      crewFill(ct.trust.reportFirstPass, { percent: 83, passed: 15, total: 18 }),
       "1",
       "2",
       "0",

@@ -29,8 +29,8 @@ const label = (id: string, language = lang) => {
   const s = demo.sources.find((x) => x.id === id)!;
   return s.label?.[language] ?? s.name;
 };
-// 待驗收：依交件時間（c12 11-13、j11 11-14、s14 11-17、c11 與 k13 11-18、j06 11-19）；#134 加了 c12、j11
-const AWAITING = ["c12", "j11", "s14", "c11", "k13", "j06"];
+// 待驗收：依交件時間（c12 11-13、j11 11-14、s14 11-17、k17 11-18 10:00、c11 與 k13 11-18 11:00、j06 11-19）；#134 加了 c12、j11；#161 加了 k17
+const AWAITING = ["c12", "j11", "s14", "k17", "c11", "k13", "j06"];
 // k13 的檢查：format 先 pending 後 pass（同名只取最新一筆）、required-fields 是 fail；依名稱排序
 const K13_CHECKS = [
   { name: "duplicates", status: "pass" },
@@ -57,6 +57,7 @@ describe("到期日與優先順序（#133）", () => {
       { id: "c12", dueAt: "2026-11-17", priority: "high", due: "overdue" },
       { id: "j11", dueAt: "2026-11-21", priority: "normal", due: "soon" },
       { id: "s14", dueAt: "2026-11-18", priority: "high", due: "overdue" },
+      { id: "k17", dueAt: "2026-12-02", priority: "normal", due: "later" },
       { id: "c11", dueAt: "2026-11-22", priority: "normal", due: "soon" },
       { id: "k13", dueAt: "2026-12-04", priority: "low", due: "later" },
       { id: "j06", dueAt: null, priority: "high", due: "none" },
@@ -67,8 +68,8 @@ describe("到期日與優先順序（#133）", () => {
 
   it("今天可以指定：換一天，狀態跟著換", async () => {
     const { awaiting } = await readWorkList(db, "manager", lang, "2026-12-10");
-    // #134 加了 c12、j11
-    expect(awaiting.map((i) => i.due)).toEqual(["overdue", "overdue", "overdue", "overdue", "overdue", "none"]);
+    // #134 加了 c12、j11；#161 加了 k17
+    expect(awaiting.map((i) => i.due)).toEqual(["overdue", "overdue", "overdue", "overdue", "overdue", "overdue", "none"]);
   });
 
   it("面板的標題卡顯示到期日與「高」優先；逾期標成 overdue", async () => {
@@ -89,12 +90,13 @@ describe("到期日與優先順序（#133）", () => {
 });
 
 describe("readWorkList：匯入虛構資料後", () => {
-  it("manager：待驗收是 c12、j11、s14、c11、k13、j06；最近驗收過依驗收時間新到舊，最多 RECENT_LIMIT 筆", async () => {
+  it("manager：待驗收是 c12、j11、s14、k17、c11、k13、j06；最近驗收過依驗收時間新到舊，最多 RECENT_LIMIT 筆", async () => {
     const { awaiting, recent } = await list(db, "manager");
     expect(ids(awaiting)).toEqual(AWAITING);
     expect(recent).toHaveLength(RECENT_LIMIT);
     // #134 加了最新一輪退回的 k15（11-19）、s16（11-18），排在最前面；c10 與 k12 的驗收時間相同，依交辦 id
-    expect(ids(recent).slice(0, 5)).toEqual(["k15", "s16", "c10", "k12", "s13"]);
+    // #161 加了 j12～j15（10-27～11-07 通過）：j12 與 c10、k12 的驗收時間相同，依交辦 id
+    expect(ids(recent).slice(0, 8)).toEqual(["k15", "s16", "j15", "j14", "j13", "c10", "j12", "k12"]);
     expect(recent.slice(0, 2).every((i) => i.verdict === "returned")).toBe(true);
     expect(recent.slice(2).every((i) => i.verdict === "accepted")).toBe(true);
     // #134 加了更早交件的 c12、j11，s14 移到第 3 筆
@@ -145,6 +147,18 @@ describe("readWorkList：匯入虛構資料後", () => {
 });
 
 describe("readReviewPanel：匯入虛構資料後", () => {
+  // 抽查（#161，crew ADR 0008 第 7～9 點）：Linden 同意看重點後的第 5 件 k17 被抽查，變更逐項列出；第 6 件 k13 是一般的看重點
+  it("manager 打開 k17（看重點期間的抽查）：層級仍是看重點，變更逐項列出，帶抽查的序號與 N", async () => {
+    const p = (await panel(db, "manager", "k17"))!;
+    expect(p.focus.level).toBe("light");
+    expect(p.focus.spotCheck).toEqual({ ordinal: 5, every: 5 });
+    expect(p.focus.changes).toEqual({ mode: "items", items: p.changeItems });
+    expect(p.canDecide).toBe(true);
+    const k13 = (await panel(db, "manager", "k13"))!;
+    expect(k13.focus.spotCheck).toBeUndefined();
+    expect(k13.focus.changes.mode).toBe("summary");
+  });
+
   it("manager 打開 k13（Linden × 知識庫整理，看重點）：變更收成摘要、全文收起、可以驗收", async () => {
     const p = (await panel(db, "manager", "k13"))!;
     expect(p.focus.level).toBe("light");
@@ -221,11 +235,11 @@ describe("readReviewPanel：匯入虛構資料後", () => {
 describe("readReviewPanel：交件的種類與全文的結構", () => {
   it("工作類型決定交件的種類：客服是回信、內容是貼文、知識庫是條目、開發是程式修改", async () => {
     const kinds = await Promise.all(AWAITING.map(async (id) => (await panel(db, "manager", id))!.deliverable));
-    // #134 加了 c12（貼文）、j11（程式修改）
-    expect(kinds).toEqual(["post", "code", "reply", "post", "kb", "code"]);
+    // #134 加了 c12（貼文）、j11（程式修改）；#161 加了 k17（條目）
+    expect(kinds).toEqual(["post", "code", "reply", "kb", "post", "kb", "code"]);
   });
 
-  it.each([lang, other])("待驗收六件的全文（%s）都解析成功，每個重點在內容中都有位置", async (language) => {
+  it.each([lang, other])("待驗收七件的全文（%s）都解析成功，每個重點在內容中都有位置", async (language) => {
     for (const id of AWAITING) {
       const p = (await panel(db, "manager", id, language))!;
       expect(p.body.structured, id).toBe(true);

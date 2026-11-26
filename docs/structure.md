@@ -254,8 +254,9 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `knowledge/guideline-document.ts`：守則進知識庫（#149，crew ADR 0007 決定 7）：`toGuidelineDocument()`（確認的守則 → 文件標題與兩段：守則的文字、來歷）、`guidelineDocumentId()`（`crew-guideline-<守則 id>`）、`reasonLabel()`、`identityName()`（測試在 `guideline-document.test.ts`）
 - `knowledge/origin.ts`：回流文件的來源與當時的把關：`readFlowbackOrigin()`（文件 → 哪位 AI 員工、誰驗收、當時的審查層級、退回次數、自動檢查、依照的守則數，#147；純函式的測試在 `origin.test.ts`）、`readFlowbackPassage()`（工作 → 回流文件的第一段）；看不到回流紀錄時是 null（測試在 `app/tests/crew/flowback-access.test.ts`）；守則的文件：`readGuidelineOrigin()`（#149）
 - `time.ts`：時間戳的顯示一律用展示公司的時區（`client/crew/settings.json` 的 `timeZone`，沒有這個檔時是 UTC；不合法的時區拋錯）：`shortDate()`、`shortDateTime()`、`formatInZone()`、`isSameDay()`；只有日期的欄位（到期日、demo 的 `today`）不經過這裡（#153，測試在 `time.test.ts`）
-- `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數
-- `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）
+- `trust/demo-params.ts`：第 0 階段 demo 的虛構示範參數（第 5 階段加上抽查的 `spotEvery`，#161）
+- `trust/rules.ts`：信任規則的純函式（不讀資料庫、不產生介面文字）；事後更正在更正的時間算一次做錯了、`lightPeriods()`、`recentDotEntries()`、`reviewFocus()` 的抽查（#161）
+- `trust/spot-check.ts`：抽查（crew ADR 0008 第 7～9 點，#161）：`spotChecks()`（看重點期間按交件順序每 N 件抽 1 件，不存）、`trustStats()`（抽查次數與結果、更正與「沒被標成重點」次數）
 - `trust/types.ts`：信任規則用的型別
 - `ui/assign.ts`：「交辦」的資料整理（`readAssign()`：交辦清單與表單的選項，員工平常的來源與工作類型由 `usualOf()` 從交辦紀錄推得；`initialChoice()`：員工卡「交辦給 ○○」預選的員工與來源；`resultKey()`、`visibleAssignments()`：結果說明的文字鍵與清單的最近 4 件；`submitAssignment()`、`simulateAssignment()`：交辦與模擬交件；測試在 `assign.test.ts`）
 - `ui/AssignView.css`：「交辦」畫面的表單（員工單選卡、來源與工作類型、結果說明）與交辦清單

@@ -37,27 +37,28 @@ const read = (identity: string | null) =>
 
 describe("虛構資料的讀取範圍", () => {
   // #134 加了 s15、s16、c12、k14、k15、j11：交辦 +6、交件 +4（s15、k14 還沒交件）、驗收 +2（s16、k15 退回）
-  it("manager：四個來源、54 筆交辦", async () => {
+  // #161 加了 s17～s20、j12～j15、k16（通過）與 k17（待驗收）：交辦 +10、交件 +10、驗收 +9
+  it("manager：四個來源、64 筆交辦", async () => {
     expect(await read("manager")).toEqual({
       sources: ["Company KB", "Social account", "Support inbox", "example-org/company-site"],
       employees: ["juniper", "linden", "rowan", "sorrel"],
-      assignments: { "juniper/dev": 11, "linden/knowledge": 15, "rowan/support": 16, "sorrel/content": 12 },
-      total: 54,
-      works: 60,
-      reviews: 54,
+      assignments: { "juniper/dev": 15, "linden/knowledge": 17, "rowan/support": 20, "sorrel/content": 12 },
+      total: 64,
+      works: 70,
+      reviews: 63,
       levelDecisions: ["d01", "d02", "d03", "d04"],
     });
   });
 
-  // #134 加了青翼專案的 s15、s16、c12：交辦 +3、交件 +2、驗收 +1
-  it("staff：只看到青翼專案的 28 筆交辦（Rowan × support 16、Sorrel × content 12）", async () => {
+  // #134 加了青翼專案的 s15、s16、c12：交辦 +3、交件 +2、驗收 +1；#161 加了 s17～s20：各 +4
+  it("staff：只看到青翼專案的 32 筆交辦（Rowan × support 20、Sorrel × content 12）", async () => {
     expect(await read("staff")).toEqual({
       sources: ["Social account", "Support inbox"],
       employees: ["juniper", "linden", "rowan", "sorrel"],
-      assignments: { "rowan/support": 16, "sorrel/content": 12 },
-      total: 28,
-      works: 31,
-      reviews: 28,
+      assignments: { "rowan/support": 20, "sorrel/content": 12 },
+      total: 32,
+      works: 35,
+      reviews: 32,
       levelDecisions: ["d01"],
     });
   });

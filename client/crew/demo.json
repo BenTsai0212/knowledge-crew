@@ -220,7 +220,10 @@
             { "path": "reply/closing", "summary": { "zh-TW": "承諾當天退款", "en": "Promise a same-day refund" } }
           ],
           "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-15T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-15T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-15T11:20:00+08:00" }],
-          "review": { "id": "s12-1", "verdict": "returned", "reason": "wrong", "note": { "zh-TW": "重複扣款不能直接答應退款，要先請客戶提供交易時間與末四碼", "en": "Don't promise a refund for a duplicate charge right away; first ask the customer for the transaction time and the last four digits of the card" }, "decidedBy": "manager", "decidedAt": "2026-10-15T15:00:00+08:00" }
+          "review": {
+            "id": "s12-1", "verdict": "returned", "reason": "wrong", "notInPoints": true, "note": { "zh-TW": "重複扣款不能直接答應退款，要先請客戶提供交易時間與末四碼", "en": "Don't promise a refund for a duplicate charge right away; first ask the customer for the transaction time and the last four digits of the card" }, "decidedBy": "manager", "decidedAt": "2026-10-15T15:00:00+08:00",
+            "feedback": { "guidelines": [{ "guideline": "g01", "result": "not_done" }] }
+          }
         },
         {
           "round": 2, "submittedAt": "2026-10-16T10:00:00+08:00",
@@ -247,7 +250,10 @@
           "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
           "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明寄送範圍", "en": "Explain where we ship" } }],
           "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-24T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-24T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-24T11:20:00+08:00" }],
-          "review": { "id": "s13-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-24T15:00:00+08:00" }
+          "review": {
+            "id": "s13-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-24T15:00:00+08:00",
+            "feedback": { "points": [{ "ordinal": 1, "result": "ok" }], "guidelines": [{ "guideline": "g01", "result": "done" }] }
+          }
         }
       ]
     },
@@ -512,11 +518,20 @@
         {
           "round": 2, "submittedAt": "2026-09-03T10:00:00+08:00",
           "summary": { "zh-TW": "改正退貨天數並註明更新日期", "en": "Fix the return window and note the update date" },
-          "body": { "zh-TW": "改正退貨天數並註明更新日期。請看「要看的重點」。", "en": "Fix the return window and note the update date. See the points to review." },
+          "body": {
+            "zh-TW": "@@ kb/returns-policy | 退換貨政策\n@@ kb/returns-policy#steps [required] | 步驟\n1. 收到商品〔1〕7 天內〔/1〕可以申請退貨，在訂單頁填寫原因。\n2. 商品有瑕疵時可以換貨，換貨期限是收到商品後 14 天。\n3. 客服確認後寄出退貨單，收到退貨後 7 個工作天內退款。\n@@ kb/returns-policy#updated [point 1] | 最後更新\n2026 年 9 月",
+            "en": "@@ kb/returns-policy | Returns and exchanges policy\n@@ kb/returns-policy#steps [required] | Steps\n1. Returns can be requested 〔1〕within 7 days〔/1〕 of receiving the item, with a reason on the order page.\n2. Defective items can be exchanged within 14 days of receiving them.\n3. Support sends a return label once confirmed; refunds are issued within 7 business days of receiving the return.\n@@ kb/returns-policy#updated [point 1] | Last updated\nSeptember 2026"
+          },
           "points": [{ "zh-TW": "過期的資訊", "en": "Outdated information" }],
           "changes": [{ "path": "kb/returns-policy#steps", "summary": { "zh-TW": "改正退貨天數", "en": "Fix the return window" } }],
           "checks": [{ "name": "format", "status": "pass", "checkedAt": "2026-09-03T10:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-09-03T10:20:00+08:00" }],
-          "review": { "id": "k01-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-03T14:00:00+08:00" }
+          "review": {
+            "id": "k01-2", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-09-03T14:00:00+08:00",
+            "correction": {
+              "id": "cr01", "correctedBy": "manager", "correctedAt": "2026-09-04T16:00:00+08:00", "notInPoints": true,
+              "note": { "zh-TW": "換貨期限寫成 14 天，合約是 7 天；客服依這條回覆了客戶", "en": "The exchange period says 14 days but the contract says 7; support replied to a customer based on this entry" }
+            }
+          }
         }
       ]
     },
@@ -699,7 +714,10 @@
           ],
           "changes": [{ "path": "kb/supplier-orders#steps", "summary": { "zh-TW": "下單步驟", "en": "Ordering steps" } }],
           "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-27T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-27T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-10-27T11:20:00+08:00" }],
-          "review": { "id": "k12-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-27T15:00:00+08:00" }
+          "review": {
+            "id": "k12-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-27T15:00:00+08:00",
+            "feedback": { "points": [{ "ordinal": 1, "result": "ok" }, { "ordinal": 2, "result": "problem" }], "guidelines": [{ "guideline": "g05", "result": "done" }] }
+          }
         }
       ]
     },
@@ -968,10 +986,10 @@
     },
     {
       "id": "k15", "source": "company-kb", "workType": "knowledge", "employee": "linden",
-      "title": { "zh-TW": "整理禮品包裝的說明", "en": "Write up gift wrapping" }, "assignedBy": "manager", "assignedAt": "2026-11-18T09:00:00+08:00",
+      "title": { "zh-TW": "整理禮品包裝的說明", "en": "Write up gift wrapping" }, "assignedBy": "manager", "assignedAt": "2026-11-17T09:00:00+08:00",
       "works": [
         {
-          "round": 1, "submittedAt": "2026-11-18T11:00:00+08:00", "guidelines": ["g05"],
+          "round": 1, "submittedAt": "2026-11-17T11:00:00+08:00", "guidelines": ["g05"],
           "summary": { "zh-TW": "新增禮品包裝的費用與注意事項", "en": "Add the fee and notes for gift wrapping" },
           "body": {
             "zh-TW": "@@ kb/gift-wrapping | 禮品包裝說明\n@@ kb/gift-wrapping#owner [required] [point 1] | 負責部門\n電商營運組\n@@ kb/gift-wrapping#fee | 費用\n每件禮品包裝酌收 NT$ 50，可在結帳時勾選。\n@@ kb/gift-wrapping#notes | 注意事項\n〔2〕大型商品與預購商品不提供包裝〔/2〕，包裝後的商品仍可依退貨規則退回。",
@@ -985,7 +1003,7 @@
             { "path": "kb/gift-wrapping", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } },
             { "path": "kb/gift-wrapping#owner", "summary": { "zh-TW": "負責的部門", "en": "Owning team" } }
           ],
-          "checks": [{ "name": "format", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-11-18T11:20:00+08:00" }],
+          "checks": [{ "name": "format", "status": "pass", "checkedAt": "2026-11-17T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-11-17T11:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-11-17T11:20:00+08:00" }],
           "review": { "id": "k15-1", "verdict": "returned", "reason": "different_approach", "note": { "zh-TW": "包裝費用請列成表格", "en": "Please list the packaging fees in a table" }, "decidedBy": "manager", "decidedAt": "2026-11-19T10:00:00+08:00" }
         }
       ]
@@ -1011,13 +1029,175 @@
           "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-14T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-11-14T11:20:00+08:00" }]
         }
       ]
+    },
+    {
+      "id": "s17", "source": "support-inbox", "externalRef": "1057", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問保溫瓶能否裝碳酸飲料", "en": "Whether the bottle can hold sparkling drinks" }, "assignedBy": "manager", "assignedAt": "2026-10-10T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-10T11:00:00+08:00", "guidelines": ["g01"],
+          "summary": { "zh-TW": "說明不建議裝碳酸飲料，附上原因", "en": "Explain why sparkling drinks are not recommended" },
+          "body": { "zh-TW": "說明不建議裝碳酸飲料，附上原因。請看「要看的重點」。", "en": "Explain why sparkling drinks are not recommended. See the points to review." },
+          "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明使用限制", "en": "Explain the usage limit" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-10T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-10T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-10T11:20:00+08:00" }],
+          "review": { "id": "s17-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-10T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s18", "source": "support-inbox", "externalRef": "1058", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問門市自取的時間", "en": "Pickup hours at the store" }, "assignedBy": "manager", "assignedAt": "2026-10-11T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-11T11:00:00+08:00", "guidelines": ["g01"],
+          "summary": { "zh-TW": "回覆門市自取的時間與需要的證件", "en": "Reply with pickup hours and what to bring" },
+          "body": { "zh-TW": "回覆門市自取的時間與需要的證件。請看「要看的重點」。", "en": "Reply with pickup hours and what to bring. See the points to review." },
+          "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "列出自取時間", "en": "List pickup hours" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-11T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-11T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-11T11:20:00+08:00" }],
+          "review": { "id": "s18-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-11T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s19", "source": "support-inbox", "externalRef": "1059", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問刻字服務的價格", "en": "Price of the engraving service" }, "assignedBy": "manager", "assignedAt": "2026-10-13T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-13T11:00:00+08:00", "guidelines": ["g01"],
+          "summary": { "zh-TW": "回覆刻字的費用與製作天數", "en": "Reply with the engraving fee and lead time" },
+          "body": { "zh-TW": "回覆刻字的費用與製作天數。請看「要看的重點」。", "en": "Reply with the engraving fee and lead time. See the points to review." },
+          "points": [{ "zh-TW": "回信中的價格與優惠是否和報價單一致", "en": "Whether prices and offers in the reply match the quote" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "列出刻字費用", "en": "List engraving fees" } }],
+          "checks": [{ "name": "quote-match", "status": "pending", "checkedAt": "2026-10-13T11:01:00+08:00" }, { "name": "quote-match", "status": "pass", "checkedAt": "2026-10-13T11:20:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-13T11:20:00+08:00" }],
+          "review": { "id": "s19-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-13T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "s20", "source": "support-inbox", "externalRef": "1060", "workType": "support", "employee": "rowan",
+      "title": { "zh-TW": "詢問變更收件地址", "en": "Changing the delivery address" }, "assignedBy": "manager", "assignedAt": "2026-10-14T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-14T11:00:00+08:00", "guidelines": ["g01"],
+          "summary": { "zh-TW": "說明出貨前可以在訂單頁變更地址", "en": "Explain the address can be changed on the order page before shipping" },
+          "body": { "zh-TW": "說明出貨前可以在訂單頁變更地址。請看「要看的重點」。", "en": "Explain the address can be changed on the order page before shipping. See the points to review." },
+          "points": [{ "zh-TW": "有沒有超出權限的承諾（退款、補償）", "en": "Promises beyond our authority (refunds, compensation)" }],
+          "changes": [{ "path": "reply/p2", "summary": { "zh-TW": "說明變更方式", "en": "Explain how to change it" } }],
+          "checks": [{ "name": "banned-words", "status": "pending", "checkedAt": "2026-10-14T11:01:00+08:00" }, { "name": "banned-words", "status": "pass", "checkedAt": "2026-10-14T11:20:00+08:00" }, { "name": "tone", "status": "pass", "checkedAt": "2026-10-14T11:20:00+08:00" }],
+          "review": { "id": "s20-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-14T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j12", "source": "company-site", "externalRef": "32", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "商品頁的庫存提示", "en": "Stock notice on the product page" }, "assignedBy": "manager", "assignedAt": "2026-10-27T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "44", "submittedAt": "2026-10-27T11:00:00+08:00",
+          "summary": { "zh-TW": "商品頁在庫存少於 5 件時顯示提示", "en": "Show a notice on the product page when fewer than 5 are left" },
+          "body": { "zh-TW": "商品頁在庫存少於 5 件時顯示提示。請看「要看的重點」。", "en": "Show a notice on the product page when fewer than 5 are left. See the points to review." },
+          "points": [{ "zh-TW": "庫存為 0 時的顯示", "en": "Display when out of stock" }],
+          "changes": [{ "path": "src/product/StockNotice.tsx", "summary": { "zh-TW": "新增提示", "en": "Add the notice" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-27T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-27T11:20:00+08:00" }],
+          "review": { "id": "j12-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-27T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j13", "source": "company-site", "externalRef": "33", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "結帳頁的運費說明", "en": "Shipping fee note on checkout" }, "assignedBy": "manager", "assignedAt": "2026-10-31T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "45", "submittedAt": "2026-10-31T11:00:00+08:00",
+          "summary": { "zh-TW": "結帳頁顯示運費與免運門檻", "en": "Show the shipping fee and free-shipping threshold at checkout" },
+          "body": { "zh-TW": "結帳頁顯示運費與免運門檻。請看「要看的重點」。", "en": "Show the shipping fee and free-shipping threshold at checkout. See the points to review." },
+          "points": [{ "zh-TW": "金額剛好等於門檻時的顯示", "en": "Display when the total equals the threshold" }],
+          "changes": [{ "path": "src/checkout/ShippingNote.tsx", "summary": { "zh-TW": "新增說明", "en": "Add the note" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-10-31T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-10-31T11:20:00+08:00" }],
+          "review": { "id": "j13-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-31T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j14", "source": "company-site", "externalRef": "34", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "門市頁的地圖連結", "en": "Map links on the store page" }, "assignedBy": "manager", "assignedAt": "2026-11-04T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "46", "submittedAt": "2026-11-04T11:00:00+08:00",
+          "summary": { "zh-TW": "門市頁每間門市加上地圖連結", "en": "Add a map link for each store on the store page" },
+          "body": { "zh-TW": "門市頁每間門市加上地圖連結。請看「要看的重點」。", "en": "Add a map link for each store on the store page. See the points to review." },
+          "points": [{ "zh-TW": "連結在新分頁開啟", "en": "Links open in a new tab" }],
+          "changes": [{ "path": "src/stores/StoreList.tsx", "summary": { "zh-TW": "加入地圖連結", "en": "Add map links" } }],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-04T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-11-04T11:20:00+08:00" }],
+          "review": { "id": "j14-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-11-04T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "j15", "source": "company-site", "externalRef": "35", "workType": "dev", "employee": "juniper",
+      "title": { "zh-TW": "頁首的搜尋提示文字", "en": "Placeholder text in the header search" }, "assignedBy": "manager", "assignedAt": "2026-11-07T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "externalRef": "47", "submittedAt": "2026-11-07T11:00:00+08:00",
+          "summary": { "zh-TW": "頁首搜尋框加入提示文字，從設定檔讀取", "en": "Add placeholder text to the header search, read from config" },
+          "body": { "zh-TW": "頁首搜尋框加入提示文字，從設定檔讀取。請看「要看的重點」。", "en": "Add placeholder text to the header search, read from config. See the points to review." },
+          "points": [{ "zh-TW": "手機版的寬度", "en": "Width on mobile" }],
+          "changes": [
+            { "path": "src/layout/SearchBox.tsx", "summary": { "zh-TW": "加入提示文字", "en": "Add the placeholder" } },
+            { "path": "src/config/search.ts", "summary": { "zh-TW": "新增設定", "en": "Add the config" } }
+          ],
+          "checks": [{ "name": "ci", "status": "pending", "checkedAt": "2026-11-07T11:01:00+08:00" }, { "name": "ci", "status": "pass", "checkedAt": "2026-11-07T11:20:00+08:00" }],
+          "review": { "id": "j15-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-11-07T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k16", "source": "company-kb", "workType": "knowledge", "employee": "linden",
+      "title": { "zh-TW": "整理會員點數的使用方式", "en": "Write up member points" }, "assignedBy": "manager", "assignedAt": "2026-10-12T09:00:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-10-12T11:00:00+08:00", "guidelines": ["g04", "g05"],
+          "summary": { "zh-TW": "說明會員點數的累積、折抵與期限", "en": "Explain how member points are earned, redeemed and expire" },
+          "body": { "zh-TW": "說明會員點數的累積、折抵與期限。請看「要看的重點」。", "en": "Explain how member points are earned, redeemed and expire. See the points to review." },
+          "points": [{ "zh-TW": "過期的資訊", "en": "Outdated information" }],
+          "changes": [{ "path": "kb/member-points", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } }],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-10-12T11:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-10-12T11:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-10-12T11:20:00+08:00" }],
+          "review": { "id": "k16-1", "verdict": "accepted", "decidedBy": "manager", "decidedAt": "2026-10-12T15:00:00+08:00" }
+        }
+      ]
+    },
+    {
+      "id": "k17", "source": "company-kb", "workType": "knowledge", "employee": "linden", "dueAt": "2026-12-02",
+      "title": { "zh-TW": "整理門市換貨的說明", "en": "Write up in-store exchanges" }, "assignedBy": "manager", "assignedAt": "2026-11-18T08:30:00+08:00",
+      "works": [
+        {
+          "round": 1, "submittedAt": "2026-11-18T10:00:00+08:00", "guidelines": ["g05"],
+          "summary": { "zh-TW": "新增門市換貨的條件與流程", "en": "Add the conditions and steps for in-store exchanges" },
+          "body": {
+            "zh-TW": "@@ kb/store-exchanges | 門市換貨說明\n@@ kb/store-exchanges#owner [required] [point 1] | 負責部門\n門市營運組\n@@ kb/store-exchanges#conditions | 換貨條件\n購買後〔2〕30 天內〔/2〕、附發票且商品未使用，可在任一門市換貨。\n@@ kb/store-exchanges#steps | 流程\n1. 出示發票與商品。\n2. 門市人員確認商品狀態。\n3. 換成同價或補差價的商品。",
+            "en": "@@ kb/store-exchanges | In-store exchanges\n@@ kb/store-exchanges#owner [required] [point 1] | Owner department\nStore operations\n@@ kb/store-exchanges#conditions | Conditions\nItems can be exchanged at any store 〔2〕within 30 days〔/2〕 of purchase with the receipt, if unused.\n@@ kb/store-exchanges#steps | Steps\n1. Show the receipt and the item.\n2. Store staff check the item's condition.\n3. Exchange for an item of the same price, or pay the difference."
+          },
+          "points": [
+            { "zh-TW": "不確定的實體（產品型號、部門名稱）", "en": "Uncertain entities (model numbers, team names)" },
+            { "zh-TW": "過期的資訊", "en": "Outdated information" }
+          ],
+          "changes": [
+            { "path": "kb/store-exchanges", "summary": { "zh-TW": "新增條目", "en": "Add the entry" } },
+            { "path": "kb/store-exchanges#conditions", "summary": { "zh-TW": "換貨條件", "en": "Exchange conditions" } },
+            { "path": "kb/store-exchanges#steps", "summary": { "zh-TW": "換貨流程", "en": "Exchange steps" } }
+          ],
+          "checks": [{ "name": "format", "status": "pending", "checkedAt": "2026-11-18T10:01:00+08:00" }, { "name": "format", "status": "pass", "checkedAt": "2026-11-18T10:20:00+08:00" }, { "name": "required-fields", "status": "pass", "checkedAt": "2026-11-18T10:20:00+08:00" }, { "name": "duplicates", "status": "pass", "checkedAt": "2026-11-18T10:20:00+08:00" }]
+        }
+      ]
     }
   ],
   "levelDecisions": [
     { "id": "d01", "employee": "rowan", "workType": "support", "decision": "relax", "basisReview": "s10-1", "decidedBy": "manager", "decidedAt": "2026-10-09T10:00:00+08:00" },
-    { "id": "d02", "employee": "linden", "workType": "knowledge", "decision": "relax", "basisReview": "k09-1", "decidedBy": "manager", "decidedAt": "2026-10-13T10:00:00+08:00" },
+    { "id": "d02", "employee": "linden", "workType": "knowledge", "decision": "relax", "basisReview": "k16-1", "decidedBy": "manager", "decidedAt": "2026-10-13T10:00:00+08:00" },
     { "id": "d03", "employee": "juniper", "workType": "dev", "decision": "relax", "basisReview": "j10-1", "decidedBy": "manager", "decidedAt": "2026-10-19T10:00:00+08:00" },
-    { "id": "d04", "employee": "juniper", "workType": "dev", "decision": "revoke", "decidedBy": "manager", "decidedAt": "2026-10-24T10:00:00+08:00" }
+    { "id": "d04", "employee": "juniper", "workType": "dev", "decision": "revoke", "decidedBy": "manager", "decidedAt": "2026-11-10T10:00:00+08:00" }
   ],
   "guidelines": [
     {

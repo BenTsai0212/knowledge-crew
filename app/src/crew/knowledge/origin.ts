@@ -12,7 +12,7 @@ import { guidelineTexts } from "../ui/guideline-text";
 import type { ReturnReason } from "../trust/types";
 import { demoText } from "../demo/texts";
 import { reviewLevel } from "../trust/rules";
-import type { LevelDecision, Review, ReviewLevel, WorkCheck } from "../trust/types";
+import type { Correction, LevelDecision, Review, ReviewLevel, WorkCheck } from "../trust/types";
 
 export interface FlowbackOrigin {
   /** 「工作與驗收」要選的交辦 */
@@ -32,6 +32,8 @@ export interface FlowbackOrigin {
   checks: { passed: number; total: number } | null;
   /** 通過那一輪依照的守則數（員工自述） */
   guidelines: number;
+  /** 通過後發現有錯：事後更正的時間（ISO，crew ADR 0008 第 5 點）；沒有更正時是 null */
+  correctedAt: string | null;
 }
 
 interface OriginRow {
@@ -41,12 +43,13 @@ interface OriginRow {
   workTypeId: string;
   employeeName: string;
   workId: string;
+  reviewId: string;
   decidedBy: string;
   decidedAt: Date | string;
 }
 
 const ORIGIN_SQL = `SELECT a.id AS "assignmentId", a.title, a.employee_id AS "employeeId", a.work_type_id AS "workTypeId",
-       e.display_name AS "employeeName", w.id AS "workId", rv.decided_by AS "decidedBy", rv.decided_at AS "decidedAt"
+       e.display_name AS "employeeName", w.id AS "workId", rv.id AS "reviewId", rv.decided_by AS "decidedBy", rv.decided_at AS "decidedAt"
   FROM crew.knowledge_flowbacks f
   JOIN crew.reviews rv ON rv.id = f.review_id
   JOIN crew.works w ON w.id = rv.work_id
@@ -57,12 +60,21 @@ const time = (iso: string) => Date.parse(iso);
 
 /**
  * 通過那一刻的審查層級：只用那一刻以前的驗收與看重點的決定（同員工 × 工作類型），交給 rules.ts 的 reviewLevel()。
- * 通過的那一次本身不算（它不會讓層級改變）。
+ * 通過的那一次本身不算（它不會讓層級改變）。事後更正（#161）只算那一刻以前的。
  */
-export function levelAt(reviews: readonly Review[], decisions: readonly LevelDecision[], at: string): ReviewLevel {
+export function levelAt(
+  reviews: readonly Review[],
+  decisions: readonly LevelDecision[],
+  at: string,
+  corrections: readonly Correction[] = [],
+): ReviewLevel {
   const before = <T extends { decidedAt: string }>(items: readonly T[]) => items.filter((x) => time(x.decidedAt) < time(at));
-  return reviewLevel(before(reviews), before(decisions));
+  return reviewLevel(before(reviews), before(decisions), corrections.filter((c) => time(c.correctedAt) < time(at)));
 }
+
+/** 這次驗收的事後更正時間（「通過後發現有錯（日期）」）；沒有更正時是 null */
+export const correctedAtOf = (corrections: readonly Correction[], reviewId: string): string | null =>
+  corrections.find((c) => c.reviewId === reviewId)?.correctedAt ?? null;
 
 /** 同一交辦在 `at`（通過的時間）之前被退回的次數 */
 export const returnedBefore = (reviews: readonly Pick<Review, "verdict" | "decidedAt">[], at: string): number =>
@@ -92,10 +104,11 @@ export async function readFlowbackOrigin(db: Database, identity: string | null, 
     employeeName: row.employeeName,
     decidedAt,
     decidedBy: row.decidedBy,
-    level: levelAt(trust.reviews, trust.decisions, decidedAt),
+    level: levelAt(trust.reviews, trust.decisions, decidedAt, trust.corrections),
     returned: returnedBefore(assignmentReviews, decidedAt),
     checks: checkTally(works.find((w) => w.id === row.workId)?.checks ?? []),
     guidelines: followed.length,
+    correctedAt: correctedAtOf(trust.corrections, row.reviewId),
   };
 }
 

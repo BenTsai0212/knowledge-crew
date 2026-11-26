@@ -4,7 +4,7 @@
 import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import {
-  getAssignmentWorks, getTrustInputs, listAssignments, listEmployees, listGuidelines, listWorkGuidelines, type AssignmentSummary, type Priority, type SourceKind, type StoredWork,
+  getAssignmentWorks, getTrustSummary, listAssignments, listEmployees, listGuidelines, listWorkGuidelines, type AssignmentSummary, type Priority, type SourceKind, type StoredWork,
 } from "../db/store";
 import { DEMO } from "../demo/load";
 import { demoText } from "../demo/texts";
@@ -189,15 +189,17 @@ export async function readReviewPanel(
   const works = (await getAssignmentWorks(db, identity, assignmentId)).map((w) => localize(w, language));
   const current = works.at(-1);
   if (!current) return null;
-  const { reviews, decisions } = await getTrustInputs(db, identity, item.employee.id, item.workTypeId);
-  const level = reviewLevel(reviews, decisions);
+  const { inputs, spotChecks } = await getTrustSummary(db, identity, item.employee.id, item.workTypeId, DEMO_PARAMS);
+  const { reviews, decisions, corrections } = inputs;
+  const level = reviewLevel(reviews, decisions, corrections);
   const [followed, all] = await Promise.all([
     listWorkGuidelines(db, identity, current.id),
     canReview ? listGuidelines(db, identity, { employeeId: item.employee.id, workTypeId: item.workTypeId }) : Promise.resolve([]),
   ]);
   return {
     item,
-    focus: reviewFocus(current, level),
+    // 抽查（#161）：被抽到的那件逐項列出變更；畫面的標示在後續的 Issue
+    focus: reviewFocus(current, level, { spotCheck: spotChecks.get(current.id) ?? null }),
     current: { id: current.id, round: current.round, externalRef: current.externalRef, summary: current.summary, submittedAt: current.submittedAt },
     earlier: works.slice(0, -1).map((w) => ({
       round: w.round,
