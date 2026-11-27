@@ -76,7 +76,7 @@ export function EmployeesView({ db, identity, language, navigate, employeeId, on
   return (
     <div className="crew-employees">
       <header className="crew-employees__header">
-        <h2>{fill(t.title, { count: state.employees.length }, language)}</h2>
+        <p className="crew-employees__count">{fill(t.title, { count: state.employees.length }, language)}</p>
         <p className="muted">{t.intro}</p>
       </header>
       <div className="crew-employees__grid">
@@ -87,9 +87,9 @@ export function EmployeesView({ db, identity, language, navigate, employeeId, on
               <div className="crew-employees__top">
                 <RoleIcon deliverable={main && deliverableOf(main.workTypeId)} />
                 <div className="crew-employees__identity">
-                  <h3 id={`crew-employee-${e.id}`}>
+                  <h2 id={`crew-employee-${e.id}`}>
                     <EmployeeName name={e.displayName} language={language} />
-                  </h3>
+                  </h2>
                   {(e.roleNote !== null || main) && (
                     <p className="muted">
                       {e.roleNote !== null && main
@@ -147,9 +147,9 @@ function WorkFacts({ work, heading, t, language, now }: { work: EmployeeWorkType
   return (
     <div className="crew-employees__work">
       {heading && (
-        <h4>
+        <h3>
           {workTypeLabel(work.workTypeId, language)} <LevelBadge level={work.level}>{levelText(work, t)}</LevelBadge>
-        </h4>
+        </h3>
       )}
       <dl className="crew-employees__facts">
         <dt>{t.fieldDeliverable}</dt>

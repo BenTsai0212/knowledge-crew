@@ -68,11 +68,11 @@ export function Sidebar(props: NavProps) {
   return (
     // 整個左側欄是頁首（banner）：客戶名稱、頁面與身分都在這裡
     <header className="sidebar">
-      <h1 className="sidebar__brand">
+      <p className="sidebar__brand">
         <ProductIcon size={SIDEBAR_ICON_SIZE} />
         <span className="visually-hidden">{s.productName} </span>
         <span className="sidebar__client">{clientConfig.client.displayName[language]}</span>
-      </h1>
+      </p>
       <nav className="primary-tabs" aria-label={s.views}>
         {views.map((v) => (
           <button key={v} type="button" data-view={v} aria-current={view === v ? "page" : undefined} onClick={() => onView(v)}>

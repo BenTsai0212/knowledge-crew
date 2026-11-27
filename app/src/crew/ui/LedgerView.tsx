@@ -109,7 +109,6 @@ export function LedgerView({ db, identity, language, ledgerFilter, navigate }: C
 
   const header = (
     <div className="crew-ledger__header">
-      <h2 className="crew-ledger__title">{t.title}</h2>
       <p className="muted crew-ledger__lead">{t.lead}</p>
     </div>
   );

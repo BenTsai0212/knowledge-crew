@@ -175,6 +175,7 @@
   "timelineShowAll": "Back to all",
   "undated": "Undated",
   "tabUpload": "Upload",
+  "uploadLead": "Questions and the graph use a document only after it is approved",
   "uploadNotAllowed": "The current identity can't upload documents.",
   "uploadNotAllowedReason": "With the demo permissions, only some identities can upload documents.",
   "uploadEphemeral": "Uploaded content is kept only until you reload the page.",
@@ -256,6 +257,7 @@
     "no_access_code": "An access code is needed to extract. Enter it on the Q&A page, then retry."
   },
   "tabReview": "Review",
+  "reviewLead": "Content extracted from uploaded documents, used only after approval",
   "reviewPendingTab": "Pending",
   "reviewRejectedTab": "Rejected",
   "reviewEmpty": "Nothing is waiting for review.",

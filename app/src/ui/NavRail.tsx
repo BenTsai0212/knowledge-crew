@@ -22,12 +22,12 @@ export function NavRail(props: NavProps) {
   return (
     <>
       <nav className="nav-rail" aria-label={s.views}>
-        <h1 className="nav-rail__brand">
+        <p className="nav-rail__brand">
           <ProductIcon size={BRAND_ICON_SIZE} />
           <span className="visually-hidden">
             {s.productName} {clientConfig.client.displayName[language]}
           </span>
-        </h1>
+        </p>
         {views.map((id) => (
           <button key={id} type="button" data-view={id} aria-current={view === id ? "page" : undefined} onClick={() => onView(id)}>
             <NavIcon view={id} />

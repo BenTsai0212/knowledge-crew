@@ -189,17 +189,17 @@ test.describe("待審", () => {
     await expect(card.locator(".review-entity")).toHaveCount(0);
 
     // 分段切換：一行、在列內橫向捲動
-    const tabs = page.locator(".review-tabs [role=tab]");
+    const tabs = page.locator(".review-page .ui-tabs [role=tab]");
     const tops = await tabs.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
     expect(new Set(tops).size).toBe(1);
-    expect(await page.locator(".review-tabs").evaluate((el) => getComputedStyle(el).overflowX)).toBe("auto");
+    expect(await page.locator(".review-page .ui-tabs").evaluate((el) => getComputedStyle(el).overflowX)).toBe("auto");
 
     // 「核准這份文件的全部」固定在分頁列之上，在可見範圍內；卡片頁首沒有這個按鈕
     const approveAll = card.locator(".review-doc__approve-all");
     expect(await approveAll.evaluate((el) => getComputedStyle(el).position)).toBe("sticky");
     await expect(approveAll.getByRole("button", { name: s.reviewApproveDocument })).toBeInViewport();
     await expect(card.locator(".review-doc__side").getByRole("button", { name: s.reviewApproveDocument })).toHaveCount(0);
-    await expectTouchTargets(page.locator(".review-tabs [role=tab], .review-toolbar .icon-button, button.review-sheet-row, .review-doc__approve-all > button"));
+    await expectTouchTargets(page.locator(".review-page .ui-tabs [role=tab], .review-refresh, button.review-sheet-row, .review-doc__approve-all > button"));
     expect(await noHorizontalScroll(page)).toBe(true);
 
     // 點摘要列打開底部面板：兩個候選與「建立新實體」，還沒選擇時不能確認；選「建立新實體」後確認，面板關閉、這份文件沒有遺留

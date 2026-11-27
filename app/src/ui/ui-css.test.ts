@@ -69,6 +69,8 @@ const CLASSES = [
   "ui-tbl", "ui-tbl-wrap",
   "ui-dialog", "ui-scrim",
   "ui-qmark", "ui-tip",
+  "ui-page-head", "ui-page-head__row", "ui-page-head__title", "ui-page-head__eyebrow", "ui-page-head__lead", "ui-page-head__actions",
+  "ui-tabs", "ui-tabs--more", "ui-tab",
 ];
 
 describe("ui.css 的共用元件", () => {
@@ -154,6 +156,23 @@ describe("ui.css 的共用元件", () => {
     expect(mediaRule("(max-width: 719px)", ".ui-tbl td[data-label]::before")).toMatchObject({ content: "attr(data-label)" });
     expect(mediaRule("(max-width: 719px)", ".ui-scrim")).toMatchObject({ "align-items": "flex-end" });
     expect(mediaRule("(max-width: 719px)", ".ui-dialog")).toMatchObject({ "border-radius": "var(--radius-large) var(--radius-large) 0 0", width: "100%" });
+  });
+
+  it("頁首（#179）：h1 28px、手機 22px；動作放不下時換行；說明最多 68 字寬", () => {
+    expect(rule(".ui-page-head h1")).toMatchObject({ "font-size": "28px", "font-weight": "700", margin: "0" });
+    expect(mediaRule("(max-width: 719px)", ".ui-page-head h1")).toEqual({ "font-size": "22px" });
+    expect(rule(".ui-page-head__row")).toMatchObject({ display: "flex", "flex-wrap": "wrap" });
+    expect(rule(".ui-page-head__actions")["flex-wrap"]).toBe("wrap");
+    expect(rule(".ui-page-head__lead")).toMatchObject({ color: "var(--color-textMuted)", "max-width": "68ch" });
+  });
+
+  it("分頁（#179）：單行橫向捲動、不顯示捲軸；目前的分頁是墨色 2px 底線與粗體；觸控目標至少 44px", () => {
+    expect(rule(".ui-tabs")).toMatchObject({ display: "flex", "overflow-x": "auto", "scrollbar-width": "none" });
+    expect(rule(".ui-tab")).toMatchObject({ "white-space": "nowrap", flex: "none", "min-height": "44px", "min-width": "44px" });
+    const current = rule(".ui-tab[aria-current=\"page\"],\n.ui-tab[aria-selected=\"true\"]");
+    expect(current).toMatchObject({ "border-bottom-color": "var(--color-text)", "font-weight": "700", color: "var(--color-text)" });
+    expect(rule(".ui-tab:focus-visible")).toEqual({ outline: "2px solid var(--color-focus)", "outline-offset": "-2px" });
+    expect(rule(".ui-tabs--more")["mask-image"]).toContain("linear-gradient");
   });
 
   it("深色模式不另寫規則（由 theme 的變數切換）", () => {

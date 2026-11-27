@@ -57,7 +57,9 @@ h3 {
 }
 
 /* 頂部：28px 的 K 晶格 icon＋客戶名稱（16px／900） */
+/* #179：不是 h1（每頁的 h1 是頁首），字體沿用原本 h1 的標題字體 */
 .sidebar__brand {
+  font-family: var(--font-heading);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1594,6 +1596,8 @@ main.qa > .source .source-text mark.entering {
 }
 
 .mobile-brand {
+  font-family: var(--font-heading);
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2205,65 +2209,6 @@ main.qa > .source .source-text mark.entering {
   background: var(--color-surface);
   color: var(--color-primary);
   font-weight: 700;
-}
-
-/* 待審頁的第二層：底線式分頁（#243）。整列一條 border 底線，選中的分頁是 2px text 底線、粗體；數量直接接在名稱後。
-   一律單行，窄螢幕超出時橫向捲動（不換行，底線不斷開）；分頁列往下 1px 疊在整列的底線上，捲動容器不裁掉選中的底線 */
-.review-toolbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.review-tabs {
-  display: flex;
-  flex-wrap: nowrap;
-  flex: 0 1 auto;
-  min-width: 0;
-  gap: 1.25rem;
-  margin-bottom: -1px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.review-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-/* 右側還有分頁時（#288，docs/design.md「英文版面」）：右側 36px 漸層提示還有內容。以遮罩讓內容淡出到背景，
-   淺色與深色都不需要另外的顏色（遮罩只看不透明度，var(--color-text) 只當作不透明的顏色） */
-.review-tabs.has-more {
-  -webkit-mask-image: linear-gradient(to left, transparent, var(--color-text) 36px);
-  mask-image: linear-gradient(to left, transparent, var(--color-text) 36px);
-}
-
-.review-tabs [role="tab"] {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  flex: none;
-  white-space: nowrap;
-  padding: 0.5rem 0 0.4rem;
-  color: var(--color-textMuted);
-  font-weight: 400;
-}
-
-/* 橫向捲動的容器會裁掉往外畫的焦點框（#243 PR 2 審查）：分頁的焦點框畫在內側 */
-.review-tabs [role="tab"]:focus-visible {
-  outline-offset: -2px;
-}
-
-.review-tabs [role="tab"][aria-selected="true"] {
-  border-bottom-color: var(--color-text);
-  color: var(--color-text);
-  font-weight: 700;
-}
-
-.review-tabs__count {
-  font-family: var(--font-mono);
 }
 
 /* 圖示按鈕（重新整理、關閉） */
@@ -3784,27 +3729,15 @@ button.chip.graph-chip[aria-pressed="true"] {
 }
 
 /* 手機的待審頁（#282，docs/design.md「時間軸、上傳、待審、評測台與更多（手機）」；ReviewPage 的 review-page--phone）：
-   分段切換單行、橫向捲動（.review-tabs），分頁與重新整理至少 44px；需要決定的項目是一行摘要與「›」，點了以底部面板處理；
+   分段切換單行、橫向捲動（共用的 .ui-tabs，#179），分頁與重新整理至少 44px；需要決定的項目是一行摘要與「›」，點了以底部面板處理；
    「核准這份文件的全部」以 sticky 固定在分頁列之上。main 不當捲動容器，sticky 以整頁捲動為準 */
 .app.app--phone > main:has(> .review-page--phone) {
   overflow: visible;
 }
 
-/* 文字短的頁籤（例如「回報」只有 32px）也至少 44px 寬（#282 PR 3 修正要求）；文字置中，仍在列內橫向捲動 */
-.review-page--phone .review-tabs [role="tab"] {
+/* 頁首的重新整理至少 44px 高（#282；分頁的 44px 在 ui.css 的 .ui-tab，#179） */
+.review-page--phone .review-refresh {
   min-height: 44px;
-  min-width: 44px;
-  text-align: center;
-}
-
-.review-page--phone .review-toolbar {
-  align-items: center;
-}
-
-.review-page--phone .review-toolbar .icon-button {
-  flex: none;
-  width: 44px;
-  height: 44px;
 }
 
 /* 實體名稱優先完整顯示（畫板 G-Mobile-Pages 第 3 張）：空間不夠時，要做的決定與「›」換到下一行，名稱本身不截斷 */
@@ -7505,12 +7438,8 @@ main.page:has(> .eval-page--desktop) {
   font-weight: 700;
 }
 
-/* 我的上傳（#284，docs/design.md「日常工具」的「我的上傳」）：上傳頁頂端的兩段沿用待審頁的底線式分頁；
+/* 我的上傳（#284，docs/design.md「日常工具」的「我的上傳」）：上傳頁頂端的兩段是共用的分頁（#179）；
    每份一列（標題可以截斷，完整文字在 title），點了在右側顯示詳情；手機從底部升起詳情面板 */
-.upload-sections {
-  border-bottom: 1px solid var(--color-border);
-}
-
 .upload-steps--four {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -8463,43 +8392,6 @@ main.page:has(> .upload-page) {
   padding: 32px clamp(16px, 3vw, 40px);
 }
 
-.upload-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.upload-header h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-/* 分段切換：40px 高、圓角 8px；選中的一段 surfaceRaised 底、粗體。「我的上傳 N」的 N 是還在處理中的上傳數 */
-.upload-segments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-left: 12px;
-}
-
-.upload-segments [role="tab"] {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-textMuted);
-  font-size: 14px;
-}
-
-.upload-segments [role="tab"][aria-selected="true"] {
-  background: var(--color-surfaceRaised);
-  color: var(--color-text);
-  font-weight: 700;
-}
-
 /* 提示：surfaceRaised 底的說明列（不用橘色外框）；重新上傳修正版的提示也是 */
 .upload-hint,
 :is(.upload-page, .upload-page--phone) .notice-info {
@@ -8837,24 +8729,6 @@ main.page:has(> .upload-page) {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
-}
-
-.upload-page--phone .upload-header {
-  gap: 6px;
-}
-
-.upload-page--phone .upload-header h1 {
-  flex: 1 0 100%;
-  font-size: 22px;
-}
-
-.upload-page--phone .upload-segments {
-  margin-left: 0;
-}
-
-.upload-page--phone .upload-segments [role="tab"] {
-  min-height: 44px;
-  padding: 0 12px;
 }
 
 .upload-page--phone .my-upload {
@@ -9738,21 +9612,6 @@ main.page:has(> .review-page--desktop) {
 .review-page--desktop {
   max-width: none;
   gap: 20px;
-}
-
-.review-header h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.review-page--desktop .review-tabs {
-  gap: 4px;
-}
-
-.review-page--desktop .review-tabs [role="tab"] {
-  height: 44px;
-  padding: 0 14px;
 }
 
 .review-page--desktop .review-panel {

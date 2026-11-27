@@ -46,7 +46,10 @@ describe("頂部與頁面項目", () => {
     expect(SIDEBAR_ICON_SIZE).toBe(28);
     expect(SIDEBAR_ICON_SIZE).toBeLessThanOrEqual(SIMPLIFIED_MAX_SIZE);
     for (const lang of clientConfig.client.languages) {
-      const h1 = render({ language: lang }).match(/<h1 class="sidebar__brand">([\s\S]*?)<\/h1>/)?.[1] ?? "";
+      // 頁面的 h1 是各頁的頁首（#179），左側欄的名稱不是標題
+      const html = render({ language: lang });
+      expect(html).not.toContain("<h1");
+      const h1 = html.match(/<p class="sidebar__brand">([\s\S]*?)<\/p>/)?.[1] ?? "";
       expect(h1).toContain('width="28"');
       expect(h1).toContain(`<span class="visually-hidden">${strings(lang).productName} </span>`);
       expect(h1).toContain(`<span class="sidebar__client">${clientConfig.client.displayName[lang]}</span>`);

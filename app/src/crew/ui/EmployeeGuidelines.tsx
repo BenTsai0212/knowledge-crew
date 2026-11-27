@@ -62,7 +62,7 @@ export function EmployeeGuidelineSection({ employee, guidelines, canReview, savi
       aria-label={fill(t.guidelinesLabel, { employee: employeeOptionText(employee.displayName, language) })}
       data-pending={pending.length > 0 || undefined}
     >
-      <h4 id={titleId}>{t.guidelinesTitle}</h4>
+      <h3 id={titleId}>{t.guidelinesTitle}</h3>
       <p className="muted">{guidelineSummary(guidelines, canReview, language)}</p>
       {failed && (
         <p className="error" role="alert">

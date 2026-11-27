@@ -777,8 +777,125 @@ button.ui-row:hover {
   right: 0;
 }
 
+/* ---------- 頁首（#179，每頁一個）：所屬區塊小字＋主標題 h1＋一句說明＋動作；動作放不下時換到下一行 ---------- */
+.ui-page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ui-page-head__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+}
+
+.ui-page-head__title {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ui-page-head__eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-textMuted);
+  letter-spacing: 0.02em;
+}
+
+.ui-page-head h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ui-page-head__lead {
+  margin: 0;
+  color: var(--color-textMuted);
+  font-size: 15px;
+  max-width: 68ch;
+}
+
+.ui-page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---------- 分頁（#179，待審、上傳、AI 員工共用）：底線式，一律單行，放不下時橫向捲動（不顯示捲軸） ---------- */
+.ui-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-top: 4px;
+  min-width: 0;
+}
+
+.ui-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* 右側還有分頁時（#288）：右側 36px 以遮罩淡出，淺色與深色都不需要另外的顏色 */
+.ui-tabs--more {
+  -webkit-mask-image: linear-gradient(to left, transparent, var(--color-text) 36px);
+  mask-image: linear-gradient(to left, transparent, var(--color-text) 36px);
+}
+
+.ui-tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--color-textMuted);
+  font: inherit;
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ui-tab:hover {
+  color: var(--color-text);
+}
+
+/* 橫向捲動的容器會裁掉往外畫的焦點框：畫在內側 */
+.ui-tab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.ui-tab[aria-current="page"],
+.ui-tab[aria-selected="true"] {
+  color: var(--color-text);
+  font-weight: 700;
+  border-bottom-color: var(--color-text);
+}
+
 /* ---------- 手機（< 720px） ---------- */
 @media (max-width: 719px) {
+  .ui-page-head h1 {
+    font-size: 22px;
+  }
+
   .ui-card {
     padding: 16px;
   }

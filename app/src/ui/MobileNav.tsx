@@ -45,11 +45,11 @@ export function MobileNav(props: NavProps) {
     <>
       <header className="mobile-topbar">
         <div className="mobile-topbar__row">
-          <h1 className="mobile-brand">
+          <p className="mobile-brand">
             <ProductIcon size={TOPBAR_ICON_SIZE} />
             <span className="visually-hidden">{s.productName} </span>
             <span className="mobile-brand__client">{clientConfig.client.displayName[language]}</span>
-          </h1>
+          </p>
           {signedIn && (
             // 空狀態的「切換身分」把焦點移到這裡（#245）
             <button

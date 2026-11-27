@@ -28,7 +28,9 @@ test.describe("員工卡（主管，桌機 1280）", () => {
   test("頁首與四張卡（兩欄）", async ({ page }) => {
     const count = demo.employees.length;
     expect(count).toBe(4);
-    await expect(page.getByRole("heading", { level: 2 })).toContainText(String(count));
+    // 子頁的主標題是頁首的 h1（#179）；人數改在標題下的一行文字
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(ct.common.sectionEmployees);
+    await expect(page.locator(".crew-employees__count")).toContainText(String(count));
     await expect(page.getByText(ct.employees.intro, { exact: true })).toBeVisible();
     for (const e of demo.employees) await expect(card(page, e.id)).toBeVisible();
     const [a, b] = await Promise.all([card(page, "juniper").boundingBox(), card(page, "linden").boundingBox()]);
@@ -62,7 +64,8 @@ test.describe("員工卡（主管，桌機 1280）", () => {
 
   test("「看信任紀錄」切到信任頁", async ({ page }) => {
     await card(page, "rowan").getByRole("button", { name: ct.employees.linkTrust, exact: true }).click();
-    await expect(page.getByRole("heading", { name: ct.trust.title, exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionTrust, exact: true })).toBeVisible();
+    await expect(page.getByText(ct.trust.title, { exact: true })).toBeVisible();
   });
 });
 

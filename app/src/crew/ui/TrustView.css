@@ -22,10 +22,9 @@
   min-width: 0;
 }
 
-.crew-trust__heading h2,
 .crew-trust__heading p,
 .crew-trust__rules,
-.crew-trust__row h3,
+.crew-trust__row h2,
 .crew-trust__row p {
   margin: 0;
 }
@@ -33,6 +32,12 @@
 /* 說明換成多行時（英文、窄螢幕）避免最後一行只剩一個字 */
 .crew-trust__heading p {
   text-wrap: pretty;
+}
+
+/* 原本的 h2（#179：子頁的主標題改為頁首的 h1「信任」），字的大小與粗細不變 */
+.crew-trust__title {
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .crew-trust__legend {
@@ -71,7 +76,13 @@
   gap: 0.5rem 0.75rem;
 }
 
-.crew-trust__top h3 {
+/* 子頁的主標題是頁首的 h1（#179）：每列與總覽報表的標題從 h3 改成 h2、經過從 h4 改成 h3，大小不變 */
+.crew-trust__top h2,
+.crew-trust-report__heading h2 {
+  font-size: 0.95rem;
+}
+
+.crew-trust__top h2 {
   flex: 1 1 auto;
 }
 
@@ -312,7 +323,7 @@
   gap: 0.25rem;
 }
 
-.crew-trust-report__heading h3,
+.crew-trust-report__heading h2,
 .crew-trust-report__heading p {
   margin: 0;
 }

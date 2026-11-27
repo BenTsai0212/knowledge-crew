@@ -1,4 +1,4 @@
-// crew 頁子導覽的數字與目前子頁的捲動（#103，設計規格 v3 第 5 節）。只是資料整理與位置計算，不另寫查詢：
+// crew 頁子導覽的數字（#103，設計規格 v3 第 5 節；目前子頁的捲動在共用的 Tabs，#179）。只是資料整理與位置計算，不另寫查詢：
 // 數字來自 readToday()（與首頁、側欄的待驗收件數同一份，home-today.ts）。
 import type { HomeToday } from "./home-today";
 import type { CrewSection } from "./sections";
@@ -12,16 +12,4 @@ export function sectionCounts(today: HomeToday): Partial<Record<CrewSection, num
   if (today.decide.length > 0) counts.trust = today.decide.length;
   if (today.guidelines.length > 0) counts.employees = today.guidelines.length;
   return counts;
-}
-
-interface Span {
-  left: number;
-  right: number;
-}
-
-/** 按鈕列要橫向捲動多少（正數往右），目前的按鈕才整個看得見；已經看得見時是 0。比按鈕列寬時對齊左緣 */
-export function scrollDelta(row: Span, button: Span): number {
-  if (button.left < row.left || button.right - button.left > row.right - row.left) return button.left - row.left;
-  if (button.right > row.right) return button.right - row.right;
-  return 0;
 }
