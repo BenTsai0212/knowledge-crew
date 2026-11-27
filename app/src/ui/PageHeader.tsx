@@ -1,8 +1,9 @@
 // 頁首（#179，設計規格 v4 第 4 節「頁首（每頁一個）」、v4.css 的 .page-head）：
 // 所屬區塊（選填，小字）、主標題 h1、說明（選填，一句）、頁面動作（選填，右側；放不下時換到下一行）與分頁（選填）。
 // 切換畫面後焦點移到 h1（WCAG 2.4.3，沿用 focusWhenShown 的做法：h1 有 tabIndex={-1}）：掛上時與 focusKey 改變時移過去。
-// 頁內其他元件之後自己移動焦點時（例如打開一件工作），以它們為準（React 先執行前面兄弟元件的 effect）。
+// 焦點在開著的對話框內時不移動。頁內其他元件之後自己移動焦點時（例如打開一件工作），以它們為準（React 先執行前面兄弟元件的 effect）。
 import { useEffect, useRef, type ReactNode } from "react";
+import { CLOSING_CLASS } from "./dialog-motion";
 
 interface Props {
   eyebrow?: ReactNode;
@@ -23,13 +24,16 @@ export function PageHeader({ eyebrow, title, lead, actions, tabs, focusKey = "",
     const h = heading.current;
     if (h === null) return;
     const focus = () => h.focus({ preventScroll: true });
-    focus();
-    if (document.activeElement === h) return;
-    // 從底部面板切換畫面（例如手機的「更多」）：面板關閉的動畫期間頁面不能取得焦點，關閉時面板又把焦點還給打開它的按鈕；
+    // 從底部面板切換畫面（例如手機的「更多」）：關閉的動畫期間頁面不能取得焦點，關閉時面板又把焦點還給打開它的按鈕；
     // 等面板關閉後再移到 h1（這個 listener 比面板自己的晚加上，所以在它之後執行）
-    const sheet = document.querySelector("dialog[open]");
-    sheet?.addEventListener("close", focus, { once: true });
-    return () => sheet?.removeEventListener("close", focus);
+    const sheet = document.querySelector(`dialog[open].${CLOSING_CLASS}`);
+    if (sheet !== null) {
+      sheet.addEventListener("close", focus, { once: true });
+      return () => sheet.removeEventListener("close", focus);
+    }
+    // 開著的對話框帶著切換畫面（例如第一次來的導覽）時，焦點留在對話框
+    if (document.activeElement?.closest('dialog[open], [role="dialog"]')) return;
+    focus();
   }, [focusKey]);
   return (
     <header className={className === undefined ? "ui-page-head" : `ui-page-head ${className}`}>
