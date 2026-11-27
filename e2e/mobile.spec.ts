@@ -81,9 +81,10 @@ test("主管：首頁、問答、圖譜、上傳、更多；「更多」只列�
   await moreSheet(page).locator('[data-view="review"]').click();
   await expect(moreSheet(page)).toBeHidden();
   await expect(page.locator(".review-page")).toBeVisible();
-  // 目前的頁面收在「更多」裡時，「更多」標為目前的頁籤；關閉後焦點回到「更多」
+  // 目前的頁面收在「更多」裡時，「更多」標為目前的頁籤；選了頁面後焦點在該頁的 h1（#179：切換畫面後焦點移到 h1）
   await expect(more).toHaveAttribute("aria-current", "page");
-  await expect(more).toBeFocused();
+  await expect(more).not.toBeFocused();
+  await expect(page.getByRole("heading", { level: 1, name: s.tabReview })).toBeFocused();
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
