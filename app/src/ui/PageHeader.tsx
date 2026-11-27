@@ -11,6 +11,8 @@ interface Props {
   lead?: ReactNode;
   actions?: ReactNode;
   tabs?: ReactNode;
+  /** 說明下方的其他內容（例如首頁的今日摘要與可見範圍）；不放在說明的 p 裡，可以是段落以外的元素 */
+  children?: ReactNode;
   /** 同一個元件換了畫面（例如 AI 員工的子頁）時改變，焦點再移到 h1 */
   focusKey?: string;
   /** h1 的 id（aria-labelledby 用） */
@@ -18,7 +20,7 @@ interface Props {
   className?: string;
 }
 
-export function PageHeader({ eyebrow, title, lead, actions, tabs, focusKey = "", titleId, className }: Props) {
+export function PageHeader({ eyebrow, title, lead, actions, tabs, children, focusKey = "", titleId, className }: Props) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     const h = heading.current;
@@ -44,6 +46,7 @@ export function PageHeader({ eyebrow, title, lead, actions, tabs, focusKey = "",
             {title}
           </h1>
           {lead !== undefined && <p className="ui-page-head__lead">{lead}</p>}
+          {children}
         </div>
         {actions !== undefined && <div className="ui-page-head__actions">{actions}</div>}
       </div>

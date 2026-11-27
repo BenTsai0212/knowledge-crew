@@ -99,6 +99,9 @@ test("鍵盤：頁面項目與使用者卡都能用 Tab 到達，aria-current �
   await first.focus();
   await page.keyboard.press("Enter");
   await expect(first).toHaveAttribute("aria-current", "page");
+  // 切換畫面後焦點移到該頁的 h1（#179）；回到頁面項目繼續用 Tab
+  await expect(page.locator("h1")).toBeFocused();
+  await first.focus();
   for (const item of (await items(page).all()).slice(1)) {
     await page.keyboard.press("Tab");
     await expect(item).toBeFocused();

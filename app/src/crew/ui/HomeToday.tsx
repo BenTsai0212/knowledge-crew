@@ -95,15 +95,15 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
   const group = (id: string, title: string, rows: ReactNode[]) =>
     rows.length > 0 && (
       <section className="crew-home__group" aria-labelledby={`crew-home-${id}`}>
-        <h4 id={`crew-home-${id}`} className="crew-home__group-title">
+        <h3 id={`crew-home-${id}`} className="crew-home__group-title">
           {title}
-        </h4>
+        </h3>
         <ul className="home__list">{rows}</ul>
       </section>
     );
   return (
     <section className={className} aria-labelledby="crew-home-title">
-      <h3 id="crew-home-title">{t.title}</h3>
+      <h2 id="crew-home-title">{t.title}</h2>
       {data === "failed" ? (
         <p className="error" role="alert">
           {t.loadFailed}

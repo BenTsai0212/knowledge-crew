@@ -39,6 +39,7 @@ import { GraphZoomView } from "./GraphZoomView";
 import { SHEET_HALF, useLayout } from "./layout";
 import { prefersReducedMotion } from "./motion";
 import { presentationMode } from "./online-demo";
+import { PageHeader } from "./PageHeader";
 import { PathPanel } from "./PathPanel";
 import { createRequestGate } from "./requests";
 import { entityTypeShape } from "./timeline-view";
@@ -668,6 +669,8 @@ export function GraphPage({ db, identity, language, onOpenSource, onAskAbout, ca
     return (
       <div className="graph-page graph-page--desktop graph-page--stage">
         <section className="graph-main" aria-label={s.tabGraph}>
+          {/* 展示模式的頂端列已有頁籤：h1 只給報讀器（#179） */}
+          <PageHeader className="visually-hidden" title={s.tabGraph} />
           <div className="graph-stage">
             <div className="graph-stage__crumbs">{crumbs}</div>
             {frameElement}
@@ -682,35 +685,37 @@ export function GraphPage({ db, identity, language, onOpenSource, onAskAbout, ca
 
   if (desktop) {
     const closePath = () => (setPathOpen(false), pathButton.current?.focus());
+    // 頁首的動作：搜尋、找路徑（找路徑的面板浮在頁首下方）
+    const graphActions = (
+      <>
+        {searchBox}
+        <button
+          ref={pathButton}
+          type="button"
+          className="secondary graph-path-button"
+          aria-expanded={pathOpen}
+          aria-controls={pathId}
+          onClick={() => setPathOpen((open) => !open)}
+        >
+          {s.graphFindPath}
+        </button>
+        {/* 找路徑的面板（原本的可收合區塊）：浮在畫布右上，Esc 或再按一次「找路徑」關閉 */}
+        {pathOpen && (
+          <div
+            className="graph-path-popover"
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && !e.defaultPrevented) closePath();
+            }}
+          >
+            {pathPanel}
+          </div>
+        )}
+      </>
+    );
     return (
       <div className="graph-page graph-page--desktop">
         <section className="graph-main" aria-labelledby="graph-title">
-          <div className="graph-head">
-            {/* 左側欄的客戶名稱是 h1（#330），一頁只放一個 h1 */}
-            <h2 id="graph-title">{s.tabGraph}</h2>
-            {searchBox}
-            <button
-              ref={pathButton}
-              type="button"
-              className="secondary graph-path-button"
-              aria-expanded={pathOpen}
-              aria-controls={pathId}
-              onClick={() => setPathOpen((open) => !open)}
-            >
-              {s.graphFindPath}
-            </button>
-            {/* 找路徑的面板（原本的可收合區塊）：浮在畫布右上，Esc 或再按一次「找路徑」關閉 */}
-            {pathOpen && (
-              <div
-                className="graph-path-popover"
-                onKeyDown={(e) => {
-                  if (e.key === "Escape" && !e.defaultPrevented) closePath();
-                }}
-              >
-                {pathPanel}
-              </div>
-            )}
-          </div>
+          <PageHeader className="graph-head" titleId="graph-title" title={s.tabGraph} actions={graphActions} />
           <div className="graph-toolbar">
             {trail}
             {chips}
@@ -771,6 +776,7 @@ export function GraphPage({ db, identity, language, onOpenSource, onAskAbout, ca
     return (
       <div className="graph-page graph-page--phone">
         <section className="graph-main">
+          <PageHeader className="graph-page__head" title={s.tabGraph} />
           <div className="graph-tools">
             <div className="graph-tools__row">
               {searchBox}
@@ -824,6 +830,7 @@ export function GraphPage({ db, identity, language, onOpenSource, onAskAbout, ca
   return (
     <div className={tablet ? "graph-page graph-page--tablet" : "graph-page"}>
       <section className="card graph-main">
+        <PageHeader title={s.tabGraph} />
         <div className="graph-tools">
           {searchBox}
           {filters}

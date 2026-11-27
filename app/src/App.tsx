@@ -88,6 +88,7 @@ import { CrewTour, CrewTourCard, useCrewTour } from "./crew/ui/Tour";
 import { CREW_ONLY_ACCESS_CODE, crewDefaultView, crewDirectEntryLabel, crewNoAskNote, crewOnlyMode, crewSeed, crewStartIdentity, entryPoints, focusWhenShown, hasCrewDemo, withCrew } from "./crew/ui/entry";
 import { endedExtractions, seenUploads, showsUploadDot } from "./ui/my-uploads";
 import { PresentationBar, type IdentityBump } from "./ui/PresentationBar";
+import { PageHeader } from "./ui/PageHeader";
 import { ScriptPanel } from "./ui/ScriptPanel";
 import { IdentityCompare, type CompareRun } from "./ui/IdentityCompare";
 import { compareColumns, compareKey, compareQuestion } from "./ui/identity-compare";
@@ -1078,21 +1079,14 @@ export function App() {
             <ScriptPanel language={language} conversations={conversations} current={scriptCurrent} disabled={retriever === null || answering || limit !== null} onAsk={onScript} />
           )}
           <div className="qa-center">
-            {/* 桌機的頁首（#335）：「每一題獨立回答」的說明從輸入框下方移到這裡 */}
-            {desktop && (
-              <header className="qa-header">
-                <h1>{s.tabQa}</h1>
-                <p className="muted">{s.qaHeaderNote}</p>
-              </header>
-            )}
+            {/* 頁首（#335、#179）：每個版面都有（每頁一個 h1）；展示模式的頂端列已有頁籤，只給報讀器 */}
+            <PageHeader className={presentationBar ? "qa-header visually-hidden" : "qa-header"} title={s.tabQa} lead={s.qaHeaderNote} />
             {offline && <Notice kind="warning" title={s.qaProblems.offline} className="notice--offline" />}
             {db === null && <p className="card muted">{s.loading}</p>}
             {/* 線上 demo：提問會傳給模型供應商（#100 計畫第 8 項） */}
             {onlineDemo.enabled && <p className="badge warning">{s.demoQaNotice}</p>}
             <RetrievalNotice language={language} preparesModel={preparesModel(client.retrieval)} status={providerStatus} compact={presentationMode} />
             {adminError !== null && <AdminNotice language={language} {...adminError} />}
-            {/* 手機的「每一題獨立回答」（#354）：輸入區改成單行輸入列後，說明與桌機相同移到頂部 */}
-            {phone && <p className="muted qa-phone-note">{s.qaHeaderNote}</p>}
             {/* 手機與平板的「這次的問題」在問答頁頂部（#256 決定 1、#333），平板打開右側的滑出面板；展示模式不顯示（#260） */}
             {overlay && !presentationMode && <SessionQuestions language={language} questions={turns} onQuestion={scrollToTurn} side={side} />}
             {compareEnabled && compare !== null ? (

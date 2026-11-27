@@ -6,10 +6,11 @@ import { AccessBadges } from "./AccessBadges";
 import { entityOptionLabel } from "./graph-labels";
 import { PassageMarks } from "./PassageMarks";
 import { createRequestGate } from "./requests";
+import { PageHeader } from "./PageHeader";
 import { EmptyState } from "./EmptyState";
 import { goneDelay, withGone } from "./gone-motion";
 import { prefersReducedMotion, staggerIndex } from "./motion";
-import { conflictDocuments, dateParts, entityTypeShape, languageTag, timelineEmptyKind, timelineMonths, timelineSections, yearGroups, type TimelineRow } from "./timeline-view";
+import { conflictDocuments, dateParts, entityTypeShape, languageTag, timelineEmptyKind, timelineSections, yearGroups, type TimelineRow } from "./timeline-view";
 import { useLayout } from "./layout";
 import { presentationMode } from "./online-demo";
 import { fill, strings } from "../client/i18n";
@@ -257,10 +258,8 @@ export function TimelinePage({ db, identity, language, uploaded, focus, onFocuse
   const sections = rows === null ? null : timelineSections(rows.map((r) => r.item), entityId);
   const empty = sections === null ? null : timelineEmptyKind(sections, entityId);
 
-  // 桌機頁首的範圍與文件數：只算目前身分看得到的文件（entries 經 RLS；消失中的文件不算）
-  const months = entries === null ? null : timelineMonths(entries, language);
-  const documents = entries === null ? null : fill(s.timelineDocuments, { count: entries.length }, language);
-  const summary = documents === null ? null : months === null ? documents : fill(s.timelineSummary, { range: months.to === null ? months.from : fill(s.timelineMonthRange, { from: months.from, to: months.to }), documents });
+  // 頁首的說明（文件數・排序）：只算目前身分看得到的文件（entries 經 RLS；消失中的文件不算）
+  const summary = entries === null ? undefined : fill(s.timelineSummary, { documents: fill(s.timelineDocuments, { count: entries.length }, language) });
   // 篩選時，符合的文件的圓點用該實體的類型色（畫板 F-Timeline）
   const filterColor = entityId === null ? undefined : (entityTypes.find((t) => t.id === byId.get(entityId)?.type)?.color ?? "var(--color-primary)");
 
@@ -283,13 +282,7 @@ export function TimelinePage({ db, identity, language, uploaded, focus, onFocuse
       }
       style={desktop && filterColor !== undefined ? ({ "--filter-color": filterColor } as CSSProperties) : undefined}
     >
-      {compact && (
-        <header className="timeline-head">
-          <h1>{s.tabTimeline}</h1>
-          {/* 手機的頁首只有文件數（畫板 G-Mobile-Pages） */}
-          {(desktop ? summary : documents) !== null && <p className="muted">{desktop ? summary : documents}</p>}
-        </header>
-      )}
+      <PageHeader className="timeline-head" title={s.tabTimeline} lead={summary} />
       <div className="timeline-filter" role="group" aria-label={s.timelineFilter}>
         {desktop && (
           <span className="timeline-filter__label" aria-hidden="true">

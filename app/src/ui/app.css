@@ -2824,18 +2824,9 @@ main.page:has(> .graph-page--desktop) {
 }
 
 /* 頁首一列：標題 28px、右側搜尋框（44px、最少 240px、搜尋 icon）與「找路徑」（44px） */
+/* 頁首（PageHeader，#179）：找路徑的面板以頁首為基準浮在下方 */
 .graph-head {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.graph-head h2 {
-  margin: 0 auto 0 0;
-  font-size: 28px;
-  font-weight: 700;
 }
 
 .graph-head .entity-search {
@@ -3294,6 +3285,15 @@ button.chip.graph-chip[aria-pressed="true"] {
   flex: 1 1 auto;
   min-height: 0;
   background: var(--color-background);
+}
+
+/* 手機的頁首（#179）：與下方的搜尋列對齊；上下留白縮小，畫布在面板打開時仍留得下選取的節點 */
+.graph-page--phone .graph-page__head {
+  padding: 12px 16px 0;
+}
+
+.graph-page--phone .graph-page__head + .graph-tools {
+  padding-top: 8px;
 }
 
 /* 上方（#357）：一列是搜尋框（放大鏡、placeholder「搜尋名稱」）＋ 44px 的篩選圖示按鈕，下一列是靠左的「圖譜｜清單」分段切換 */
@@ -5324,11 +5324,6 @@ label.inline {
   gap: 1rem;
 }
 
-.eval-header h2,
-.eval-header p {
-  margin: 0;
-}
-
 .eval-overview {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
@@ -5426,8 +5421,14 @@ label.inline {
   gap: 1rem;
 }
 
-.eval-detail h4 {
+/* 頁首是 h1 後各降一級（#179：h3 → h2、h4 → h3），大小不變 */
+.eval-page .card h2 {
+  font-size: 0.95rem;
+}
+
+.eval-detail h3 {
   margin: 0 0 0.25rem;
+  font-size: 1em;
 }
 
 .eval-result p {
@@ -5702,23 +5703,6 @@ main.page:has(> .eval-page--desktop) {
   gap: 20px;
 }
 
-.eval-page--desktop .eval-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.eval-page--desktop .eval-header h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.eval-page--desktop .eval-header p {
-  font-size: 14px;
-}
-
 .eval-page--desktop .eval-overview {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 16px;
@@ -5733,7 +5717,7 @@ main.page:has(> .eval-page--desktop) {
   border-radius: 16px;
 }
 
-.eval-page--desktop .card h3 {
+.eval-page--desktop .card h2 {
   margin: 0;
   font-size: 17px;
   font-weight: 700;
@@ -6850,7 +6834,7 @@ main.page:has(> .eval-page--desktop) {
   max-width: 56rem;
 }
 
-.home__top h2 {
+.home__top h1 {
   margin: 0;
 }
 
@@ -6875,8 +6859,10 @@ main.page:has(> .eval-page--desktop) {
   min-width: 0;
 }
 
-.home__card h3 {
+.home__card h2 {
   margin: 0;
+  /* 頁首是 h1 後由 h3 改為 h2（#179），大小不變 */
+  font-size: 0.95rem;
 }
 
 .home__list {
@@ -7217,7 +7203,7 @@ main.page:has(> .eval-page--desktop) {
   gap: 24px;
 }
 
-.home--wide .home__top h2 {
+.home--wide .home__top h1 {
   font-size: 28px;
   font-weight: 700;
 }
@@ -7232,7 +7218,7 @@ main.page:has(> .eval-page--desktop) {
   padding: 20px;
 }
 
-.home--wide .home__card h3 {
+.home--wide .home__card h2 {
   font-size: 17px;
   font-weight: 700;
 }
@@ -7301,7 +7287,7 @@ main.page:has(> .eval-page--desktop) {
   gap: 14px;
 }
 
-.home--phone .home__top h2 {
+.home--phone .home__top h1 {
   font-size: 22px;
   font-weight: 700;
 }
@@ -7314,7 +7300,7 @@ main.page:has(> .eval-page--desktop) {
   gap: 8px;
 }
 
-.home--phone .home__card h3 {
+.home--phone .home__card h2 {
   font-size: 15px;
   font-weight: 700;
 }
@@ -7659,25 +7645,6 @@ main.page:has(> .eval-page--desktop) {
 .app--desktop .qa-center {
   gap: 20px;
   padding: 32px clamp(16px, 4vw, 56px) 24px;
-}
-
-.qa-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.qa-header h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.qa-header p {
-  margin: 0;
-  font-size: 13px;
 }
 
 .app--desktop .conversation {
@@ -8382,12 +8349,6 @@ main.page:has(> .eval-page--desktop) {
   font-size: 12px;
 }
 
-/* 「每一題獨立回答」：頁首的一行小字（桌機在 qa-header） */
-.qa-phone-note {
-  margin: 0;
-  font-size: 12px;
-}
-
 /* 原文面板（SourceSheet.tsx）：標題是 13px textMuted 的「原文 · 出處 N／M」；文件名 18px；紙面 16px／1.9，
    未引用的段落 textMuted（Dark 的紙面是亮色，改用紙面文字，見上方深色的規則）；下方兩個並排的 48px 按鈕。平板的滑出面板不變 */
 .app--phone .source-sheet .bottom-sheet__body {
@@ -9027,7 +8988,7 @@ main.page:has(> .upload-page) {
   gap: 2px;
 }
 
-.presentation-bar h1 {
+.presentation-bar .brand {
   margin: 0;
   font-size: 26px;
   font-weight: 900;

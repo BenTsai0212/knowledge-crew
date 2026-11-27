@@ -1,16 +1,17 @@
 // 頁首與分頁元件（#179，設計規格 v4 第 4 節「頁首」）：AI 員工的每個子頁、待審與上傳在桌機 1280 與手機 390 都剛好一個 h1，
 // 切換畫面後焦點在 h1；AI 員工是小字「AI 員工」＋子頁主標題＋分頁（nav），待審、上傳的分頁是 tablist（左右鍵切換）。
-// 其餘 knowledge-kit 頁面（首頁、問答、圖譜、時間軸、評測台）在 #179 的第 2 個 PR。
+// 首頁、問答、圖譜、時間軸、評測台（#179 的第 2 個 PR）同樣用共用頁首：一個 h1（照 v5 的 HTML 是頁面名稱，首頁是問候）與一句說明。
 import { expect, test, type Page } from "@playwright/test";
-import { gotoView, openApp, s, switchIdentity } from "./support/app";
-import { reviewingUploader } from "./support/client";
+import { EVALS_PATH, gotoView, openApp, s, switchIdentity } from "./support/app";
+import { reviewer, reviewingUploader } from "./support/client";
 import { ct, crewSections, gotoCrewSection, hasCrewDemo, openCrew } from "./support/crew";
 
 const SECTIONS = ["sectionOverview", "sectionEmployees", "sectionAssignments", "sectionWorks", "sectionTrust", "sectionLedger"] as const;
 const h1 = (page: Page) => page.locator("h1");
+const greetings = new RegExp(`^(${[s.home.morning, s.home.afternoon, s.home.evening].join("|")})$`);
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
-async function expectOnlyH1(page: Page, name: string): Promise<void> {
+async function expectOnlyH1(page: Page, name: string | RegExp): Promise<void> {
   await expect(h1(page)).toHaveCount(1);
   await expect(h1(page)).toHaveText(name);
   await expect(h1(page)).toBeFocused();
@@ -76,6 +77,32 @@ for (const viewport of [
       await page.keyboard.press("ArrowLeft");
       await expect(uploadTabs.getByRole("tab", { name: new RegExp(`^${s.myUploads.tabMine}`) })).toBeFocused();
       expect(await noHorizontalScroll(page)).toBe(true);
+    });
+
+    test("首頁、問答、圖譜、時間軸、評測台：每頁一個 h1，切換畫面後焦點在 h1；說明照 HTML", async ({ page }) => {
+      // 評測台只在 ?tools=evals 時有頁籤
+      await openApp(page, EVALS_PATH);
+      if (reviewer !== undefined) await switchIdentity(page, reviewer.id);
+      // 依序切換：每次切換後只有新頁面的 h1，且焦點在它上面
+      const pages: Array<{ view: string; name: string | RegExp; lead?: string }> = [
+        { view: "home", name: greetings },
+        { view: "qa", name: s.tabQa, lead: s.qaHeaderNote },
+        { view: "graph", name: s.tabGraph },
+        { view: "timeline", name: s.tabTimeline },
+        { view: "evals", name: s.tabEvals },
+      ];
+      let visited = 0;
+      for (const target of pages) {
+        if (!(await gotoView(page, target.view))) continue;
+        visited += 1;
+        await expectOnlyH1(page, target.name);
+        const header = page.locator(".ui-page-head").filter({ has: h1(page) });
+        await expect(header).toHaveCount(1);
+        if (target.lead !== undefined) await expect(header.locator(".ui-page-head__lead")).toHaveText(target.lead);
+        expect(await noHorizontalScroll(page)).toBe(true);
+      }
+      // 首頁、問答、圖譜、時間軸一定看得到；評測台要能審核的身分
+      expect(visited).toBeGreaterThanOrEqual(reviewer === undefined ? 4 : 5);
     });
   });
 }

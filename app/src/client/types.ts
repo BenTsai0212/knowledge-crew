@@ -603,7 +603,6 @@ export interface UiStrings {
   timelineHidePassages: string;
   // 桌機時間軸的頁首：文件數、月份範圍（{from}、{to}）、範圍與文件數（{range}、{documents}）
   timelineDocuments: string;
-  timelineMonthRange: string;
   timelineSummary: string;
   extractTitle: string;
   extractRunning: string;

@@ -43,6 +43,7 @@ import { EmptyState } from "./EmptyState";
 import { FilePicker } from "./FilePicker";
 import { useLayout } from "./layout";
 import { Notice } from "./Notice";
+import { PageHeader } from "./PageHeader";
 import { RetrievalNotice } from "./RetrievalNotice";
 import type { ProviderStatus } from "./retrieval-notice";
 
@@ -482,7 +483,7 @@ export function EvalPage({ language, accessCode, uploadedCount, provider, status
   const summaryClass = ["card", "eval-summary", !animate && "still", settled && "settled"].filter(Boolean).join(" ");
   const summaryHead = run !== null && (
     <div className="eval-card-head">
-      <h3>{s.evalSummary}</h3>
+      <h2>{s.evalSummary}</h2>
       {run.status === "running" && (
         <p aria-live="polite">
           {s.evalRunning} {fill(s.evalProgress, { done: Math.min(done + 1, cells.length), total: cells.length })}
@@ -501,7 +502,7 @@ export function EvalPage({ language, accessCode, uploadedCount, provider, status
   );
   const resultsHead = (
     <div className="eval-card-head">
-      <h3>{s.evalResults}</h3>
+      <h2>{s.evalResults}</h2>
       {twoSets && (
         <label className="inline">
           <input type="checkbox" checked={onlyDiff} onChange={(e) => setOnlyDiff(e.target.checked)} />
@@ -562,10 +563,7 @@ export function EvalPage({ language, accessCode, uploadedCount, provider, status
     };
     return (
       <div className="eval-page eval-page--phone">
-        <header className="eval-header">
-          <h2>{s.tabEvals}</h2>
-          <p className="muted">{fill(s.evalBankSummary, BANK)}</p>
-        </header>
+        <PageHeader className="eval-header" title={s.tabEvals} lead={fill(s.evalBankSummary, BANK)} />
         {/* 設定收合成一列：「評測設定 A topK 5 · B topK 8 ›」，點了以底部面板編輯與開始 */}
         <button type="button" className="eval-settings-row" aria-haspopup="dialog" onClick={() => setSettingsOpen(true)}>
           <span>{s.evalSettings}</span>
@@ -676,7 +674,7 @@ export function EvalPage({ language, accessCode, uploadedCount, provider, status
               <div className="eval-detail-sets">
                 {byId.map((results, i) => (
                   <div key={i} role="group" aria-label={fill(s.evalSetName, { name: SET_NAMES[i] })}>
-                    {twoSets && <h4>{fill(s.evalSetName, { name: SET_NAMES[i] })}</h4>}
+                    {twoSets && <h3>{fill(s.evalSetName, { name: SET_NAMES[i] })}</h3>}
                     {resultDetail(pickedQ, results.get(pickedQ.id), run)}
                   </div>
                 ))}
@@ -690,15 +688,12 @@ export function EvalPage({ language, accessCode, uploadedCount, provider, status
 
   return (
     <div className={desktop ? "eval-page eval-page--desktop" : "eval-page"}>
-      <header className="eval-header">
-        {desktop ? <h1>{s.tabEvals}</h1> : <h2>{s.tabEvals}</h2>}
-        <p className="muted">{fill(s.evalBankSummary, BANK)}</p>
-      </header>
+      <PageHeader className="eval-header" title={s.tabEvals} lead={fill(s.evalBankSummary, BANK)} />
 
       {/* 上半部（#244）：「評測設定」與「總覽」兩張卡片並排，窄螢幕上下堆疊 */}
       <div className="eval-overview">
         <section className="card eval-settings">
-          <h3>{s.evalSettings}</h3>
+          <h2>{s.evalSettings}</h2>
           {settingsFields}
           {settingsNotices}
           {/* 按鈕列：開始評測（評測中換成停止）、下載 JSON、下載品質報告（用這次的結果產生）；還不能用時停用 */}
@@ -805,7 +800,7 @@ export function EvalPage({ language, accessCode, uploadedCount, provider, status
                             <div className="eval-detail-sets">
                               {byId.map((results, i) => (
                                 <div key={i} role="group" aria-label={fill(s.evalSetName, { name: SET_NAMES[i] })}>
-                                  {twoSets && <h4>{fill(s.evalSetName, { name: SET_NAMES[i] })}</h4>}
+                                  {twoSets && <h3>{fill(s.evalSetName, { name: SET_NAMES[i] })}</h3>}
                                   {resultDetail(q, results.get(q.id), run)}
                                 </div>
                               ))}

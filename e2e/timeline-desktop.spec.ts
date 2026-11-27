@@ -71,12 +71,12 @@ test.describe("1440×900", () => {
 test.describe("平板 820px 不變", () => {
   test.use({ viewport: { width: 820, height: 1180 } });
 
-  test("沒有頁首與展開按鈕，段落與「打開原文」照舊直接列出", async ({ page }) => {
+  test("頁首（每頁一個 h1，#179）、沒有展開按鈕，段落與「打開原文」照舊直接列出", async ({ page }) => {
     await openApp(page);
     expect(await gotoView(page, "timeline")).toBe(true);
     const first = rows(page).first();
     await expect(first).toBeVisible();
-    await expect(page.locator(".timeline-head")).toHaveCount(0);
+    await expect(page.locator(".timeline-head").getByRole("heading", { level: 1, name: s.tabTimeline })).toBeVisible();
     await expect(page.locator(".timeline-toggle")).toHaveCount(0);
     await expect(first.getByRole("button", { name: s.openSource }).first()).toBeVisible();
   });
