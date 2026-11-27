@@ -261,7 +261,9 @@ test.describe("焦點（#153）", () => {
   test("初次載入、自動選第一筆時焦點不移到面板；在清單以 Enter 選一筆後焦點在面板標題", async ({ page }) => {
     const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });
     await expect(page.locator(".crew-review__panel")).toBeVisible();
-    await expect(works).toBeFocused();
+    // #179：切換子頁後焦點在頁首的 h1（子頁名稱），不在面板
+    await expect(works).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionWorks })).toBeFocused();
     await expect(page.locator("#crew-review-title")).not.toBeFocused();
 
     const title = titles.get("s14")!;
