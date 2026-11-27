@@ -65,7 +65,9 @@ test("邀請碼體驗：寬度、項目與選中樣式照畫板；使用者卡�
   const role = presetQuestions[0].role;
   await switchIdentity(page, role);
   await expectFrame(page);
-  await expect(sidebar(page).getByRole("heading", { level: 1 })).toContainText(client.displayName[language]);
+  // #179：頁面的 h1 是各頁的頁首，左側欄的客戶名稱不是標題
+  await expect(sidebar(page).locator(".sidebar__brand")).toContainText(client.displayName[language]);
+  await expect(sidebar(page).getByRole("heading", { level: 1 })).toHaveCount(0);
   await expect(sidebar(page).locator(".sidebar__labels")).toHaveText(`${s.fictionalData} · ${s.demoPermissions}`);
   // 「這次的問題」不在左側欄（#330 決定 3）
   await expect(page.getByRole("navigation", { name: s.sessionQuestions })).toHaveCount(0);

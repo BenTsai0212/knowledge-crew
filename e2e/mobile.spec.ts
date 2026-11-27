@@ -36,7 +36,9 @@ test("頂端列 60px：客戶名稱、身分徽章、「虛構資料」「展示
   await expect(page.locator(".sidebar")).toHaveCount(0);
   const top = page.getByRole("banner");
   expect((await top.locator(".mobile-topbar__row").boundingBox())!.height).toBeCloseTo(60, 0);
-  await expect(top.getByRole("heading", { level: 1 })).toContainText(client.displayName[language]);
+  // #179：頁面的 h1 是各頁的頁首，頂端列的客戶名稱不是標題
+  await expect(top.locator(".mobile-brand")).toContainText(client.displayName[language]);
+  await expect(top.getByRole("heading", { level: 1 })).toHaveCount(0);
   await expect(top.getByText(s.fictionalData)).toBeVisible();
   await expect(top.getByText(s.demoPermissions)).toBeVisible();
   await expect(identityBadge(page)).toHaveText(access.roles[0].label[language]);
