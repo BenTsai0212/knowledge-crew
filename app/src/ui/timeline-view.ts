@@ -65,17 +65,6 @@ export function yearGroups(rows: readonly TimelineRow[]): Array<{ year: string |
   return groups;
 }
 
-// 桌機頁首的範圍（#346）：最早與最晚的文件月份，依介面語言以 Intl 格式化（例如「2026年1月」「January 2026」），
-// 兩者相同時 to 為 null；連接兩者的文字在翻譯檔（timelineMonthRange）。Intl 的 formatRange 在 zh-TW 會變成「2026/1至2026/5」，所以不用。
-// 只用傳入的文件（目前身分看得到的），沒有日期的文件不計入；沒有可用的日期時為 null
-export function timelineMonths(entries: readonly TimelineEntry[], language: string): { from: string; to: string | null } | null {
-  const dated = entries.flatMap((e) => (e.date === null ? [] : [e.date])).filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
-  const months = Array.from(new Set(dated.map((date) => date.slice(0, 7)))).sort();
-  if (months.length === 0) return null;
-  const format = (month: string) => new Intl.DateTimeFormat(language, { year: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`));
-  return { from: format(months[0]), to: months.length === 1 ? null : format(months.at(-1)!) };
-}
-
 // 卡片的語言短標（#346）：語言代碼的主要部分轉大寫（zh-TW → ZH、en → EN）
 export const languageTag = (code: string): string => code.split("-")[0].toUpperCase();
 

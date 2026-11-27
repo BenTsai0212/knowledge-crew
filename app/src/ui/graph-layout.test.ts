@@ -91,7 +91,9 @@ describe("頁首與找路徑", () => {
     expect(html).toContain(`placeholder="${s.graphSearch}"`);
     expect(rule('.entity-search--field input[type="search"]')).toMatchObject({ height: "44px", "border-radius": "12px" });
     expect(rule(".graph-head .entity-search")).toMatchObject({ "min-width": "240px" });
-    expect(rule(".graph-head h2")).toMatchObject({ "font-size": "28px", "font-weight": "700" });
+    expect(rule(".graph-head")).toMatchObject({ position: "relative" });
+    expect(rule(".graph-page--phone .graph-page__head")).toMatchObject({ padding: "12px 16px 0" });
+    expect(rule(".graph-page--phone .graph-page__head + .graph-tools")).toMatchObject({ "padding-top": "8px" });
     expect(rule("button.secondary.graph-path-button")).toMatchObject({ height: "44px" });
     // 手機、平板與展示模式：標籤在上方
     const plain = renderToStaticMarkup(createElement(EntitySearch, { graph, language, label: s.graphSearch, onPick: noop }));

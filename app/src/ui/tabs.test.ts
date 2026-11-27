@@ -33,6 +33,15 @@ describe("PageHeader", () => {
     expect(at("ui-page-head__lead")).toBeLessThan(at('class="ui-page-head__actions"><button>重新整理'));
     expect(at("ui-page-head__actions")).toBeLessThan(at("<nav>"));
   });
+
+  it("說明下方的其他內容（首頁的今日摘要、可見範圍）放在標題欄內、說明之後，不包在說明的 p 裡", () => {
+    const out = html(createElement(PageHeader, { title: "晚安", lead: "一句說明", className: "home__top" }, createElement("p", { className: "summary" }, "7 件等你驗收")));
+    expect(out).toMatch(/^<header class="ui-page-head home__top">/);
+    expect(out).toContain('一句說明</p><p class="summary">7 件等你驗收</p></div>');
+    expect(out.indexOf("summary")).toBeLessThan(out.indexOf("</header>"));
+    // 沒有其他內容時，標題欄只有 h1 與說明
+    expect(html(createElement(PageHeader, { title: "T", lead: "L" }))).toContain('<p class="ui-page-head__lead">L</p></div>');
+  });
 });
 
 describe("Tabs", () => {

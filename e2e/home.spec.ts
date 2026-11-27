@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 
 test("登入後先到首頁：問候是三種之一、不含身分名稱；常見問題只列目前身分的情境", async ({ page }) => {
   await expect(tab(page, s.tabHome)).toHaveAttribute("aria-current", "page");
-  const greeting = page.locator(".home__top h2");
+  const greeting = page.locator(".home__top h1");
   expect(greetings).toContain(await greeting.textContent());
 
   const question = presetQuestions[0];

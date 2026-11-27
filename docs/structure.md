@@ -119,7 +119,7 @@
 - `NavRail.tsx`：平板（720–980px）的左側圖示導覽列（名稱只給輔助技術、「虛構資料」標示，#182），與 `Sidebar`、`MobileNav` 共用 `NavProps`；App 依 `useLayout()` 只渲染其中一種
 - `Notice.tsx`：共用的提示框（`className` 依位置調整樣式，例如桌機問答頁的額度與需要管理者的說明條）
 - `online-demo.ts`：唯一讀取處：線上 demo 的 `VITE_ONLINE_DEMO`、`VITE_PUBLIC_ACCESS_CODE`（預設關閉；開啟時隱藏評測台），展示模式 `?mode=presentation`（只顯示問答與圖譜），評測台的 `?tools=evals`，身分對照的 `VITE_DEMO_COMPARE`（預設關閉、線上 demo 一律關閉），只展示 AI 員工的 `VITE_CREW_ONLY`（crew ADR 0005）；見 `docs/qa.md`「線上 demo」「展示模式」「身分對照」、`docs/evals.md`「開啟評測台」
-- `PageHeader.tsx`：每頁一個的頁首（所屬區塊小字、主標題 h1、一句說明、動作與分頁；切換畫面後焦點移到 h1，#179），樣式是 `ui.css` 的 `ui-page-head`
+- `PageHeader.tsx`：每頁一個的頁首（所屬區塊小字、主標題 h1、一句說明、動作與分頁；切換畫面後焦點移到 h1，#179），樣式是 `ui.css` 的 `ui-page-head`；首頁、問答、圖譜、時間軸、上傳、待審、評測台與 AI 員工都用它（展示模式的問答與圖譜只給報讀器）
 - `PassageMarks.tsx`：時間軸與原文面板的標示
 - `PathPanel.tsx`：圖譜頁的路徑面板；`panel` 是桌機「找路徑」打開的面板（#336）
 - `PresentationBar.tsx`：展示模式登入後的頂端列（不論寬度都取代 `Sidebar`／`MobileNav`；畫板 `H-QA`、`H-Graph`，#349）；`VITE_DEMO_COMPARE` 開啟時有「身分對照」按鈕，見 `docs/qa.md`「展示模式」「身分對照」

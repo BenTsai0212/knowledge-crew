@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TimelineEntry } from "../graph/timeline";
 import css from "./app.css?raw";
-import { conflictDocuments, dateParts, entityTypeShape, languageTag, mentionedEntityIds, timelineEmptyKind, timelineMonths, timelineSections, yearGroups } from "./timeline-view";
+import { conflictDocuments, dateParts, entityTypeShape, languageTag, mentionedEntityIds, timelineEmptyKind, timelineSections, yearGroups } from "./timeline-view";
 
 const entry = (documentId: string, date: string | null, passages: string[][]): TimelineEntry => ({
   documentId,
@@ -66,13 +66,6 @@ describe("桌機的時間軸（#346，畫板 F-Timeline）", () => {
       ["2026", ["a", "b"]],
       ["2025", ["c"]],
     ]);
-  });
-
-  it("頁首的範圍是最早到最晚的月份，只用傳入的文件，沒有日期的不計入", () => {
-    expect(timelineMonths(entries, "en")).toEqual({ from: "January 2025", to: "March 2026" });
-    expect(timelineMonths([entry("x", "2026-01-05", []), entry("y", "2026-01-20", [])], "en")).toEqual({ from: "January 2026", to: null });
-    expect(timelineMonths([entry("none", null, [])], "en")).toBeNull();
-    expect(timelineMonths([], "en")).toBeNull();
   });
 
   it("語言短標是語言代碼的主要部分轉大寫", () => {

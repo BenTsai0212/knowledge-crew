@@ -79,10 +79,10 @@ describe("桌機與手機、平板的排法", () => {
 
 describe("尺寸與 token（畫板 K-Home）", () => {
   it("問候 28px／700；卡片 auto-fit（最小 340px）、間距 20px、padding 20px、標題 17px", () => {
-    expect(rule(".home--wide .home__top h2")).toEqual({ "font-size": "28px", "font-weight": "700" });
+    expect(rule(".home--wide .home__top h1")).toEqual({ "font-size": "28px", "font-weight": "700" });
     expect(rule(".home--wide .home__cards")).toMatchObject({ "grid-template-columns": "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: "20px" });
     expect(rule(".home--wide .home__card")).toEqual({ padding: "20px" });
-    expect(rule(".home--wide .home__card h3")).toEqual({ "font-size": "17px", "font-weight": "700" });
+    expect(rule(".home--wide .home__card h2")).toEqual({ "font-size": "17px", "font-weight": "700" });
   });
 
   it("寬螢幕最多兩欄：最寬放得下兩欄（340px × 2＋20px），放不下三欄", () => {
@@ -161,7 +161,7 @@ describe("手機（#356，畫板 K-Mobile 的首頁）", () => {
   });
 
   it("尺寸：問候 22px；提問框與常見問題 44px（觸控目標）；數字卡兩欄、數字 34px；「開始審核」50px", () => {
-    expect(rule(".home--phone .home__top h2")).toEqual({ "font-size": "22px", "font-weight": "700" });
+    expect(rule(".home--phone .home__top h1")).toEqual({ "font-size": "22px", "font-weight": "700" });
     expect(rule(".home--phone .free-question--compact input")).toMatchObject({ height: "44px", border: "none" });
     expect(rule(".home--phone .free-question--compact button")).toMatchObject({ height: "44px" });
     expect(rule(".home--phone .composer--compact .presets button")).toMatchObject({ height: "44px" });
@@ -229,7 +229,7 @@ describe("可能答得出來了（#408）", () => {
     it(`${name}：A2 在問候下方、提問框上方，只顯示最近的一題，附三點時間線`, () => {
       const out = html();
       const recall = out.indexOf(`aria-label="${s.home.recallTitle}"`);
-      expect(recall).toBeGreaterThan(out.indexOf("</h2>"));
+      expect(recall).toBeGreaterThan(out.indexOf("</h1>"));
       expect(recall).toBeLessThan(out.indexOf("free-question"));
       expect(count(out, `aria-label="${s.home.recallTitle}"`)).toBe(1);
       const section = out.slice(recall, out.indexOf("</section>", recall));

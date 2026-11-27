@@ -51,9 +51,9 @@ export function CrewTourCard({ enabled, seen, language, onStart, onDismiss }: Ca
   return (
     <section className="card crew-tour-card" aria-labelledby="crew-tour-card-title">
       <div className="crew-tour-card__text">
-        <h3 id="crew-tour-card-title" className="crew-tour-card__title">
+        <h2 id="crew-tour-card-title" className="crew-tour-card__title">
           {t.cardTitle}
-        </h3>
+        </h2>
         <p className="crew-tour-card__body">{t.cardBody}</p>
       </div>
       <div className="crew-tour-card__actions">

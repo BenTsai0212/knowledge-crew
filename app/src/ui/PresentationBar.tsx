@@ -36,12 +36,13 @@ export function PresentationBar({ language, identity, onIdentity, onLanguage, vi
   return (
     <header className="presentation-bar">
       <div className="presentation-bar__brand">
-        <h1 className="brand">
+        {/* 客戶名稱不是 h1：每頁的 h1 是頁面的主標題（#179） */}
+        <p className="brand">
           <span className="brand__product">
             <ProductIcon size={BRAND_ICON_SIZE} />
             <span className="brand__client">{clientConfig.client.displayName[language]}</span>
           </span>
-        </h1>
+        </p>
         {/* 標示不縮小（RFC 0001）：客戶名稱下方一行 16px 的小字，以「·」連成一行 */}
         <p className="presentation-bar__labels">
           <span>{s.fictionalData}</span>

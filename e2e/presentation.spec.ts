@@ -110,7 +110,10 @@ test("一般模式（不帶參數）：字級與隱藏的元素不變", async ({
 // 頂端列與劇本（#260 PR 2，docs/design.md「展示模式」的「版面」）
 test("頂端列：客戶名稱、標示、「問答｜圖譜」、身分分段切換（快捷鍵數字、56px 高）與語言；沒有左導覽與輸入區的預設問題", async ({ page }) => {
   const banner = page.getByRole("banner");
-  await expect(banner.getByRole("heading", { level: 1 })).toHaveText(client.displayName[language]);
+  // 客戶名稱不是 h1（#179）：每頁一個 h1 是頁面的主標題（問答，只給報讀器）
+  await expect(banner.locator(".brand")).toHaveText(client.displayName[language]);
+  await expect(banner.getByRole("heading", { level: 1 })).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(s.tabQa);
   await expect(banner.getByText(s.fictionalData, { exact: true })).toBeVisible();
   await expect(banner.getByText(s.demoPermissions, { exact: true })).toBeVisible();
   const tabs = banner.getByRole("navigation", { name: s.views }).getByRole("button");

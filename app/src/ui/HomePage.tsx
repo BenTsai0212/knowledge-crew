@@ -38,6 +38,7 @@ import {
 import { reportAgainOf } from "./report-helpers";
 import { ReportResult } from "./ReportResult";
 import { statusLabel } from "./MyUploads";
+import { PageHeader } from "./PageHeader";
 import { QuestionPanel } from "./QuestionPanel";
 import { RequestAsk } from "./RequestAsk";
 import { uploaderAsks, type UploaderAsk } from "./seam-review";
@@ -224,9 +225,9 @@ export function HomePage(props: Props) {
   const waitingSection = waiting !== undefined && (
     <section className={`${card} home__waiting`} aria-labelledby="home-waiting">
       {/* 手機只有數字卡與「開始審核」，標題給輔助技術 */}
-      <h3 id="home-waiting" className={phone ? "visually-hidden" : undefined}>
+      <h2 id="home-waiting" className={phone ? "visually-hidden" : undefined}>
         {s.home.waitingTitle}
-      </h3>
+      </h2>
       {waiting === null ? (
         <p className="muted">{s.loading}</p>
       ) : rows.length === 0 ? (
@@ -287,11 +288,11 @@ export function HomePage(props: Props) {
 
   const updatesSection = updatesProps !== undefined && (
     <section className={`${card} home__updates`} aria-labelledby="home-updates">
-      <h3 id="home-updates">
+      <h2 id="home-updates">
         {s.home.updatesTitle}
         {/* 手機的標題後面是則數（畫板 K-Mobile） */}
         {phone && updateCount > 0 && <span className="home__count"> {updateCount}</span>}
-      </h3>
+      </h2>
       {updates === null ? (
         <p className="muted">{s.loading}</p>
       ) : updateCount === 0 ? (
@@ -381,7 +382,7 @@ export function HomePage(props: Props) {
 
   const askedSection = onAsk !== undefined && (
     <section className={`${card} home__asked`} aria-labelledby="home-asked">
-      <h3 id="home-asked">{s.home.askedTitle}</h3>
+      <h2 id="home-asked">{s.home.askedTitle}</h2>
       {asked.length === 0 ? (
         <EmptyState as="div" icon="question" title={s.home.askedEmpty} />
       ) : (
@@ -446,7 +447,7 @@ export function HomePage(props: Props) {
 
   const documentsSection = (
     <section className={`${card} home__documents`} aria-labelledby="home-documents">
-      <h3 id="home-documents">{s.home.recentDocumentsTitle}</h3>
+      <h2 id="home-documents">{s.home.recentDocumentsTitle}</h2>
       {recent === null ? (
         <p className="muted">{s.loading}</p>
       ) : recent.documents.length === 0 ? (
@@ -473,7 +474,7 @@ export function HomePage(props: Props) {
 
   const viewedSection = (
     <section className={`${card} home__viewed`} aria-labelledby="home-viewed">
-      <h3 id="home-viewed">{s.home.viewedTitle}</h3>
+      <h2 id="home-viewed">{s.home.viewedTitle}</h2>
       {recent === null ? (
         <p className="muted">{s.loading}</p>
       ) : recent.entities.length === 0 ? (
@@ -506,10 +507,7 @@ export function HomePage(props: Props) {
 
   return (
     <div className={wide ? "home home--wide" : phone ? "home home--phone" : "home"}>
-      <header className="home__top">
-        <h2 id="home-title" tabIndex={-1}>
-          {s.home[greetingPeriod(now.getHours())]}
-        </h2>
+      <PageHeader className="home__top" titleId="home-title" title={s.home[greetingPeriod(now.getHours())]}>
         {todaySummary}
         {/* 可見範圍：桌機在左側欄的使用者卡（#330），手機在身分與語言面板（#255、#356）；只有平板在問候下方 */}
         {!wide && !phone && (
@@ -526,7 +524,7 @@ export function HomePage(props: Props) {
             ))}
           </p>
         )}
-      </header>
+      </PageHeader>
       {recall}
       {/* 手機的主管：待辦的數字放最上（畫板 K-Mobile） */}
       {phone && waitingSection}
