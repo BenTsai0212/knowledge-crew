@@ -143,7 +143,7 @@
 - `SeamItem.tsx`：接縫卡片的項目本身（類型膠囊、名稱、其他語言名稱、「出處（N）」文字連結），待審頁的接縫卡與 `RequestAsk.tsx` 共用（畫板 `S-Review` ①，見 `docs/design.md`）
 - `SeamRecords.tsx`：「記錄」：自己的與同事的理解（角色與日期），回答卡片與原文欄共用（ADR 0012，見 `docs/qa.md`「人的理解的顯示」）
 - `SessionQuestions.tsx`：手機與平板的「這次的問題（N）」按鈕，手機打開底部面板、平板打開滑出面板（#256、#333）
-- `Sidebar.tsx`：桌機的左側欄（客戶名稱、頁面項目與圖示、分隔線、「虛構資料 · 展示用權限」、使用者卡與身分和語言選單，#330）
+- `Sidebar.tsx`：桌機的左側欄（客戶名稱、頁面項目與圖示、分隔線、「虛構資料 · 展示用權限」、使用者卡與身分和語言選單，#330）；`NavProps` 的 `bell` 是 knowledge-crew 的「最近的變化」鈴鐺（#182，桌機在字標右側、平板在產品 icon 下方、手機在頂端列的頭像前）
 - `source-steps.ts`：「出處 N／M」與「在圖譜中查看」目標的純函式
 - `SourceConfirmation.tsx`：原文欄每一段下方的來源確認：「確認這段」「撤銷確認」、「〈角色〉於〈日期〉確認」與失效的說明（ADR 0013，見 `docs/design.md`「來源確認」）
 - `SourcePanel.tsx`：桌機的原文欄（段落編號、「這次回答的出處」，#335）；展示模式是浮動的原文卡片（#349）
@@ -284,6 +284,8 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/overview.ts`：「總覽」的資料整理（#134）：`readOverview()`（看得到的專案卡片與工作，狀態與需注意的標記由 `work/status.ts` 推算）、`filterItems()`、`boardColumns()`（四欄與各欄的排序）；測試在 `overview.test.ts`
 - `ui/OverviewView.css`：「總覽」畫面的專案卡片、篩選列與看板（手機是依狀態切換的清單）
 - `ui/OverviewView.tsx`：「總覽」畫面（#134，AI 員工頁的預設分頁）：專案卡片（點卡片篩選）、篩選列（專案、員工、工作類型、只看需注意；可清除）、四欄的工作看板（點工作到「工作與驗收」，待交件到「交辦」）；只讀，不呈現績效
+- `ui/recent-changes.ts`：「最近的變化」的資料整理（#182，crew ADR 0009 第四節）：`recentChanges()`（從帳本事件挑出審查方式改變、等你確認的守則、抽查的結果與退回，最近 4 則，與點了到哪裡）、`readSpotReviewIds()`（被抽查的驗收，由 `spotChecks()` 推算）、`readRecentChanges()`；不另存、不記錄已讀；測試在 `recent-changes.test.ts`
+- `ui/RecentChanges.css`、`ui/RecentChanges.tsx`：外框的接入點（`NavProps` 的 `bell`）：「最近的變化」的鈴鐺（不顯示數字）與面板（桌機與平板在鈴鐺旁，手機是底部面板；打開時才讀取）
 - `ui/refs.ts`：工作來源與外部編號的顯示（`assignmentRef()`、`workRef()`：repo 類是 `<repo>#<Issue>`、`PR #<編號>`，其他類型是來源名稱與編號，沒有編號時只有來源名稱；文字在 `common` 的 `ref*`）
 - `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果、交件的種類、依照的守則與等確認的守則數（#147）；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）

@@ -14,7 +14,7 @@ import { ProductIcon } from "./ProductIcon";
 import { BRAND_ICON_SIZE, DemoFlagIcon, tabLabels, type NavProps } from "./Sidebar";
 
 export function NavRail(props: NavProps) {
-  const { language, identity, identityControl, views, view, onView, tabExtra } = props;
+  const { language, identity, identityControl, views, view, onView, tabExtra, bell } = props;
   const s = strings(language);
   const labels = tabLabels(language);
   const [open, setOpen] = useState(false);
@@ -30,6 +30,7 @@ export function NavRail(props: NavProps) {
             {s.productName} {clientConfig.client.displayName[language]}
           </span>
         </p>
+        {bell}
         {navGroups(views).map((group, i) => (
           <Fragment key={group[0]}>
             {i > 0 && <div className="nav-sep" role="separator" />}

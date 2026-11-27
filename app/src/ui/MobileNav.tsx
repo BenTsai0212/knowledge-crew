@@ -1,4 +1,4 @@
-// 手機（< 720px）的導覽（#255，docs/design.md「手機的共同結構」；#182 依 crew 設計規格 v4 第 4 節）：頂端列（產品 icon、客戶名稱、「虛構資料」、身分的頭像）、
+// 手機（< 720px）的導覽（#255，docs/design.md「手機的共同結構」；#182 依 crew 設計規格 v4 第 4 節）：頂端列（產品 icon、客戶名稱、「虛構資料」、最近的變化、身分的頭像）、
 // 底部分頁列（首頁、問答、圖譜、時間軸或上傳、更多；有 AI 員工時第 4 格是 AI 員工；分配見 layout.ts 的 phoneTabs()）。
 // 登入前（#355）與展示模式登入後（PresentationBar，#260）不渲染本元件。
 // 身分徽章打開身分與語言面板，「更多」打開列出其餘頁面的面板，兩者都是底部面板。「這次的問題」在問答頁頂部（SessionQuestions，#256 決定 1）
@@ -25,7 +25,7 @@ export function NavIcon({ view }: { view: View | "more" }) {
 }
 
 export function MobileNav(props: NavProps) {
-  const { language, identity, identityControl, views, view, onView, tabExtra } = props;
+  const { language, identity, identityControl, views, view, onView, tabExtra, bell } = props;
   const s = strings(language);
   const labels = tabLabels(language);
   const [sheet, setSheet] = useState<"identity" | "more" | null>(null);
@@ -52,6 +52,7 @@ export function MobileNav(props: NavProps) {
             <span className="mobile-brand__client">{clientConfig.client.displayName[language]}</span>
           </p>
           <span className="badge mobile-topbar__flag">{s.fictionalData}</span>
+          {bell}
           {signedIn && (
             // 頭像是身分名稱的第一個字（與平板相同），名稱在 aria-label；空狀態的「切換身分」把焦點移到這裡（#245）
             <button

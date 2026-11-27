@@ -81,6 +81,7 @@ import { useLayout } from "./ui/layout";
 import { crewMigrations } from "./crew/db/migrate";
 import { CrewPage } from "./crew/ui/CrewPage";
 import { CrewTabCount, HomeTodayCard, HomeTodaySummary, useCrewToday } from "./crew/ui/HomeToday";
+import { RecentChangesBell } from "./crew/ui/RecentChanges";
 import type { CrewTarget } from "./crew/ui/sections";
 import { SourceOrigin } from "./crew/ui/SourceOrigin";
 import { CrewTour, CrewTourCard, useCrewTour } from "./crew/ui/Tour";
@@ -885,6 +886,13 @@ export function App() {
             // AI 員工的待驗收件數（#96，與待審分開）：只給能驗收的身分；手機 0 時不顯示（與待審相同）
             crew: crewAwaiting !== null && (!phone || crewAwaiting > 0) && <CrewTabCount count={crewAwaiting} language={language} />,
           }}
+          // knowledge-crew 的「最近的變化」（#182）：有 AI 員工頁籤、且已進入時才有；桌機與平板是鈴鐺旁的面板，手機是底部面板
+          bell={
+            accessCode !== null &&
+            views(canReview).includes("crew") && (
+              <RecentChangesBell db={db} identity={identity} language={language} side={phone ? "bottom" : "popover"} onOpen={openCrew} />
+            )
+          }
         />
       )}
       {loadFailed ? (

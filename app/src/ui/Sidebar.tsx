@@ -39,6 +39,8 @@ export interface NavProps {
   onView(view: View): void;
   // 頁籤名稱後面附加的內容（待審頁籤的筆數）
   tabExtra?: Partial<Record<View, ReactNode>>;
+  // knowledge-crew 的「最近的變化」鈴鐺（#182）：桌機在字標右側、平板在產品 icon 下方、手機在頂端列的頭像前；沒有 AI 員工時不傳
+  bell?: ReactNode;
 }
 
 // 導覽的頁籤：上傳頁的「已送審」標記以此找到「待審」的位置（#242 PR 3）；手機的分頁列也適用，主管的「待審」收在「更多」（#255）
@@ -67,7 +69,7 @@ export function DemoFlagIcon() {
 export const avatarInitial = (name: string) => (Array.from(name)[0] ?? "").toLocaleUpperCase();
 
 export function Sidebar(props: NavProps) {
-  const { language, identity, identityControl, account, onLanguage, onChangeAccessCode, views, view, onView, tabExtra } = props;
+  const { language, identity, identityControl, account, onLanguage, onChangeAccessCode, views, view, onView, tabExtra, bell } = props;
   const s = strings(language);
   const labels = tabLabels(language);
   const [open, setOpen] = useState(false);
@@ -80,11 +82,14 @@ export function Sidebar(props: NavProps) {
   return (
     // 整個左側欄是頁首（banner）：客戶名稱、頁面與身分都在這裡
     <header className="sidebar">
-      <p className="sidebar__brand">
-        <ProductIcon size={SIDEBAR_ICON_SIZE} />
-        <span className="visually-hidden">{s.productName} </span>
-        <span className="sidebar__client">{clientConfig.client.displayName[language]}</span>
-      </p>
+      <div className="sidebar__top">
+        <p className="sidebar__brand">
+          <ProductIcon size={SIDEBAR_ICON_SIZE} />
+          <span className="visually-hidden">{s.productName} </span>
+          <span className="sidebar__client">{clientConfig.client.displayName[language]}</span>
+        </p>
+        {bell}
+      </div>
       <nav className="primary-tabs" aria-label={s.views}>
         {navGroups(views).map((group, i) => (
           <Fragment key={group[0]}>

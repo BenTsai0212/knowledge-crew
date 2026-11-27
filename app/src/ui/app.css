@@ -56,6 +56,19 @@ h3 {
   background: var(--color-surface);
 }
 
+/* 頂部列（#182）：字標，右側是 knowledge-crew 的「最近的變化」鈴鐺（沒有 AI 員工時只有字標） */
+.sidebar__top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 16px;
+}
+
+.sidebar__top > .sidebar__brand {
+  flex: 1;
+  padding-bottom: 0;
+}
+
 /* 頂部：28px 的 K 晶格 icon＋客戶名稱（16px／900） */
 /* #179：不是 h1（每頁的 h1 是頁首），字體沿用原本 h1 的標題字體 */
 .sidebar__brand {
