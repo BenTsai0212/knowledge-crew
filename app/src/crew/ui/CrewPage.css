@@ -82,10 +82,10 @@
   color: var(--color-primary);
 }
 
-/* 輸入框與下拉選單的邊框（#153 第 3 點，WCAG 1.4.11）：--color-border 對底色不到 3:1，crew 頁內改用 textMuted。
-   只在 .crew-page 之下；knowledge-kit 的 app.css 與 theme.json 的 border 不改。對比由 css.test.ts 檢查 */
+/* 輸入框與下拉選單的邊框（#153 第 3 點，WCAG 1.4.11）：--color-border 對底色不到 3:1，crew 頁內改用 borderStrong（#178；客戶沒有設定時是 textMuted）。
+   只在 .crew-page 之下；knowledge-kit 的 app.css 與 theme.json 的 border 不改。對比由 css.test.ts 與 check-client.mjs 檢查 */
 .crew-page input:not([type="checkbox"], [type="radio"]),
 .crew-page select,
 .crew-page textarea {
-  border-color: var(--color-textMuted);
+  border-color: var(--color-borderStrong);
 }

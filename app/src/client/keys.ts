@@ -101,6 +101,7 @@ export const manifests: ManifestEntry[] = [
       text: "required",
       textMuted: "required",
       border: "required",
+      borderStrong: "optional",
       danger: "required",
       warning: "required",
       success: "required",

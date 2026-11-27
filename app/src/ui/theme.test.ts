@@ -227,6 +227,16 @@ describe("設計系統 v1", () => {
     });
   });
 
+  it("--color-borderStrong：有設定時用設定值，沒有設定時用 textMuted（淺色與深色，#178）", () => {
+    const { borderStrong: _light, ...colors } = theme.colors;
+    const { borderStrong: _dark, ...darkColors } = theme.darkColors;
+    expect(themeVariables(theme)["--color-borderStrong"]).toBe(theme.colors.borderStrong);
+    const unset = { ...theme, colors, darkColors };
+    expect(themeVariables(unset)["--color-borderStrong"]).toBe(theme.colors.textMuted);
+    const [, dark] = themeStyleSheet(unset).split(DARK_SELECTOR);
+    expect(dark).toContain(`--color-borderStrong: ${theme.darkColors.textMuted};`);
+  });
+
   it("--font-mono、--font-display 由 theme.json 提供", () => {
     expect(themeVariables(theme)).toMatchObject({ "--font-mono": theme.fonts.mono, "--font-display": theme.fonts.display });
   });
