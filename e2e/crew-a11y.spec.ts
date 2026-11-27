@@ -84,6 +84,15 @@ async function walk(page: Page): Promise<void> {
   ).toBeVisible();
   await scan(page, scans, "首頁", ["#home-title", ".crew-home"]);
 
+  // 最近的變化（#182）：鈴鐺打開的面板掃一次，Esc 關閉
+  await page.getByRole("button", { name: ct.changes.bell, exact: true }).click();
+  await expect(page.locator("dialog.crew-changes-sheet .crew-changes__item").first()).toBeVisible();
+  // 桌機的面板是淡入（kFade）：動畫結束後再掃，否則對比度以半透明計算
+  await page.locator("dialog.crew-changes-sheet").evaluate((d) => Promise.all(d.getAnimations({ subtree: true }).map((a) => a.finished)));
+  await scan(page, scans, "最近的變化", ["dialog.crew-changes-sheet"]);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("dialog.crew-changes-sheet")).toBeHidden();
+
   await openCrew(page);
   for (const [name, section] of [
     ["總覽", ct.common.sectionOverview],

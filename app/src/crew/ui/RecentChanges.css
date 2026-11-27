@@ -1,0 +1,90 @@
+/* 「最近的變化」的鈴鐺與面板（#182）：列的樣式照 crew 設計規格 v5 的 v4.css 的 .chg（圖示＋等寬日期＋一句話，列之間 1px 分隔線）。 */
+
+/* 鈴鐺：ghost 的圖示按鈕（v4.css 的 .btn--ghost.btn--icon，primary 字色）；導覽的觸控目標一律至少 44px（e2e/entry-touch.spec.ts） */
+.ui-btn.crew-bell {
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+}
+
+.crew-bell:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* 桌機：在側欄（232px）旁、貼著頂端；平板：在圖示側欄（72px）旁 */
+.bottom-sheet.popover-sheet.crew-changes-sheet {
+  inset: 16px auto auto 240px;
+  width: min(380px, calc(100vw - 256px));
+}
+
+@media (max-width: 980px) {
+  .bottom-sheet.popover-sheet.crew-changes-sheet {
+    inset: 16px auto auto 80px;
+    width: min(380px, calc(100vw - 96px));
+  }
+}
+
+.crew-changes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crew-changes > li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.crew-changes__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.crew-changes__item:hover .crew-changes__text > span {
+  text-decoration: underline;
+}
+
+.crew-changes__item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.crew-changes__icon {
+  flex: none;
+  margin-top: 3px;
+  color: var(--color-textMuted);
+  line-height: 0;
+}
+
+.crew-changes__icon.is-bad {
+  color: var(--color-danger);
+}
+
+.crew-changes__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.crew-changes__date {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-textMuted);
+}
+
+.crew-changes__note {
+  margin: 0;
+  padding: 12px 0;
+}
