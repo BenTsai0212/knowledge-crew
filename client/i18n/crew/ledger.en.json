@@ -1,5 +1,4 @@
 {
-  "title": "Work ledger",
   "lead": "Who did what, when, and why. Changes to the review level are shaded grey.",
   "loading": "Loading…",
   "loadFailed": "The work ledger could not be loaded. Reload the page and try again.",

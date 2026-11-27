@@ -12,7 +12,6 @@
   min-width: 0;
 }
 
-.crew-overview__title,
 .crew-overview__lead {
   margin: 0;
 }
@@ -180,7 +179,9 @@
   background: var(--color-surfaceRaised);
 }
 
+/* 子頁的主標題是頁首的 h1（#179），欄的標題從 h3 改成 h2，大小維持原本 h3 的 0.95rem */
 .crew-overview__column-title {
+  font-size: 0.95rem;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;

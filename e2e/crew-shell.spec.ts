@@ -56,9 +56,11 @@ test.describe("桌機 1280", () => {
     test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
     await openApp(page);
     await openCrew(page);
-    await expect(page.locator(".crew-page__header")).not.toContainText(s.fictionalData);
+    await expect(page.locator(".crew-page .ui-page-head")).not.toContainText(s.fictionalData);
     await expect(page.getByText(s.fictionalData, { exact: true })).toHaveCount(1);
-    await expect(page.getByRole("heading", { level: 1, name: ct.common.title })).toBeVisible();
+    // #179：AI 員工的 h1 是子頁名稱，「AI 員工」是頁首的小字
+    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionOverview })).toBeVisible();
+    await expect(page.locator(".crew-page .ui-page-head")).toContainText(ct.common.title);
   });
 });
 
@@ -123,6 +125,6 @@ test.describe("手機 390", () => {
     if (!hasCrewDemo) return;
     await page.locator('.mobile-tabbar [data-view="crew"]').click();
     await expect(page.locator('.mobile-tabbar [data-view="crew"]')).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("heading", { level: 1, name: ct.common.title })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionOverview })).toBeVisible();
   });
 });

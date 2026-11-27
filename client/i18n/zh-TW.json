@@ -175,6 +175,7 @@
   "timelineShowAll": "回到全部",
   "undated": "未註明日期",
   "tabUpload": "上傳",
+  "uploadLead": "審核通過後，問答與圖譜才會用到",
   "uploadNotAllowed": "目前的身分沒有上傳文件的權限。",
   "uploadNotAllowedReason": "展示用權限中，上傳文件只開放給部分身分。",
   "uploadEphemeral": "上傳內容只保留到重新整理頁面為止。",
@@ -256,6 +257,7 @@
     "no_access_code": "需要邀請碼才能萃取。請到問答頁輸入邀請碼後重試。"
   },
   "tabReview": "待審",
+  "reviewLead": "上傳文件整理出的內容，核准後才會用到",
   "reviewPendingTab": "待審",
   "reviewRejectedTab": "已退回",
   "reviewEmpty": "沒有待審的項目。",

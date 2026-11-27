@@ -46,7 +46,7 @@ for (const width of [1280, 390]) {
     await row.getByRole("button").click();
 
     await expect(employeesButton(page)).toHaveAttribute("aria-current", "page");
-    await expect(employeesButton(page).locator(".crew-page__count")).toHaveText("1");
+    await expect(employeesButton(page).locator(".ui-count")).toHaveText("1");
     const rowan = card(page, "rowan");
     await expect(rowan).toBeInViewport();
     await expect(section(rowan).getByText(summary(1, 1), { exact: true })).toBeVisible();
@@ -60,7 +60,7 @@ for (const width of [1280, 390]) {
     await pending.getByRole("button", { name: ct.employees.guidelineConfirm, exact: true }).click();
 
     await expect(section(rowan).getByText(summary(2, 0), { exact: true })).toBeVisible();
-    await expect(employeesButton(page).locator(".crew-page__count")).toHaveCount(0);
+    await expect(employeesButton(page).locator(".ui-count")).toHaveCount(0);
     await expect(item(rowan, text("g02")).getByRole("button", { name: ct.employees.guidelineRetire, exact: true })).toBeVisible();
 
     await gotoCrewSection(page, ct.common.sectionLedger);
@@ -141,6 +141,6 @@ test.describe("桌機 1280", () => {
       await expect(crewContent(page).getByRole("button", { name, exact: true })).toHaveCount(0);
     }
     await expect(item(rowan, text("g01")).getByRole("button", { name: ct.employees.guidelineOpenReturn, exact: true })).toBeVisible();
-    await expect(employeesButton(page).locator(".crew-page__count")).toHaveCount(0);
+    await expect(employeesButton(page).locator(".ui-count")).toHaveCount(0);
   });
 });

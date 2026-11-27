@@ -175,6 +175,7 @@
   "timelineShowAll": "すべてに戻る",
   "undated": "日付なし",
   "tabUpload": "アップロード",
+  "uploadLead": "承認されると、質問応答とグラフで使われます",
   "uploadNotAllowed": "現在のユーザーは文書をアップロードできません。",
   "uploadNotAllowedReason": "デモ用の権限では、文書をアップロードできるのは一部のユーザーだけです。",
   "uploadEphemeral": "アップロードした内容は、ページを再読み込みするまでのみ保持されます。",
@@ -256,6 +257,7 @@
     "no_access_code": "抽出にはアクセスコードが必要です。質問応答のページで入力してから再試行してください。"
   },
   "tabReview": "レビュー",
+  "reviewLead": "アップロードした文書から整理した内容です。承認後に使われます",
   "reviewPendingTab": "レビュー待ち",
   "reviewRejectedTab": "却下済み",
   "reviewEmpty": "レビュー待ちの項目はありません。",

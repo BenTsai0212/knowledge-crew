@@ -2,35 +2,40 @@
 import { describe, expect, it } from "vitest";
 import css from "./app.css?raw";
 import reviewPage from "./ReviewPage.tsx?raw";
+import tabsSource from "./Tabs.tsx?raw";
+import uiCss from "./ui.css?raw";
 import referenceDoc from "../../../docs/design/motion-reference.md?raw";
 
 const cssText = css.replace(/\/\*[\s\S]*?\*\//g, "");
+const uiText = uiCss.replace(/\/\*[\s\S]*?\*\//g, "");
 
 // CSS 規則的宣告（選擇器完全相同的那一條）
-function rule(selector: string): Record<string, string> {
+function rule(selector: string, text = cssText): Record<string, string> {
   const escaped = selector.replace(/[.[\]()"=]/g, "\\$&");
-  const block = cssText.match(new RegExp(`(?:^|\\n)\\s*${escaped}\\s*\\{([^}]*)\\}`))?.[1];
+  const block = text.match(new RegExp(`(?:^|\\n)\\s*${escaped}\\s*\\{([^}]*)\\}`))?.[1];
   expect(block, selector).toBeDefined();
   return Object.fromEntries([...`${block};`.matchAll(/([-\w]+)\s*:\s*([^;{}]+);/g)].map((m) => [m[1], m[2].trim()]));
 }
 
 describe("待審頁的分頁", () => {
   it("是 tablist 與 tab，以 aria-selected 標示選中；沒有舊的分段切換", () => {
-    expect(reviewPage).toContain('role="tablist"');
-    expect(reviewPage).toContain('role="tab"');
+    // #179 起分頁是共用的 Tabs（kind="tabs"），分頁的語意在 Tabs.tsx
+    expect(reviewPage).toContain('<Tabs kind="tabs"');
+    expect(tabsSource).toContain('role: "tab"');
+    expect(tabsSource).toContain('role="tablist"');
     expect(reviewPage).toContain('role="tabpanel"');
-    expect(reviewPage).toContain("aria-selected=");
+    expect(tabsSource).toContain('"aria-selected": on');
     expect(reviewPage).not.toContain("aria-pressed");
     expect(reviewPage).not.toContain("segmented");
     expect(cssText).not.toContain(".segmented");
   });
 
   it("選中的分頁是 2px text 底線、粗體", () => {
-    expect(rule('.review-tabs [role="tab"][aria-selected="true"]')).toMatchObject({
+    expect(rule('.ui-tab[aria-current="page"],\n.ui-tab[aria-selected="true"]', uiText)).toMatchObject({
       "border-bottom-color": "var(--color-text)",
       "font-weight": "700",
     });
-    expect(rule('.review-tabs [role="tab"]')["border-bottom"]).toBe("2px solid transparent");
+    expect(rule(".ui-tab", uiText)["border-bottom"]).toBe("2px solid transparent");
   });
 });
 
@@ -49,12 +54,12 @@ describe("文件卡片", () => {
 
 describe("窄螢幕的分頁（#243 PR 1 審查）", () => {
   it("單行、超出時橫向捲動；分頁不換行", () => {
-    expect(rule(".review-tabs")).toMatchObject({ "flex-wrap": "nowrap", "overflow-x": "auto", "min-width": "0" });
-    expect(rule('.review-tabs [role="tab"]')).toMatchObject({ "white-space": "nowrap", flex: "none" });
+    expect(rule(".ui-tabs", uiText)).toMatchObject({ "flex-wrap": "nowrap", "overflow-x": "auto", "min-width": "0" });
+    expect(rule(".ui-tab", uiText)).toMatchObject({ "white-space": "nowrap", flex: "none" });
   });
 
-  it("切換分頁時把選中的分頁捲進可見範圍", () => {
-    expect(reviewPage).toMatch(/scrollIntoView\?\.\(\{ block: "nearest", inline: "nearest" \}\)/);
+  it("切換分頁時把選中的分頁捲進可見範圍（#179 起捲到中間）", () => {
+    expect(tabsSource).toMatch(/el\.scrollLeft \+= centerDelta\(/);
   });
 });
 
@@ -128,6 +133,6 @@ describe("核准全部與說法不同的動態（#243 PR 4）", () => {
 
 describe("窄螢幕的分頁焦點框（#243 PR 2 審查）", () => {
   it("焦點框畫在內側，不被橫向捲動的容器裁掉", () => {
-    expect(rule('.review-tabs [role="tab"]:focus-visible')["outline-offset"]).toBe("-2px");
+    expect(rule(".ui-tab:focus-visible", uiText)["outline-offset"]).toBe("-2px");
   });
 });

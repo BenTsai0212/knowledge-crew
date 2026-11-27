@@ -538,6 +538,8 @@ export interface UiStrings {
   timelineShowAll: string;
   undated: string;
   tabUpload: string;
+  /** 上傳的頁首說明（#179） */
+  uploadLead: string;
   uploadNotAllowed: string;
   uploadNotAllowedReason: string;
   // 上傳內容只存在瀏覽器記憶體
@@ -616,6 +618,8 @@ export interface UiStrings {
   extractRetry: string;
   extractErrors: Record<ExtractFailure, string>;
   tabReview: string;
+  /** 待審的頁首說明（#179） */
+  reviewLead: string;
   reviewPendingTab: string;
   reviewRejectedTab: string;
   reviewEmpty: string;

@@ -270,7 +270,7 @@ test.describe("手機 390：首頁、圖譜、時間軸（#91）", () => {
     await gotoCrewSection(page, ct.common.sectionWorks);
     const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });
     await expect(works).toHaveAttribute("aria-current", "page");
-    await expect(works.locator(".crew-page__count")).toBeVisible();
+    await expect(works.locator(".ui-count")).toBeVisible();
     expect(await crewSections(page).evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
     const bar = page.locator(".crew-review__decision");
     await expect(bar).toBeVisible();

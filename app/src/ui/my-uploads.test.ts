@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import css from "./app.css?raw";
+import uiCss from "./ui.css?raw";
 import { canReupload, countsFromBatches, endedExtractions, extractionPhase, inProgressCount, myUploadStatus, reuploadOf, reviewCounts, reviewSteps, seenUploads, showsUploadDot, uploadTerms, type ReviewCounts } from "./my-uploads";
 
 const counts = (c: Partial<ReviewCounts>): ReviewCounts => ({ extracting: false, total: 0, pending: 0, approved: 0, ...c });
@@ -160,8 +161,9 @@ describe("手機的上傳頁的樣式（#358）", () => {
   });
 
   it("分段切換的觸控目標至少 44px，詳情的按鈕滿寬 48px", () => {
-    expect(rule('.upload-page--phone .upload-segments [role="tab"]')).toMatch(/min-height:\s*44px/);
-    expect(rule(".upload-page--phone .upload-header h1")).toMatch(/font-size:\s*22px/);
+    // #179 起頁首與分頁是共用的 PageHeader、Tabs：分頁 44px、手機的 h1 22px 在 ui.css
+    expect(uiCss).toMatch(/\n\.ui-tab \{[^}]*min-height:\s*44px/);
+    expect(uiCss).toMatch(/@media \(max-width: 719px\) \{\s*\.ui-page-head h1 \{\s*font-size:\s*22px/);
     expect(css).toMatch(/\.upload-detail\.upload-detail--sheet > button \{[^}]*min-height:\s*48px/);
   });
 

@@ -5,12 +5,17 @@
   gap: 1rem;
 }
 
-.crew-employees__header h2,
 .crew-employees__header p,
+.crew-employees__card h2,
 .crew-employees__card h3,
-.crew-employees__card h4,
 .crew-employees__card p {
   margin: 0;
+}
+
+/* 原本的 h2（#179：子頁的主標題改為頁首的 h1「員工」），字的大小與粗細不變 */
+.crew-employees__count {
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .crew-employees__header {
@@ -43,7 +48,8 @@
   overflow-wrap: anywhere;
 }
 
-.crew-employees__identity h3 {
+/* 子頁的主標題是頁首的 h1（#179）：員工名稱從 h3 改成 h2、工作類型與守則從 h4 改成 h3，大小不變 */
+.crew-employees__identity h2 {
   font-size: 1.125rem;
 }
 
@@ -66,7 +72,8 @@
   gap: 0.5rem;
 }
 
-.crew-employees__work h4 {
+.crew-employees__work h3 {
+  font-size: 1rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

@@ -227,6 +227,8 @@ describe("OverviewView", () => {
   it("一開始顯示讀取中（伺服器端產生的 HTML 不讀資料庫）", () => {
     const html = renderToStaticMarkup(createElement(OverviewView, { db: {} as never, identity: "manager", language: lang }));
     expect(html).toContain(crewStrings("overview", lang).loading);
-    expect(html).toContain(crewStrings("overview", lang).title);
+    expect(html).toContain(crewStrings("overview", lang).lead);
+    // 子頁的主標題是 CrewPage 頁首的 h1（#179），畫面內沒有標題
+    expect(html).not.toContain("<h2");
   });
 });

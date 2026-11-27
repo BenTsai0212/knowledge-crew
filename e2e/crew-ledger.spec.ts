@@ -28,7 +28,9 @@ test.describe("桌機 1280", () => {
   test.beforeEach(async ({ page }) => openLedger(page));
 
   test("標題、欄位與「載入更早的紀錄」", async ({ page }) => {
-    await expect(crewContent(page).getByRole("heading", { name: ct.ledger.title, level: 2 })).toBeVisible();
+    // 子頁的主標題是頁首的 h1（#179），子頁內不再重複「工作帳本」的 h2
+    await expect(page.getByRole("heading", { name: ct.common.sectionLedger, level: 1 })).toBeVisible();
+    await expect(crewContent(page).getByRole("heading", { name: ct.common.sectionLedger })).toHaveCount(0);
     await expect(crewContent(page).getByText(ct.ledger.lead, { exact: true })).toBeVisible();
     const headers = [ct.ledger.columnDate, ct.ledger.columnEvent, ct.ledger.columnWork, ct.ledger.columnEmployee, ct.ledger.columnActor];
     await expect(table(page).getByRole("columnheader")).toHaveText(headers);

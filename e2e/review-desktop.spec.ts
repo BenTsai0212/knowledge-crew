@@ -94,13 +94,15 @@ async function checkItemRow(page: Page, doc: Locator): Promise<void> {
 test.describe("平板 900px", () => {
   test.use({ viewport: { width: 900, height: 1000 } });
 
-  test("平板不套用桌機的待審版面（沒有 h1）", async ({ page }) => {
+  test("平板不套用桌機的待審版面（h1 是共用的頁首，#179）", async ({ page }) => {
     test.skip(reviewer === undefined, "access.json 沒有 canReview 的身分");
     await openApp(page);
     await switchIdentity(page, reviewer!.id);
     expect(await gotoView(page, "review")).toBe(true);
     await expect(page.locator(".review-page")).toBeVisible();
     await expect(page.locator(".review-page--desktop")).toHaveCount(0);
-    await expect(page.locator(".review-page").getByRole("heading", { level: 1 })).toHaveCount(0);
+    // #179：每頁剛好一個 h1，平板也有（共用的頁首，不是桌機的版面）
+    await expect(page.locator(".review-page").getByRole("heading", { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(s.tabReview);
   });
 });

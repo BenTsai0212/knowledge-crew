@@ -9,9 +9,16 @@ import { graphStyle, NODE_LABEL_MAX_LINES, NODE_LABEL_MAX_WIDTH } from "./graph-
 import graphView from "./GraphView.tsx?raw";
 import reportList from "./ReportList.tsx?raw";
 import { overflowsEnd } from "./review-helpers";
-import reviewPage from "./ReviewPage.tsx?raw";
+import tabsSource from "./Tabs.tsx?raw";
+import uiCss from "./ui.css?raw";
 
 const cssText = css.replace(/\/\*[\s\S]*?\*\//g, "");
+// ui.css（#179 的共用分頁）不在 @media 中的一條規則的宣告
+const uiRule = (selector: string): Record<string, string> => {
+  const text = uiCss.replace(/\/\*[\s\S]*?\*\//g, "");
+  const m = text.match(new RegExp(`(?:^|\\n)${selector.replace(/[.[\]()="-]/g, "\\$&")}\\s*\\{([^}]*)\\}`));
+  return Object.fromEntries([...`${m?.[1] ?? ""};`.matchAll(/([-\w]+)\s*:\s*([^;{}]+);/g)].map((d) => [d[1], d[2].trim()]));
+};
 
 // 所有規則（含 @media 內的）：選擇器、宣告與所在的 @media 條件
 function rules(): { selector: string; decls: Record<string, string>; media: string | null }[] {
@@ -68,10 +75,9 @@ describe("圖譜節點的名稱（最寬 112px、最多兩行）", () => {
 
 describe("手機待審頁的分段", () => {
   it("每個頁籤至少 44×44px（文字短的頁籤也一樣），分段切換仍是一行、橫向捲動", () => {
-    const tab = rules().find((r) => r.media === null && r.selector === '.review-page--phone .review-tabs [role="tab"]');
-    expect(tab?.decls).toMatchObject({ "min-height": "44px", "min-width": "44px" });
-    const tabs = rules().find((r) => r.media === null && r.selector === ".review-tabs");
-    expect(tabs?.decls).toMatchObject({ "flex-wrap": "nowrap", "overflow-x": "auto" });
+    // #179 起是共用的分頁（ui.css 的 .ui-tabs、.ui-tab），桌機與手機相同
+    expect(uiRule(".ui-tab")).toMatchObject({ "min-height": "44px", "min-width": "44px", "white-space": "nowrap" });
+    expect(uiRule(".ui-tabs")).toMatchObject({ "flex-wrap": "nowrap", "overflow-x": "auto" });
   });
 
   it("英文 “Resolved differences” 改為 “Resolved”", () => {
@@ -83,11 +89,11 @@ describe("手機待審頁的分段", () => {
     expect(overflowsEnd({ scrollLeft: 78, clientWidth: 358, scrollWidth: 436 })).toBe(false);
     expect(overflowsEnd({ scrollLeft: 77.5, clientWidth: 358, scrollWidth: 436 })).toBe(false);
     expect(overflowsEnd({ scrollLeft: 0, clientWidth: 600, scrollWidth: 600 })).toBe(false);
-    const fade = rules().find((r) => r.selector === ".review-tabs.has-more");
-    expect(fade?.decls["mask-image"]).toContain("36px");
-    expect(fade?.decls["-webkit-mask-image"]).toBe(fade?.decls["mask-image"]);
-    expect(reviewPage).toContain('"review-tabs has-more"');
-    expect(reviewPage).toContain("onScroll={checkTabs}");
+    const fade = uiRule(".ui-tabs--more");
+    expect(fade["mask-image"]).toContain("36px");
+    expect(fade["-webkit-mask-image"]).toBe(fade["mask-image"]);
+    expect(tabsSource).toContain('"ui-tabs ui-tabs--more"');
+    expect(tabsSource).toContain("onScroll={check}");
   });
 });
 
@@ -132,8 +138,6 @@ describe("頁面外層與清單的欄寬", () => {
     // 平板的圖示側欄（#255）：名稱只給輔助技術（#182），不再是截斷的文字，所以不在這張表
     ".presets": [".app", "main.qa", ".home", ...page],
     ".scenario": [".app", "main.qa", ".home", ...page],
-    ".review-tabs": [".review-page", ".upload", ...page],
-    '.review-tabs [role="tab"]': [".review-page", ".upload", ...page],
     ".table-scroll": [".eval-overview", ".eval-page", ...page],
     ".eval-chip": [".eval-page", ...page],
     ".eval-outcome": [".eval-overview", ".eval-page", ...page],
@@ -214,7 +218,7 @@ describe("頁面外層與清單的欄寬", () => {
 
 describe("排版規則", () => {
   // 按鈕、分段（分頁）、晶片的選擇器
-  const control = /button|chip|\[role="tab"\]|review-tabs/;
+  const control = /button|chip|\[role="tab"\]/;
 
   it("按鈕、分段、晶片不設固定寬度（只有沒有文字的圖示按鈕）", () => {
     const fixed = rules()
@@ -224,12 +228,11 @@ describe("排版規則", () => {
           .filter(([p, v]) => /^(?:width|max-width|inline-size|max-inline-size)$/.test(p) && /\d(?:px|rem|em|ch)\b/.test(v))
           .map(([p, v]) => `${r.selector} { ${p}: ${v} }`),
       );
-    // 桌機圖譜的放大／縮小（#336）、手機圖譜的篩選（#357）、手機待審頁的重新整理（#282，觸控目標 44px）也是沒有文字的圖示按鈕
+    // 桌機圖譜的放大／縮小（#336）、手機圖譜的篩選（#357）也是沒有文字的圖示按鈕（待審的重新整理 #179 起有文字）
     expect(fixed).toEqual([
       ".icon-button { width: 2rem }",
       ".graph-zoom-buttons button { width: 44px }",
       ".graph-page--phone button.graph-filters-button { width: 44px }",
-      ".review-page--phone .review-toolbar .icon-button { width: 44px }",
     ]);
   });
 

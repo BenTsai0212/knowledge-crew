@@ -48,7 +48,7 @@ export function TrustReport({ rows, language, openLedger }: Props) {
   return (
     <section className="card crew-trust-report" aria-labelledby="crew-trust-report-title">
       <div className="crew-trust-report__heading">
-        <h3 id="crew-trust-report-title">{t.reportTitle}</h3>
+        <h2 id="crew-trust-report-title">{t.reportTitle}</h2>
         <p className="muted">{t.reportIntro}</p>
         <p className="muted crew-trust-report__note">{t.reportFirstPassNote}</p>
       </div>

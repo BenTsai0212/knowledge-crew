@@ -35,7 +35,7 @@ test("頁首與分段切換、送出後的四步進度卡、我的上傳的列�
   await switchIdentity(page, uploader!.id);
   await openTab(page, s.tabUpload);
 
-  // 頁首：h1 28px，同一列是分段切換；內容填滿寬度（不再是最寬 960px 的卡片）
+  // 頁首：h1 28px，分頁在 h1 與說明下方（#179，05-upload.html）；內容填滿寬度（不再是最寬 960px 的卡片）
   const main = page.locator(".upload-main");
   const heading = main.getByRole("heading", { level: 1, name: s.tabUpload });
   await expect(heading).toHaveCSS("font-size", "28px");
@@ -47,7 +47,7 @@ test("頁首與分段切換、送出後的四步進度卡、我的上傳的列�
   await expect(mineTab).toHaveText(s.myUploads.tabMine);
   const headingBox = await box(heading);
   const tabsBox = await box(tabs);
-  expect(tabsBox.y).toBeLessThan(headingBox.y + headingBox.height);
+  expect(tabsBox.y).toBeGreaterThanOrEqual(headingBox.y + headingBox.height);
   expect((await box(main.locator(".drop-zone"))).width).toBeGreaterThan(960);
   // 提示是 surfaceRaised 底的說明列
   await expect(main.locator(".upload-hint")).toHaveCSS("background-color", await tokenColor(page, "surfaceRaised"));
@@ -138,7 +138,7 @@ test("英文版面：頁首、我的上傳與上傳詳情不破版", async ({ pa
   const main = page.locator(".upload-main");
   const heading = main.getByRole("heading", { level: 1 });
   const tabs = main.getByRole("tablist");
-  expect((await box(tabs)).y).toBeLessThan((await box(heading)).y + (await box(heading)).height);
+  expect((await box(tabs)).y).toBeGreaterThanOrEqual((await box(heading)).y + (await box(heading)).height);
   expect(await noHorizontalScroll(page)).toBe(true);
   await screenshot(page, testInfo, "upload-new-1440-en.png");
 

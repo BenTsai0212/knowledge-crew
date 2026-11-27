@@ -104,7 +104,7 @@ export function TrustView({ db, identity, language, onChanged, navigate }: CrewS
     <div className="crew-trust">
       <header className="crew-trust__header">
         <div className="crew-trust__heading">
-          <h2>{t.title}</h2>
+          <p className="crew-trust__title">{t.title}</p>
           <p className="muted">{fill(t.intro, { count: DEMO_PARAMS.dots }, language)}</p>
         </div>
         <ul className="crew-trust__legend" aria-label={t.legendLabel}>
@@ -123,9 +123,9 @@ export function TrustView({ db, identity, language, onChanged, navigate }: CrewS
         return (
           <section key={key} className="card crew-trust__row" aria-labelledby={`crew-trust-${key}`}>
             <div className="crew-trust__top">
-              <h3 id={`crew-trust-${key}`}>
+              <h2 id={`crew-trust-${key}`}>
                 {withEmployee(t.rowTitle, { workType: workTypeLabel(row.workTypeId, language) }, row.employee.displayName, language)}
-              </h3>
+              </h2>
               <span className="muted crew-trust__summary">{fill(t.dotsSummary, counts)}</span>
               <LevelBadge level={row.level}>{fill(t.levelBadge, { level: levelText(row.level, t) })}</LevelBadge>
             </div>
@@ -376,7 +376,7 @@ function History({
   };
   return (
     <section className="crew-trust__history" aria-label={label}>
-      <h4 className="crew-trust__history-title">{t.historyTitle}</h4>
+      <h3 className="crew-trust__history-title">{t.historyTitle}</h3>
       <ol className="crew-trust__history-list">
         {steps.map((step, i) => (
           <li key={i} data-kind={step.kind}>

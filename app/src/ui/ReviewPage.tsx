@@ -21,7 +21,7 @@
 // 手機（#282）：review-page--phone；需要決定的組（sheetReason）與待處理的說法不同只畫一行摘要與「›」，點了以底部面板處理
 // （groupBody、conflictBody 與列表共用）；「核准這份文件的全部」在卡片最下方、sticky 固定在分頁列之上
 // 讀取與寫入都經 store.ts、conflicts/store.ts（RLS 決定看得到、能核准什麼）；模型輸出一律以文字節點顯示。
-import { Fragment, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { clientConfig } from "../client/load";
 import type { LocalizedText } from "../client/types";
 import { decideConflict, readConflicts, type ConflictDecision, type ConflictItem, type ConflictPassage } from "../conflicts/store";
@@ -51,6 +51,8 @@ import { autoItems, heldItems, openRequests, relationSeamPlan, seamPartition, se
 import { SeamItem } from "./SeamItem";
 import { relationQuestion, replyLabel, seamOptionLabel, seamQuestion } from "./seam-text";
 import { Notice } from "./Notice";
+import { PageHeader } from "./PageHeader";
+import { Tabs } from "./Tabs";
 import { EmptyState } from "./EmptyState";
 import { ReportList } from "./ReportList";
 import { roleLabel } from "./ReportResult";
@@ -68,8 +70,6 @@ import {
   inputSize,
   mergeCandidates,
   missingNameLanguages,
-  nextTab,
-  overflowsEnd,
   pendingEmptyText,
   reviewDocuments,
   reviewGroups,
@@ -120,7 +120,7 @@ const { client, knowledgeModel } = clientConfig;
 // 說法不同的三種處理方式（#51 決定 4），依按鈕的順序
 const CONFLICT_DECISIONS: readonly ConflictDecision[] = ["coexist", "supersede", "not_conflict"];
 
-// 第二層分頁（#243：底線式，role="tablist"）。decided：已處理的說法不同（#51）；reports：回答錯誤回報（ADR 0007）
+// 第二層分頁（#243：底線式，role="tablist"；#179 起是共用的 Tabs）。decided：已處理的說法不同（#51）；reports：回答錯誤回報（ADR 0007）
 const TABS = ["pending", "rejected", "decided", "reports"] as const;
 type Tab = (typeof TABS)[number];
 
@@ -175,22 +175,6 @@ export function ReviewPage({ db, identity, language, extracting, onOpenSource, o
   const [sheet, setSheet] = useState<{ docId: string; kind: "group" | "conflict"; id: string } | null>(null);
   const reads = useRef(createRequestGate());
   const [version, setVersion] = useState(0);
-  // 分頁列右側還有內容時的漸層提示（#288）：捲動、分頁列大小改變（視窗寬度、數量）與每次繪製後重新判斷
-  const tabList = useRef<HTMLDivElement>(null);
-  const [moreTabs, setMoreTabs] = useState(false);
-  const checkTabs = () => {
-    if (tabList.current !== null) setMoreTabs(overflowsEnd(tabList.current));
-  };
-  useEffect(checkTabs);
-  const loaded = docs !== null && graph !== null;
-  useEffect(() => {
-    const el = tabList.current;
-    if (el === null || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => setMoreTabs(overflowsEnd(el)));
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [loaded]);
-
   useEffect(() => {
     const ticket = reads.current.begin();
     void Promise.all([readReview(db, identity), readGraph(db, identity), readConflicts(db, identity), readReports(db, identity), readRequests(db, identity)]).then(([d, g, c, r, q]) => {
@@ -242,19 +226,6 @@ export function ReviewPage({ db, identity, language, extracting, onOpenSource, o
   const requests = openRequests(requestRows);
   const counts = reviewTabCounts(docs, conflicts, reports, heldItems(requestRows));
   const tabLabels: Record<Tab, string> = { pending: s.reviewPendingTab, rejected: s.reviewRejectedTab, decided: s.reviewDecidedTab, reports: s.reviewReportsTab };
-  // 窄螢幕的分頁橫向捲動（#243）：選中的分頁捲進可見範圍
-  const selectTab = (next: Tab) => {
-    setTab(next);
-    document.getElementById(`${ids}-tab-${next}`)?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-  };
-  // 左右鍵、Home、End 切換分頁並把焦點移過去（只有選中的分頁在 Tab 順序中）
-  const tabKey = (ev: KeyboardEvent<HTMLDivElement>) => {
-    const next = nextTab(TABS, tab, ev.key);
-    if (next === null) return;
-    ev.preventDefault();
-    selectTab(next);
-    document.getElementById(`${ids}-tab-${next}`)?.focus();
-  };
   const languageNames = new Intl.DisplayNames([language], { type: "language" });
   // 列內的次要動作（#345）：桌機是外框按鈕，其他版面維持底線連結
   const minor = desktop ? "secondary" : "link";
@@ -904,41 +875,18 @@ export function ReviewPage({ db, identity, language, extracting, onOpenSource, o
 
   return (
     <div className={desktop ? "review-page review-page--desktop" : phone ? "review-page review-page--phone" : "review-page"}>
-      {desktop && (
-        <header className="review-header">
-          <h1>{s.tabReview}</h1>
-        </header>
-      )}
-      <div className="review-toolbar">
-        {/* 第二層：底線式分頁（#243），數量直接接在名稱後（0 時不顯示） */}
-        <div
-          ref={tabList}
-          className={moreTabs ? "review-tabs has-more" : "review-tabs"}
-          role="tablist"
-          aria-label={s.reviewStatusTabs}
-          onKeyDown={tabKey}
-          onScroll={checkTabs}
-        >
-          {TABS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="tab"
-              id={`${ids}-tab-${t}`}
-              aria-selected={tab === t}
-              aria-controls={`${ids}-panel`}
-              tabIndex={tab === t ? 0 : -1}
-              onClick={() => selectTab(t)}
-            >
-              {tabLabels[t]}
-              {counts[t] > 0 && <span className="review-tabs__count"> {counts[t]}</span>}
-            </button>
-          ))}
-        </div>
-        <button type="button" className="icon-button" aria-label={s.reviewRefresh} title={s.reviewRefresh} disabled={busy} onClick={refresh}>
-          ↻
-        </button>
-      </div>
+      {/* 頁首（#179）：h1、說明、重新整理與分頁（共用的 Tabs：左右鍵、Home、End 切換，數量接在名稱後，0 時不顯示） */}
+      <PageHeader
+        title={s.tabReview}
+        lead={s.reviewLead}
+        actions={
+          <button type="button" className="ui-btn ui-btn--sm review-refresh" disabled={busy} onClick={refresh}>
+            <span aria-hidden="true">↻</span>
+            {s.reviewRefresh}
+          </button>
+        }
+        tabs={<Tabs kind="tabs" label={s.reviewStatusTabs} items={TABS.map((t) => ({ id: t, label: tabLabels[t], count: counts[t] }))} current={tab} onSelect={setTab} idPrefix={ids} />}
+      />
       {/* 短提示：浮動在視窗底部置中（#246）；live region 一直存在，內容出現時螢幕閱讀器才讀得到 */}
       <div className="toast-region" role="status">
         {toast !== null && (

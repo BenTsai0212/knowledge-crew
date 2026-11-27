@@ -44,10 +44,10 @@ for (const width of [375, 1440]) {
         }
         if (view === "review") {
           // 分頁列放不下時可橫向捲動，右側有漸層提示
-          const tabs = page.locator(".review-tabs");
+          const tabs = page.locator(".review-page .ui-tabs");
           const overflow = await tabs.evaluate((el) => el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
-          if (overflow) await expect(tabs).toHaveClass(/has-more/);
-          else await expect(tabs).not.toHaveClass(/has-more/);
+          if (overflow) await expect(tabs).toHaveClass(/ui-tabs--more/);
+          else await expect(tabs).not.toHaveClass(/ui-tabs--more/);
         }
       }
     });

@@ -1,7 +1,7 @@
-// 子導覽的數字與目前子頁的捲動（#103）
+// 子導覽的數字（#103；目前子頁的捲動改由共用的 Tabs 處理，測試在 app/src/ui/tabs.test.ts）
 import { describe, expect, it } from "vitest";
 import type { HomeToday } from "./home-today";
-import { scrollDelta, sectionCounts } from "./section-counts";
+import { sectionCounts } from "./section-counts";
 import type { TodayAssignment, TodayGuideline, TodaySuggestion } from "./today";
 
 const assignment = (id: string): TodayAssignment => ({
@@ -41,26 +41,5 @@ describe("sectionCounts", () => {
   it("不能驗收的身分沒有數字", () => {
     expect(sectionCounts(today({ canReview: false, awaiting: [assignment("a")], decide: [suggestion] }))).toEqual({});
     expect(sectionCounts(today({ canReview: false, guidelines: [guideline("g1")] }))).toEqual({});
-  });
-});
-
-describe("scrollDelta", () => {
-  const row = { left: 16, right: 374 };
-
-  it("已經看得見時不捲動", () => {
-    expect(scrollDelta(row, { left: 16, right: 100 })).toBe(0);
-    expect(scrollDelta(row, { left: 300, right: 374 })).toBe(0);
-  });
-
-  it("超出右緣時往右捲到右緣對齊", () => {
-    expect(scrollDelta(row, { left: 330, right: 420 })).toBe(46);
-  });
-
-  it("超出左緣時往左捲到左緣對齊", () => {
-    expect(scrollDelta(row, { left: -40, right: 50 })).toBe(-56);
-  });
-
-  it("比按鈕列寬時對齊左緣", () => {
-    expect(scrollDelta(row, { left: 100, right: 500 })).toBe(84);
   });
 });

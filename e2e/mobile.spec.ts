@@ -37,7 +37,9 @@ test("頂端列 56px：客戶名稱、「虛構資料」、身分的頭像；不
   await expect(page.locator(".sidebar")).toHaveCount(0);
   const top = page.getByRole("banner");
   expect((await top.locator(".mobile-topbar__row").boundingBox())!.height).toBeCloseTo(56, 0);
-  await expect(top.getByRole("heading", { level: 1 })).toContainText(client.displayName[language]);
+  // #179：頁面的 h1 是各頁的頁首，頂端列的客戶名稱不是標題
+  await expect(top.locator(".mobile-brand")).toContainText(client.displayName[language]);
+  await expect(top.getByRole("heading", { level: 1 })).toHaveCount(0);
   await expect(top.getByText(s.fictionalData)).toBeVisible();
   await expect(top.getByText(s.demoPermissions)).toHaveCount(0);
   await expect(identityBadge(page)).toHaveAccessibleName(s.identityBadge.replace("{role}", access.roles[0].label[language]));
@@ -81,9 +83,10 @@ test("主管：首頁、問答、圖譜、上傳、更多；「更多」只列�
   await moreSheet(page).locator('[data-view="review"]').click();
   await expect(moreSheet(page)).toBeHidden();
   await expect(page.locator(".review-page")).toBeVisible();
-  // 目前的頁面收在「更多」裡時，「更多」標為目前的頁籤；關閉後焦點回到「更多」
+  // 目前的頁面收在「更多」裡時，「更多」標為目前的頁籤；選了頁面後焦點在該頁的 h1（#179：切換畫面後焦點移到 h1）
   await expect(more).toHaveAttribute("aria-current", "page");
-  await expect(more).toBeFocused();
+  await expect(more).not.toBeFocused();
+  await expect(page.getByRole("heading", { level: 1, name: s.tabReview })).toBeFocused();
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 

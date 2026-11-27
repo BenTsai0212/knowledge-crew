@@ -46,11 +46,11 @@ export function MobileNav(props: NavProps) {
       {/* 頂端列（#182，crew 設計規格 v4 第 4 節「手機」）：字標、「虛構資料」徽章、身分的頭像，一行 */}
       <header className="mobile-topbar">
         <div className="mobile-topbar__row">
-          <h1 className="mobile-brand">
+          <p className="mobile-brand">
             <ProductIcon size={TOPBAR_ICON_SIZE} />
             <span className="visually-hidden">{s.productName} </span>
             <span className="mobile-brand__client">{clientConfig.client.displayName[language]}</span>
-          </h1>
+          </p>
           <span className="badge mobile-topbar__flag">{s.fictionalData}</span>
           {signedIn && (
             // 頭像是身分名稱的第一個字（與平板相同），名稱在 aria-label；空狀態的「切換身分」把焦點移到這裡（#245）

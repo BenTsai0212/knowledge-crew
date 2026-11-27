@@ -41,11 +41,13 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
   test.beforeEach(async ({ page }) => openTrustAs(page, "manager"));
 
   test("頁首、圖例與規則說明", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: ct.trust.title, exact: true })).toBeVisible();
+    // 子頁的主標題是頁首的 h1（#179）；原本當標題的 h2 改成一般文字
+    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionTrust, exact: true })).toBeVisible();
+    await expect(page.getByText(ct.trust.title, { exact: true })).toBeVisible();
     await expect(page.getByRole("list", { name: ct.trust.legendLabel })).toContainText(ct.trust.legendWrong);
     await expect(page.getByText(ct.trust.rules, { exact: true })).toBeVisible();
     // 開頭的說明一行放得下，最後兩個字不再單獨換行（#106）
-    const intro = page.locator(".crew-trust__heading p");
+    const intro = page.locator(".crew-trust__heading p.muted");
     const lines = await intro.evaluate((p) => Math.round(p.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(p).lineHeight)));
     expect(lines).toBe(1);
   });

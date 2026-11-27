@@ -58,7 +58,6 @@ export function OverviewView({ db, identity, language, navigate }: CrewScreenPro
   const options = useMemo(() => overviewOptions(items), [items]);
   const header = (
     <div className="crew-overview__header">
-      <h2 className="crew-overview__title">{t.title}</h2>
       <p className="muted crew-overview__lead">{t.lead}</p>
     </div>
   );
@@ -195,10 +194,10 @@ export function OverviewView({ db, identity, language, navigate }: CrewScreenPro
             const headingId = `crew-overview-column-${s}`;
             return (
               <section key={s} className="crew-overview__column" data-status={s} data-current={mobileStatus === s || undefined} aria-labelledby={headingId}>
-                <h3 id={headingId} className="crew-overview__column-title">
+                <h2 id={headingId} className="crew-overview__column-title">
                   {t[STATUS_KEY[s]]}
                   <span className="muted crew-overview__column-count">{fill(t.columnCount, { count: all.length }, language)}</span>
-                </h3>
+                </h2>
                 {all.length === 0 ? (
                   <p className="muted crew-overview__column-empty">{t.columnEmpty}</p>
                 ) : (

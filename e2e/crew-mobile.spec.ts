@@ -10,7 +10,7 @@ test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）"
 
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const sectionButton = (page: Page, label: string) => crewSections(page).getByRole("button", { name: label, exact: true });
-const countOf = (button: Locator) => button.locator(".crew-page__count");
+const countOf = (button: Locator) => button.locator(".ui-count");
 const reviewList = (page: Page) => page.getByRole("navigation", { name: ct.review.listLabel });
 // 「工作與驗收」清單的第一組（待驗收）
 const awaitingItems = (page: Page) => reviewList(page).locator("section").first().getByRole("listitem");
@@ -158,7 +158,7 @@ test.describe("手機 390", () => {
       await expect(sectionButton(page, ct.common.sectionWorks)).toHaveAttribute("aria-current", "page");
       await expect(page.locator(".crew-review, .empty-state").first()).toBeVisible();
       await expect(decisionBar(page)).toHaveCount(0);
-      await expect(crewSections(page).locator(".crew-page__count")).toHaveCount(0);
+      await expect(crewSections(page).locator(".ui-count")).toHaveCount(0);
       expect(await noHorizontalScroll(page)).toBe(true);
     });
   }

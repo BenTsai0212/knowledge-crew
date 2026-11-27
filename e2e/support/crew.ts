@@ -85,7 +85,7 @@ export const firstReplyBody = (employee: string, workType: string) =>
 
 // crew 頁：子導覽與目前子頁的內容（不含頁首與子導覽）
 export const crewSections = (page: Page) => page.getByRole("navigation", { name: ct.common.sectionsLabel });
-export const crewContent = (page: Page) => crewSections(page).locator("xpath=following-sibling::*");
+export const crewContent = (page: Page) => page.locator(".crew-page > .ui-page-head ~ *");
 
 // 進入 crew 頁（桌機是左側欄，手機是「更多」）
 export async function openCrew(page: Page): Promise<void> {

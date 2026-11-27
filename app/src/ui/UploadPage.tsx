@@ -9,7 +9,7 @@
 // 手機（≤ 600px，展示模式除外；#358，畫板 G-Mobile-Pages、K-Mobile）：頁面不包卡片，頁首是 h1 與分段切換、提示是說明列，
 // 我的上傳的列與桌機相同，點一份從底部面板升起詳情（內容與桌機相同）；確認視窗只留五段進度列，送出後的四步進度與萃取的進度條不顯示
 // 切換身分或語言時由 App 以 key 重建本元件，清除表單、預覽與結果。
-import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { clientConfig } from "../client/load";
 import type { Database } from "../db/database";
 import { chunk } from "../upload/chunk";
@@ -29,10 +29,11 @@ import { useLayout } from "./layout";
 import { countsFromBatches, extractionPhase, inProgressCount, myUploadStatus, reviewCounts, type Reupload } from "./my-uploads";
 import { MyUploadList, ReviewProgress, StatusBadge, UploadDetail } from "./MyUploads";
 import { Notice } from "./Notice";
+import { PageHeader } from "./PageHeader";
+import { Tabs } from "./Tabs";
 import { onlineDemo, presentationMode } from "./online-demo";
 import { REDUCED_MOTION, staggerIndex } from "./motion";
 import { createRequestGate } from "./requests";
-import { nextTab } from "./review-helpers";
 import { fill, strings } from "../client/i18n";
 import type { UploadFailure } from "../client/types";
 import { tabSelector } from "./Sidebar";
@@ -275,13 +276,6 @@ export function UploadPage({
     setSection("new");
   }
 
-  const sectionKey = (ev: KeyboardEvent<HTMLDivElement>) => {
-    const next = nextTab(SECTIONS, section, ev.key);
-    if (next === null) return;
-    ev.preventDefault();
-    setSection(next);
-    document.getElementById(`${ids}-tab-${next}`)?.focus();
-  };
   const sectionLabels: Record<Section, string> = { new: s.myUploads.tabNew, mine: s.myUploads.tabMine };
   const inProgress = docs === null ? 0 : inProgressCount(docs, extractingIds);
 
@@ -517,24 +511,14 @@ export function UploadPage({
     </div>
   );
 
-  const tabs = (
-    <div className={desktop || phonePage ? "upload-segments" : "review-tabs upload-sections"} role="tablist" aria-label={s.myUploads.sections} onKeyDown={sectionKey}>
-      {SECTIONS.map((x) => (
-        <button
-          key={x}
-          type="button"
-          role="tab"
-          id={`${ids}-tab-${x}`}
-          aria-selected={section === x}
-          aria-controls={`${ids}-panel`}
-          tabIndex={section === x ? 0 : -1}
-          onClick={() => setSection(x)}
-        >
-          {sectionLabels[x]}
-          {(desktop || phonePage) && x === "mine" && inProgress > 0 && <span className="upload-segments__count"> {inProgress}</span>}
-        </button>
-      ))}
-    </div>
+  // 頁首（#179）：h1、說明與「新增文件／我的上傳」分頁（共用的 Tabs）；「我的上傳 N」的 N 是還在處理中的上傳數
+  const header = (
+    <PageHeader
+      title={s.tabUpload}
+      titleId={`${ids}-title`}
+      lead={s.uploadLead}
+      tabs={<Tabs kind="tabs" label={s.myUploads.sections} items={SECTIONS.map((x) => ({ id: x, label: sectionLabels[x], count: x === "mine" ? inProgress : undefined }))} current={section} onSelect={setSection} idPrefix={ids} />}
+    />
   );
   const doc = docs?.find((d) => d.id === selected);
   const job = doc === undefined ? undefined : extractions.find((x) => x.state.documentId === doc.id);
@@ -696,10 +680,7 @@ export function UploadPage({
     return (
       <div className="upload-page">
         <section className="upload-main" aria-labelledby={`${ids}-title`}>
-          <header className="upload-header">
-            <h1 id={`${ids}-title`}>{s.tabUpload}</h1>
-            {tabs}
-          </header>
+          {header}
           {panel}
           {dialogElement}
         </section>
@@ -711,10 +692,7 @@ export function UploadPage({
     const sheetStatus = doc === undefined ? null : myUploadStatus(reviewCounts(doc, extractingIds.has(doc.id)));
     return (
       <section className="upload-page--phone" aria-labelledby={`${ids}-title`}>
-        <header className="upload-header">
-          <h1 id={`${ids}-title`}>{s.tabUpload}</h1>
-          {tabs}
-        </header>
+        {header}
         {panel}
         {dialogElement}
         <BottomSheet
@@ -731,8 +709,8 @@ export function UploadPage({
     );
   }
   return (
-    <section className="card upload">
-      {tabs}
+    <section className="card upload" aria-labelledby={`${ids}-title`}>
+      {header}
       {panel}
       {dialogElement}
     </section>

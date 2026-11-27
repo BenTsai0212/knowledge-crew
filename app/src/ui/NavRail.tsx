@@ -24,12 +24,12 @@ export function NavRail(props: NavProps) {
   return (
     <>
       <nav className="nav-rail" aria-label={s.views}>
-        <h1 className="nav-rail__brand">
+        <p className="nav-rail__brand">
           <ProductIcon size={BRAND_ICON_SIZE} />
           <span className="visually-hidden">
             {s.productName} {clientConfig.client.displayName[language]}
           </span>
-        </h1>
+        </p>
         {navGroups(views).map((group, i) => (
           <Fragment key={group[0]}>
             {i > 0 && <div className="nav-sep" role="separator" />}
