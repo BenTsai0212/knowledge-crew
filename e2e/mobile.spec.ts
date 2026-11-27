@@ -63,18 +63,19 @@ test("一般員工：分頁列 72px 在視窗底部，首頁、問答、圖譜�
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test("主管：首頁、問答、圖譜、上傳、更多；「更多」只列時間軸與待審（tools=evals 時加評測台，有 crew 時最後加 crew），選了之後面板關閉", async ({ page }) => {
+test("主管：首頁、問答、圖譜、上傳、更多；「更多」只列時間軸與待審（tools=evals 時加評測台；有 crew 時第 4 格是 crew，上傳收進「更多」），選了之後面板關閉", async ({ page }) => {
   test.skip(reviewer === undefined, NO_REVIEWER);
   await openApp(page, EVALS_PATH);
   await switchIdentity(page, reviewer!.id);
-  expect(await tabViews(page)).toEqual(["home", "qa", "graph", "upload", "more"]);
+  // knowledge-crew：有 crew 時第 4 格是 crew（#182）
+  expect(await tabViews(page)).toEqual(hasCrewDemo ? ["home", "qa", "graph", "crew", "more"] : ["home", "qa", "graph", "upload", "more"]);
 
   const more = tabBar(page).locator('[data-view="more"]');
   await more.click();
   await expect(moreSheet(page)).toBeVisible();
   await expect(moreSheet(page).getByRole("heading", { name: s.navMore })).toBeVisible();
   const items = moreSheet(page).locator(".more-list button");
-  expect(await items.evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "review", "evals", "crew"] : ["timeline", "review", "evals"]);
+  expect(await items.evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "upload", "review", "evals"] : ["timeline", "review", "evals"]);
   expect(await focusInside(page, "dialog.more-sheet")).toBe(true);
 
   await moreSheet(page).locator('[data-view="review"]').click();
