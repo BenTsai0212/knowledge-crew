@@ -6,9 +6,9 @@ import type { View } from "./online-demo";
 
 export type Layout = "phone" | "tablet" | "desktop";
 
-// ≤ 600px 手機、601–1024px 平板、≥ 1025px 桌機
-export const PHONE_MAX = 600;
-export const TABLET_MAX = 1024;
+// < 720px 手機、720–980px 平板（72px 的圖示側欄）、≥ 981px 桌機（232px 的側欄）：knowledge-crew 設計規格 v4 第 4 節（#182）
+export const PHONE_MAX = 719;
+export const TABLET_MAX = 980;
 
 export const layoutFor = (width: number): Layout => (width <= PHONE_MAX ? "phone" : width <= TABLET_MAX ? "tablet" : "desktop");
 
@@ -22,10 +22,21 @@ export interface PhoneTabs {
   more: View[];
 }
 
+// 有 AI 員工的客戶（頁籤有 crew，#182，crew ADR 0009 第四節）：首頁、問答、圖譜、AI 員工＋更多（時間軸、上傳、待審、評測台）
+const CREW_PHONE_PRIORITY: readonly View[] = ["home", "qa", "graph", "crew"];
+
 export function phoneTabs(views: readonly View[]): PhoneTabs {
   if (views.length <= PHONE_TAB_LIMIT) return { tabs: [...views], more: [] };
-  const kept = PHONE_PRIORITY.filter((v) => views.includes(v)).slice(0, PHONE_TAB_LIMIT - 1);
+  const priority = views.includes("crew") ? CREW_PHONE_PRIORITY : PHONE_PRIORITY;
+  const kept = priority.filter((v) => views.includes(v)).slice(0, PHONE_TAB_LIMIT - 1);
   return { tabs: kept, more: views.filter((v) => !kept.includes(v)) };
+}
+
+// 側欄（桌機與平板）的分組（#182，crew 設計規格 v4 第 4 節）：有 AI 員工時，AI 員工與評測台在分隔線之後；沒有時一組、順序不變
+export function navGroups(views: readonly View[]): View[][] {
+  if (!views.includes("crew")) return [[...views]];
+  const after: readonly View[] = ["crew", "evals"];
+  return [views.filter((v) => !after.includes(v)), after.filter((v) => views.includes(v))].filter((g) => g.length > 0);
 }
 
 // 底部面板往下拖曳超過面板高度的 1/4（最多 96px）就關閉，否則彈回原位
@@ -68,8 +79,8 @@ export const NAV_ICONS: Record<View | "more", string> = {
   upload: EMPTY_ICONS.upload,
   review: EMPTY_ICONS.review,
   evals: EMPTY_ICONS.evals,
-  // AI 員工（knowledge-crew，ADR 0004）：人形加對話框
-  crew: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6 M14 4h7v5h-4l-3 2z",
+  // AI 員工（knowledge-crew，ADR 0004）：機器人（crew 設計規格 v5 的側欄，#182）
+  crew: "M7 7h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3z M12 3v4 M9 12v1 M15 12v1 M9 16h6",
   // 更多：三個點
   more: "M5 12h.01 M12 12h.01 M19 12h.01",
 };

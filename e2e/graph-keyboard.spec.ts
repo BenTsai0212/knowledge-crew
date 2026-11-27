@@ -117,7 +117,8 @@ test("以鍵盤從進入圖譜走到另一個實體，報讀區說出每一步�
   await page.keyboard.type("/");
   const search = page.getByRole("combobox", { name: s.graphSearch });
   await expect(search).toBeFocused();
-  await search.fill(moved.cursorLabel);
+  // 搜尋比對名稱，不含同名實體在圖上加的括號（例如「林志明（產品研發部）」）；→ 移到哪個實體依版面而定（#182 側欄改為 232px 後會移到同名的實體）
+  await search.fill(moved.cursorLabel.replace(/\s*[（(][^（()）]*[）)]$/, ""));
   await page.keyboard.press("Enter");
   await expect(frame(page)).toBeFocused();
   await expect.poll(async () => (await selectedNodes(page, CANVAS)).length).toBe(1);

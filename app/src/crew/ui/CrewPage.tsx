@@ -1,4 +1,4 @@
-// crew 頁（#34）：頁首（#179：小字「AI 員工」＋子頁主標題 h1＋分頁；「虛構資料」暫放在說明的位置）與目前位置的畫面。
+// crew 頁（#34）：頁首（#179：小字「AI 員工」＋子頁主標題 h1＋分頁；「虛構資料」只在外框，#182）與目前位置的畫面。
 // H～K 掛上畫面時：新增 <畫面>View.tsx／.css，在 SCREENS 插入一行 import 與一行登錄。
 // 子導覽的「員工」「工作與驗收」「信任」帶數字（#103、#145，只給能驗收的身分）；分頁元件是共用的 Tabs（nav），目前的子頁捲到中間。
 import { useEffect, useState } from "react";
@@ -67,11 +67,6 @@ export function CrewPage({ request = null, ...props }: Props) {
         eyebrow={t.title}
         title={t[current.label]}
         focusKey={section}
-        lead={
-          <span className="badge" title={t.fictionalDataNote}>
-            {t.fictionalData}
-          </span>
-        }
         tabs={<Tabs kind="nav" label={t.sectionsLabel} items={items} current={section} onSelect={(id) => setTarget({ section: id })} idPrefix="crew-section" />}
       />
       {Screen ? (

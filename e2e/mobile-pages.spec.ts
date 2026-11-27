@@ -108,7 +108,8 @@ test.describe("上傳", () => {
     await dialog.getByRole("button", { name: s.uploadAnother }).click();
     await expect(dialog).toBeHidden();
 
-    const dot = page.locator('.mobile-tabbar [data-view="upload"] .tab-dot');
+    // knowledge-crew：有 crew 時上傳收在「更多」，小點在「更多」上（#182，MobileNav 的「更多」顯示其中第一個附加內容）
+    const dot = page.locator(`.mobile-tabbar [data-view="${hasCrewDemo ? "more" : "upload"}"] .tab-dot`);
     await expect(dot).toHaveCount(0);
     expect(await gotoView(page, "qa")).toBe(true);
     release();
@@ -307,23 +308,23 @@ test.describe("評測台", () => {
 test.describe("更多（主管）", () => {
   test.skip(reviewer === undefined, NO_REVIEWER);
 
-  test("列出時間軸與待審（有 crew 時最後加 crew），待審的數量（不是 0 時）標在清單上；沒有 ?tools=evals 時沒有評測台", async ({ page }) => {
+  test("列出時間軸與待審（有 crew 時 crew 在分頁列上，「更多」是時間軸、上傳、待審），待審的數量（不是 0 時）標在清單上；沒有 ?tools=evals 時沒有評測台", async ({ page }) => {
     await openApp(page);
     await switchIdentity(page, reviewer!.id);
     await page.locator('.mobile-tabbar [data-view="more"]').click();
     await expect(moreSheet(page)).toBeVisible();
-    expect(await moreItems(page).evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "review", "crew"] : ["timeline", "review"]);
+    expect(await moreItems(page).evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "upload", "review"] : ["timeline", "review"]);
     // 0 時不顯示（#358，mobile-timeline-uploads.spec.ts）；顯示時是正整數
     await expect(moreSheet(page).locator('[data-view="review"] .tab-count').filter({ hasText: /^0$/ })).toHaveCount(0);
     await expectTouchTargets(moreItems(page));
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 
-  test("帶 ?tools=evals 時加上評測台（在 crew 之前）", async ({ page }) => {
+  test("帶 ?tools=evals 時加上評測台（在最後）", async ({ page }) => {
     await openApp(page, EVALS_PATH);
     await switchIdentity(page, reviewer!.id);
     await page.locator('.mobile-tabbar [data-view="more"]').click();
-    expect(await moreItems(page).evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "review", "evals", "crew"] : ["timeline", "review", "evals"]);
+    expect(await moreItems(page).evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "upload", "review", "evals"] : ["timeline", "review", "evals"]);
     // 0 時不顯示（#358，mobile-timeline-uploads.spec.ts）；顯示時是正整數
     await expect(moreSheet(page).locator('[data-view="review"] .tab-count').filter({ hasText: /^0$/ })).toHaveCount(0);
   });
@@ -333,7 +334,7 @@ test("一般員工：分頁列沒有「更多」，時間軸在分頁列上（�
   test.skip(nonReviewer === undefined, NO_NON_REVIEWER);
   await openApp(page);
   await switchIdentity(page, nonReviewer!.id);
-  // knowledge-crew：有 crew 時超過 5 頁，時間軸與 crew 收進「更多」（#34）
+  // knowledge-crew：有 crew 時超過 5 頁，第 4 格是 crew，時間軸與上傳收進「更多」（#182）
   await expect(page.locator('.mobile-tabbar [data-view="more"]')).toHaveCount(hasCrewDemo ? 1 : 0);
   await expect(page.locator('.mobile-tabbar [data-view="timeline"]')).toHaveCount(hasCrewDemo ? 0 : 1);
   await expectTouchTargets(page.locator(".mobile-tabbar button"));

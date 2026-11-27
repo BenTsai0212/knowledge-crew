@@ -1,5 +1,5 @@
-// 手機的導覽（#255，docs/design.md「手機的共同結構」）：頂端列（產品 icon、客戶名稱、身分徽章；下方一行「虛構資料」「展示用權限」）、
-// 底部分頁列（首頁、問答、圖譜、時間軸或上傳、更多；分配見 layout.ts 的 phoneTabs()）。
+// 手機（< 720px）的導覽（#255，docs/design.md「手機的共同結構」；#182 依 crew 設計規格 v4 第 4 節）：頂端列（產品 icon、客戶名稱、「虛構資料」、身分的頭像）、
+// 底部分頁列（首頁、問答、圖譜、時間軸或上傳、更多；有 AI 員工時第 4 格是 AI 員工；分配見 layout.ts 的 phoneTabs()）。
 // 登入前（#355）與展示模式登入後（PresentationBar，#260）不渲染本元件。
 // 身分徽章打開身分與語言面板，「更多」打開列出其餘頁面的面板，兩者都是底部面板。「這次的問題」在問答頁頂部（SessionQuestions，#256 決定 1）
 import { useState } from "react";
@@ -11,7 +11,7 @@ import { IdentitySheet } from "./IdentitySheet";
 import { NAV_ICONS, phoneTabs } from "./layout";
 import type { View } from "./online-demo";
 import { ProductIcon } from "./ProductIcon";
-import { tabLabels, type NavProps } from "./Sidebar";
+import { avatarInitial, tabLabels, type NavProps } from "./Sidebar";
 
 // 頂端列的 icon：28px（簡化版）
 const TOPBAR_ICON_SIZE = 28;
@@ -43,6 +43,7 @@ export function MobileNav(props: NavProps) {
 
   return (
     <>
+      {/* 頂端列（#182，crew 設計規格 v4 第 4 節「手機」）：字標、「虛構資料」徽章、身分的頭像，一行 */}
       <header className="mobile-topbar">
         <div className="mobile-topbar__row">
           <p className="mobile-brand">
@@ -50,24 +51,21 @@ export function MobileNav(props: NavProps) {
             <span className="visually-hidden">{s.productName} </span>
             <span className="mobile-brand__client">{clientConfig.client.displayName[language]}</span>
           </p>
+          <span className="badge mobile-topbar__flag">{s.fictionalData}</span>
           {signedIn && (
-            // 空狀態的「切換身分」把焦點移到這裡（#245）
+            // 頭像是身分名稱的第一個字（與平板相同），名稱在 aria-label；空狀態的「切換身分」把焦點移到這裡（#245）
             <button
               type="button"
               id={IDENTITY_SELECT_ID}
-              className="identity-badge"
+              className="identity-badge mobile-topbar__avatar"
               aria-haspopup="dialog"
               aria-label={fill(s.identityBadge, { role })}
               onClick={() => setSheet("identity")}
             >
-              {role}
+              <span aria-hidden="true">{avatarInitial(role)}</span>
             </button>
           )}
         </div>
-        <p className="mobile-topbar__badges">
-          <span className="badge">{s.fictionalData}</span>
-          {signedIn && <span className="badge">{s.demoPermissions}</span>}
-        </p>
       </header>
       <nav className="mobile-tabbar" aria-label={s.views}>
         {tabs.map(tabButton)}

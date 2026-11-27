@@ -85,9 +85,9 @@ describe("readToday：匯入虛構資料後", () => {
 });
 
 describe("crew 共用的文字", () => {
-  it("「虛構資料」標示在 common（CrewPage 的頁首）", () => {
+  it("「虛構資料」標示只在外框（#182）：crew 的 common 沒有自己的一份", () => {
     for (const language of clientConfig.client.languages) {
-      expect(crewStrings("common", language)).toHaveProperty("fictionalData");
+      expect(crewStrings("common", language)).not.toHaveProperty("fictionalData");
     }
   });
 

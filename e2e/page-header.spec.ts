@@ -23,14 +23,15 @@ for (const viewport of [
   test.describe(`${viewport.width}px`, () => {
     test.use({ viewport });
 
-    test("AI 員工：每個子頁一個 h1（子頁名稱），切換後焦點在 h1；小字「AI 員工」與「虛構資料」在頁首", async ({ page }) => {
+    test("AI 員工：每個子頁一個 h1（子頁名稱），切換後焦點在 h1；小字「AI 員工」在頁首，「虛構資料」只在外框", async ({ page }) => {
       test.skip(!hasCrewDemo, "客戶沒有 crew 的示範資料");
       await openApp(page);
       await switchIdentity(page, "manager");
       await openCrew(page);
       const header = page.locator(".crew-page > .ui-page-head");
       await expect(header.locator(".ui-page-head__eyebrow")).toHaveText(ct.common.title);
-      await expect(header.getByText(ct.common.fictionalData, { exact: true })).toBeVisible();
+      // 「虛構資料」只在外框（#182），頁首沒有
+      await expect(header).not.toContainText(s.fictionalData);
       // 分頁在頁首內，是 nav（不是 tablist）
       await expect(header.getByRole("navigation", { name: ct.common.sectionsLabel })).toBeVisible();
       await expect(header.getByRole("tablist")).toHaveCount(0);

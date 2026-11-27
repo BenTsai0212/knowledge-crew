@@ -68,11 +68,14 @@ describe("頂部與頁面項目", () => {
   });
 });
 
+// 「虛構資料」前的圖示（#182）
+const FLAG_ICON = '<svg class="demo-flag__icon"[^>]*><path[^>]*></path></svg>';
+
 describe("底部", () => {
   it("邀請碼體驗：標示是「虛構資料 · 展示用權限」，使用者卡是角色的縮寫頭像、角色名與「看得到：…」，沒有「登出」", () => {
     for (const role of roles) {
       const html = render({ identity: role.id });
-      expect(html).toMatch(new RegExp(`<p class="sidebar__labels"><span>${s.fictionalData}</span><span aria-hidden="true"> · </span><span>${s.demoPermissions}</span></p>`));
+      expect(html).toMatch(new RegExp(`<p class="sidebar__labels">${FLAG_ICON}<span>${s.fictionalData}</span><span aria-hidden="true"> · </span><span>${s.demoPermissions}</span></p>`));
       const card = userCard(html);
       expect(card, role.id).toBeDefined();
       expect(card).toContain(`id="${IDENTITY_SELECT_ID}"`);
@@ -100,7 +103,7 @@ describe("底部", () => {
   it("登入頁：沒有使用者卡，標示只有「虛構資料」，語言是下拉選單", () => {
     const html = render({ identityControl: "none", onChangeAccessCode: undefined });
     expect(userCard(html)).toBeUndefined();
-    expect(html).toContain(`<p class="sidebar__labels"><span>${s.fictionalData}</span></p>`);
+    expect(html).toMatch(new RegExp(`<p class="sidebar__labels">${FLAG_ICON}<span>${s.fictionalData}</span></p>`));
     expect(html).toMatch(/<label class="sidebar__language">[^<]*<select/);
   });
 
@@ -112,8 +115,8 @@ describe("底部", () => {
 });
 
 describe("樣式（畫板 K-Home）", () => {
-  it("寬 220px、surface 底、右邊 1px border", () => {
-    expect(rule(".app")["grid-template-columns"]).toBe("220px minmax(0, 1fr)");
+  it("寬 232px（#182）、surface 底、右邊 1px border", () => {
+    expect(rule(".app")["grid-template-columns"]).toBe("232px minmax(0, 1fr)");
     expect(rule(".sidebar")).toMatchObject({ background: "var(--color-surface)", "border-right": "1px solid var(--color-border)" });
   });
 

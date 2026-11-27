@@ -42,13 +42,14 @@ test("導覽列 72px：頁籤 60×56px、有 aria-label；不顯示左側導覽�
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test("主管：所有頁籤都在導覽列（含待審，tools=evals 時加評測台，有 crew 時最後加 crew），沒有「更多」", async ({ page }) => {
+test("主管：所有頁籤都在導覽列（含待審，tools=evals 時加評測台，有 crew 時 crew 與評測台在分隔線之後），沒有「更多」", async ({ page }) => {
   test.skip(reviewer === undefined, NO_REVIEWER);
   await openApp(page, EVALS_PATH);
   await switchIdentity(page, reviewer!.id);
   const views = await rail(page).locator("button[data-view]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")));
-  // knowledge-crew：有 crew 時最後加 crew（#34）
-  expect(views).toEqual(hasCrewDemo ? ["home", "qa", "graph", "timeline", "upload", "review", "evals", "crew"] : ["home", "qa", "graph", "timeline", "upload", "review", "evals"]);
+  // knowledge-crew：有 crew 時 crew 與評測台在分隔線之後（#182，layout.ts 的 navGroups()）
+  expect(views).toEqual(hasCrewDemo ? ["home", "qa", "graph", "timeline", "upload", "review", "crew", "evals"] : ["home", "qa", "graph", "timeline", "upload", "review", "evals"]);
+  await expect(rail(page).locator(".nav-sep")).toHaveCount(hasCrewDemo ? 1 : 0);
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 

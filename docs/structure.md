@@ -111,12 +111,12 @@
 - `identity-compare.ts`：身分對照的純函式：欄的順序與目前身分、目前的題目、一欄一欄送出、`C`／`Esc`
 - `IdentityCompare.tsx`：展示模式的身分對照，每個身分一欄，沿用 `AnswerView`（純函式在 `identity-compare.ts`；畫板 `H-QA`，#349），見 `docs/qa.md`「身分對照」
 - `IdentitySheet.tsx`：身分與語言面板的內容（手機、平板與桌機使用者卡的選單共用；身分單選卡附 `roles[].scope`、語言分段切換、更換邀請碼；帳號登入時只顯示帳號與角色）
-- `layout.ts`：斷點（`layoutFor()`、`useLayout()`）、手機分頁的分配（`phoneTabs()`）、底部面板的拖曳門檻與 `sheetSnap()`、底部面板以上的可見部分 `visibleArea()`（扣掉浮在畫布上方的一列）（純函式，測試在 `layout.test.ts`）
+- `layout.ts`：斷點（`layoutFor()`、`useLayout()`）、手機分頁的分配（`phoneTabs()`；有 AI 員工時第 4 格是 AI 員工，#182）、側欄的分組（`navGroups()`：AI 員工與評測台在分隔線之後，#182）、底部面板的拖曳門檻與 `sheetSnap()`、底部面板以上的可見部分 `visibleArea()`（扣掉浮在畫布上方的一列）（純函式，測試在 `layout.test.ts`）
 - `MentionPanel.tsx`：問答頁的右側面板：回答提到的實體（純函式在 `mentions.ts`）
 - `mentions.ts`：`MentionPanel.tsx` 的純函式
-- `MobileNav.tsx`：≤ 600px 時取代左側導覽的手機頂端列＋底部分頁列（含「更多」面板；登入前不顯示，#355），見 `docs/design.md`「手機與平板」
+- `MobileNav.tsx`：< 720px 時取代左側導覽的手機頂端列＋底部分頁列（含「更多」面板；登入前不顯示，#355），見 `docs/design.md`「手機與平板」
 - `motion.ts`：動態的刻度與 CSS 變數 `--motion-*`、`--ease-*`；圖譜展開的動態與「減少動態效果」的判斷
-- `NavRail.tsx`：平板（601–1024px）的左側圖示導覽列，與 `Sidebar`、`MobileNav` 共用 `NavProps`；App 依 `useLayout()` 只渲染其中一種
+- `NavRail.tsx`：平板（720–980px）的左側圖示導覽列（名稱只給輔助技術、「虛構資料」標示，#182），與 `Sidebar`、`MobileNav` 共用 `NavProps`；App 依 `useLayout()` 只渲染其中一種
 - `Notice.tsx`：共用的提示框（`className` 依位置調整樣式，例如桌機問答頁的額度與需要管理者的說明條）
 - `online-demo.ts`：唯一讀取處：線上 demo 的 `VITE_ONLINE_DEMO`、`VITE_PUBLIC_ACCESS_CODE`（預設關閉；開啟時隱藏評測台），展示模式 `?mode=presentation`（只顯示問答與圖譜），評測台的 `?tools=evals`，身分對照的 `VITE_DEMO_COMPARE`（預設關閉、線上 demo 一律關閉），只展示 AI 員工的 `VITE_CREW_ONLY`（crew ADR 0005）；見 `docs/qa.md`「線上 demo」「展示模式」「身分對照」、`docs/evals.md`「開啟評測台」
 - `PageHeader.tsx`：每頁一個的頁首（所屬區塊小字、主標題 h1、一句說明、動作與分頁；切換畫面後焦點移到 h1，#179），樣式是 `ui.css` 的 `ui-page-head`
@@ -143,7 +143,7 @@
 - `SeamItem.tsx`：接縫卡片的項目本身（類型膠囊、名稱、其他語言名稱、「出處（N）」文字連結），待審頁的接縫卡與 `RequestAsk.tsx` 共用（畫板 `S-Review` ①，見 `docs/design.md`）
 - `SeamRecords.tsx`：「記錄」：自己的與同事的理解（角色與日期），回答卡片與原文欄共用（ADR 0012，見 `docs/qa.md`「人的理解的顯示」）
 - `SessionQuestions.tsx`：手機與平板的「這次的問題（N）」按鈕，手機打開底部面板、平板打開滑出面板（#256、#333）
-- `Sidebar.tsx`：桌機的左側欄（客戶名稱、頁面項目、「虛構資料 · 展示用權限」、使用者卡與身分和語言選單，#330）
+- `Sidebar.tsx`：桌機的左側欄（客戶名稱、頁面項目與圖示、分隔線、「虛構資料 · 展示用權限」、使用者卡與身分和語言選單，#330）
 - `source-steps.ts`：「出處 N／M」與「在圖譜中查看」目標的純函式
 - `SourceConfirmation.tsx`：原文欄每一段下方的來源確認：「確認這段」「撤銷確認」、「〈角色〉於〈日期〉確認」與失效的說明（ADR 0013，見 `docs/design.md`「來源確認」）
 - `SourcePanel.tsx`：桌機的原文欄（段落編號、「這次回答的出處」，#335）；展示模式是浮動的原文卡片（#349）
