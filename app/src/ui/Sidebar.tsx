@@ -1,16 +1,19 @@
-// 桌機（≥ 1025px）的左側欄（#330，畫板 docs/design/v1/boards/K-Home.dc.html 的 <nav>）：220px、surface 底、右邊 1px border。
+// 桌機（≥ 981px）的左側欄（#330，畫板 docs/design/v1/boards/K-Home.dc.html 的 <nav>；#182 依 crew 設計規格 v5 改成 232px、項目加圖示、
+// 有 AI 員工時 AI 員工與評測台在分隔線之後，layout.ts 的 navGroups()）：surface 底、右邊 1px border。
 // 由上而下是 K 晶格 icon＋客戶名稱、頁面項目（44px，選中是 text 底、surface 字；待審的筆數是右側的 primary 圓形徽章）、
 // 底部的「虛構資料 · 展示用權限」虛線框與使用者卡。使用者卡按下打開左側欄旁的身分與語言選單（內容與手機的面板相同，#330 決定 1、2）；
 // 帳號登入時卡上另有「登出」，選單只有語言與「登出」。登入頁沒有使用者卡，語言是虛線框上方的下拉選單
 // （桌機登入前 App 改用 EntryBar 的頂端列、不渲染左側欄，#334）。
 // 「這次的問題」不放在左側欄（#330 決定 3）
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { clientConfig } from "../client/load";
 import { fill, strings } from "../client/i18n";
 import { crewTabLabel } from "../crew/ui/entry";
 import { BottomSheet } from "./BottomSheet";
 import { IDENTITY_SELECT_ID } from "./empty-state";
 import { IdentitySheet, ownName } from "./IdentitySheet";
+import { navGroups } from "./layout";
+import { NavIcon } from "./MobileNav";
 import type { View } from "./online-demo";
 import { ProductIcon } from "./ProductIcon";
 import type { IdentityControl } from "./sign-in";
@@ -51,6 +54,15 @@ export function tabLabels(language: string): Record<View, string> {
   };
 }
 
+// 「虛構資料」標示的圖示（圓圈裡的 i，crew 設計規格 v5 的 demo-flag，#182）：桌機側欄與平板的圖示側欄共用
+export function DemoFlagIcon() {
+  return (
+    <svg className="demo-flag__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 11v6 M12 7.5v.01" />
+    </svg>
+  );
+}
+
 // 使用者卡的縮寫頭像：帳號登入時是帳號的第一個字（大寫），以邀請碼體驗時是角色名稱的第一個字（與平板的頭像相同）
 export const avatarInitial = (name: string) => (Array.from(name)[0] ?? "").toLocaleUpperCase();
 
@@ -74,11 +86,17 @@ export function Sidebar(props: NavProps) {
         <span className="sidebar__client">{clientConfig.client.displayName[language]}</span>
       </h1>
       <nav className="primary-tabs" aria-label={s.views}>
-        {views.map((v) => (
-          <button key={v} type="button" data-view={v} aria-current={view === v ? "page" : undefined} onClick={() => onView(v)}>
-            <span className="primary-tabs__label">{labels[v]}</span>
-            {tabExtra?.[v]}
-          </button>
+        {navGroups(views).map((group, i) => (
+          <Fragment key={group[0]}>
+            {i > 0 && <div className="nav-sep" role="separator" />}
+            {group.map((v) => (
+              <button key={v} type="button" data-view={v} aria-current={view === v ? "page" : undefined} onClick={() => onView(v)}>
+                <NavIcon view={v} />
+                <span className="primary-tabs__label">{labels[v]}</span>
+                {tabExtra?.[v]}
+              </button>
+            ))}
+          </Fragment>
         ))}
       </nav>
       <div className="sidebar__footer">
@@ -95,6 +113,7 @@ export function Sidebar(props: NavProps) {
           </label>
         )}
         <p className="sidebar__labels">
+          <DemoFlagIcon />
           <span>{s.fictionalData}</span>
           {signedIn && (
             <>

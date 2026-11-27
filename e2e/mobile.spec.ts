@@ -31,49 +31,51 @@ const moreSheet = (page: Page) => page.locator("dialog.more-sheet");
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const focusInside = (page: Page, selector: string) => page.evaluate((sel) => document.activeElement?.closest(sel) != null, selector);
 
-test("頂端列 60px：客戶名稱、身分徽章、「虛構資料」「展示用權限」；不顯示左側導覽，整頁沒有橫向捲動", async ({ page }) => {
+// #182（crew 設計規格 v4 第 4 節）：頂端列改成一行 56px；身分是頭像（名稱在 aria-label）；「展示用權限」只在桌機側欄
+test("頂端列 56px：客戶名稱、「虛構資料」、身分的頭像；不顯示左側導覽與「展示用權限」，整頁沒有橫向捲動", async ({ page }) => {
   await openApp(page);
   await expect(page.locator(".sidebar")).toHaveCount(0);
   const top = page.getByRole("banner");
-  expect((await top.locator(".mobile-topbar__row").boundingBox())!.height).toBeCloseTo(60, 0);
+  expect((await top.locator(".mobile-topbar__row").boundingBox())!.height).toBeCloseTo(56, 0);
   await expect(top.getByRole("heading", { level: 1 })).toContainText(client.displayName[language]);
   await expect(top.getByText(s.fictionalData)).toBeVisible();
-  await expect(top.getByText(s.demoPermissions)).toBeVisible();
-  await expect(identityBadge(page)).toHaveText(access.roles[0].label[language]);
+  await expect(top.getByText(s.demoPermissions)).toHaveCount(0);
+  await expect(identityBadge(page)).toHaveAccessibleName(s.identityBadge.replace("{role}", access.roles[0].label[language]));
   expect((await identityBadge(page).boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test("一般員工：分頁列 72px 在視窗底部，首頁、問答、圖譜、時間軸、上傳，沒有「更多」（有 crew 時時間軸與 crew 收進「更多」）；按了切換頁面（有 crew 時按上傳）", async ({ page }) => {
+test("一般員工：分頁列 72px 在視窗底部，首頁、問答、圖譜、時間軸、上傳，沒有「更多」（有 crew 時第 4 格是 crew、時間軸與上傳收進「更多」）；按了切換頁面（有 crew 時按 crew）", async ({ page }) => {
   test.skip(nonReviewer === undefined, NO_NON_REVIEWER);
   await openApp(page);
   await switchIdentity(page, nonReviewer!.id);
   const bar = (await tabBar(page).boundingBox())!;
   expect(bar.height).toBeCloseTo(72, 0);
   expect(bar.y + bar.height).toBeCloseTo(844, 0);
-  // knowledge-crew：有 crew 時超過 5 頁，時間軸與 crew 收進「更多」（#34）
-  expect(await tabViews(page)).toEqual(hasCrewDemo ? ["home", "qa", "graph", "upload", "more"] : ["home", "qa", "graph", "timeline", "upload"]);
+  // knowledge-crew：有 crew 時超過 5 頁，第 4 格是 crew，時間軸與上傳收進「更多」（#182，crew ADR 0009 第四節）
+  expect(await tabViews(page)).toEqual(hasCrewDemo ? ["home", "qa", "graph", "crew", "more"] : ["home", "qa", "graph", "timeline", "upload"]);
   for (const box of await tabBar(page).locator("button").evaluateAll((bs) => bs.map((b) => b.getBoundingClientRect().height))) expect(box).toBeGreaterThanOrEqual(44);
 
-  // knowledge-crew：有 crew 時時間軸不在分頁列上，改點上傳（#34）
-  const target = hasCrewDemo ? "upload" : "timeline";
+  // knowledge-crew：有 crew 時時間軸不在分頁列上，改點 crew（#182）
+  const target = hasCrewDemo ? "crew" : "timeline";
   await tabBar(page).locator(`[data-view="${target}"]`).click();
   await expect(tabBar(page).locator(`[data-view="${target}"]`)).toHaveAttribute("aria-current", "page");
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test("主管：首頁、問答、圖譜、上傳、更多；「更多」只列時間軸與待審（tools=evals 時加評測台，有 crew 時最後加 crew），選了之後面板關閉", async ({ page }) => {
+test("主管：首頁、問答、圖譜、上傳、更多；「更多」只列時間軸與待審（tools=evals 時加評測台；有 crew 時第 4 格是 crew，上傳收進「更多」），選了之後面板關閉", async ({ page }) => {
   test.skip(reviewer === undefined, NO_REVIEWER);
   await openApp(page, EVALS_PATH);
   await switchIdentity(page, reviewer!.id);
-  expect(await tabViews(page)).toEqual(["home", "qa", "graph", "upload", "more"]);
+  // knowledge-crew：有 crew 時第 4 格是 crew（#182）
+  expect(await tabViews(page)).toEqual(hasCrewDemo ? ["home", "qa", "graph", "crew", "more"] : ["home", "qa", "graph", "upload", "more"]);
 
   const more = tabBar(page).locator('[data-view="more"]');
   await more.click();
   await expect(moreSheet(page)).toBeVisible();
   await expect(moreSheet(page).getByRole("heading", { name: s.navMore })).toBeVisible();
   const items = moreSheet(page).locator(".more-list button");
-  expect(await items.evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "review", "evals", "crew"] : ["timeline", "review", "evals"]);
+  expect(await items.evaluateAll((bs) => bs.map((b) => b.getAttribute("data-view")))).toEqual(hasCrewDemo ? ["timeline", "upload", "review", "evals"] : ["timeline", "review", "evals"]);
   expect(await focusInside(page, "dialog.more-sheet")).toBe(true);
 
   await moreSheet(page).locator('[data-view="review"]').click();
@@ -143,7 +145,7 @@ test("身分與語言面板：每個身分一張單選卡，附 access.json 的�
     // 點卡片上的說明文字也會選取
     await roleCardTarget(sheet, other.id).locator(".role-card__scope").click();
     await expect(roleCard(sheet, other.id)).toBeChecked();
-    await expect(identityBadge(page)).toHaveText(other.label[language]);
+    await expect(identityBadge(page)).toHaveAccessibleName(s.identityBadge.replace("{role}", other.label[language]));
   }
   expect(await noHorizontalScroll(page)).toBe(true);
 });
@@ -203,16 +205,17 @@ test("展示模式：沒有分頁列，頂端列只有一個問答與圖譜的�
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test("斷點：600px 是手機，601–1024px 是平板的導覽列，1025px 起是左側導覽", async ({ page }) => {
+// #182（crew 設計規格 v4 第 4 節）：斷點由 600／1024 改成 719／980
+test("斷點：719px 是手機，720–980px 是平板的圖示側欄，981px 起是左側導覽", async ({ page }) => {
   await openApp(page);
-  await page.setViewportSize({ width: 600, height: 844 });
+  await page.setViewportSize({ width: 719, height: 844 });
   await expect(tabBar(page)).toBeVisible();
-  await page.setViewportSize({ width: 601, height: 844 });
+  await page.setViewportSize({ width: 720, height: 844 });
   await expect(tabBar(page)).toHaveCount(0);
   await expect(page.locator(".nav-rail")).toBeVisible();
-  await page.setViewportSize({ width: 1024, height: 844 });
+  await page.setViewportSize({ width: 980, height: 844 });
   await expect(page.locator(".nav-rail")).toBeVisible();
-  await page.setViewportSize({ width: 1025, height: 844 });
+  await page.setViewportSize({ width: 981, height: 844 });
   await expect(page.locator(".nav-rail")).toHaveCount(0);
   await expect(page.locator(".sidebar")).toBeVisible();
 });

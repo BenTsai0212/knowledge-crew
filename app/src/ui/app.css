@@ -36,10 +36,10 @@ h3 {
   font-size: 0.95rem;
 }
 
-/* 左側欄、中間、右側面板（#195）：整個視窗高度，各欄自己捲動，整頁不捲動。左側欄 220px（#330，畫板 K-Home） */
+/* 左側欄、中間、右側面板（#195）：整個視窗高度，各欄自己捲動，整頁不捲動。左側欄 232px（#182，crew 設計規格 v4 第 4 節） */
 .app {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 232px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   height: 100dvh;
 }
@@ -112,6 +112,37 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+/* 項目的圖示 18px（#182） */
+.sidebar .primary-tabs .nav-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* 分隔線（#182）：有 AI 員工時在待審與 AI 員工之間（layout.ts 的 navGroups()） */
+.nav-sep {
+  flex: none;
+  height: 1px;
+  margin: 8px;
+  background: var(--color-border);
+}
+
+.nav-rail .nav-sep {
+  align-self: stretch;
+  margin: 4px 8px;
+}
+
+/* 「虛構資料」標示的圖示（#182） */
+.demo-flag__icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* 待審的筆數：項目右側的 primary 圓形徽章（22px） */
 .sidebar .crew-tab-count,
 .sidebar .tab-count {
@@ -141,8 +172,12 @@ h3 {
 }
 
 .sidebar__labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 8px;
   margin: 0;
-  padding: 12px;
+  padding: 8px 12px;
   border: 1px dashed var(--color-textMuted);
   border-radius: 12px;
   color: var(--color-textMuted);
@@ -1523,8 +1558,8 @@ main.qa > .source .source-text mark.entering {
   font-weight: 700;
 }
 
-/* 手機寬度（#195）：三欄改成上下堆疊、整頁捲動；順序是左導覽、對話、輸入區、右側面板。601px 起是平板的導覽列（#255），所以斷點對齊 600px */
-@media (max-width: 600px) {
+/* 手機寬度（#195）：三欄改成上下堆疊、整頁捲動；順序是左導覽、對話、輸入區、右側面板。720px 起是平板的圖示側欄（#255、#182），所以斷點對齊 719px */
+@media (max-width: 719px) {
   .app,
   main.qa,
   main.qa.with-panel {
@@ -1562,7 +1597,7 @@ main.qa > .source .source-text mark.entering {
   }
 }
 
-/* 手機的共同結構（#255，docs/design.md「手機與平板」）：≤ 600px 時 App 依 layout.ts 加上 app--phone，
+/* 手機的共同結構（#255，docs/design.md「手機與平板」）：< 720px 時 App 依 layout.ts 加上 app--phone，
    以頂端列＋底部分頁列取代左側導覽。整頁捲動，底部留分頁列（72px）與 safe area 的空間 */
 .app.app--phone {
   display: block;
@@ -1580,17 +1615,34 @@ main.qa > .source .source-text mark.entering {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 0 1rem 0.5rem;
+  padding: 0 1rem;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
+/* 一行（#182）：字標、「虛構資料」、（空白）、身分的頭像 */
 .mobile-topbar__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  height: 60px;
+  gap: 0.5rem;
+  min-height: 56px;
+}
+
+.mobile-topbar__flag {
+  flex: none;
+  margin-inline-end: auto;
+}
+
+/* 身分的頭像：44px 的圓（觸控目標），裡面是身分名稱的第一個字 */
+.identity-badge.mobile-topbar__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  max-width: none;
+  padding: 0;
+  font-weight: 700;
 }
 
 .mobile-brand {
@@ -1621,13 +1673,6 @@ main.qa > .source .source-text mark.entering {
   background: var(--color-text);
   color: var(--color-background);
   padding: 0 1rem;
-}
-
-.mobile-topbar__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0;
 }
 
 /* 底部分頁列（72px）：圖示＋名稱，選中用 primary；觸控目標至少 44px */
@@ -1661,9 +1706,20 @@ main.qa > .source .source-text mark.entering {
   line-height: 1.2;
 }
 
+/* 目前的頁面：墨色字、上緣 2px 的墨色線（#182，crew 設計規格 v5 的 tabbar） */
 .mobile-tabbar button[aria-current="page"] {
-  color: var(--color-primary);
+  color: var(--color-text);
   font-weight: 700;
+}
+
+.mobile-tabbar button[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: var(--color-text);
 }
 
 .mobile-tabbar__label {
@@ -2036,7 +2092,7 @@ main.qa > .source .source-text mark.entering {
   }
 }
 
-/* 平板（#255）：601–1024px 時 App 依 layout.ts 加上 app--tablet，左側 72px 的圖示導覽列＋主內容（原文與實體是滑出面板，不常駐右欄） */
+/* 平板（#255）：720–980px 時 App 依 layout.ts 加上 app--tablet，左側 72px 的圖示導覽列＋主內容（原文與實體是滑出面板，不常駐右欄） */
 .app.app--tablet {
   grid-template-columns: 72px minmax(0, 1fr);
 }
@@ -2077,19 +2133,41 @@ main.qa > .source .source-text mark.entering {
   color: var(--color-textMuted);
 }
 
+/* 目前的頁面：墨色底（#182，與桌機的側欄相同） */
 .nav-rail > button[aria-current="page"] {
-  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
-  color: var(--color-primary);
+  background: var(--color-text);
+  color: var(--color-surface);
   font-weight: 700;
 }
 
+/* 名稱只給輔助技術（#182）：寫法與 .visually-hidden 相同 */
 .nav-rail__label {
-  max-width: 100%;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* 「虛構資料」標示（#182）：圖示＋12px 文字，可換行；在頭像上方 */
+.nav-rail__flag {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  align-self: stretch;
+  margin: auto 0 0.25rem;
+  padding: 6px 2px;
+  border: 1px dashed var(--color-textMuted);
+  border-radius: var(--radius-medium);
+  color: var(--color-textMuted);
   font-size: 11px;
-  line-height: 1.2;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .nav-rail .crew-tab-count,
@@ -2107,7 +2185,6 @@ main.qa > .source .source-text mark.entering {
   flex: none;
   min-width: 44px;
   max-width: none;
-  margin-top: auto;
   padding: 0;
 }
 
@@ -3210,7 +3287,7 @@ button.chip.graph-chip[aria-pressed="true"] {
   color: var(--color-markText);
 }
 
-/* 窄的寬度（#199）：圖譜頁改為單欄（搜尋 → 圖 → 面板），圖的高度較低。手機（≤ 600px）改用下方的 graph-page--phone */
+/* 窄的寬度（#199）：圖譜頁改為單欄（搜尋 → 圖 → 面板），圖的高度較低。手機（< 720px）改用下方的 graph-page--phone */
 @media (max-width: 640px) {
   .graph-page {
     grid-template-columns: minmax(0, 1fr);
@@ -3699,7 +3776,7 @@ button.chip.graph-chip[aria-pressed="true"] {
   }
 }
 
-/* 手機（≤ 600px，#282，docs/design.md「時間軸、上傳、待審、評測台與更多（手機）」）：日期欄 46px、年與月日分兩行，卡片佔滿其餘寬度；
+/* 手機（< 720px，#282，docs/design.md「時間軸、上傳、待審、評測台與更多（手機）」）：日期欄 46px、年與月日分兩行，卡片佔滿其餘寬度；
    篩選晶片一行、橫向滑動，晶片不換行，觸控目標至少 44px */
 .app--phone .timeline-entry {
   grid-template-columns: 46px 1rem minmax(0, 1fr);
@@ -6143,7 +6220,7 @@ main.page:has(> .eval-page--desktop) {
 }
 
 /* 桌機的登入面板（#334）：面板本身就是欄，表單不再是浮動的卡片；標題 28px、輸入框與「登入」52px、「使用邀請碼體驗」48px，都是滿寬 */
-@media (min-width: 1025px) {
+@media (min-width: 981px) {
   .entry__panel {
     gap: 16px;
     padding: 40px clamp(16px, 3vw, 48px);
@@ -6228,9 +6305,9 @@ main.page:has(> .eval-page--desktop) {
   }
 }
 
-/* 手機與平板（≤ 1024px，layout.ts 的 TABLET_MAX；docs/design.md「入口（手機）」、平板的登入頁沿用手機版）：
+/* 手機與平板（≤ 980px，layout.ts 的 TABLET_MAX；docs/design.md「入口（手機）」、平板的登入頁沿用手機版）：
    主視覺縮成上方 330px，帳號、密碼、登入與模型下載進度在下方；輸入框與按鈕高 52px，文字連結的觸控範圍補到 44px */
-@media (max-width: 1024px) {
+@media (max-width: 980px) {
   .app > main.entry {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 330px auto;
@@ -7630,7 +7707,7 @@ main.page:has(> .eval-page--desktop) {
   }
 }
 
-/* 桌機的問答頁（#335，畫板 QA）：≥ 1025px 且不是展示模式時 App 加上 app--desktop。中間是頁首、對話（最寬 760px）與單行輸入列，
+/* 桌機的問答頁（#335，畫板 QA）：≥ 981px 且不是展示模式時 App 加上 app--desktop。中間是頁首、對話（最寬 760px）與單行輸入列，
    右側是貼齊右緣的整高原文欄（360～440px）。手機、平板與展示模式沒有 app--desktop，不受影響。
    問題泡泡、回答卡片與其中的狀態（:is(.app--desktop, .app--phone)）手機也沿用（#354，畫板 G-Mobile-QA），手機的尺寸在下方「手機的問答」另外調整 */
 .app--desktop main.qa.with-panel {
@@ -9452,9 +9529,9 @@ main.page:has(> .upload-page) {
   font-size: 26px;
 }
 
-/* 手機寬度（≤ 600px，layout.ts 的 PHONE_MAX）：展示模式登入後仍是同一個頂端列（不換成手機的導覽，畫面上只有一個「問答｜圖譜」切換）。
+/* 手機寬度（≤ 719px，layout.ts 的 PHONE_MAX）：展示模式登入後仍是同一個頂端列（不換成手機的導覽，畫面上只有一個「問答｜圖譜」切換）。
    頂端列的每一項各佔一行、分段切換佔滿寬度、身分可換行；劇本改成在對話上方堆疊，整頁沒有橫向捲動 */
-@media (max-width: 600px) {
+@media (max-width: 719px) {
   :root[data-mode="presentation"] .presentation-bar {
     gap: 0.75rem;
     padding: 0.75rem 1rem;

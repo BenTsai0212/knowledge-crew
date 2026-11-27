@@ -100,16 +100,15 @@ test.describe("桌機 1280", () => {
 test.describe("手機 390", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("主管：整列可以點、不破版；「更多」裡的 AI 員工有待驗收件數", async ({ page }) => {
+  test("主管：整列可以點、不破版；分頁列的 AI 員工有待驗收件數", async ({ page }) => {
     await openHomeAs(page, manager.id);
     await expect(homeToday(page)).toBeVisible();
     const awaiting = await reviewButtons(page).count();
     expect(awaiting).toBeGreaterThan(0);
     await expectWorkTypes(page, awaiting);
     expect(await noHorizontalScroll(page)).toBe(true);
-    await page.locator('.mobile-tabbar [data-view="more"]').click();
-    await expect(page.locator('dialog.more-sheet [data-view="crew"] .crew-tab-count [aria-hidden="true"]')).toHaveText(String(awaiting));
-    await page.keyboard.press("Escape");
+    // #182：AI 員工在底部分頁列的第 4 格，不在「更多」
+    await expect(page.locator('.mobile-tabbar [data-view="crew"] .crew-tab-count [aria-hidden="true"]')).toHaveText(String(awaiting));
 
     await reviewButtons(page).first().click();
     await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");

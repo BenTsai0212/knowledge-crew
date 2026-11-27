@@ -113,6 +113,8 @@ export async function gotoView(page: Page, view: string): Promise<boolean> {
     return false;
   }
   await item.click();
+  // 「更多」面板關閉的動畫結束前，背後的頁面仍是 inert（showModal），這時輸入的文字不會進到 React 的 state（#182 起手機的上傳收在「更多」）
+  await expect(page.locator("dialog.more-sheet")).toBeHidden();
   return true;
 }
 
