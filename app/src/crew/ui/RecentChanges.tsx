@@ -87,8 +87,10 @@ export function RecentChangesBell({ db, identity, language, side, onOpen }: Prop
     };
   }, [open, db, identity, language]);
 
-  let body: ReactNode;
-  if (state === "loading") body = <p className="muted crew-changes__note">{t.loading}</p>;
+  // 關閉時不渲染內容（關閉的 dialog 裡的「讀取中…」仍會被依文字找到）
+  let body: ReactNode = null;
+  if (!open) body = null;
+  else if (state === "loading") body = <p className="muted crew-changes__note">{t.loading}</p>;
   else if (state === "failed") body = <p className="error crew-changes__note" role="alert">{t.loadFailed}</p>;
   else if (state.length === 0) body = <p className="muted crew-changes__note">{t.empty}</p>;
   else

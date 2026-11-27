@@ -1,8 +1,10 @@
 /* 「最近的變化」的鈴鐺與面板（#182）：列的樣式照 crew 設計規格 v5 的 v4.css 的 .chg（圖示＋等寬日期＋一句話，列之間 1px 分隔線）。 */
 
-/* 鈴鐺：ghost 的圖示按鈕（v4.css 的 .btn--ghost.btn--icon，primary 字色） */
-.crew-bell {
+/* 鈴鐺：ghost 的圖示按鈕（v4.css 的 .btn--ghost.btn--icon，primary 字色）；導覽的觸控目標一律至少 44px（e2e/entry-touch.spec.ts） */
+.ui-btn.crew-bell {
   flex: none;
+  width: 44px;
+  min-height: 44px;
 }
 
 .crew-bell:focus-visible {
