@@ -25,7 +25,7 @@ test.describe("員工卡（主管，桌機 1280）", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
   test.beforeEach(async ({ page }) => openEmployeesAs(page, "manager"));
 
-  test("頁首與四張卡（兩欄）", async ({ page }) => {
+  test("頁首與四張卡（一欄：卡內有審查方式的時間軸，#191）", async ({ page }) => {
     const count = demo.employees.length;
     expect(count).toBe(4);
     // 子頁的主標題是頁首的 h1（#179）；人數改在標題下的一行文字
@@ -34,7 +34,7 @@ test.describe("員工卡（主管，桌機 1280）", () => {
     await expect(page.getByText(ct.employees.intro, { exact: true })).toBeVisible();
     for (const e of demo.employees) await expect(card(page, e.id)).toBeVisible();
     const [a, b] = await Promise.all([card(page, "juniper").boundingBox(), card(page, "linden").boundingBox()]);
-    expect(Math.round(a!.y)).toBe(Math.round(b!.y));
+    expect(Math.round(a!.x)).toBe(Math.round(b!.x));
   });
 
   test("Rowan：交件、來源、圓點的摘要與做錯了的說明", async ({ page }) => {

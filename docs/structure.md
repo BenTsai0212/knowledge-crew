@@ -269,7 +269,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
 - `ui/EmployeeGuidelines.tsx`：員工卡的「守則」區塊（#145，crew ADR 0007）：摘要、等確認的守則（確認、修改後確認、不採用）、生效的守則（收回前先問）、收起的已收回與不採用、「看那次退回」；決定的按鈕只給能驗收的身分
 - `ui/employees.ts`：「員工」的資料整理（`readEmployees()`：看得到的員工與每類工作的層級、驗收次數、待驗收件數、平常的工作來源、最近的圓點與一句說明；#145 加上每位員工的守則：等確認、生效、已收回與不採用，含來歷的日期與之後依照的次數（`groupGuidelines()`）；測試在 `employees.test.ts`）
-- `ui/EmployeesView.css`：「員工」畫面的員工卡（桌機兩欄、窄螢幕一欄；職務圖示的方框）
+- `ui/EmployeesView.css`：「員工」畫面的員工卡（#191 起一欄，卡內有審查方式的時間軸；職務圖示的方框）
 - `ui/EmployeesView.tsx`：「員工」畫面（設計規格 v3 第 6.5 節）：呈現 `employees.ts` 的員工卡（職務圖示、交件與來源、圓點、說明）；「看信任紀錄」切到信任頁，「交辦給 ○○」只給能驗收的身分，切到交辦頁並預選員工；守則的決定以 `decideGuideline()` 寫入後重新讀取，失敗時註明狀態已改變（#145）；從首頁點進來時捲到該員工卡
 - `ui/entry.ts`：knowledge-kit 畫面的接入點：`withCrew()`（頁籤顯示的條件）、`crewSeed()`、`crewTabLabel()`；只展示 AI 員工的 build（crew ADR 0005）：`crewOnlyMode`、`crewDefaultView()`、`crewStartIdentity()`、`CREW_ONLY_ACCESS_CODE`、`crewDirectEntryLabel()`
 - `ui/guideline-text.ts`：守則的文字換成目前語言（`proposedText()`、`revisionText()`、`guidelineTexts()`：提出的文字與確認時修改的文字；員工卡與工作帳本共用，#145）
