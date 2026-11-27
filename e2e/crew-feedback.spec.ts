@@ -10,7 +10,9 @@ test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）"
 
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const workList = (page: Page) => page.getByRole("navigation", { name: ct.review.listLabel });
-const zone = (panel: Locator, title: string) => panel.getByRole("region", { name: title, exact: true });
+// 分區以 h4 標題區分（#186 起分區與檢查卡的名稱同為「系統檢查」）
+const zone = (panel: Locator, title: string) =>
+  panel.getByRole("region", { name: title, exact: true }).filter({ has: panel.page().getByRole("heading", { level: 4, name: title, exact: true }) });
 const pointGroups = (panel: Locator) => panel.locator(".crew-review__points").getByRole("group");
 const guidelineGroups = (panel: Locator) => panel.locator(".crew-review__followed-list").getByRole("group");
 const tag = (scope: Locator, text: string) => scope.locator(".crew-review__feedback-tag").filter({ hasText: text });
