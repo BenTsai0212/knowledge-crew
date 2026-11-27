@@ -63,10 +63,8 @@ export function CrewPage({ request = null, ...props }: Props) {
   return (
     <section className="crew-page">
       <header className="crew-page__header">
+        {/* 「虛構資料」只放在外框（側欄、手機頂端列，#182） */}
         <h1 className="crew-page__title">{t.title}</h1>
-        <span className="badge" title={t.fictionalDataNote}>
-          {t.fictionalData}
-        </span>
       </header>
       <nav ref={navRef} className="crew-page__sections" aria-label={t.sectionsLabel}>
         {CREW_SECTIONS.map((s) => {

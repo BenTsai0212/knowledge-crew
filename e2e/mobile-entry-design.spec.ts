@@ -149,8 +149,9 @@ test("登入後照舊：帳號登入固定身分、以邀請碼體驗可以切�
   if (await code.isVisible()) await code.fill(ACCESS_CODE);
   await form.getByRole("button", { name: s.signInSubmit, exact: true }).click();
   await expect(page.locator(".mobile-tabbar")).toBeVisible();
-  await expect(identityBadge(page)).toHaveText(role.label[language]);
-  await expect(page.locator(".mobile-topbar").getByText(s.demoPermissions)).toBeVisible();
+  // #182：頭像的名稱在 aria-label；「展示用權限」只在桌機側欄
+  await expect(identityBadge(page)).toHaveAccessibleName(s.identityBadge.replace("{role}", role.label[language]));
+  await expect(page.locator(".mobile-topbar").getByText(s.demoPermissions)).toHaveCount(0);
 
   await page.reload();
   await page.getByRole("button", { name: s.signInWithCode }).click();

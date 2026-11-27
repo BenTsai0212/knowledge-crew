@@ -111,7 +111,7 @@ describe("入口頁主視覺的畫法", () => {
   });
 
   it("入口在 1024px 以下主視覺在上、高 330px；輸入框與按鈕高 52px、文字連結 44px", () => {
-    const narrow = cssText.split("@media (max-width: 1024px)").slice(1).find((part) => part.includes(".entry__panel"));
+    const narrow = cssText.split("@media (max-width: 980px)").slice(1).find((part) => part.includes(".entry__panel"));
     expect(narrow).toMatch(/\.app > main\.entry \{[^}]*grid-template-rows: 330px auto/);
     expect(narrow).toMatch(/\.entry__panel :is\(input:not\(\[type="checkbox"\], \[type="radio"\]\), select, button:not\(\.link\)\) \{\s*min-height: 52px;/);
     expect(narrow).toMatch(/\.entry__panel button\.link \{\s*min-height: 44px;/);

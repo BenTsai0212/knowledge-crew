@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { layoutFor, NAV_ICONS, phoneTabs, SHEET_HALF, sheetDragCloses, sheetSnap, visibleArea } from "./layout";
+import { layoutFor, NAV_ICONS, navGroups, phoneTabs, SHEET_HALF, sheetDragCloses, sheetSnap, visibleArea } from "./layout";
 import { visibleViews } from "./online-demo";
 
 const off = { enabled: false };
 
 describe("layoutFor（docs/design.md「斷點」）", () => {
-  it("≤ 600 手機、601–1024 平板、≥ 1025 桌機", () => {
-    expect([320, 390, 600, 601, 820, 1024, 1025, 1280].map(layoutFor)).toEqual(["phone", "phone", "phone", "tablet", "tablet", "tablet", "desktop", "desktop"]);
+  it("< 720 手機、720–980 平板（圖示側欄）、≥ 981 桌機（#182）", () => {
+    expect([320, 390, 719, 720, 820, 980, 981, 1280].map(layoutFor)).toEqual(["phone", "phone", "phone", "tablet", "tablet", "tablet", "desktop", "desktop"]);
   });
 });
 
@@ -27,8 +27,39 @@ describe("phoneTabs（docs/design.md「日常工具 › 手機」）", () => {
     expect(phoneTabs(visibleViews(true, { enabled: true }, false, true)).more).toEqual(["timeline", "review"]);
   });
 
+  it("有 AI 員工（#182）：一般員工是首頁、問答、圖譜、AI 員工＋更多（時間軸、上傳）", () => {
+    expect(phoneTabs([...visibleViews(false, off, false, false), "crew"])).toEqual({ tabs: ["home", "qa", "graph", "crew"], more: ["timeline", "upload"] });
+  });
+
+  it("有 AI 員工的主管：「更多」是時間軸、上傳、待審、評測台", () => {
+    expect(phoneTabs([...visibleViews(true, off, false, true), "crew"])).toEqual({ tabs: ["home", "qa", "graph", "crew"], more: ["timeline", "upload", "review", "evals"] });
+  });
+
+  it("5 個以內（crew-only）全放，順序不變", () => {
+    expect(phoneTabs(["home", "graph", "timeline", "crew"])).toEqual({ tabs: ["home", "graph", "timeline", "crew"], more: [] });
+  });
+
   it("每個頁籤與「更多」都有圖示", () => {
     for (const view of [...visibleViews(true, off, false, true), "more" as const]) expect(NAV_ICONS[view]).toMatch(/^M/);
+  });
+});
+
+describe("navGroups（側欄的分組，#182）", () => {
+  it("沒有 AI 員工：一組，順序不變", () => {
+    const views = visibleViews(true, off, false, true);
+    expect(navGroups(views)).toEqual([views]);
+  });
+
+  it("有 AI 員工：知識庫的頁籤｜AI 員工、評測台", () => {
+    expect(navGroups([...visibleViews(true, off, false, true), "crew"])).toEqual([
+      ["home", "qa", "graph", "timeline", "upload", "review"],
+      ["crew", "evals"],
+    ]);
+  });
+
+  it("沒有評測台時第二組只有 AI 員工；crew-only 也一樣", () => {
+    expect(navGroups([...visibleViews(false, off, false, false), "crew"])[1]).toEqual(["crew"]);
+    expect(navGroups(["home", "graph", "timeline", "crew"])).toEqual([["home", "graph", "timeline"], ["crew"]]);
   });
 });
 

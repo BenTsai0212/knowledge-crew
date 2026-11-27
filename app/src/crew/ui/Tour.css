@@ -148,7 +148,7 @@
 }
 
 /* 手機與平板：左右各留 16px；下方讓出底部分頁列，上方讓出頂端列 */
-@media (max-width: 1024px) {
+@media (max-width: 980px) {
   .crew-tour {
     left: 16px;
     right: 16px;
@@ -156,7 +156,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 719px) {
   .crew-tour[data-place="bottom"] {
     bottom: calc(84px + env(safe-area-inset-bottom));
   }

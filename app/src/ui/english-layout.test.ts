@@ -129,8 +129,7 @@ describe("頁面外層與清單的欄寬", () => {
     ".mobile-brand__client": [".app"],
     ".identity-badge": [".app"],
     ".mobile-tabbar__label": [".app"],
-    // 平板的導覽列（#255）：flex 容器，在 .app 的第一欄
-    ".nav-rail__label": [".app"],
+    // 平板的圖示側欄（#255）：名稱只給輔助技術（#182），不再是截斷的文字，所以不在這張表
     ".presets": [".app", "main.qa", ".home", ...page],
     ".scenario": [".app", "main.qa", ".home", ...page],
     ".review-tabs": [".review-page", ".upload", ...page],
