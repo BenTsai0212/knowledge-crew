@@ -71,7 +71,7 @@ describe("conclusionOf：未通過", () => {
     const c = conclusionOf([check("quote-match", "fail"), check("banned-words", "pass")], ctx())!;
     expect(c.tone).toBe("fail");
     expect(c.title).toBe("先別寄出：報價核對沒有通過");
-    expect(c.description).toBe(`${checkSentence("quote-match", "fail", "zh-TW")}。{employee} 標了 2 個重點，已在回信草稿裡用編號標出。`);
+    expect(c.description).toBe(`${checkSentence("quote-match", "fail", "zh-TW")}。{employee} 標了 2 處，已在回信草稿裡用編號標出。`);
   });
 
   it("多個未通過：名稱以「、」連接，說明用第一個；同時有檢查中仍是未通過", () => {
@@ -85,7 +85,7 @@ describe("conclusionOf：未通過", () => {
     const c = conclusionOf([check("required-fields", "fail"), check("format", "pass")], ctx({ deliverable: "kb", body: parseWorkBody(KB, 2), pointCount: 2 }))!;
     expect(c.title).toBe("先別加進知識庫：必填欄位沒有通過");
     // 第 2 個重點沒有位置：改說列在重點卡
-    expect(c.description).toBe("「生效日期」是空的。{employee} 標了 2 個重點，列在「要看的重點」。");
+    expect(c.description).toBe("「生效日期」是空的。{employee} 標了 2 處，列在「請你確認」。");
   });
 
   it("必填欄位未通過、但內容看不出空白的欄位：用檢查的一句", () => {
@@ -99,19 +99,19 @@ describe("conclusionOf：未通過", () => {
 
   it("舊格式或解析有錯：重點列在重點卡", () => {
     for (const body of [parseWorkBody("plain", 2), parseWorkBody("@@ reply/p2\n〔1〕a", 2)]) {
-      expect(conclusionOf([check("tone", "fail")], ctx({ body }))!.description).toContain("列在「要看的重點」");
+      expect(conclusionOf([check("tone", "fail")], ctx({ body }))!.description).toContain("列在「請你確認」");
     }
   });
 
   it("沒有重點", () => {
     const c = conclusionOf([check("tone", "fail")], ctx({ body: parseWorkBody("@@ reply/p2\na", 0), pointCount: 0 }))!;
-    expect(c.description).toBe(`${checkSentence("tone", "fail", "zh-TW")}。{employee} 沒有標出要看的重點。`);
+    expect(c.description).toBe(`${checkSentence("tone", "fail", "zh-TW")}。{employee} 沒有標記要你確認的地方。`);
   });
 
   it("不認得的檢查：名稱是代碼，說明只有重點的一句", () => {
     const c = conclusionOf([check("spellcheck", "fail")], ctx())!;
     expect(c.title).toBe("先別寄出：spellcheck沒有通過");
-    expect(c.description).toBe("{employee} 標了 2 個重點，已在回信草稿裡用編號標出。");
+    expect(c.description).toBe("{employee} 標了 2 處，已在回信草稿裡用編號標出。");
   });
 
   it("不能驗收的身分：不用「先別…」", () => {
@@ -152,8 +152,8 @@ describe("conclusionOf：檢查中與不顯示", () => {
   it("en：單複數與動詞", () => {
     const c = conclusionOf([check("quote-match", "fail")], ctx({ language: "en" }))!;
     expect(c.title).toBe(fill(crewStrings("review", "en").conclusionFail, { verb: "send", checks: checkLabel("quote-match", "en") }));
-    expect(c.description).toContain("marked 2 points");
-    expect(conclusionOf([check("tone", "fail")], ctx({ language: "en", body: parseWorkBody("@@ reply/p2\n〔1〕a〔/1〕", 1), pointCount: 1 }))!.description).toContain("marked 1 point,");
+    expect(c.description).toContain("marked 2 spots");
+    expect(conclusionOf([check("tone", "fail")], ctx({ language: "en", body: parseWorkBody("@@ reply/p2\n〔1〕a〔/1〕", 1), pointCount: 1 }))!.description).toContain("marked 1 spot,");
   });
 });
 

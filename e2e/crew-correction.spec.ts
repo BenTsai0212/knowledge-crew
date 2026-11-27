@@ -73,7 +73,7 @@ for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
     const linden = () => trustRow(page, "linden", "knowledge");
     await gotoCrewSection(page, ct.common.sectionTrust);
-    await expect(linden().getByText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelLight }), { exact: true })).toBeVisible();
+    await expect(linden().locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelLight }));
     await expect(linden().locator(".crew-trust__dot[data-corrected]")).toHaveCount(0);
 
     const panel = await openWork(page, "k12");
@@ -98,7 +98,7 @@ for (const width of [1280, 390]) {
     await expect(panel.getByText(withDate(ct.review.correctionDone))).toBeVisible();
     await expect(panel.getByText(crewFill(ct.review.correctionNoteShown, { note: "Cutoff is 15:00, not 17:00" }), { exact: true })).toBeVisible();
     await expect(open).toHaveCount(0);
-    await expect(panel.getByText(crewFill(ct.review.levelBadge, { level: ct.review.levelItem }), { exact: true })).toBeVisible();
+    await expect(panel.locator(".crew-level-badge")).toHaveText(crewFill(ct.review.levelBadge, { level: ct.review.levelItem }));
     await expect(panel.getByRole("heading", { name: ct.review.lightTitle, exact: true })).toHaveCount(0);
     expect(await noHorizontalScroll(page)).toBe(true);
     await shot(page, testInfo, "done");
@@ -120,7 +120,7 @@ for (const width of [1280, 390]) {
 
     // 信任頁：改回逐項看，k12 那一格中空，名稱是「通過，MM/DD 事後更正為做錯了」，有圖例
     await gotoCrewSection(page, ct.common.sectionTrust);
-    await expect(linden().getByText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelItem }), { exact: true })).toBeVisible();
+    await expect(linden().locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelItem }));
     await expect(linden().locator(".crew-trust__dot[data-corrected]")).toHaveCount(1);
     const prefix = ct.trust.dotCorrected.split("{date}")[0];
     await expect(linden().locator(".crew-trust__cell").filter({ has: page.locator(".crew-trust__dot[data-corrected]") })).toHaveAttribute("aria-label", new RegExp(`^${escape(prefix)}`));

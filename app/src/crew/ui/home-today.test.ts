@@ -43,9 +43,9 @@ describe("homeToday：匯入虛構資料後", () => {
     expect(awaitingCount(t)).toBe(7);
     // #145：Rowan 整理的一條守則等確認
     expect(h.guidelines.map((g) => [g.id, g.employee.id, g.workTypeId])).toEqual([["g02", "rowan", "support"]]);
-    expect(homeSummary(h, "zh-TW")).toBe("7 件工作等你驗收，其中 2 件有檢查沒通過；1 個「看重點」建議等你決定；1 條守則等你確認。");
+    expect(homeSummary(h, "zh-TW")).toBe("7 件工作等你驗收，其中 2 件有檢查沒通過；1 個「只看標記處」建議等你決定；1 條守則等你決定。");
     expect(homeSummary(h, "en")).toBe(
-      "7 work items await your review, 2 with failed checks; 1 key-points suggestion awaits your decision; 1 guideline awaits your confirmation.",
+      "7 work items await your review, 2 with failed checks; 1 Check marked spots suggestion awaits your decision; 1 guideline awaits your decision.",
     );
   });
 
@@ -80,7 +80,7 @@ describe("rowStatus、rowTarget", () => {
     const a = item({ checks: [{ name: "links", status: "pending" }, { name: "length", status: "pass" }] });
     expect(rowStatus(a, true, "zh-TW").split("・")).toHaveLength(2);
     expect(rowStatus(a, true, "zh-TW")).toMatch(/檢查中・.+通過$/);
-    expect(rowStatus(item({}), true, "zh-TW")).toBe("沒有自動檢查");
+    expect(rowStatus(item({}), true, "zh-TW")).toBe("沒有系統檢查");
   });
 
   it("進行中：還沒交件或退回後等下一輪", () => {
@@ -101,8 +101,8 @@ describe("rowStatus、rowTarget", () => {
 
   it("總結：守則一句（#145）；不能驗收的身分沒有", () => {
     const g = { id: "g", employee: item({}).employee, workTypeId: "dev" };
-    expect(homeSummary(homeToday(today({ guidelines: [g, { ...g, id: "g2" }] })), "zh-TW")).toBe("2 條守則等你確認。");
-    expect(homeSummary(homeToday(today({ guidelines: [g] })), "en")).toBe("1 guideline awaits your confirmation.");
+    expect(homeSummary(homeToday(today({ guidelines: [g, { ...g, id: "g2" }] })), "zh-TW")).toBe("2 條守則等你決定。");
+    expect(homeSummary(homeToday(today({ guidelines: [g] })), "en")).toBe("1 guideline awaits your decision.");
     const others = homeToday(today({ canReview: false, guidelines: [g] }));
     expect(others.guidelines).toEqual([]);
     expect(isHomeTodayEmpty(others)).toBe(true);
@@ -159,7 +159,7 @@ describe("HomeTodayCard：等確認的守則（#145）", () => {
     const html = renderToStaticMarkup(
       createElement(HomeTodayCard, { state: { identity: "manager", data, awaiting: 6 }, identity: "manager", language: "zh-TW", phone: false, onOpen: () => {} }),
     );
-    expect(html).toContain(`Rowan</span> 整理了一條「${workTypeLabel("support", "zh-TW")}」守則，等你確認`);
+    expect(html).toContain(`Rowan</span> 整理了一條「${workTypeLabel("support", "zh-TW")}」守則，等你決定是否採用`);
     expect(html).toContain(t.guidelineNote);
     expect(html).toContain(`aria-label="${t.actionGuideline}：Rowan"`);
   });

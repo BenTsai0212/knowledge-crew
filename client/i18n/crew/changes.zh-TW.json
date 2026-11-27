@@ -7,9 +7,9 @@
   "returned": "退回 {employee} 的{title}（{reason}）",
   "spotAccepted": "抽查 {employee} 的{title}：驗收通過",
   "spotReturned": "抽查 {employee} 的{title}：退回（{reason}）",
-  "relax": "{employee}・{workType}：同意改看重點",
-  "revoke": "{employee}・{workType}：收回，改回逐項看",
-  "autoReset": "{employee}・{workType}：因做錯了改回逐項看",
-  "autoResetCorrection": "{employee}・{workType}：因事後更正改回逐項看",
-  "guideline": "{employee} 提出守則，等你確認"
+  "relax": "{employee}・{workType}：改為只看標記處",
+  "revoke": "{employee}・{workType}：改回全部看",
+  "autoReset": "{employee}・{workType}：因做錯了改回全部看",
+  "autoResetCorrection": "{employee}・{workType}：因補記錯誤改回全部看",
+  "guideline": "{employee} 提出守則，等你決定是否採用"
 }

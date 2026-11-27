@@ -7,9 +7,9 @@
   "returned": "Returned {employee}’s “{title}” ({reason})",
   "spotAccepted": "Spot check of {employee}’s “{title}”: accepted",
   "spotReturned": "Spot check of {employee}’s “{title}”: returned ({reason})",
-  "relax": "{employee} · {workType}: key-points review agreed",
-  "revoke": "{employee} · {workType}: back to reviewing every item",
-  "autoReset": "{employee} · {workType}: back to item-by-item review after a mistake",
-  "autoResetCorrection": "{employee} · {workType}: back to every item after a correction",
-  "guideline": "{employee} proposed a guideline for you to confirm"
+  "relax": "{employee} · {workType}: switched to Check marked spots",
+  "revoke": "{employee} · {workType}: back to Check everything",
+  "autoReset": "{employee} · {workType}: back to Check everything after a mistake",
+  "autoResetCorrection": "{employee} · {workType}: back to Check everything after a missed error was recorded",
+  "guideline": "{employee} proposed a guideline for you to adopt or decline"
 }

@@ -172,7 +172,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
         <div className="crew-review__pair">
           <section className="card crew-review__section" aria-labelledby="crew-review-points-title">
             <h5 id="crew-review-points-title">{t.points}</h5>
-            <p className="muted crew-review__by">{withEmployee(t.pointsBy, {}, item.employee.displayName, language)}</p>
+            <p className="muted crew-review__by">{withEmployee(t.pointsBy, { count: focus.points.length }, item.employee.displayName, language)}</p>
             {focus.noPoints ? (
               <p className="crew-review__notice" role="note">
                 {t.noPoints}

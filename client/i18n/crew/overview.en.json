@@ -7,7 +7,7 @@
   "projectsLabel": "Projects",
   "projectSources": "Sources: {sources}",
   "projectProgress": "{done} of {total} done",
-  "projectKnowledge": "{count, plural, one {# entry added to knowledge} other {# entries added to knowledge}}",
+  "projectKnowledge": "{count, plural, one {# entry added to the knowledge base} other {# entries added to the knowledge base}}",
   "projectGuidelines": "{count, plural, one {# guideline} other {# guidelines}}",
   "projectSelectHint": "Select a card to see only that project",
   "separator": ", ",

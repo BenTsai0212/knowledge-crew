@@ -61,7 +61,7 @@ for (const width of [1280, 390]) {
       await expect(card.getByRole("button", { name: ct.review.lightTrust, exact: true })).toBeVisible();
       await expect(panel.getByRole("region", { name: ct.review.lightTitle })).toHaveCount(0);
       await expect(panel.getByRole("button", { name: ct.review.fullOnce })).toHaveCount(0);
-      await expect(panel.getByText(crewFill(ct.review.levelBadge, { level: ct.review.levelLight }), { exact: true })).toBeVisible();
+      await expect(panel.locator(".crew-level-badge")).toHaveText(crewFill(ct.review.levelBadge, { level: ct.review.levelLight }));
       // 逐項看：沒有收起的欄位與收成一行的變更
       await expect(panel.locator(".crew-collapsed, .crew-review__changes-collapsed")).toHaveCount(0);
       expect(await noHorizontalScroll(page)).toBe(true);
@@ -91,7 +91,7 @@ for (const width of [1280, 390]) {
       await expect(back).toBeFocused();
       await expect(card.getByText(ct.review.fullOnceNote, { exact: true })).toBeVisible();
       await expect(panel.locator(".crew-collapsed, .crew-review__changes-collapsed")).toHaveCount(0);
-      await expect(panel.getByText(crewFill(ct.review.levelBadge, { level: ct.review.levelLight }), { exact: true })).toBeVisible();
+      await expect(panel.locator(".crew-level-badge")).toHaveText(crewFill(ct.review.levelBadge, { level: ct.review.levelLight }));
       expect(await noHorizontalScroll(page)).toBe(true);
       await shot(page, testInfo, "k13-after");
 

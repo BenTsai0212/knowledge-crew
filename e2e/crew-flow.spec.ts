@@ -25,9 +25,9 @@ const firstMarkedText = (body: string) =>
     .replace(/\u3014\/?\d+\u3015/g, "")
     .trim();
 
-// 層級徽章（#75：時間軸的層級帶也有「逐項看／看重點」，所以只看徽章）
+// 層級徽章（#75：時間軸的層級帶也有「逐項看／看重點」，所以只看徽章；#186 起徽章只寫「全部看」「只看標記處」，以 .crew-level-badge 指定）
 async function expectLevel(page: Page, employee: string, workType: string, expected: string): Promise<void> {
-  await expect(trustRow(page, employee, workType).getByText(crewFill(ct.trust.levelBadge, { level: expected }), { exact: true })).toBeVisible();
+  await expect(trustRow(page, employee, workType).locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: expected }));
 }
 
 test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看 → 工作帳本記下四筆", async ({ page }) => {
@@ -44,7 +44,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
     reason: ct.review.reasonWrong,
     beforeReturn: async (panel) => {
       const points = panel.getByRole("heading", { name: ct.review.points, exact: true });
-      const checks = panel.getByRole("heading", { name: ct.review.checks, exact: true });
+      const checks = panel.getByRole("heading", { level: 5, name: ct.review.checks, exact: true });
       const body = panel.getByRole("article", { name: ct.review.deliverableKb });
       await expect(points).toBeVisible();
       await expect(checks).toBeVisible();

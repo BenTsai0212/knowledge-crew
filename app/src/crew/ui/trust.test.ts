@@ -348,7 +348,7 @@ describe("「信任」「員工」的文字", () => {
       const t = crewStrings("trust", language);
       expect(new Set([t.dotOk, t.dotWrong, t.dotNeutral]).size).toBe(3);
     }
-    expect(crewStrings("trust", "zh-TW").dotNeutral).toContain("不影響信任");
+    expect(crewStrings("trust", "zh-TW").dotNeutral).toContain("審查方式不變");
   });
 
   it("兩個畫面的「逐項看／看重點」文字一致", () => {
