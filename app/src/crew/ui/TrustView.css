@@ -24,7 +24,7 @@
 
 .crew-trust__heading p,
 .crew-trust__rules,
-.crew-trust__row h2,
+.crew-trust__row h3,
 .crew-trust__row p {
   margin: 0;
 }
@@ -76,13 +76,13 @@
   gap: 0.5rem 0.75rem;
 }
 
-/* 子頁的主標題是頁首的 h1（#179）：每列與總覽報表的標題從 h3 改成 h2、經過從 h4 改成 h3，大小不變 */
-.crew-trust__top h2,
+/* 子頁的主標題是頁首的 h1（#179）：總覽報表的標題是 h2；每列在員工卡（h2）內（#191），標題是 h3、經過是 h4，大小不變 */
+.crew-trust__top h3,
 .crew-trust-report__heading h2 {
   font-size: 0.95rem;
 }
 
-.crew-trust__top h2 {
+.crew-trust__top h3 {
   flex: 1 1 auto;
 }
 

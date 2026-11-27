@@ -1,5 +1,5 @@
-// 「信任」時間軸（#75，設計規格 v3 第 6.4 節）：四位員工 demo 開始時的狀態、staff 看到的文字，與手機 390 不破版。
-// 最上方的總覽報表（#121）：欄位、點一列或退回的數字追到工作帳本並套用篩選、清除篩選，與三種身分、手機 390 的卡片。
+// 審查方式的時間軸（#75，設計規格 v3 第 6.4 節；#191 起在「員工」子頁的員工卡內）：四位員工 demo 開始時的狀態、staff 看到的文字，與手機 390 不破版。
+// 總覽報表（#121；#191 起是「紀錄」的「看統計」）：欄位、點一列或退回的數字追到紀錄並套用篩選、清除篩選，與三種身分、手機 390 的卡片。
 // 每個 test 重新開頁，資料庫在瀏覽器記憶體中從 migration 與虛構資料重建。只在有 crew/demo.json 的客戶執行。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
@@ -12,6 +12,7 @@ import {
   ct,
   employeeName,
   gotoCrewSection,
+  gotoRecordsStats,
   hasCrewDemo,
   openCrew,
   trustRow,
@@ -24,7 +25,15 @@ async function openTrustAs(page: Page, identity: string): Promise<void> {
   await openApp(page);
   await switchIdentity(page, identity);
   await openCrew(page);
-  await gotoCrewSection(page, ct.common.sectionTrust);
+  await gotoCrewSection(page, ct.common.sectionEmployees);
+}
+
+// 總覽報表在「紀錄」的「看統計」（#191）
+async function openReportAs(page: Page, identity: string): Promise<void> {
+  await openApp(page);
+  await switchIdentity(page, identity);
+  await openCrew(page);
+  await gotoRecordsStats(page);
 }
 
 // 圓點的清單（aria-label 是摘要，例如「通過 9、做錯了 1」）
@@ -41,8 +50,8 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
   test.beforeEach(async ({ page }) => openTrustAs(page, "manager"));
 
   test("頁首、圖例與規則說明", async ({ page }) => {
-    // 子頁的主標題是頁首的 h1（#179）；原本當標題的 h2 改成一般文字
-    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionTrust, exact: true })).toBeVisible();
+    // 子頁的主標題是頁首的 h1（#179）；#191 起審查方式在「員工」子頁，說明與圖例在上方
+    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionEmployees, exact: true })).toBeVisible();
     await expect(page.getByText(ct.trust.title, { exact: true })).toBeVisible();
     await expect(page.getByRole("list", { name: ct.trust.legendLabel })).toContainText(ct.trust.legendWrong);
     await expect(page.getByText(ct.trust.rules, { exact: true })).toBeVisible();
@@ -98,7 +107,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(steps.nth(3)).toHaveText(crewFill(ct.trust.historyReset, { date: "10/15", title: assignmentTitle("s12") }));
   });
 
-  test("Juniper：不用操作就有完整一輪：提出 → 同意 → 生效 → 收回；點生效的那件到「工作與驗收」（#125）", async ({ page }) => {
+  test("Juniper：不用操作就有完整一輪：提出 → 同意 → 生效 → 收回；點生效的那件到「工作」（#125）", async ({ page }) => {
     const row = trustRow(page, "juniper", "dev");
     await expect(dots(row).getByRole("listitem")).toHaveCount(10);
     await expect(row.locator(".crew-level-badge")).toHaveText(badge(ct.trust.levelItem));
@@ -123,7 +132,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(crewContent(page).locator('[aria-current="true"]')).toContainText(assignmentTitle("j05"));
   });
 
-  test("Sorrel：看重點的建議列出依據的 10 次驗收；「在工作帳本看這幾次」篩選成 Sorrel 的「貼文與商品介紹」（#125）", async ({ page }) => {
+  test("Sorrel：看重點的建議列出依據的 10 次驗收；「在工作帳本看這幾次」到「紀錄」並篩選成 Sorrel 的「貼文與商品介紹」（#125）", async ({ page }) => {
     const row = trustRow(page, "sorrel", "content");
     const summary = row.getByText(crewFill(ct.trust.basisSummary, { count: 10, from: "09/09", to: "10/27" }), { exact: true });
     await expect(summary).toBeVisible();
@@ -135,7 +144,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     await expect(historySteps(row)).toHaveCount(1);
     await expect(historySteps(row).first()).toHaveText(crewFill(ct.trust.historyProposed, { date: "10/21", count: 10, from: "09/04", to: "10/21" }));
     await row.getByRole("button", { name: ct.trust.basisOpenLedger, exact: true }).click();
-    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionLedger, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionRecords, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(activeFilter(page)).toContainText(employeeName("sorrel"));
     await expect(activeFilter(page)).toContainText(workTypeName("content"));
     await expect(ledgerRows(page).first()).toBeVisible();
@@ -198,7 +207,7 @@ test("手機 390：只有一格的「看重點」看得到短名，不是空框�
   await panel.getByRole("button", { name: ct.review.accept, exact: true }).click();
   await expect(panel.getByRole("button", { name: ct.review.accept, exact: true })).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
-  await gotoCrewSection(page, ct.common.sectionTrust);
+  await gotoCrewSection(page, ct.common.sectionEmployees);
   const narrow = trustRow(page, "sorrel", "content").locator('.crew-trust__band[data-level="light"][data-span="1"]');
   await expect(narrow.locator(".crew-trust__band-short")).toBeVisible();
   await expect(narrow.locator(".crew-trust__band-short")).toHaveText(ct.trust.levelLightShort);
@@ -213,15 +222,15 @@ const reportRow = (page: Page, employee: string, workType: string) =>
   report(page).locator(`tbody tr[data-employee="${employee}"][data-work-type="${workType}"]`);
 const ledgerRows = (page: Page) => page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row");
 const rowMeta = (employee: string, workType: string) => crewFill(ct.ledger.eventMeta, { employee: employeeName(employee), workType: workTypeName(workType) });
-// 工作帳本頂端的「目前的篩選」
+// 紀錄（原本的工作帳本）頂端的「目前的篩選」
 const activeFilter = (page: Page) => crewContent(page).locator(".crew-ledger__active");
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
 test.describe("總覽報表（主管，桌機 1280）", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
-  test.beforeEach(async ({ page }) => openTrustAs(page, "manager"));
+  test.beforeEach(async ({ page }) => openReportAs(page, "manager"));
 
-  test("在時間軸上方；欄位與 Rowan 的數字（三種退回原因分開）", async ({ page }) => {
+  test("在「紀錄」的「看統計」；欄位與 Rowan 的數字（三種退回原因分開）", async ({ page }) => {
     const headers = [
       ct.trust.reportColumnRow,
       ct.trust.reportColumnReviews,
@@ -255,9 +264,9 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
     for (const th of await report(page).locator("thead th").all()) expect(await lines(th)).toBeLessThanOrEqual(2);
     for (const name of await report(page).locator("tbody th").all()) expect(await lines(name)).toBeLessThanOrEqual(2);
     await expect(reportRows(page)).toHaveCount(4);
-    const reportBox = (await report(page).boundingBox())!;
-    const firstCard = (await trustRow(page, "rowan", "support").boundingBox())!;
-    expect(reportBox.y).toBeLessThan(firstCard.y);
+    // #191：報表在「紀錄」，時間軸不在同一頁（原本比較報表在時間軸上方）
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionRecords, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(trustRow(page, "rowan", "support")).toHaveCount(0);
     const rowan = reportRow(page, "rowan", "support");
     await expect(rowan.getByRole("cell")).toHaveText([
       // #134：s16 的退回（我想要不一樣的做法）加了一次驗收；#161 加了 s17～s20 四次通過
@@ -279,7 +288,7 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
 
   test("點一列 → 工作帳本篩選成該員工＋該工作類型；清除後回到全部", async ({ page }) => {
     await reportRow(page, "rowan", "support").getByRole("cell").first().click();
-    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionLedger, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionRecords, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(activeFilter(page)).toContainText(ct.ledger.activeFilter);
     await expect(activeFilter(page)).toContainText(employeeName("rowan"));
     await expect(activeFilter(page)).toContainText(workTypeName("support"));
@@ -308,7 +317,7 @@ test.describe("總覽報表（主管，桌機 1280）", () => {
 
 test("總覽報表：staff 只有自己專案的兩列", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await openTrustAs(page, "staff");
+  await openReportAs(page, "staff");
   await expect(reportRows(page)).toHaveCount(2);
   await expect(reportRow(page, "rowan", "support")).toBeVisible();
   await expect(reportRow(page, "sorrel", "content")).toBeVisible();
@@ -316,14 +325,14 @@ test("總覽報表：staff 只有自己專案的兩列", async ({ page }) => {
 
 test("總覽報表：guest 是空狀態，沒有報表", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await openTrustAs(page, "guest");
+  await openReportAs(page, "guest");
   await expect(page.getByText(ct.trust.empty, { exact: true })).toBeVisible();
   await expect(report(page)).toHaveCount(0);
 });
 
 test("總覽報表：手機 390 每列一張卡片，沒有水平捲動；點卡片追到工作帳本", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await openTrustAs(page, "manager");
+  await openReportAs(page, "manager");
   await expect(reportRows(page)).toHaveCount(4);
   expect(await noHorizontalScroll(page)).toBe(true);
   const table = (await report(page).boundingBox())!;

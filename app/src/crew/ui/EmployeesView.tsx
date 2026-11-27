@@ -2,6 +2,7 @@
 // 層級徽章；交件、工作來源、驗收次數與待驗收件數、最近的圓點；一句說明；「看信任紀錄」「交辦給 ○○」）。
 // 資料整理在 employees.ts，這裡只負責呈現；「交辦給 ○○」只給能驗收的身分（與交辦頁的表單一致）。
 // #145 加上「守則」區塊（EmployeeGuidelines.tsx）：決定只給能驗收的身分，decideGuideline() 後重新讀取；從首頁點進來時捲到該員工卡。
+// #191：原本「信任」子頁每類工作的列（審查方式的時間軸、建議與同意、收回、經過）放在對應員工卡內（TrustView.tsx），說明與圖例在上方。
 import { useEffect, useRef, useState } from "react";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
@@ -16,6 +17,7 @@ import { deliverableName, deliverableOf, type Deliverable } from "./review/concl
 import type { CrewScreenProps } from "./sections";
 import { canReviewOf } from "./today";
 import { isSameDay, shortDate } from "./trust";
+import { TrustIntro, TrustRowCard, useTrust } from "./TrustView";
 import "./EmployeesView.css";
 
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; employees: EmployeeSummary[] };
@@ -30,6 +32,8 @@ export function EmployeesView({ db, identity, language, navigate, employeeId, on
   const [failed, setFailed] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const scrollPending = useRef(employeeId !== undefined);
+  // 審查方式（#191）：寫入後員工卡的層級徽章與說明也重新讀取
+  const trust = useTrust({ db, identity, language }, () => (onChanged?.(), setVersion((v) => v + 1)));
 
   useEffect(() => {
     let current = true;
@@ -43,12 +47,12 @@ export function EmployeesView({ db, identity, language, navigate, employeeId, on
     };
   }, [db, identity, language, canReview, version]);
 
-  // 從首頁的「等你決定」點進來（#145）：讀取完成後把該員工卡捲進畫面
+  // 從首頁的「等你決定」點進來（#145、#191）：員工與審查方式都讀取完成後把該員工卡捲進畫面
   useEffect(() => {
-    if (state.kind !== "ready" || !scrollPending.current) return;
+    if (state.kind !== "ready" || trust.state.kind === "loading" || !scrollPending.current) return;
     scrollPending.current = false;
     document.getElementById(`crew-employee-${employeeId}`)?.closest("section")?.scrollIntoView?.({ block: "start" });
-  }, [state, employeeId]);
+  }, [state, trust.state, employeeId]);
 
   const decide = async (employee: string, input: NewGuidelineDecision) => {
     setSaving(true);
@@ -73,12 +77,19 @@ export function EmployeesView({ db, identity, language, navigate, employeeId, on
     );
   }
   const now = new Date();
+  const ready = trust.state.kind === "ready" ? trust.state : null;
   return (
     <div className="crew-employees">
       <header className="crew-employees__header">
         <p className="crew-employees__count">{fill(t.title, { count: state.employees.length }, language)}</p>
         <p className="muted">{t.intro}</p>
       </header>
+      {trust.state.kind === "failed" && (
+        <p className="error" role="alert">
+          {crewStrings("trust", language).loadFailed}
+        </p>
+      )}
+      {ready && ready.trust.rows.length > 0 && <TrustIntro language={language} />}
       <div className="crew-employees__grid">
         {state.employees.map((e) => {
           const main = e.workTypes[0] ?? null;
@@ -114,8 +125,23 @@ export function EmployeesView({ db, identity, language, navigate, employeeId, on
                 decide={(input) => void decide(e.id, input)}
                 openReturn={navigate && ((assignmentId) => navigate({ section: "works", assignmentId }))}
               />
+              {ready &&
+                ready.trust.rows
+                  .filter((row) => row.employee.id === e.id)
+                  .map((row) => (
+                    <TrustRowCard
+                      key={row.workTypeId}
+                      row={row}
+                      trust={ready.trust}
+                      events={ready.events}
+                      saving={trust.saving ?? (saving ? "" : null)}
+                      failed={trust.failed}
+                      write={trust.write}
+                      {...{ db, identity, language, navigate }}
+                    />
+                  ))}
               <div className="crew-employees__links">
-                <button type="button" className="link" onClick={() => navigate?.({ section: "trust" })}>
+                <button type="button" className="link" onClick={() => navigate?.({ section: "records", ledgerFilter: { employeeId: e.id } })}>
                   {t.linkTrust}
                 </button>
                 {canReview && main && (

@@ -8,7 +8,7 @@ import type { LanguageCode } from "../../client/types";
 import type { Database } from "../../db/database";
 import { crewStrings } from "../i18n";
 import { withEmployee } from "./components";
-import { DECIDE_TARGET, guidelineTarget, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget, type HomeToday } from "./home-today";
+import { decideTarget, guidelineTarget, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget, type HomeToday } from "./home-today";
 import { workTypeLabel } from "./labels";
 import { assignmentRef } from "./refs";
 import type { CrewTarget } from "./sections";
@@ -125,7 +125,7 @@ export function HomeTodayCard({ state, identity, language, phone, onOpen }: Card
                 primary={false}
                 separator={colon}
                 subject={d.employee.displayName}
-                onClick={() => onOpen(DECIDE_TARGET)}
+                onClick={() => onOpen(decideTarget(d))}
               >
                 <strong className="home__name crew-home__wrap">
                   {withEmployee(t.decideItem, { workType: workTypeLabel(d.workTypeId, language) }, d.employee.displayName, language)}

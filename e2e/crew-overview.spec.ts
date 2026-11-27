@@ -1,10 +1,10 @@
-// AI 員工頁的「總覽」（#134）：預設分頁、專案卡片與篩選（點卡片、篩選列、只看需注意、清除）、四欄看板、
+// AI 員工頁的「總覽」（#134；#191 起是「工作」的「看板」）：預設分頁與切換、專案卡片與篩選（點卡片、篩選列、只看需注意、清除）、四欄看板、
 // 點工作追到「工作與驗收」（待交件到「交辦」）、員工只看自己專案、訪客是空狀態。1280 與 390 都不橫向捲動；
 // 390 時看板改成依狀態切換的清單（分段按鈕）。只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import { access, language, readClientJson } from "./support/client";
-import { assignmentTitle, crewContent, crewSections, ct, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
+import { assignmentTitle, crewContent, crewSections, ct, gotoWorksBoard, hasCrewDemo, openCrew, reviewPanel, worksViewSwitch } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -42,17 +42,21 @@ async function openOverviewAs(page: Page, identity: string): Promise<void> {
   await openApp(page);
   await switchIdentity(page, identity);
   await openCrew(page);
+  await gotoWorksBoard(page);
 }
+
+// 從清單切回看板（#191：原本是點子導覽的「總覽」）
+const backToBoard = (page: Page) => worksViewSwitch(page).getByRole("button", { name: ct.common.viewBoard, exact: true }).click();
 
 for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
   test.describe(`${viewport.width}`, () => {
     test.use({ viewport });
 
-    test("主管：總覽是預設分頁，兩個專案的卡片；點卡片篩選、只看需注意、清除篩選", async ({ page }) => {
+    test("主管：工作是預設分頁，看板有兩個專案的卡片；點卡片篩選、只看需注意、清除篩選", async ({ page }) => {
       expect(demoToday).toBe("2026-11-20");
       await openOverviewAs(page, "manager");
-      await expect(crewSections(page).getByRole("button", { name: ct.common.sectionOverview, exact: true })).toHaveAttribute("aria-current", "page");
-      await expect(crewSections(page).getByRole("button").first()).toHaveText(ct.common.sectionOverview);
+      await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");
+      await expect(crewSections(page).getByRole("button").first()).toHaveText(new RegExp(`^${ct.common.sectionWorks}`));
       await expect(projects(page).getByRole("button")).toHaveCount(2);
       await expect(projectCard(page, "bluewing")).toHaveAttribute("aria-pressed", "false");
       // 卡片：進度與需注意的件數（逾期、3 天內到期、停滯）
@@ -105,7 +109,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       expect(await noHorizontalScroll(page)).toBe(true);
     });
 
-    test("主管：點工作追到「工作與驗收」並選中那一件；已完成的較早工作也能追到；待交件切到「交辦」", async ({ page }) => {
+    test("主管：點工作切回「清單」並選中那一件；已完成的較早工作也能追到；待交件切到「交辦」", async ({ page }) => {
       await openOverviewAs(page, "manager");
       await showColumn(page, "awaiting");
       await workCard(page, "awaiting", "c12").click();
@@ -113,7 +117,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       await expect(reviewPanel(page, assignmentTitle("c12"))).toBeVisible();
 
       // 已完成欄預設只顯示最近幾件；「顯示全部」後點最早完成的一件
-      await crewSections(page).getByRole("button", { name: ct.common.sectionOverview, exact: true }).click();
+      await backToBoard(page);
       const done = await showColumn(page, "done");
       await expect(workCard(page, "done", "s01")).toHaveCount(0);
       await done.getByRole("button", { name: new RegExp(`^${escape(ct.overview.showAll.split("（")[0].split(" (")[0])}`) }).click();
@@ -126,7 +130,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       );
 
       // 待交件沒有交件可以驗收：切到「交辦」
-      await crewSections(page).getByRole("button", { name: ct.common.sectionOverview, exact: true }).click();
+      await backToBoard(page);
       await showColumn(page, "notSubmitted");
       await workCard(page, "notSubmitted", "s15").click();
       await expect(crewSections(page).getByRole("button", { name: ct.common.sectionAssignments, exact: true })).toHaveAttribute("aria-current", "page");

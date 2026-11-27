@@ -6,7 +6,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { expandTimelineEntry, gotoView, openApp, s, switchIdentity } from "./support/app";
 import { access, language, readClientJson } from "./support/client";
-import { crewContent, ct, employeeName, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel, trustRow } from "./support/crew";
+import { crewContent, ct, employeeName, gotoCrewSection, gotoWorksBoard, hasCrewDemo, homeToday, openCrew, reviewPanel, trustRow, worksViewSwitch } from "./support/crew";
 
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
@@ -55,17 +55,21 @@ test.describe("桌機", () => {
     await expect(homeToday(page)).toBeVisible();
     await page.screenshot({ path: shotPath("home-today") });
 
-    // 總覽是 AI 員工頁的預設分頁（#134）
+    // 看板（原本的總覽，#134）：#191 起在「工作」的「清單｜看板」切換
     await openCrew(page);
+    await gotoWorksBoard(page);
     await expect(page.getByRole("region", { name: ct.overview.boardLabel })).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: shotPath("overview") });
+    // 切回清單（#191：再按「工作」的分頁不會改變清單｜看板）
+    await worksViewSwitch(page).getByRole("button", { name: ct.common.viewList, exact: true }).click();
+    await expect(worksViewSwitch(page).getByRole("button", { name: ct.common.viewList, exact: true })).toHaveAttribute("aria-pressed", "true");
 
     await openRowanReply(page);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: shotPath("review") });
 
-    await gotoCrewSection(page, ct.common.sectionTrust);
+    await gotoCrewSection(page, ct.common.sectionEmployees);
     await expect(trustRow(page, "rowan", "support")).toBeVisible();
     await page.screenshot({ path: shotPath("trust") });
   });
@@ -78,7 +82,7 @@ test.describe("桌機", () => {
     await page.screenshot({ path: shotPath("spot-check") });
 
     // k01 較早驗收、不在最近驗收過的清單：從工作帳本的「事後更正」點進去
-    await gotoCrewSection(page, ct.common.sectionLedger);
+    await gotoCrewSection(page, ct.common.sectionRecords);
     await crewContent(page).getByRole("combobox", { name: new RegExp(`^${ct.ledger.filterEvent}`) }).selectOption({ label: ct.ledger.eventReturned });
     const row = page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row").filter({ hasText: ct.ledger.kindCorrected });
     await row.getByRole("button", { name: demoTitle("k01"), exact: true }).click();
@@ -126,6 +130,8 @@ test.describe("手機", () => {
   test("總覽（#134：專案卡片直向排列，看板是依狀態切換的清單）", async ({ page }) => {
     await start(page);
     await openCrew(page);
+    // #191：看板在「工作」的「清單｜看板」切換
+    await gotoWorksBoard(page);
     await expect(page.getByRole("region", { name: ct.overview.boardLabel })).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: shotPath("mobile-overview"), fullPage: true });

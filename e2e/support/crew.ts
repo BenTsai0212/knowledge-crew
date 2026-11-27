@@ -102,7 +102,24 @@ export async function gotoCrewSection(page: Page, label: string): Promise<void> 
   await expect(button).toHaveAttribute("aria-current", "page");
 }
 
-// 信任頁的一列（員工 × 工作類型）；列內「建議的經過」的區塊名稱也含員工與工作類型（#153），以列的頂端區分
+// 「工作」的「清單｜看板」切換（#191：看板＝原本的「總覽」）；切到「工作」子頁後按下
+export const worksViewSwitch = (page: Page) => crewContent(page).getByRole("group", { name: ct.common.viewLabel, exact: true });
+export async function gotoWorksBoard(page: Page): Promise<void> {
+  await gotoCrewSection(page, ct.common.sectionWorks);
+  const board = worksViewSwitch(page).getByRole("button", { name: ct.common.viewBoard, exact: true });
+  await board.click();
+  await expect(board).toHaveAttribute("aria-pressed", "true");
+}
+
+// 「紀錄」的「看統計」（#191：統計＝原本信任頁上方的總表）
+export async function gotoRecordsStats(page: Page): Promise<void> {
+  await gotoCrewSection(page, ct.common.sectionRecords);
+  await crewContent(page).getByRole("button", { name: ct.common.viewStats, exact: true }).click();
+  await expect(crewContent(page).getByRole("button", { name: ct.common.viewEvents, exact: true })).toBeVisible();
+}
+
+// 審查方式的一列（員工 × 工作類型；#191 起在「員工」子頁的員工卡內）
+// 原本「信任頁的一列」；列內「建議的經過」的區塊名稱也含員工與工作類型（#153），以列的頂端區分
 export const trustRow = (page: Page, employee: string, workType: string): Locator =>
   page
     .getByRole("region", { name: crewFill(ct.trust.rowTitle, { employee: employeeName(employee), workType: workTypeName(workType) }) })
@@ -157,7 +174,7 @@ const TOUR = [
   { title: () => ct.tour.reviewTitle, section: () => ct.common.sectionWorks, target: ".crew-review__pair" },
   { title: () => ct.tour.returnTitle, section: () => ct.common.sectionWorks, target: ".crew-review__decision" },
   { title: () => ct.tour.guidelinesTitle, section: () => ct.common.sectionEmployees, target: ".crew-employees__guidelines[data-pending]", owner: "rowan" },
-  { title: () => ct.tour.trustTitle, section: () => ct.common.sectionTrust, target: ".crew-trust__row" },
+  { title: () => ct.tour.trustTitle, section: () => ct.common.sectionEmployees, target: ".crew-trust__row" },
   // 抽查（k17 的「這次抽查」卡）與事後更正（k01 的更正紀錄）（#171）
   { title: () => ct.tour.spotTitle, section: () => ct.common.sectionWorks, target: ".crew-review__spot" },
   { title: () => ct.tour.correctionTitle, section: () => ct.common.sectionWorks, target: ".crew-review__correction" },

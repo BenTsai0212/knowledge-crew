@@ -30,9 +30,9 @@ async function expectLevel(page: Page, employee: string, workType: string, expec
   await expect(trustRow(page, employee, workType).locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: expected }));
 }
 
-test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看 → 工作帳本記下四筆", async ({ page }) => {
+test("交辦 → 模擬交件 → 退回（做錯了）→ 員工頁的審查方式改回全部看 → 紀錄記下四筆", async ({ page }) => {
   // 開始前：Linden 的「知識庫整理」是看重點，有「收回」
-  await gotoCrewSection(page, ct.common.sectionTrust);
+  await gotoCrewSection(page, ct.common.sectionEmployees);
   await expectLevel(page, "linden", "knowledge", ct.trust.levelLight);
   await expect(trustRow(page, "linden", "knowledge").getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
 
@@ -61,7 +61,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
   });
 
   // 5：最後一個圓點是做錯了，層級改回逐項看，「收回」消失
-  await gotoCrewSection(page, ct.common.sectionTrust);
+  await gotoCrewSection(page, ct.common.sectionEmployees);
   const row = trustRow(page, "linden", "knowledge");
   // 圓點的清單（卡片內還有「建議的經過」的清單，#125）
   await expect(row.locator(".crew-trust__dots").getByRole("listitem").last()).toHaveAttribute(
@@ -72,7 +72,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
   await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toHaveCount(0);
 
   // 6：最新的四筆是交辦、交件、退回（做錯了）與改回逐項看（同一時間的先後不斷言）
-  await gotoCrewSection(page, ct.common.sectionLedger);
+  await gotoCrewSection(page, ct.common.sectionRecords);
   const items = page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row");
   await expect(items.first()).toBeVisible();
   const kinds = [
@@ -93,7 +93,7 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 信任改回逐項看
 
 test("對照：退回選「我想要不一樣的做法」時，Linden 的「知識庫整理」維持看重點", async ({ page }) => {
   await assignSimulateReturn(page, { title: TITLE, employee: "linden", workType: "knowledge", reason: ct.review.reasonDifferentApproach });
-  await gotoCrewSection(page, ct.common.sectionTrust);
+  await gotoCrewSection(page, ct.common.sectionEmployees);
   await expect(trustRow(page, "linden", "knowledge").locator(".crew-trust__dots").getByRole("listitem").last()).toHaveAttribute(
     "aria-label",
     crewFill(ct.trust.dotCell, { result: ct.trust.dotNeutral, date: ct.trust.today }),
@@ -103,7 +103,7 @@ test("對照：退回選「我想要不一樣的做法」時，Linden 的「知�
 });
 
 test("對照：Sorrel 的「貼文與商品介紹」同意改看重點 → 看重點、出現「收回」→ 收回 → 逐項看（建議要重新累積，不馬上再出現）", async ({ page }) => {
-  await gotoCrewSection(page, ct.common.sectionTrust);
+  await gotoCrewSection(page, ct.common.sectionEmployees);
   const row = trustRow(page, "sorrel", "content");
   const agree = row.getByRole("button", { name: ct.trust.agreeRelax, exact: true });
   const revoke = row.getByRole("button", { name: ct.trust.revoke, exact: true });

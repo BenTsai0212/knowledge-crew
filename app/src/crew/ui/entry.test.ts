@@ -160,25 +160,25 @@ describe("頁籤與子導覽的名稱", () => {
     expect(crewTabLabel("xx")).toBe("");
   });
 
-  it("子導覽六個位置依序排列（#134：總覽在最前面），每個都有名稱的鍵；沒有「今天」（#100）", () => {
-    expect(CREW_SECTIONS.map((s) => s.id)).toEqual(["overview", "employees", "assignments", "works", "trust", "ledger"]);
+  it("子導覽四個位置依序排列（#191：工作、員工、交辦、紀錄），每個都有名稱的鍵；沒有「今天」（#100）", () => {
+    expect(CREW_SECTIONS.map((s) => s.id)).toEqual(["works", "employees", "assignments", "records"]);
     for (const language of clientConfig.client.languages) {
       for (const s of CREW_SECTIONS) expect(CREW_TRANSLATIONS.common[language][s.label], `${language}.${s.label}`).toBeTruthy();
     }
   });
 
-  it("點進 AI 員工時預設停在「總覽」（#134；#100 時是「工作與驗收」）", () => {
-    expect(DEFAULT_CREW_SECTION).toBe("overview");
+  it("點進 AI 員工時預設停在「工作」（#191；#134 時是「總覽」，#100 時是「工作與驗收」）", () => {
+    expect(DEFAULT_CREW_SECTION).toBe("works");
     expect(CREW_SECTIONS.map((s) => s.id)).toContain(DEFAULT_CREW_SECTION);
   });
 
-  it("CrewPage 沒有收到 request 時，子導覽的目前位置是「總覽」（#134）", async () => {
+  it("CrewPage 沒有收到 request 時，子導覽的目前位置是「工作」（#191）", async () => {
     const { createElement } = await import("react");
     const { renderToStaticMarkup } = await import("react-dom/server");
     const { CrewPage } = await import("./CrewPage");
     const language = clientConfig.client.defaultLanguage;
     const html = renderToStaticMarkup(createElement(CrewPage, { db: {} as never, identity: "manager", language }));
     const current = [...html.matchAll(/<button[^>]*aria-current="page"[^>]*>([^<]*)<\/button>/g)].map((m) => m[1]);
-    expect(current).toEqual([CREW_TRANSLATIONS.common[language].sectionOverview]);
+    expect(current).toEqual([CREW_TRANSLATIONS.common[language].sectionWorks]);
   });
 });

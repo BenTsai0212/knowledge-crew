@@ -3,7 +3,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import { language, readClientJson, theme } from "./support/client";
-import { crewContent, crewFill, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
+import { crewContent, crewFill, crewSections, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel, trustRow } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -230,10 +230,11 @@ test.describe("看重點（#102）：Linden 的 k13", () => {
     await expect(panel.getByText(ct.review.decisionKb, { exact: true })).toBeVisible();
   });
 
-  test("「看信任紀錄」切到信任頁", async ({ page }) => {
+  test("「看審查方式」切到「員工」，看得到 Linden 的審查方式（#191；原本切到信任頁）", async ({ page }) => {
     const panel = await openWork(page, "k13");
     await panel.getByRole("button", { name: ct.review.lightTrust, exact: true }).click();
-    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionTrust, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionEmployees, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(trustRow(page, "linden", "knowledge")).toBeInViewport();
   });
 
   test("逐項看的件（Rowan 的回信 s14）沒有說明卡，也沒有收起的欄位", async ({ page }) => {
@@ -260,6 +261,9 @@ test.describe("焦點（#153）", () => {
 
   test("初次載入、自動選第一筆時焦點不移到面板；在清單以 Enter 選一筆後焦點在面板標題", async ({ page }) => {
     const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });
+    // #191：「工作」是預設的子頁，beforeEach 按下目前的分頁不算切換；先切到別的子頁再切回來
+    await gotoCrewSection(page, ct.common.sectionEmployees);
+    await gotoCrewSection(page, ct.common.sectionWorks);
     await expect(page.locator(".crew-review__panel")).toBeVisible();
     // #179：切換子頁後焦點在頁首的 h1（子頁名稱），不在面板
     await expect(works).toHaveAttribute("aria-current", "page");

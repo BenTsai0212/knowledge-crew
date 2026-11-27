@@ -9,9 +9,12 @@ import {
   ct,
   crewContent,
   gotoCrewSection,
+  gotoRecordsStats,
+  gotoWorksBoard,
   hasCrewDemo,
   homeToday,
   openCrew,
+  worksViewSwitch,
 } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（crew-only 不生效）");
@@ -94,8 +97,12 @@ async function walk(page: Page): Promise<void> {
   await expect(page.locator("dialog.crew-changes-sheet")).toBeHidden();
 
   await openCrew(page);
+  // 工作的看板（#191：原本的「總覽」）
+  await gotoWorksBoard(page);
+  await expect(page.locator(".crew-overview__projects")).toBeVisible();
+  await scan(page, scans, "工作（看板）", CREW);
+  // 員工（#191：含原本「信任」每類工作的審查方式）
   for (const [name, section] of [
-    ["總覽", ct.common.sectionOverview],
     ["員工", ct.common.sectionEmployees],
     ["交辦", ct.common.sectionAssignments],
   ] as const) {
@@ -104,8 +111,9 @@ async function walk(page: Page): Promise<void> {
     await scan(page, scans, name, CREW);
   }
 
-  // 工作與驗收：打開一筆，退回表單打開與關閉各掃一次
+  // 工作的清單（原本的「工作與驗收」）：打開一筆，退回表單打開與關閉各掃一次
   await gotoCrewSection(page, ct.common.sectionWorks);
+  await worksViewSwitch(page).getByRole("button", { name: ct.common.viewList, exact: true }).click();
   const content = page.locator(".crew-page");
   await page
     .getByRole("navigation", { name: ct.review.listLabel })
@@ -156,26 +164,25 @@ async function walk(page: Page): Promise<void> {
   await expect(content.getByRole("button", { name: ct.review.fullOnceBack, exact: true })).toBeVisible();
   await scan(page, scans, "工作與驗收（這次逐項看）", CREW);
 
-  for (const [name, section] of [
-    ["信任", ct.common.sectionTrust],
-    ["工作帳本", ct.common.sectionLedger],
-  ] as const) {
-    await gotoCrewSection(page, section);
-    await expect(crewContent(page).first()).toBeVisible();
-    await scan(page, scans, name, CREW);
-  }
+  // 紀錄的事件（原本的「工作帳本」）與統計（原本信任頁上方的總表，#191）
+  await gotoCrewSection(page, ct.common.sectionRecords);
+  await expect(crewContent(page).first()).toBeVisible();
+  await scan(page, scans, "紀錄（事件）", CREW);
+  await gotoRecordsStats(page);
+  await expect(page.locator(".crew-trust-report")).toBeVisible();
+  await scan(page, scans, "紀錄（統計）", CREW);
 
   report(scans);
 }
 
 test.describe("桌機 1280×800", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
-  test("登入、首頁與 AI 員工的 6 個子頁：axe 沒有違規", async ({ page }) =>
+  test("登入、首頁與 AI 員工的 4 個子頁（含看板與統計）：axe 沒有違規", async ({ page }) =>
     walk(page));
 });
 
 test.describe("手機 390×844", () => {
   test.use({ viewport: { width: 390, height: 844 } });
-  test("登入、首頁與 AI 員工的 6 個子頁：axe 沒有違規", async ({ page }) =>
+  test("登入、首頁與 AI 員工的 4 個子頁（含看板與統計）：axe 沒有違規", async ({ page }) =>
     walk(page));
 });

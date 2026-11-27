@@ -10,7 +10,6 @@ import { demoSeed } from "../demo/seed";
 import { readEmployees } from "./employees";
 import { homeToday } from "./home-today";
 import { readLedger } from "./ledger";
-import { sectionCounts } from "./section-counts";
 import { readToday } from "./today";
 
 const lang = clientConfig.client.defaultLanguage;
@@ -23,7 +22,8 @@ afterEach(() => db.close());
 
 const rowan = async () => (await readEmployees(db, "manager", lang, true)).find((e) => e.id === "rowan")!.guidelines;
 const ledger = async (id: string) => (await readLedger(db, "manager", lang)).filter((e) => e.guideline?.id === id).map((e) => e.kind);
-const pendingCount = async () => sectionCounts(homeToday(await readToday(db, "manager", lang, true))).employees;
+// 首頁「等你決定」的守則件數（#191 起子導覽「員工」的數字另含審查方式的建議，這裡只看守則）
+const pendingCount = async () => homeToday(await readToday(db, "manager", lang, true)).guidelines.length;
 
 describe("退回時記成守則", () => {
   it("勾選後同時寫入退回與守則：員工卡多一條生效的（退回時記下），帳本是退回、記成守則", async () => {
@@ -55,7 +55,7 @@ describe("員工頁的決定", () => {
     expect(g.pending).toEqual([]);
     expect(g.active.find((x) => x.id === "g02")).toMatchObject({ status: "active", revised: false });
     expect(g.active.find((x) => x.id === "g02")!.confirmedAt).not.toBeNull();
-    expect(await pendingCount()).toBeUndefined();
+    expect(await pendingCount()).toBe(0);
     expect(await ledger("g02")).toEqual(["guidelineConfirmed", "guidelineProposed"]);
   });
 

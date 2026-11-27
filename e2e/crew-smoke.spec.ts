@@ -16,17 +16,13 @@ import {
   sourcesOf,
   trustRow,
   workTypeName,
+  gotoRecordsStats,
 } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
-const SECTIONS = [
-  ct.common.sectionEmployees,
-  ct.common.sectionAssignments,
-  ct.common.sectionWorks,
-  ct.common.sectionTrust,
-  ct.common.sectionLedger,
-];
+// #191：子頁 4 個（工作、員工、交辦、紀錄）
+const SECTIONS = [ct.common.sectionEmployees, ct.common.sectionAssignments, ct.common.sectionWorks, ct.common.sectionRecords];
 
 // 畫面上每個員工名字都在 AI 標記之後（#66）；至少要出現一個名字
 async function expectAiMarks(page: Page): Promise<void> {
@@ -53,8 +49,9 @@ test.describe("冒煙（主管，桌機）", () => {
   test("員工：每個員工一張卡片，列出工作類型、交件與目前層級", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionEmployees);
     const card = page.getByRole("region", { name: employeeName("linden") }).filter({ has: page.locator(".crew-employees__top") });
-    await expect(card.getByText(ct.employees.levelLight, { exact: true })).toBeVisible();
-    await expect(card.getByText(workTypeName("knowledge"), { exact: false })).toBeVisible();
+    // 卡內另有審查方式的列（#191），層級與工作類型以卡片頂端為準
+    await expect(card.locator(".crew-employees__top").getByText(ct.employees.levelLight, { exact: true })).toBeVisible();
+    await expect(card.locator(".crew-employees__top").getByText(workTypeName("knowledge"), { exact: false })).toBeVisible();
     await expect(page.getByRole("region", { name: employeeName("sorrel") }).filter({ has: page.locator(".crew-employees__top") })).toBeVisible();
   });
 
@@ -109,16 +106,16 @@ test.describe("冒煙（主管，桌機）", () => {
     await expectAiMarks(page);
   });
 
-  test("信任：每個員工 × 工作類型的圓點與目前層級", async ({ page }) => {
-    await gotoCrewSection(page, ct.common.sectionTrust);
+  test("員工的審查方式（#191：原本的「信任」）：每個員工 × 工作類型的圓點與目前層級", async ({ page }) => {
+    await gotoCrewSection(page, ct.common.sectionEmployees);
     const row = trustRow(page, "linden", "knowledge");
     await expect(row.locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelLight }));
     await expect(row.getByRole("listitem").first()).toBeVisible();
     await expectAiMarks(page);
   });
 
-  test("工作帳本：篩選與紀錄", async ({ page }) => {
-    await gotoCrewSection(page, ct.common.sectionLedger);
+  test("紀錄（原本的「工作帳本」）：篩選與事件", async ({ page }) => {
+    await gotoCrewSection(page, ct.common.sectionRecords);
     await expect(crewContent(page).getByRole("combobox", { name: new RegExp(`^${ct.ledger.filterEmployee}`) })).toBeVisible();
     await expect(page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row").first()).toBeVisible();
   });
@@ -166,14 +163,17 @@ test.describe("權限（桌機）", () => {
       [ct.common.sectionEmployees, ct.employees.empty],
       [ct.common.sectionAssignments, ct.assign.empty],
       [ct.common.sectionWorks, ct.review.empty],
-      [ct.common.sectionTrust, ct.trust.empty],
-      [ct.common.sectionLedger, ct.ledger.empty],
+      [ct.common.sectionRecords, ct.ledger.empty],
     ];
     for (const [section, text] of empty) {
       await gotoCrewSection(page, section);
       await expect(page.getByText(text, { exact: true })).toBeVisible();
       await expect(crewContent(page).getByRole("alert")).toHaveCount(0);
     }
+    // 紀錄的統計（#191：原本信任頁的總表）也是空狀態
+    await gotoRecordsStats(page);
+    await expect(page.getByText(ct.trust.empty, { exact: true })).toBeVisible();
+    await expect(crewContent(page).getByRole("alert")).toHaveCount(0);
   });
 });
 

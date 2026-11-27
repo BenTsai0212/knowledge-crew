@@ -73,6 +73,7 @@ export function rowStatus(a: TodayAssignment, awaiting: boolean, language: Langu
 /** 點了到哪裡：待驗收與退回的到「工作與驗收」該件，還沒交件的到「交辦」，看重點的建議到「信任」，等確認的守則到「員工」 */
 export const rowTarget = (a: TodayAssignment, awaiting: boolean): CrewTarget =>
   awaiting || a.returned ? { section: "works", assignmentId: a.id } : { section: "assignments" };
-export const DECIDE_TARGET: CrewTarget = { section: "trust" };
+/** 「等你決定」的審查方式建議：切到「員工」並捲到該員工（#191；原本是「信任」） */
+export const decideTarget = (d: TodaySuggestion): CrewTarget => ({ section: "employees", employeeId: d.employee.id });
 /** 等確認的守則到「員工」，捲到該員工卡（#145） */
 export const guidelineTarget = (g: TodayGuideline): CrewTarget => ({ section: "employees", employeeId: g.employee.id });

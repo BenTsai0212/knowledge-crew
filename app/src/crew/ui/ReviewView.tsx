@@ -1,4 +1,4 @@
-// 「工作與驗收」畫面（#39）：左側是工作清單（窄螢幕在面板之下，#50），選一筆後顯示驗收面板。
+// 「工作與驗收」畫面（#39；#191 起是「工作」子頁的「清單」，WorksView.tsx）：左側是工作清單（窄螢幕在面板之下，#50），選一筆後顯示驗收面板。
 // 資料整理在 review.ts；面板（review/ReviewPanel.tsx）只依 readReviewPanel() 的結果呈現。「通過」「退回」只給能驗收的身分，寫入後重新讀取。
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fill } from "../../client/i18n";
@@ -159,7 +159,7 @@ export function ReviewView({ db, identity, language, assignmentId, navigate, onO
           noUpload={noUpload}
           savedGuideline={savedGuideline}
           onOpenSource={onOpenSource}
-          onOpenTrust={navigate && (() => navigate({ section: "trust" }))}
+          onOpenTrust={navigate && (() => navigate({ section: "employees", employeeId: panel.item.employee.id }))}
           onOpenEmployee={navigate && ((employeeId) => navigate({ section: "employees", employeeId }))}
         />
       ) : (

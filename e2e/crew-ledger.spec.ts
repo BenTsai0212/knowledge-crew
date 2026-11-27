@@ -19,7 +19,7 @@ async function openLedger(page: Page): Promise<void> {
   await openApp(page);
   await switchIdentity(page, "manager");
   await openCrew(page);
-  await gotoCrewSection(page, ct.common.sectionLedger);
+  await gotoCrewSection(page, ct.common.sectionRecords);
   await expect(rows(page).first()).toBeVisible();
 }
 
@@ -28,9 +28,9 @@ test.describe("桌機 1280", () => {
   test.beforeEach(async ({ page }) => openLedger(page));
 
   test("標題、欄位與「載入更早的紀錄」", async ({ page }) => {
-    // 子頁的主標題是頁首的 h1（#179），子頁內不再重複「工作帳本」的 h2
-    await expect(page.getByRole("heading", { name: ct.common.sectionLedger, level: 1 })).toBeVisible();
-    await expect(crewContent(page).getByRole("heading", { name: ct.common.sectionLedger })).toHaveCount(0);
+    // 子頁的主標題是頁首的 h1（#179；#191 起是「紀錄」），子頁內不再重複同名的 h2
+    await expect(page.getByRole("heading", { name: ct.common.sectionRecords, level: 1 })).toBeVisible();
+    await expect(crewContent(page).getByRole("heading", { name: ct.common.sectionRecords })).toHaveCount(0);
     await expect(crewContent(page).getByText(ct.ledger.lead, { exact: true })).toBeVisible();
     const headers = [ct.ledger.columnDate, ct.ledger.columnEvent, ct.ledger.columnWork, ct.ledger.columnEmployee, ct.ledger.columnActor];
     await expect(table(page).getByRole("columnheader")).toHaveText(headers);

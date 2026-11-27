@@ -55,6 +55,12 @@ describe("TOUR_STEPS", () => {
     expect(step.targets).toEqual([".crew-employees__guidelines[data-pending]", ".crew-employees__guidelines"]);
   });
 
+  it("審查方式一步切到「員工」（#191：原本的「信任」子頁移到員工卡內），標出第一個審查方式的列", () => {
+    const step = TOUR_STEPS.find((s) => s.id === "trust")!;
+    expect(step.go).toEqual({ kind: "crew", target: { section: "employees" } });
+    expect(step.targets).toEqual([".crew-trust__row", ".crew-employees"]);
+  });
+
   it("每一步都有標題、說明與至少一個目標，文字在每種語言都有", () => {
     for (const step of TOUR_STEPS) {
       expect(step.targets.length, step.id).toBeGreaterThan(0);

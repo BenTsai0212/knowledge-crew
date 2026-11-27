@@ -1,4 +1,4 @@
-// 「員工」的員工卡（#83，設計規格 v3 第 6.5 節）：四張卡、最近 10 次圓點的摘要、「看信任紀錄」與「交辦給 ○○」預選員工，
+// 「員工」的員工卡（#83，設計規格 v3 第 6.5 節）：四張卡、最近 10 次圓點的摘要、「看審查方式的紀錄」與「交辦給 ○○」預選員工，
 // 只能查看的身分沒有「交辦給 ○○」，手機 390 不破版。每個 test 重新開頁，資料庫在瀏覽器記憶體中從 migration 與虛構資料重建。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
@@ -50,7 +50,8 @@ test.describe("員工卡（主管，桌機 1280）", () => {
   test("Sorrel 有看重點的建議；Juniper 10 個圓點，同意改看重點後又收回（#125）", async ({ page }) => {
     await expect(card(page, "sorrel").getByText(ct.employees.noteSuggestion, { exact: true })).toBeVisible();
     await expect(dots(card(page, "juniper")).locator(".crew-dot")).toHaveCount(10);
-    await expect(card(page, "juniper").getByText(crewFill(ct.employees.noteRevoke, { date: "11/10" }), { exact: true })).toBeVisible();
+    // #191：卡內另有審查方式的時間軸（事件文字相同），只看員工卡的說明
+    await expect(card(page, "juniper").locator(".crew-employees__note").getByText(crewFill(ct.employees.noteRevoke, { date: "11/10" }), { exact: true })).toBeVisible();
   });
 
   test("「交辦給 Linden」切到交辦頁並預選 Linden 與平常的來源", async ({ page }) => {
@@ -62,14 +63,14 @@ test.describe("員工卡（主管，桌機 1280）", () => {
     await expect(form.getByLabel(new RegExp(`^${ct.assign.fieldWorkType}`))).toHaveValue(workTypeName("knowledge"));
   });
 
-  test("「看信任紀錄」切到信任頁", async ({ page }) => {
+  test("「看審查方式的紀錄」切到「紀錄」並篩選成該員工（#191；原本切到信任頁）", async ({ page }) => {
     await card(page, "rowan").getByRole("button", { name: ct.employees.linkTrust, exact: true }).click();
-    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionTrust, exact: true })).toBeVisible();
-    await expect(page.getByText(ct.trust.title, { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: ct.common.sectionRecords, exact: true })).toBeVisible();
+    await expect(page.locator(".crew-ledger__active")).toContainText(employeeName("rowan"));
   });
 });
 
-test("staff：沒有「交辦給 ○○」，有「看信任紀錄」", async ({ page }) => {
+test("staff：沒有「交辦給 ○○」，有「看審查方式的紀錄」", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openEmployeesAs(page, "staff");
   const rowan = card(page, "rowan");

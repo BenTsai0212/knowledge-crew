@@ -32,14 +32,15 @@ const box = async (locator: Locator) => (await locator.boundingBox())!;
 test.describe("手機 390", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("主管：子頁按鈕列可以橫向滑動、目前的子頁捲進畫面，數字是待驗收件數與看重點的建議數", async ({ page }) => {
+  test("主管：子頁按鈕列不超出畫面、目前的子頁捲進畫面，數字是待驗收件數與等你決定的件數", async ({ page }) => {
     await openCrewAs(page, "manager");
     const nav = crewSections(page);
-    expect(await nav.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    // #191：子頁減為 4 個，按鈕列不一定需要橫向滑動；按鈕列本身不超出畫面
+    expect((await box(nav)).x + (await box(nav)).width).toBeLessThanOrEqual(390 + 1);
     for (const button of await nav.getByRole("button").all()) expect((await box(button)).height).toBeGreaterThanOrEqual(44);
 
-    // 預設停在「總覽」（#134）；切到「工作與驗收」：數字與清單的待驗收件數相同，說明在 aria-describedby（按鈕的名稱仍是子頁名稱）
-    await expect(sectionButton(page, ct.common.sectionOverview)).toHaveAttribute("aria-current", "page");
+    // 預設停在「工作」（#191）的清單：數字與清單的待驗收件數相同，說明在 aria-describedby（按鈕的名稱仍是子頁名稱）
+    await expect(sectionButton(page, ct.common.sectionWorks)).toHaveAttribute("aria-current", "page");
     const works = sectionButton(page, ct.common.sectionWorks);
     await gotoCrewSection(page, ct.common.sectionWorks);
     await expect(works).toHaveAttribute("aria-current", "page");
@@ -48,16 +49,18 @@ test.describe("手機 390", () => {
     await expect(countOf(works)).toHaveText(String(awaiting));
     await expect(works).toHaveAccessibleDescription(new RegExp(String(awaiting)));
 
-    // 信任的數字與「同意改看重點」的按鈕數相同
-    const trust = sectionButton(page, ct.common.sectionTrust);
-    await gotoCrewSection(page, ct.common.sectionTrust);
+    // 員工的數字（#191）＝「同意改看重點」的按鈕數＋等確認的守則數
+    const employees = sectionButton(page, ct.common.sectionEmployees);
+    await gotoCrewSection(page, ct.common.sectionEmployees);
+    await expect(page.locator(".crew-trust__row").first()).toBeVisible();
     const suggestions = await page.getByRole("button", { name: ct.trust.agreeRelax, exact: true }).count();
-    if (suggestions === 0) await expect(countOf(trust)).toHaveCount(0);
-    else await expect(countOf(trust)).toHaveText(String(suggestions));
+    const pending = await page.getByRole("button", { name: ct.employees.guidelineConfirm, exact: true }).count();
+    if (suggestions + pending === 0) await expect(countOf(employees)).toHaveCount(0);
+    else await expect(countOf(employees)).toHaveText(String(suggestions + pending));
 
     // 最後一個子頁（一開始在畫面外）：點了之後整個捲進按鈕列
     await nav.evaluate((el) => (el.scrollLeft = 0));
-    const ledger = sectionButton(page, ct.common.sectionLedger);
+    const ledger = sectionButton(page, ct.common.sectionRecords);
     await ledger.click();
     await expect(ledger).toHaveAttribute("aria-current", "page");
     await expect
@@ -152,8 +155,8 @@ test.describe("手機 390", () => {
   for (const role of ["staff", "guest"]) {
     test(`${role}：沒有固定的決定列，子導覽沒有數字`, async ({ page }) => {
       await openCrewAs(page, role);
-      // 預設是「總覽」（#134），明確切到「工作與驗收」
-      await expect(sectionButton(page, ct.common.sectionOverview)).toHaveAttribute("aria-current", "page");
+      // 預設是「工作」（#191），再明確切一次
+      await expect(sectionButton(page, ct.common.sectionWorks)).toHaveAttribute("aria-current", "page");
       await gotoCrewSection(page, ct.common.sectionWorks);
       await expect(sectionButton(page, ct.common.sectionWorks)).toHaveAttribute("aria-current", "page");
       await expect(page.locator(".crew-review, .empty-state").first()).toBeVisible();

@@ -5,7 +5,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { blockModelDownload, chooseAccount, EVALS_PATH, gotoView, s, signInPanel, switchIdentity, userCard } from "./support/app";
 import { access, language, readClientJson } from "./support/client";
-import { ct, crewContent, crewSections, gotoCrewSection, hasCrewDemo, homeToday, openCrew, reviewPanel, tourCard, tourDialog, walkTour } from "./support/crew";
+import { ct, crewContent, crewSections, gotoCrewSection, gotoWorksBoard, hasCrewDemo, homeToday, openCrew, reviewPanel, tourCard, tourDialog, walkTour } from "./support/crew";
 import { toFlowbackDocument } from "../app/src/crew/knowledge/flowback";
 import type { Cy } from "./support/graph";
 
@@ -123,23 +123,17 @@ test.describe("桌機", () => {
     await walkTour(page);
   });
 
-  test("五個子畫面都能開啟，沒有錯誤", async ({ page }) => {
+  test("四個子頁都能開啟，沒有錯誤（#191）", async ({ page }) => {
     await enter(page);
     await openCrew(page);
-    for (const section of [
-      ct.common.sectionEmployees,
-      ct.common.sectionAssignments,
-      ct.common.sectionWorks,
-      ct.common.sectionTrust,
-      ct.common.sectionLedger,
-    ]) {
+    for (const section of [ct.common.sectionEmployees, ct.common.sectionAssignments, ct.common.sectionRecords, ct.common.sectionWorks]) {
       await gotoCrewSection(page, section);
       await expect(crewContent(page).first()).toBeVisible();
       await expect(crewContent(page).getByRole("alert")).toHaveCount(0);
     }
   });
 
-  test("切換身分後內容改變：訪客的「工作與驗收」是空狀態", async ({ page }) => {
+  test("切換身分後內容改變：訪客的「工作」是空狀態", async ({ page }) => {
     const guest = access.roles.find((r) => !r.canReview && !r.canUpload);
     test.skip(guest === undefined, "沒有不能審查也不能上傳的身分");
     await enter(page);
@@ -149,10 +143,10 @@ test.describe("桌機", () => {
     await expectHomeWithoutAsk(page);
     await expect(navViews(page)).toHaveCount(VIEWS.length);
     await openCrew(page);
-    // 預設是「總覽」（#134）：訪客沒有資料時是空狀態；「工作與驗收」同樣是空狀態
-    await expect(crewContent(page).getByText(ct.overview.empty, { exact: true })).toBeVisible();
-    await gotoCrewSection(page, ct.common.sectionWorks);
+    // 預設是「工作」的清單（#191）：訪客沒有資料時是空狀態；看板（原本的「總覽」）同樣是空狀態
     await expect(page.getByText(ct.review.empty, { exact: true })).toBeVisible();
+    await gotoWorksBoard(page);
+    await expect(crewContent(page).getByText(ct.overview.empty, { exact: true })).toBeVisible();
   });
 
   test("帳號登入：沒有邀請碼欄，按「登入」就進入首頁", async ({ page }) => {
@@ -265,13 +259,14 @@ test.describe("手機 390：首頁、圖譜、時間軸（#91）", () => {
   test("AI 員工：子頁是按鈕列、帶待驗收件數，決定列固定在底部（#103）", async ({ page }) => {
     await enter(page);
     await openCrew(page);
-    // 預設是「總覽」（#134），明確切到「工作與驗收」
-    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionOverview, exact: true })).toHaveAttribute("aria-current", "page");
+    // 預設是「工作」（#191），再明確切一次
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");
     await gotoCrewSection(page, ct.common.sectionWorks);
     const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });
     await expect(works).toHaveAttribute("aria-current", "page");
     await expect(works.locator(".ui-count")).toBeVisible();
-    expect(await crewSections(page).evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    // #191：子頁減為 4 個，按鈕列不一定需要橫向滑動；按鈕列本身不超出畫面
+    expect(await crewSections(page).evaluate((el) => el.getBoundingClientRect().right <= window.innerWidth + 1)).toBe(true);
     const bar = page.locator(".crew-review__decision");
     await expect(bar).toBeVisible();
     expect(await bar.evaluate((el) => getComputedStyle(el).position)).toBe("sticky");

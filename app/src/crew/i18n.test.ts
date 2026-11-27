@@ -94,9 +94,11 @@ describe("審查方式的用詞（#128、#186）", () => {
     }
   });
 
-  it("子頁名稱：工作、審查方式、紀錄（總覽不變）", () => {
-    expect(CREW_TRANSLATIONS.common["zh-TW"]).toMatchObject({ sectionOverview: "總覽", sectionWorks: "工作", sectionTrust: "審查方式", sectionLedger: "紀錄" });
-    expect(CREW_TRANSLATIONS.common.en).toMatchObject({ sectionOverview: "Overview", sectionWorks: "Work", sectionTrust: "Review mode", sectionLedger: "Records" });
+  it("子頁名稱：工作、員工、交辦、紀錄（#191）；清單｜看板、看統計｜看事件", () => {
+    expect(CREW_TRANSLATIONS.common["zh-TW"]).toMatchObject({ sectionWorks: "工作", sectionEmployees: "員工", sectionAssignments: "交辦", sectionRecords: "紀錄" });
+    expect(CREW_TRANSLATIONS.common.en).toMatchObject({ sectionWorks: "Work", sectionEmployees: "Employees", sectionAssignments: "Assign", sectionRecords: "Records" });
+    expect(CREW_TRANSLATIONS.common["zh-TW"]).toMatchObject({ viewList: "清單", viewBoard: "看板", viewStats: "看統計", viewEvents: "看事件" });
+    expect(CREW_TRANSLATIONS.common.en).toMatchObject({ viewList: "List", viewBoard: "Board", viewStats: "View statistics", viewEvents: "View events" });
   });
 });
 
