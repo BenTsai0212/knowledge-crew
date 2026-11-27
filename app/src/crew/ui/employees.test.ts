@@ -175,13 +175,13 @@ describe("readEmployees：守則（#145）", () => {
 describe("guidelineSummary、closedSummary", () => {
   const g = (status: "pending" | "active" | "rejected" | "revoked") => ({ status }) as EmployeeGuideline;
 
-  it("0 的那段不顯示；都沒有時是「還沒有守則」；不能驗收的身分是「等確認」", () => {
-    expect(guidelineSummary({ active: [g("active"), g("active")], pending: [g("pending")] }, true, "zh-TW")).toBe("守則 2 條・等你確認 1 條");
+  it("0 的那段不顯示；都沒有時是「還沒有守則」；不能驗收的身分是「等決定」", () => {
+    expect(guidelineSummary({ active: [g("active"), g("active")], pending: [g("pending")] }, true, "zh-TW")).toBe("守則 2 條・等你決定 1 條");
     expect(guidelineSummary({ active: [g("active")], pending: [] }, true, "zh-TW")).toBe("守則 1 條");
-    expect(guidelineSummary({ active: [], pending: [g("pending")] }, true, "zh-TW")).toBe("等你確認 1 條");
-    expect(guidelineSummary({ active: [], pending: [g("pending")] }, false, "zh-TW")).toBe("等確認 1 條");
+    expect(guidelineSummary({ active: [], pending: [g("pending")] }, true, "zh-TW")).toBe("等你決定 1 條");
+    expect(guidelineSummary({ active: [], pending: [g("pending")] }, false, "zh-TW")).toBe("等決定 1 條");
     expect(guidelineSummary({ active: [], pending: [] }, true, "zh-TW")).toBe("還沒有守則");
-    expect(guidelineSummary({ active: [g("active")], pending: [g("pending")] }, true, "en")).toBe("1 guideline · 1 for you to confirm");
+    expect(guidelineSummary({ active: [g("active")], pending: [g("pending")] }, true, "en")).toBe("1 guideline · 1 for you to decide on");
   });
 
   it("已收回與不採用", () => {

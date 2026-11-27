@@ -54,7 +54,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
 
   test("Rowan：做錯了依規則自動改回，說明要重新累積，沒有按鈕", async ({ page }) => {
     const row = trustRow(page, "rowan", "support");
-    await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
+    await expect(row.locator(".crew-level-badge")).toHaveText(badge(ct.trust.levelItem));
     // #134：最近 10 次含 s16 的退回（其他退回）
     await expect(dots(row)).toHaveAttribute("aria-label", summary([[ct.trust.dotsAriaOk, 8], [ct.trust.dotsAriaWrong, 1], [ct.trust.dotsAriaNeutral, 1]]));
     await expect(row.getByText(crewFill(ct.trust.eventReset, { date: "10/15" }), { exact: false })).toBeVisible();
@@ -69,12 +69,12 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
     // 建議的經過跟著更新（#125）：提出 → 同意 → 收回
     await expect(historySteps(row)).toHaveCount(1);
     await row.getByRole("button", { name: ct.trust.agreeRelax, exact: true }).click();
-    await expect(row.getByText(badge(ct.trust.levelLight), { exact: true })).toBeVisible();
+    await expect(row.locator(".crew-level-badge")).toHaveText(badge(ct.trust.levelLight));
     await expect(row.getByText(crewFill(ct.trust.eventRelax, { date: ct.trust.today }), { exact: true })).toBeVisible();
     await expect(historySteps(row)).toHaveCount(2);
     await expect(historySteps(row).last()).toHaveText(crewFill(ct.trust.historyRelax, { date: ct.trust.today, actor: roleName("manager") }));
     await row.getByRole("button", { name: ct.trust.revoke, exact: true }).click();
-    await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
+    await expect(row.locator(".crew-level-badge")).toHaveText(badge(ct.trust.levelItem));
     await expect(row.getByText(ct.trust.noteRevoked, { exact: true })).toBeVisible();
     await expect(historySteps(row)).toHaveCount(3);
     await expect(historySteps(row).last()).toHaveText(crewFill(ct.trust.historyRevoke, { date: ct.trust.today, actor: roleName("manager") }));
@@ -82,7 +82,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
 
   test("Linden：看重點中，事件 10/13，有「收回，改回逐項看」", async ({ page }) => {
     const row = trustRow(page, "linden", "knowledge");
-    await expect(row.getByText(badge(ct.trust.levelLight), { exact: true })).toBeVisible();
+    await expect(row.locator(".crew-level-badge")).toHaveText(badge(ct.trust.levelLight));
     await expect(row.getByText(crewFill(ct.trust.eventRelax, { date: "10/13" }), { exact: true })).toBeVisible();
     await expect(row.getByText(ct.trust.noteLight, { exact: true })).toBeVisible();
     await expect(row.getByRole("button", { name: ct.trust.revoke, exact: true })).toBeVisible();
@@ -101,7 +101,7 @@ test.describe("信任：四種狀態（主管，桌機 1280）", () => {
   test("Juniper：不用操作就有完整一輪：提出 → 同意 → 生效 → 收回；點生效的那件到「工作與驗收」（#125）", async ({ page }) => {
     const row = trustRow(page, "juniper", "dev");
     await expect(dots(row).getByRole("listitem")).toHaveCount(10);
-    await expect(row.getByText(badge(ct.trust.levelItem), { exact: true })).toBeVisible();
+    await expect(row.locator(".crew-level-badge")).toHaveText(badge(ct.trust.levelItem));
     // #161：同意與收回（改為 11/10）之間看重點驗收 5 次，兩個事件在不同的格
     const events = [crewFill(ct.trust.eventRelax, { date: "10/19" }), crewFill(ct.trust.eventRevoke, { date: "11/10" })].map((text) => row.getByText(text, { exact: true }));
     for (const event of events) await expect(event).toBeVisible();

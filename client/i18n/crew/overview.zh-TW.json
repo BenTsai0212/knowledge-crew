@@ -7,7 +7,7 @@
   "projectsLabel": "專案",
   "projectSources": "來源：{sources}",
   "projectProgress": "已完成 {done}／{total}",
-  "projectKnowledge": "回流知識 {count} 筆",
+  "projectKnowledge": "收進知識庫 {count} 筆",
   "projectGuidelines": "守則 {count} 條",
   "projectSelectHint": "點卡片只看這個專案",
   "separator": "、",

@@ -126,7 +126,7 @@ for (const width of [1280, 390]) {
 
     test("逐項看的面板（s14）同樣分兩區，切換按鈕在重點旁", async ({ page }, testInfo) => {
       const panel = await openWork(page, "s14");
-      await expect(panel.getByText(crewFill(ct.review.levelBadge, { level: ct.review.levelItem }), { exact: true })).toBeVisible();
+      await expect(panel.locator(".crew-level-badge")).toHaveText(crewFill(ct.review.levelBadge, { level: ct.review.levelItem }));
       await expectZones(panel);
       await expect(pointGroups(panel).first().getByRole("button")).toHaveCount(2);
       expect(await noHorizontalScroll(page)).toBe(true);

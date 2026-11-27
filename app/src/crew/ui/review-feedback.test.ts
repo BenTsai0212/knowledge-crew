@@ -69,10 +69,12 @@ describe("readReviewPanel 與面板（#168）", { timeout: DB_TIMEOUT }, () => {
     expect(html).toContain(`<h4 id="crew-review-zone-self">${t.groupSelf}</h4>`);
     expect(html).toContain(`<h5 id="crew-review-points-title">${t.points}</h5>`);
     expect(html).toContain(`<h5 id="crew-review-checks-title">${t.checks}</h5>`);
-    // 「員工自己說的」在「獨立檢查」之前，重點在守則之前
-    expect(html.indexOf(t.groupSelf)).toBeLessThan(html.indexOf(t.points));
-    expect(html.indexOf(t.followedTitle)).toBeLessThan(html.indexOf(t.groupIndependent));
-    expect(html.indexOf(t.groupIndependent)).toBeLessThan(html.indexOf(t.checks));
+    expect(html).toContain(`<h4 id="crew-review-zone-independent">${t.groupIndependent}</h4>`);
+    expect(html).toContain(`<h5 id="crew-review-followed-title">${t.followedTitle}</h5>`);
+    // 員工標出的分區在系統檢查的分區之前，重點在守則之前（#186 起分區標題與檢查卡標題同為「系統檢查」，以 id 比位置）
+    expect(html.indexOf('id="crew-review-zone-self"')).toBeLessThan(html.indexOf('id="crew-review-points-title"'));
+    expect(html.indexOf('id="crew-review-followed-title"')).toBeLessThan(html.indexOf('id="crew-review-zone-independent"'));
+    expect(html.indexOf('id="crew-review-zone-independent"')).toBeLessThan(html.indexOf('id="crew-review-checks-title"'));
     const groups = k13.focus.points.length + k13.guidelines.length;
     expect(groups).toBeGreaterThan(1);
     expect(count(html, 'role="group"')).toBe(groups);

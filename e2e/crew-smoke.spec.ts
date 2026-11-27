@@ -112,7 +112,7 @@ test.describe("冒煙（主管，桌機）", () => {
   test("信任：每個員工 × 工作類型的圓點與目前層級", async ({ page }) => {
     await gotoCrewSection(page, ct.common.sectionTrust);
     const row = trustRow(page, "linden", "knowledge");
-    await expect(row.getByText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelLight }), { exact: true })).toBeVisible();
+    await expect(row.locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelLight }));
     await expect(row.getByRole("listitem").first()).toBeVisible();
     await expectAiMarks(page);
   });
