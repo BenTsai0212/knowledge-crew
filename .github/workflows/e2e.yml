@@ -41,7 +41,8 @@ jobs:
   playwright:
     needs: list
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 參考情境（client）單一 worker 約 30 分鐘，已碰到 30 分鐘的上限，提高到 45（#187）
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
