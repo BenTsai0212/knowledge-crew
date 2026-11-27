@@ -1,4 +1,4 @@
-// 桌機的左側欄（#330，畫板 docs/design/v1/boards/K-Home.dc.html）：220px、44px 的頁面項目、選中是 text 底，
+// 桌機的左側欄（#330，畫板 docs/design/v1/boards/K-Home.dc.html）：232px（#182，原本 220px）、44px 的頁面項目、選中是 text 底，
 // 底部是「虛構資料 · 展示用權限」與使用者卡（邀請碼體驗與帳號登入兩種）。/api/ask 一律是假的回應。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
@@ -43,7 +43,8 @@ const roleName = (id: string) => access.roles.find((r) => r.id === id)!.label[la
 
 async function expectFrame(page: Page): Promise<void> {
   const box = await sidebar(page).boundingBox();
-  expect(box!.width).toBe(220);
+  // #182（crew 設計規格 v4 第 4 節）：220 → 232px
+  expect(box!.width).toBe(232);
   const current = items(page).and(page.locator('[aria-current="page"]'));
   await expect(current).toHaveCount(1);
   for (const item of await items(page).all()) expect((await item.boundingBox())!.height).toBe(44);
@@ -144,7 +145,7 @@ test("英文版面（#288）：左側欄與使用者卡不破版", async ({ page
   await switchIdentity(page, access.roles.at(-1)!.id);
   await switchLanguage(page, "en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  expect((await sidebar(page).boundingBox())!.width).toBe(220);
+  expect((await sidebar(page).boundingBox())!.width).toBe(232);
   expect(await sidebar(page).evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   expect(await noHorizontalScroll(page)).toBe(true);
 });
