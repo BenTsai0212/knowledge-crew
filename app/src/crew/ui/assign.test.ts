@@ -261,12 +261,12 @@ describe("staff、guest 不能寫入", () => {
 
 describe("到期日與優先順序（#133）", () => {
   it("清單帶到期日、優先順序與畫面標示的到期狀態（demo 的今天固定）", async () => {
-    expect(await item("s14")).toMatchObject({ dueAt: "2026-11-18", priority: "high", due: "overdue" });
-    expect(await item("c11")).toMatchObject({ dueAt: "2026-11-22", priority: "normal", due: "soon" });
-    expect(await item("k13")).toMatchObject({ dueAt: "2026-12-04", priority: "low", due: "later" });
-    expect(await item("j06")).toMatchObject({ dueAt: null, priority: "high", due: "none" });
-    // 已通過的不標逾期
-    expect(await item("j05")).toMatchObject({ dueAt: "2026-10-30", priority: "high", due: "later", status: "accepted" });
+    expect(await item("s14")).toMatchObject({ dueAt: "2026-11-18", priority: "high", due: { kind: "overdue", days: 2 } });
+    expect(await item("c11")).toMatchObject({ dueAt: "2026-11-22", priority: "normal", due: { kind: "inDays", days: 2 } });
+    expect(await item("k13")).toMatchObject({ dueAt: "2026-12-04", priority: "low", due: { kind: "inDays", days: 14 } });
+    expect(await item("j06")).toMatchObject({ dueAt: null, priority: "high", due: { kind: "none" } });
+    // 已通過的不顯示相對期限（不標逾期）
+    expect(await item("j05")).toMatchObject({ dueAt: "2026-10-30", priority: "high", due: { kind: "none" }, status: "accepted" });
   });
 
   it("交辦時填到期日與優先順序，讀回一致；沒填時沒有到期日、一般", async () => {
@@ -276,8 +276,8 @@ describe("到期日與優先順序（#133）", () => {
     });
     const b = await submitAssignment(db, "manager", { sourceId: "support-inbox", title: "Plain", workTypeId: "support", employeeId: "rowan" });
     expect(await count()).toBe(before + 2);
-    expect(await item(a.id)).toMatchObject({ dueAt: "2026-11-21", priority: "high", due: "soon", status: "notSubmitted" });
-    expect(await item(b.id)).toMatchObject({ dueAt: null, priority: "normal", due: "none" });
+    expect(await item(a.id)).toMatchObject({ dueAt: "2026-11-21", priority: "high", due: { kind: "tomorrow" }, status: "notSubmitted" });
+    expect(await item(b.id)).toMatchObject({ dueAt: null, priority: "normal", due: { kind: "none" } });
   });
 
   it("到期日不是 YYYY-MM-DD 時拋錯且不寫入", async () => {

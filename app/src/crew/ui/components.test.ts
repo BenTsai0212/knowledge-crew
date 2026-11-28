@@ -1,11 +1,11 @@
-// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節）：AI 標記、層級徽章、結論列、自動檢查列、收起的區塊
+// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節）：AI 標記、層級徽章、結論列、自動檢查列、收起的區塊；相對期限（#193）
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import { crewStrings } from "../i18n";
-import { AiMark, CheckRow, CollapsedFields, ConclusionRow, DotMark, DotRow, dotsSummary, employeeOptionText, LevelBadge, withEmployee } from "./components";
+import { AiMark, CheckRow, CollapsedFields, ConclusionRow, DotMark, DotRow, dotsSummary, DueTag, dueTone, employeeOptionText, LevelBadge, relativeDueText, ScheduleLine, withEmployee } from "./components";
 import { shortDate } from "../time";
 import { checkLabel, checkSentence } from "./glossary";
 import css from "./components.css?raw";
@@ -196,5 +196,52 @@ describe("圓點（#83：信任頁與員工卡共用）", () => {
     expect(rule('.crew-dot[data-dot="ok"]')).toContain("background: var(--color-success)");
     expect(rule('.crew-dot[data-dot="wrong"]')).toContain("color: var(--color-danger)");
     expect(rule('.crew-dot[data-dot="neutral"]')).toContain("border: 1.5px dashed var(--color-textMuted)");
+  });
+});
+
+describe("相對期限（#193）", () => {
+  it("文字：逾期 N 天、今天到期、明天到期、N 天後到期（zh-TW 與 en）；沒有到期日是 null", () => {
+    expect(relativeDueText({ kind: "overdue", days: 3 }, "zh-TW")).toBe("逾期 3 天");
+    expect(relativeDueText({ kind: "today" }, "zh-TW")).toBe("今天到期");
+    expect(relativeDueText({ kind: "tomorrow" }, "zh-TW")).toBe("明天到期");
+    expect(relativeDueText({ kind: "inDays", days: 5 }, "zh-TW")).toBe("5 天後到期");
+    expect(relativeDueText({ kind: "overdue", days: 1 }, "en")).toBe("1 day overdue");
+    expect(relativeDueText({ kind: "overdue", days: 3 }, "en")).toBe("3 days overdue");
+    expect(relativeDueText({ kind: "today" }, "en")).toBe("Due today");
+    expect(relativeDueText({ kind: "tomorrow" }, "en")).toBe("Due tomorrow");
+    expect(relativeDueText({ kind: "inDays", days: 7 }, "en")).toBe("Due in 7 days");
+    expect(relativeDueText({ kind: "none" }, "zh-TW")).toBeNull();
+  });
+
+  it("標示：逾期 overdue、今天與明天、3 天內（SOON_DAYS）soon、其他 later", () => {
+    expect(dueTone({ kind: "overdue", days: 1 })).toBe("overdue");
+    expect(dueTone({ kind: "today" })).toBe("today");
+    expect(dueTone({ kind: "tomorrow" })).toBe("tomorrow");
+    expect(dueTone({ kind: "inDays", days: 2 })).toBe("soon");
+    expect(dueTone({ kind: "inDays", days: 3 })).toBe("soon");
+    expect(dueTone({ kind: "inDays", days: 4 })).toBe("later");
+  });
+
+  it("DueTag：逾期 ui-due--over、今天與明天 ui-due--soon、3 天內與其他只有 ui-due；沒有到期日時不顯示", () => {
+    expect(html(createElement(DueTag, { due: { kind: "overdue", days: 2 }, language }))).toContain(`<span class="ui-due ui-due--over crew-due" data-due="overdue">${relativeDueText({ kind: "overdue", days: 2 }, language)}</span>`);
+    expect(html(createElement(DueTag, { due: { kind: "today" }, language }))).toContain('class="ui-due ui-due--soon crew-due" data-due="today"');
+    expect(html(createElement(DueTag, { due: { kind: "tomorrow" }, language }))).toContain(`class="ui-due ui-due--soon crew-due" data-due="tomorrow">${c.dueTomorrow}<`);
+    expect(html(createElement(DueTag, { due: { kind: "inDays", days: 3 }, language }))).toContain('class="ui-due crew-due" data-due="soon"');
+    expect(html(createElement(DueTag, { due: { kind: "inDays", days: 9 }, language }))).toContain('class="ui-due crew-due" data-due="later"');
+    expect(html(createElement(DueTag, { due: { kind: "none" }, language }))).toBe("<div></div>");
+  });
+
+  it("3 天內是 warning（不粗體），其他是一般文字（沒有顏色規則）", () => {
+    expect(rule('.crew-due[data-due="soon"]')).toContain("color: var(--color-warning)");
+    expect(rule('.crew-due[data-due="soon"]')).not.toContain("font-weight");
+    expect(rule('.crew-due[data-due="later"]')).toBe("");
+    expect(rule(".crew-due")).toBe("");
+  });
+
+  it("ScheduleLine：沒有相對期限也不是「高」時不顯示", () => {
+    expect(html(createElement(ScheduleLine, { item: { due: { kind: "none" }, priority: "normal" }, language }))).toBe("<div></div>");
+    const out = html(createElement(ScheduleLine, { item: { due: { kind: "none" }, priority: "high" }, language }));
+    expect(out).toContain(c.priorityHigh);
+    expect(out).not.toContain("crew-due");
   });
 });

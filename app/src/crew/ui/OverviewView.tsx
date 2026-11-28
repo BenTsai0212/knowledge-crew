@@ -297,7 +297,7 @@ function WorkCard({ item, onOpen, t, language }: WorkCardProps) {
       </span>
       <span className="crew-overview__work-tags">
         <PriorityTag priority={item.priority} language={language} />
-        <DueTag dueAt={item.dueAt} due={item.due} language={language} />
+        <DueTag due={item.due} language={language} />
         {item.flags.stalled && <span className="badge crew-overview__stalled">{t.stalled}</span>}
         {item.checkFailed && <span className="crew-overview__check-failed">{t.checkFailed}</span>}
         {item.status === "revising" && item.round !== null && (

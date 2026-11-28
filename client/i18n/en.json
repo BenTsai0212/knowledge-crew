@@ -42,6 +42,8 @@
   "identityAndLanguage": "Identity and language",
   "userCardScope": "Can see: {scope}",
   "navMore": "More",
+  "detailsTip": "Details",
+  "detailsTipSeparator": " · ",
   "presetQuestions": "Sample questions",
   "scenarioRole": "Scenario role",
   "questionLabel": "Your question",

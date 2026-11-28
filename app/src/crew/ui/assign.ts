@@ -23,7 +23,7 @@ import type { ReviewLevel } from "../trust/types";
 import { sourceLabel } from "./refs";
 import type { DemoFile } from "../demo/types";
 import { deliverableOf } from "./review/conclusion";
-import { crewToday, isDateOnly, shownDueStatus, type DueStatus } from "../work/due";
+import { crewToday, isDateOnly, shownRelativeDue, type RelativeDue } from "../work/due";
 import type { TodayEmployee } from "./today";
 
 /** 還沒交件／待驗收／退回後等下一輪／已通過 */
@@ -44,8 +44,8 @@ export interface AssignItem {
   /** 到期日（YYYY-MM-DD，#133）；沒有時是 null */
   dueAt: string | null;
   priority: Priority;
-  /** 畫面標示的到期狀態（shownDueStatus()；已通過的不標逾期） */
-  due: DueStatus;
+  /** 畫面標示的相對期限（shownRelativeDue()；已通過的不顯示） */
+  due: RelativeDue;
   status: AssignStatus;
   latestRound: number | null;
   simulate: SimulateState;
@@ -185,7 +185,7 @@ export async function readAssign(
       assignedAt: a.assignedAt,
       dueAt: a.dueAt,
       priority: a.priority,
-      due: shownDueStatus(a.dueAt, today, assignStatus(a) === "accepted"),
+      due: shownRelativeDue(a.dueAt, today, assignStatus(a) === "accepted"),
       status: assignStatus(a),
       latestRound: a.latestRound,
       simulate: simulateState(canReview, a, demo),

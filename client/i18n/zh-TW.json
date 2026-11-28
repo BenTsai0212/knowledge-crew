@@ -42,6 +42,8 @@
   "identityAndLanguage": "身分與語言",
   "userCardScope": "看得到：{scope}",
   "navMore": "更多",
+  "detailsTip": "詳細",
+  "detailsTipSeparator": "・",
   "presetQuestions": "預設問題",
   "scenarioRole": "情境角色",
   "questionLabel": "自由提問",

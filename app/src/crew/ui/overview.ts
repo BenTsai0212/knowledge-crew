@@ -7,7 +7,7 @@ import { DEMO } from "../demo/load";
 import { guidelineStatus, type GuidelineDecision } from "../guidelines/status";
 import { demoText } from "../demo/texts";
 import type { Verdict } from "../trust/types";
-import { crewToday, shownDueStatus, type DueStatus } from "../work/due";
+import { crewToday, shownRelativeDue, type RelativeDue } from "../work/due";
 import { attentionFlags, needsAttention, stayDays, WORK_STATUSES, workStatus, type AttentionFlags, type WorkStatus } from "../work/status";
 import { sourceLabel } from "./refs";
 
@@ -27,8 +27,8 @@ export interface OverviewItem {
   round: number | null;
   dueAt: string | null;
   priority: Priority;
-  /** 畫面標示的到期狀態（已完成的不標逾期與即將到期） */
-  due: DueStatus;
+  /** 畫面標示的相對期限（shownRelativeDue()；已完成的不顯示） */
+  due: RelativeDue;
   flags: AttentionFlags;
   /** 在目前狀態停留的天數；已完成是 null */
   stayDays: number | null;
@@ -101,7 +101,7 @@ export function toOverviewItem(row: OverviewRow, today: string): OverviewItem {
     round: row.latestRound,
     dueAt: row.dueAt,
     priority: row.priority,
-    due: shownDueStatus(row.dueAt, today, done),
+    due: shownRelativeDue(row.dueAt, today, done),
     flags: attentionFlags(row, today),
     stayDays: done ? null : stayDays(row, today),
     checkFailed: status === "awaiting" && row.checkFailed,

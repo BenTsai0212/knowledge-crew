@@ -1,9 +1,9 @@
-// 交辦的到期日與優先順序（#133）：交辦表單可以填到期日與優先順序，交辦清單與「工作與驗收」顯示到期日與「高」優先；
-// demo 的今天固定（client/crew/demo.json 的 today），逾期與即將到期不隨真實日期改變。1280 與 390 都不橫向捲動。
+// 交辦的到期日與優先順序（#133）：交辦表單可以填到期日與優先順序，交辦清單與「工作與驗收」顯示相對期限（#193）與「高」優先；
+// demo 的今天固定（client/crew/demo.json 的 today），逾期 N 天、明天到期、N 天後到期不隨真實日期改變。1280 與 390 都不橫向捲動。
 // 只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。
 import { expect, test, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
-import { language, readClientJson } from "./support/client";
+import { readClientJson } from "./support/client";
 import { assignmentTitle, crewFill, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
@@ -15,9 +15,9 @@ const demoToday = hasCrewDemo ? readClientJson<{ today?: string }>("crew/demo.js
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const reviewList = (page: Page) => page.getByRole("navigation", { name: ct.review.listLabel });
 const listItem = (page: Page, title: string) => reviewList(page).getByRole("button").filter({ hasText: title });
-// 到期日（YYYY-MM-DD）的月／日，與畫面相同的寫法
-const monthDay = (date: string) => new Intl.DateTimeFormat(language, { month: "numeric", day: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
-const dueText = (key: "dueOn" | "dueSoon" | "dueOverdue", date: string) => crewFill(ct.common[key], { date: monthDay(date) });
+// 相對期限的文字（#193）：demo 的今天是 2026-11-20
+const overdueText = (days: number) => crewFill(ct.common.dueOverdueDays, { days });
+const inDaysText = (days: number) => crewFill(ct.common.dueInDays, { days });
 
 async function openAsManager(page: Page): Promise<void> {
   await openApp(page);
@@ -29,21 +29,25 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
   test.describe(`${viewport.width}`, () => {
     test.use({ viewport });
 
-    test("工作與驗收：待驗收的清單與面板顯示到期日（逾期、即將到期、還早）與「高」優先", async ({ page }) => {
+    test("工作與驗收：待驗收的清單與面板顯示相對期限（逾期 N 天、3 天內、還早）與「高」優先", async ({ page }) => {
       expect(demoToday).toBe("2026-11-20");
       await openAsManager(page);
       await gotoCrewSection(page, ct.common.sectionWorks);
 
       const s14 = listItem(page, assignmentTitle("s14"));
-      await expect(s14.locator(".crew-due")).toHaveText(dueText("dueOverdue", "2026-11-18"));
+      // s14 的到期日是 11/18：逾期 2 天
+      await expect(s14.locator(".crew-due")).toHaveText(overdueText(2));
       await expect(s14.locator(".crew-due")).toHaveAttribute("data-due", "overdue");
       await expect(s14.getByText(ct.common.priorityHigh, { exact: true })).toBeVisible();
       const c11 = listItem(page, assignmentTitle("c11"));
       await expect(c11.locator(".crew-due")).toHaveAttribute("data-due", "soon");
-      await expect(c11.locator(".crew-due")).toHaveText(dueText("dueSoon", "2026-11-22"));
+      // c11 的到期日是 11/22：2 天後到期
+      await expect(c11.locator(".crew-due")).toHaveText(inDaysText(2));
       await expect(c11.getByText(ct.common.priorityHigh, { exact: true })).toHaveCount(0);
       const k13 = listItem(page, assignmentTitle("k13"));
+      // k13 的到期日是 12/04：14 天後到期，一般文字
       await expect(k13.locator(".crew-due")).toHaveAttribute("data-due", "later");
+      await expect(k13.locator(".crew-due")).toHaveText(inDaysText(14));
       // 沒有到期日：不顯示日期，只標「高」
       const j06 = listItem(page, assignmentTitle("j06"));
       await expect(j06.locator(".crew-due")).toHaveCount(0);
@@ -55,12 +59,12 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
 
       await s14.click();
       const panel = reviewPanel(page, assignmentTitle("s14"));
-      await expect(panel.locator(".crew-review__head .crew-due")).toHaveText(dueText("dueOverdue", "2026-11-18"));
+      await expect(panel.locator(".crew-review__head .crew-due")).toHaveText(overdueText(2));
       await expect(panel.locator(".crew-review__head").getByText(ct.common.priorityHigh, { exact: true })).toBeVisible();
       expect(await noHorizontalScroll(page)).toBe(true);
     });
 
-    test("交辦一件有到期日、優先順序高的工作：清單顯示到期日與「高」；沒填的交辦不顯示", async ({ page }) => {
+    test("交辦一件有到期日、優先順序高的工作：清單顯示「明天到期」與「高」；沒填的交辦不顯示", async ({ page }) => {
       await openAsManager(page);
       await gotoCrewSection(page, ct.common.sectionAssignments);
       const form = page.getByRole("form", { name: ct.assign.formTitle });
@@ -80,7 +84,9 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       const list = page.getByRole("region", { name: ct.assign.listTitle });
       const item = list.getByRole("listitem").filter({ hasText: TITLE });
       await expect(item.getByText(ct.assign.statusNotSubmitted, { exact: true })).toBeVisible();
-      await expect(item.locator(".crew-due")).toHaveText(dueText("dueSoon", "2026-11-21"));
+      // 到期日 11/21 是明天：warning 粗體
+      await expect(item.locator(".crew-due")).toHaveText(ct.common.dueTomorrow);
+      await expect(item.locator(".crew-due")).toHaveAttribute("data-due", "tomorrow");
       await expect(item.getByText(ct.common.priorityHigh, { exact: true })).toBeVisible();
       // 送出後表單回到預設
       await expect(due).toHaveValue("");
@@ -99,7 +105,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       await item.getByRole("button", { name: ct.assign.simulate, exact: true }).click();
       await expect(item.getByText(ct.assign.statusAwaitingReview, { exact: true })).toBeVisible();
       await gotoCrewSection(page, ct.common.sectionWorks);
-      await expect(listItem(page, TITLE).locator(".crew-due")).toHaveText(dueText("dueSoon", "2026-11-21"));
+      await expect(listItem(page, TITLE).locator(".crew-due")).toHaveText(ct.common.dueTomorrow);
       expect(await noHorizontalScroll(page)).toBe(true);
     });
   });

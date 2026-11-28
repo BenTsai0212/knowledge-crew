@@ -221,7 +221,7 @@ const uiStrings = {
   signInTitle: "required", signInAccount: "required", signInAccountOption: "required", signInPassword: "required", signInNoPassword: "required",
   signInSubmit: "required", signInWithCode: "required", signInBack: "required",
   signInEyebrow: "required", accessCodeEyebrow: "required", signInOr: "required", signInAccountHint: "required", signOut: "required",
-  identityBadge: "required", identityAndLanguage: "required", userCardScope: "required", navMore: "required",
+  identityBadge: "required", identityAndLanguage: "required", userCardScope: "required", navMore: "required", detailsTip: "required", detailsTipSeparator: "required",
   presetQuestions: "required", scenarioRole: "required", questionLabel: "required",
   questionPlaceholder: "required", askButton: "required", answering: "required", emptyAnswer: "required", emptyAnswerReason: "required", emptyAnswerAction: "required",
   qaIndependent: "required", qaHeaderNote: "required", sessionQuestions: "required", sessionQuestionsCount: "required", answerMentions: "required", answerBasis: "required", answerConflict: "required", followUpTitle: "required",

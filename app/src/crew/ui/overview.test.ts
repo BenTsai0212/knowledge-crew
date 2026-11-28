@@ -62,8 +62,8 @@ describe("readOverview：匯入虛構資料後", () => {
     expect(item("s16").round).toBe(1);
     expect(item("s15").round).toBeNull();
     expect(ids(o.items.filter((i) => i.checkFailed)).sort()).toEqual(["k13", "s14"]);
-    // 已完成沒有停留天數，也不標逾期（j05 的到期日 10-30 早於今天）
-    expect(item("j05")).toMatchObject({ status: "done", stayDays: null, due: "later", flags: { overdue: false, soon: false, stalled: false } });
+    // 已完成沒有停留天數，也不顯示相對期限（j05 的到期日 10-30 早於今天）
+    expect(item("j05")).toMatchObject({ status: "done", stayDays: null, due: { kind: "none" }, flags: { overdue: false, soon: false, stalled: false } });
   });
 
   it("需注意的標記：逾期、3 天內到期與停滯在兩個專案都有", async () => {

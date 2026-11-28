@@ -31,10 +31,29 @@ export function dueStatus(dueAt: string | null, today: string): DueStatus {
   return left <= SOON_DAYS ? "soon" : "later";
 }
 
-/** 畫面標示的到期狀態：已通過（done）的交辦不再標逾期或即將到期，只顯示日期（later）。 */
-export function shownDueStatus(dueAt: string | null, today: string, done: boolean): DueStatus {
-  const status = dueStatus(dueAt, today);
-  return done && (status === "overdue" || status === "soon") ? "later" : status;
+/** 相對期限（#193，設計規格 v5 第 5 節）：逾期 N 天／今天到期／明天到期／N 天後到期／沒有到期日 */
+export type RelativeDue =
+  | { kind: "overdue"; days: number }
+  | { kind: "today" }
+  | { kind: "tomorrow" }
+  | { kind: "inDays"; days: number }
+  | { kind: "none" };
+
+/** 到期日相對於今天的天數；與 dueStatus() 相同，以日期計算（不看時刻與時區），格式不對時拋錯。 */
+export function relativeDue(dueAt: string | null, today: string): RelativeDue {
+  const now = dayNumber(today);
+  if (dueAt === null) return { kind: "none" };
+  const left = dayNumber(dueAt) - now;
+  if (left < 0) return { kind: "overdue", days: -left };
+  if (left === 0) return { kind: "today" };
+  if (left === 1) return { kind: "tomorrow" };
+  return { kind: "inDays", days: left };
+}
+
+/** 畫面標示的相對期限：已通過（done）的交辦不顯示（none）；需要確切日期的地方另外顯示日期。 */
+export function shownRelativeDue(dueAt: string | null, today: string, done: boolean): RelativeDue {
+  const due = relativeDue(dueAt, today);
+  return done ? { kind: "none" } : due;
 }
 
 /** 本地時間的日期（YYYY-MM-DD） */

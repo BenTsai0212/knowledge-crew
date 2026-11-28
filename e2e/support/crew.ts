@@ -41,9 +41,17 @@ export const ct = {
 };
 
 // 代入 {key}（只用於沒有單複數寫法的文字）
+// 單複數（{days, plural, one {# day} other {# days}}）依預設語言的 Intl.PluralRules 選寫法，與 app 的 fill() 相同（#193）
+const PLURAL = /\{(\w+), plural,((?:\s*(?:=\d+|[a-z]+)\s*\{[^{}]*\})+)\s*\}/g;
 export function crewFill(template: string, values: Record<string, string | number>): string {
-  if (template.includes(", plural")) throw new Error(`crewFill 不處理單複數：${template}`);
-  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key]));
+  const plural = template.replace(PLURAL, (_, key: string, forms: string) => {
+    const n = Number(values[key]);
+    const byKey = new Map([...forms.matchAll(/(=\d+|[a-z]+)\s*\{([^{}]*)\}/g)].map((m) => [m[1], m[2]]));
+    const form = byKey.get(`=${n}`) ?? byKey.get(new Intl.PluralRules(language).select(n)) ?? byKey.get("other");
+    if (form === undefined) throw new Error(`crewFill 找不到單複數的寫法：${template}`);
+    return form.replaceAll("#", String(n));
+  });
+  return plural.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key]));
 }
 
 // 虛構資料（client/crew/demo.json）：員工、工作類型與工作來源以 id 指定，名稱從資料讀
