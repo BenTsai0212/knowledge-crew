@@ -375,6 +375,9 @@ export interface UiStrings {
   userCardScope: string;
   // 手機底部分頁列的「更多」（#255）
   navMore: string;
+  // 「詳細」按鈕與內容項目的分隔（#193，ui/DetailsTip.tsx）
+  detailsTip: string;
+  detailsTipSeparator: string;
   presetQuestions: string;
   // 預設問題旁標示情境的角色；提問一律以目前選的身分（#26 決定 1）
   scenarioRole: string;

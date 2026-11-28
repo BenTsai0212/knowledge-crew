@@ -31,8 +31,9 @@
   "collapseFields": "收起沒標記的欄位",
   "directEntry": "直接體驗",
   "noAsk": "線上 demo 不提供問答；可以看圖譜、時間軸與 AI 員工的工作。",
-  "dueOn": "{date} 到期",
-  "dueOverdue": "{date} 到期・已逾期",
-  "dueSoon": "{date} 到期・即將到期",
+  "dueOverdueDays": "逾期 {days} 天",
+  "dueToday": "今天到期",
+  "dueTomorrow": "明天到期",
+  "dueInDays": "{days} 天後到期",
   "priorityHigh": "優先：高"
 }

@@ -86,6 +86,7 @@
 - `ConflictStatus.tsx`：比對狀態
 - `Conversation.tsx`：問答頁中間的對話
 - `cross-fade.ts`：切換語言、Light／Dark 的交叉淡換
+- `DetailsTip.tsx`：「詳細」（#193）：文字按鈕打開小泡泡，內容是以分隔字（翻譯檔的 `detailsTipSeparator`）連接的項目，空的項目略過；開關規則同 `Qmark.tsx`
 - `entity-icons.ts`：實體類型的圖示集
 - `EntityIcon.tsx`：圖例的圖示
 - `EntityPanel.tsx`：圖譜頁的實體面板；桌機（`wide`）是右側整高欄的列與卡片（#336），展示模式的桌機也用（#349，相關實體依實體合併成一列）；手機（`sheet`）是底部面板的版面（#357）
@@ -125,6 +126,7 @@
 - `PresentationBar.tsx`：展示模式登入後的頂端列（不論寬度都取代 `Sidebar`／`MobileNav`；畫板 `H-QA`、`H-Graph`，#349）；`VITE_DEMO_COMPARE` 開啟時有「身分對照」按鈕，見 `docs/qa.md`「展示模式」「身分對照」
 - `ProductIcon.tsx`：頁首的產品 icon（favicon 在 `app/public/favicon.svg`，見 `docs/design.md`「產品 icon（K 晶格）」）
 - `qa-errors.ts`：問答錯誤的五類（見 `docs/qa.md`「錯誤」）
+- `Qmark.tsx`：「?」說明（#193）：18px 圓形按鈕（`ui-qmark`）打開小泡泡（`ui-tip`），`label` 是按鈕的可存取名稱；與 `DetailsTip.tsx` 共用 `TipBubble.tsx`
 - `refusal-next-steps.ts`：拒答下方的下一步與先確認要找的是哪一種（見 `docs/qa.md`「拒答」）
 - `report-helpers.ts`：問答的「回報有錯」組成回報
 - `ReportList.tsx`：待審頁的「回報」分頁
@@ -153,6 +155,7 @@
 - `theme.ts`：由 `client/theme.json` 設定 CSS 變數（深色模式用 `darkColors`）
 - `timeline-view.ts`：時間軸的區段與篩選、桌機與手機的年份分組、範圍與說法不同的純函式
 - `TimelinePage.tsx`：時間軸（見 `docs/graph.md`；桌機與手機是精簡卡片，#346、#358）
+- `TipBubble.tsx`、`tip.ts`：「?」與「詳細」共用的小泡泡（`details/summary`）與開關規則：同一時間只開一個、Esc 關閉並把焦點放回按鈕（對話框中只關泡泡）、點泡泡外面關閉（測試在 `tip.test.ts`）
 
 ### `app/src/graph/`
 
@@ -263,7 +266,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/assign.ts`：「交辦」的資料整理（`readAssign()`：交辦清單與表單的選項，員工平常的來源與工作類型由 `usualOf()` 從交辦紀錄推得；`initialChoice()`：員工卡「交辦給 ○○」預選的員工與來源；`resultKey()`、`visibleAssignments()`：結果說明的文字鍵與清單的最近 4 件；`submitAssignment()`、`simulateAssignment()`：交辦與模擬交件；測試在 `assign.test.ts`）
 - `ui/AssignView.css`：「交辦」畫面的表單（員工單選卡、來源與工作類型、結果說明）與交辦清單
 - `ui/AssignView.tsx`：「交辦」畫面：交辦表單（依員工帶入來源與工作類型、結果說明）、交辦清單（最近 4 件，可看全部）與「模擬交件」（只呈現 `assign.ts` 的結果；表單與按鈕只給能驗收的身分）
-- `ui/components.tsx`：AI 員工畫面共用的元件（AI 標記、層級徽章、圓點 `DotMark`／`DotRow`／`dotsSummary()`（信任頁與員工卡共用）、結論列、自動檢查列、收起的區塊；樣式在 `components.css`，測試在 `components.test.ts`）
+- `ui/components.tsx`：AI 員工畫面共用的元件（AI 標記、層級徽章、圓點 `DotMark`／`DotRow`／`dotsSummary()`（信任頁與員工卡共用）、結論列、自動檢查列、收起的區塊、相對期限 `DueTag`／`ScheduleLine`（#193，`ui-due` 系列）；樣式在 `components.css`，測試在 `components.test.ts`）
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數；手機是可橫向滑動的按鈕列，#103）
 - `ui/CrewPage.tsx`：crew 頁：頁首、子導覽四個位置（工作、員工、交辦、紀錄；#191，ADR 0009 第二節）；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」；收到的位置經 `resolveCrewTarget()`（舊的 id 對應到新位置）；「工作」「員工」帶數字（`section-counts.ts`，只給能驗收的身分）
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
@@ -316,7 +319,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/TrustView.tsx`：審查方式（時間軸，設計規格 v3 第 6.4 節）：`useTrust()`（讀取與寫入）、`TrustIntro`（說明與圖例）、`TrustRowCard`（每個「員工 × 工作類型」一列）；#191 起放在「員工」子頁的員工卡內；同意與收回只給能驗收的身分
 - `ui/WorksView.tsx`：「工作」子頁（#191）：「清單｜看板」切換（`ui-seg`、`aria-pressed`）；清單是 `ReviewView.tsx`、看板是 `OverviewView.tsx`，點看板的工作切回清單並選取那件
 - `work/body.ts`：交件全文的結構與「要看的重點」標記：`parseWorkBody()`、`toPlainText()`（格式見 `docs/crew/work-body-format.md`；測試在 `body.test.ts`）
-- `work/due.ts`：交辦的到期狀態（#133）：`dueStatus()`（逾期／3 天內到期／還早／沒有到期日）、`shownDueStatus()`（已通過的不標逾期）、`crewToday()`（demo 的 `today` 固定，沒有時用目前的日期；測試在 `due.test.ts`）
+- `work/due.ts`：交辦的到期狀態（#133）：`dueStatus()`（逾期／3 天內到期／還早／沒有到期日）、`relativeDue()`（相對期限：逾期 N 天／今天／明天／N 天後，#193）、`shownRelativeDue()`（已通過的不顯示）、`crewToday()`（demo 的 `today` 固定，沒有時用目前的日期；測試在 `due.test.ts`）
 - `work/status.ts`：工作狀態與需注意的標記（#134）：`workStatus()`（待交件／等驗收／修正中／已完成）、`stayDays()`、`attentionFlags()`（逾期、3 天內到期、停滯：停留超過 3 天）；測試在 `status.test.ts`
 
 ### `app/src/db/`

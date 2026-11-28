@@ -11,7 +11,7 @@
   "required": [
     "loading", "loadFailed", "modelLoadingTitle", "modelDownloadingTitle", "modelDownloadProgress", "modelDownloadBar", "modelPreparing",
     "retrievalFallbackTitle", "retrievalFallback", "productName", "fictionalData", "demoPermissions", "identity", "language", "accessCodeTitle",
-    "accessCodeLabel", "accessCodeHint", "demoAccessCodeHint", "demoQaNotice", "demoUploadNotice", "accessCodeSubmit", "changeAccessCode", "signInTitle", "signInAccount", "signInAccountOption", "signInPassword", "signInNoPassword", "signInSubmit", "signInWithCode", "signInBack", "signInEyebrow", "accessCodeEyebrow", "signInOr", "signInAccountHint", "signOut", "identityBadge", "identityAndLanguage", "userCardScope", "navMore", "presetQuestions", "scenarioRole",
+    "accessCodeLabel", "accessCodeHint", "demoAccessCodeHint", "demoQaNotice", "demoUploadNotice", "accessCodeSubmit", "changeAccessCode", "signInTitle", "signInAccount", "signInAccountOption", "signInPassword", "signInNoPassword", "signInSubmit", "signInWithCode", "signInBack", "signInEyebrow", "accessCodeEyebrow", "signInOr", "signInAccountHint", "signOut", "identityBadge", "identityAndLanguage", "userCardScope", "navMore", "detailsTip", "detailsTipSeparator", "presetQuestions", "scenarioRole",
     "questionLabel", "questionPlaceholder", "askButton", "answering", "emptyAnswer", "emptyAnswerReason", "emptyAnswerAction", "qaIndependent", "qaHeaderNote", "sessionQuestions", "sessionQuestionsCount", "answerMentions", "answerBasis", "answerConflict", "followUpTitle", "followUpOutgoing", "followUpIncoming", "viewInGraph", "openSource", "sourceTitle", "sourceHeading",
     "closeSource", "sourceStep", "sourceSheetStep", "sourcePrev", "sourceNext", "sourceCitedList", "sourceConfirm", "sourceConfirmRevoke", "sourceConfirmGroup", "sourceConfirmed", "sourceConfirmedSuperseded", "sourceConfirmedDisputed", "sourceConfirmedBy", "sourceConfirmOpenNewer", "sourceConfirmOpenOther", "sourceConfirmFailed", "citationConfirmed", "citationConfirmedHint", "paragraphNumber", "views", "tabQa", "tabHome", "tabGraph", "legend", "graphEmpty", "graphEmptyReason", "switchIdentity", "selectEntity", "graphExpanded", "graphShowAll", "graphShowOnly",
     "graphSearch", "graphSearchNone", "graphTopConnected", "graphRelationCount", "graphDocumentCount", "graphSourceCount", "graphAskAbout", "graphFilters", "graphFindPath", "graphZoomIn", "graphZoomOut", "graphLegendNote", "graphCounts", "graphJustExpanded", "graphListMode", "graphKeyboard", "graphZoom", "askAboutEntity", "relatedEntities",
@@ -112,6 +112,8 @@
     "identityAndLanguage": { "$ref": "#/definitions/Text" },
     "userCardScope": { "$ref": "#/definitions/Text" },
     "navMore": { "$ref": "#/definitions/Text" },
+    "detailsTip": { "$ref": "#/definitions/Text" },
+    "detailsTipSeparator": { "$ref": "#/definitions/Text" },
     "presetQuestions": { "$ref": "#/definitions/Text" },
     "scenarioRole": { "$ref": "#/definitions/Text" },
     "questionLabel": { "$ref": "#/definitions/Text" },

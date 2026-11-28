@@ -68,7 +68,7 @@ const CLASSES = [
   "ui-empty", "ui-empty--inline",
   "ui-tbl", "ui-tbl-wrap",
   "ui-dialog", "ui-scrim",
-  "ui-qmark", "ui-tip",
+  "ui-qmark", "ui-tip", "ui-tip__link",
   "ui-page-head", "ui-page-head__row", "ui-page-head__title", "ui-page-head__eyebrow", "ui-page-head__lead", "ui-page-head__actions",
   "ui-tabs", "ui-tabs--more", "ui-tab",
 ];

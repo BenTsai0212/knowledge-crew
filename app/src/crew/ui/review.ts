@@ -10,7 +10,7 @@ import { DEMO } from "../demo/load";
 import { demoText } from "../demo/texts";
 import { readFlowbackPassage } from "../knowledge/origin";
 import { parseWorkBody, type ParsedBody } from "../work/body";
-import { crewToday, shownDueStatus, type DueStatus } from "../work/due";
+import { crewToday, shownRelativeDue, type RelativeDue } from "../work/due";
 import { sourceLabel } from "./refs";
 import { deliverableOf, type Deliverable } from "./review/conclusion";
 import { followedGuidelines, pendingGuidelineCount, type FollowedGuideline } from "./review/followed";
@@ -40,8 +40,8 @@ export interface WorkListItem {
   /** 到期日（YYYY-MM-DD，#133）；沒有時是 null */
   dueAt: string | null;
   priority: Priority;
-  /** 畫面標示的到期狀態（shownDueStatus()；已通過的不標逾期） */
-  due: DueStatus;
+  /** 畫面標示的相對期限（shownRelativeDue()；已通過的不顯示） */
+  due: RelativeDue;
   /** 最新一輪是抽查（#166）：只在待驗收的清單與驗收面板算出，其他情況是 false */
   spotCheck: boolean;
 }
@@ -162,7 +162,7 @@ function toItem(a: AssignmentSummary, round: number, workRef: string | null, nam
     verdict: a.latestVerdict,
     dueAt: a.dueAt,
     priority: a.priority,
-    due: shownDueStatus(a.dueAt, today, a.latestVerdict === "accepted"),
+    due: shownRelativeDue(a.dueAt, today, a.latestVerdict === "accepted"),
     spotCheck: false,
   };
 }

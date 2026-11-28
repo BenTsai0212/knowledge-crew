@@ -5,7 +5,7 @@ import { fill } from "../../client/i18n";
 import type { LanguageCode } from "../../client/types";
 import type { Priority } from "../db/store";
 import type { CheckStatus, Dot, ReviewLevel } from "../trust/types";
-import type { DueStatus } from "../work/due";
+import { SOON_DAYS, type RelativeDue } from "../work/due";
 import { crewStrings } from "../i18n";
 import { shortDate } from "../time";
 import { checkLabel, checkSentence } from "./glossary";
@@ -75,21 +75,48 @@ export function LevelBadge({ level, children }: { level: ReviewLevel; children: 
   );
 }
 
-const DUE_TEXT = { overdue: "dueOverdue", soon: "dueSoon", later: "dueOn" } as const satisfies Record<Exclude<DueStatus, "none">, string>;
+/** 相對期限的標示（data-due）：逾期、今天、明天、3 天內（SOON_DAYS）、其他 */
+export type DueTone = "overdue" | "today" | "tomorrow" | "soon" | "later";
 
-/** 到期日（YYYY-MM-DD）的月／日；以 UTC 解讀，不因時區差一天。 */
+export function dueTone(due: Exclude<RelativeDue, { kind: "none" }>): DueTone {
+  if (due.kind === "inDays") return due.days <= SOON_DAYS ? "soon" : "later";
+  return due.kind;
+}
+
+// 逾期＝danger 粗體（ui-due--over）、今天與明天＝warning 粗體（ui-due--soon）、3 天內＝warning（components.css）、其他＝一般文字
+const DUE_CLASS = { overdue: "ui-due ui-due--over", today: "ui-due ui-due--soon", tomorrow: "ui-due ui-due--soon", soon: "ui-due", later: "ui-due" } as const satisfies Record<DueTone, string>;
+
+/** 相對期限的文字（「逾期 2 天」「明天到期」「5 天後到期」）；沒有到期日時是 null。 */
+export function relativeDueText(due: RelativeDue, language: LanguageCode): string | null {
+  const t = crewStrings("common", language);
+  switch (due.kind) {
+    case "none":
+      return null;
+    case "overdue":
+      return fill(t.dueOverdueDays, { days: due.days }, language);
+    case "today":
+      return t.dueToday;
+    case "tomorrow":
+      return t.dueTomorrow;
+    case "inDays":
+      return fill(t.dueInDays, { days: due.days }, language);
+  }
+}
+
+/** 到期日（YYYY-MM-DD）的月／日；以 UTC 解讀，不因時區差一天。確切日期之後放在「詳細」。 */
 export function formatDueDate(dueAt: string, language: LanguageCode): string {
   const date = new Date(`${dueAt}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return dueAt;
   return new Intl.DateTimeFormat(language, { month: "numeric", day: "numeric", timeZone: "UTC" }).format(date);
 }
 
-/** 到期日標籤（#133）：逾期是 danger、即將到期是 warning，其他只顯示日期；文字也寫出狀態，不只靠顏色。沒有到期日時不顯示。 */
-export function DueTag({ dueAt, due, language }: { dueAt: string | null; due: DueStatus; language: LanguageCode }) {
-  if (dueAt === null || due === "none") return null;
+/** 相對期限標籤（#133、#193）：文字寫出狀態（逾期 N 天、明天到期…），不只靠顏色。沒有到期日或已通過（none）時不顯示。 */
+export function DueTag({ due, language }: { due: RelativeDue; language: LanguageCode }) {
+  if (due.kind === "none") return null;
+  const tone = dueTone(due);
   return (
-    <span className="crew-due" data-due={due}>
-      {fill(crewStrings("common", language)[DUE_TEXT[due]], { date: formatDueDate(dueAt, language) })}
+    <span className={`${DUE_CLASS[tone]} crew-due`} data-due={tone}>
+      {relativeDueText(due, language)}
     </span>
   );
 }
@@ -100,13 +127,13 @@ export function PriorityTag({ priority, language }: { priority: Priority; langua
   return <span className="badge crew-priority">{crewStrings("common", language).priorityHigh}</span>;
 }
 
-/** 到期日與「高」優先（#133）；兩者都沒有時不顯示。 */
-export function ScheduleLine({ item, language }: { item: { dueAt: string | null; due: DueStatus; priority: Priority }; language: LanguageCode }) {
-  if (item.priority !== "high" && (item.dueAt === null || item.due === "none")) return null;
+/** 相對期限與「高」優先（#133、#193）；兩者都沒有時不顯示。 */
+export function ScheduleLine({ item, language }: { item: { due: RelativeDue; priority: Priority }; language: LanguageCode }) {
+  if (item.priority !== "high" && item.due.kind === "none") return null;
   return (
     <span className="crew-schedule">
       <PriorityTag priority={item.priority} language={language} />
-      <DueTag dueAt={item.dueAt} due={item.due} language={language} />
+      <DueTag due={item.due} language={language} />
     </span>
   );
 }

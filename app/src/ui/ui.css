@@ -777,6 +777,14 @@ button.ui-row:hover {
   right: 0;
 }
 
+/* 「詳細」（#193）：文字按鈕，打開同一種泡泡 */
+.ui-tip__link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 13px;
+}
+
 /* ---------- 頁首（#179，每頁一個）：所屬區塊小字＋主標題 h1＋一句說明＋動作；動作放不下時換到下一行 ---------- */
 .ui-page-head {
   display: flex;

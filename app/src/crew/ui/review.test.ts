@@ -2,6 +2,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import { openDatabase, type Database } from "../../db/database";
 import { createAssignment, createCorrection, createReview, createWork, nextExternalRef } from "../db/store";
@@ -54,34 +55,38 @@ describe("到期日與優先順序（#133）", () => {
     const brief = awaiting.map(({ id, dueAt, priority, due }) => ({ id, dueAt, priority, due }));
     // #134 加了 c12（青翼專案、逾期）、j11（長堤專案、3 天內到期），依交件時間排在最前面
     expect(brief).toEqual([
-      { id: "c12", dueAt: "2026-11-17", priority: "high", due: "overdue" },
-      { id: "j11", dueAt: "2026-11-21", priority: "normal", due: "soon" },
-      { id: "s14", dueAt: "2026-11-18", priority: "high", due: "overdue" },
-      { id: "k17", dueAt: "2026-12-02", priority: "normal", due: "later" },
-      { id: "c11", dueAt: "2026-11-22", priority: "normal", due: "soon" },
-      { id: "k13", dueAt: "2026-12-04", priority: "low", due: "later" },
-      { id: "j06", dueAt: null, priority: "high", due: "none" },
+      { id: "c12", dueAt: "2026-11-17", priority: "high", due: { kind: "overdue", days: 3 } },
+      { id: "j11", dueAt: "2026-11-21", priority: "normal", due: { kind: "tomorrow" } },
+      { id: "s14", dueAt: "2026-11-18", priority: "high", due: { kind: "overdue", days: 2 } },
+      { id: "k17", dueAt: "2026-12-02", priority: "normal", due: { kind: "inDays", days: 12 } },
+      { id: "c11", dueAt: "2026-11-22", priority: "normal", due: { kind: "inDays", days: 2 } },
+      { id: "k13", dueAt: "2026-12-04", priority: "low", due: { kind: "inDays", days: 14 } },
+      { id: "j06", dueAt: null, priority: "high", due: { kind: "none" } },
     ]);
-    // 已通過的交辦只顯示日期，不標逾期
-    expect(recent.find((i) => i.id === "s13")).toMatchObject({ dueAt: "2026-10-31", priority: "low", due: "later" });
+    // 已通過的交辦不顯示相對期限（不標逾期），到期日仍在 dueAt
+    expect(recent.find((i) => i.id === "s13")).toMatchObject({ dueAt: "2026-10-31", priority: "low", due: { kind: "none" } });
   });
 
   it("今天可以指定：換一天，狀態跟著換", async () => {
     const { awaiting } = await readWorkList(db, "manager", lang, "2026-12-10");
     // #134 加了 c12、j11；#161 加了 k17
-    expect(awaiting.map((i) => i.due)).toEqual(["overdue", "overdue", "overdue", "overdue", "overdue", "overdue", "none"]);
+    expect(awaiting.map((i) => i.due.kind)).toEqual(["overdue", "overdue", "overdue", "overdue", "overdue", "overdue", "none"]);
+    expect(awaiting.find((i) => i.id === "s14")!.due).toEqual({ kind: "overdue", days: 22 });
   });
 
   it("面板的標題卡顯示到期日與「高」優先；逾期標成 overdue", async () => {
     const t = crewStrings("common", lang);
     const p = (await panel(db, "manager", "s14"))!;
-    expect(p.item).toMatchObject({ due: "overdue", priority: "high" });
+    expect(p.item).toMatchObject({ due: { kind: "overdue", days: 2 }, priority: "high" });
     const html = renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: p, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
     expect(html).toContain('data-due="overdue"');
     expect(html).toContain(t.priorityHigh);
+    // 相對期限（#193）：s14 在 11-18 到期，今天 11-20
+    expect(html).toContain(fill(t.dueOverdueDays, { days: 2 }, lang));
     // 一般與低不標優先順序；沒有到期日時不顯示日期
     const k13 = renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: (await panel(db, "manager", "k13"))!, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
     expect(k13).toContain('data-due="later"');
+    expect(k13).toContain(fill(t.dueInDays, { days: 14 }, lang));
     expect(k13).not.toContain(t.priorityHigh);
     const j06 = renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: (await panel(db, "manager", "j06"))!, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
     expect(j06).not.toContain("data-due");
@@ -114,7 +119,7 @@ describe("readWorkList：匯入虛構資料後", () => {
       // #133：demo 的今天是 2026-11-20，s14 在 11-18 到期（逾期）、優先順序高
       dueAt: "2026-11-18",
       priority: "high",
-      due: "overdue",
+      due: { kind: "overdue", days: 2 },
       spotCheck: false,
     });
     expect(awaiting.find((a) => a.id === "j06")).toMatchObject({ sourceName: "example-org/company-site", externalRef: "26", workRef: "38", workTypeId: "dev" });

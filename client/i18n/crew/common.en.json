@@ -31,8 +31,9 @@
   "collapseFields": "Collapse unmarked fields",
   "directEntry": "Try it now",
   "noAsk": "The online demo does not include Q&A. Explore the graph and timeline, or see the AI employees' work.",
-  "dueOn": "Due {date}",
-  "dueOverdue": "Due {date} · overdue",
-  "dueSoon": "Due {date} · due soon",
+  "dueOverdueDays": "{days, plural, one {# day} other {# days}} overdue",
+  "dueToday": "Due today",
+  "dueTomorrow": "Due tomorrow",
+  "dueInDays": "Due in {days} days",
   "priorityHigh": "High priority"
 }

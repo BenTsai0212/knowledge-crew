@@ -42,6 +42,8 @@
   "identityAndLanguage": "身分と言語",
   "userCardScope": "閲覧できる範囲：{scope}",
   "navMore": "その他",
+  "detailsTip": "詳細",
+  "detailsTipSeparator": "・",
   "presetQuestions": "質問の例",
   "scenarioRole": "シナリオのユーザー",
   "questionLabel": "質問",
