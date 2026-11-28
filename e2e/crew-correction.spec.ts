@@ -48,7 +48,7 @@ test.describe("桌機 1280", () => {
     test.skip(!k01Correction, "demo 的 k01-2 沒有事後更正");
     const date = shortDay(k01Correction!.correctedAt);
     const note = k01Correction!.note![language];
-    await gotoCrewSection(page, ct.common.sectionLedger);
+    await gotoCrewSection(page, ct.common.sectionRecords);
     await crewContent(page).getByRole("combobox", { name: new RegExp(`^${ct.ledger.filterEvent}`) }).selectOption({ label: ct.ledger.eventReturned });
     const row = rows(page).filter({ hasText: ct.ledger.kindCorrected });
     await expect(row).toHaveCount(1);
@@ -69,10 +69,10 @@ test.describe("桌機 1280", () => {
 });
 
 for (const width of [1280, 390]) {
-  test(`主管（${width}）：對看重點期間通過的 k12 記下更正 → 改回逐項看、帳本兩筆、信任頁那一格中空`, async ({ page }, testInfo) => {
+  test(`主管（${width}）：對看重點期間通過的 k12 記下更正 → 改回逐項看、帳本兩筆、員工頁的審查方式那一格中空`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
     const linden = () => trustRow(page, "linden", "knowledge");
-    await gotoCrewSection(page, ct.common.sectionTrust);
+    await gotoCrewSection(page, ct.common.sectionEmployees);
     await expect(linden().locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelLight }));
     await expect(linden().locator(".crew-trust__dot[data-corrected]")).toHaveCount(0);
 
@@ -111,15 +111,15 @@ for (const width of [1280, 390]) {
     await page.keyboard.press("Escape");
 
     // 帳本：最新兩筆是「因事後更正改回逐項看」與「事後更正」（備註在工作欄）
-    await gotoCrewSection(page, ct.common.sectionLedger);
+    await gotoCrewSection(page, ct.common.sectionRecords);
     await expect(rows(page).nth(0)).toContainText(ct.ledger.kindAutoResetCorrection);
     await expect(rows(page).nth(1)).toContainText(ct.ledger.kindCorrected);
     await expect(rows(page).nth(1)).toContainText("Cutoff is 15:00, not 17:00");
     expect(await noHorizontalScroll(page)).toBe(true);
     await shot(page, testInfo, "ledger");
 
-    // 信任頁：改回逐項看，k12 那一格中空，名稱是「通過，MM/DD 事後更正為做錯了」，有圖例
-    await gotoCrewSection(page, ct.common.sectionTrust);
+    // 員工頁的審查方式（#191）：改回逐項看，k12 那一格中空，名稱是「通過，MM/DD 事後更正為做錯了」，有圖例
+    await gotoCrewSection(page, ct.common.sectionEmployees);
     await expect(linden().locator(".crew-level-badge")).toHaveText(crewFill(ct.trust.levelBadge, { level: ct.trust.levelItem }));
     await expect(linden().locator(".crew-trust__dot[data-corrected]")).toHaveCount(1);
     const prefix = ct.trust.dotCorrected.split("{date}")[0];

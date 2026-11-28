@@ -46,7 +46,8 @@ for (const width of [1280, 390]) {
     await row.getByRole("button").click();
 
     await expect(employeesButton(page)).toHaveAttribute("aria-current", "page");
-    await expect(employeesButton(page).locator(".ui-count")).toHaveText("1");
+    // #191：「員工」的數字是等你決定的件數（Rowan 的守則 1＋Sorrel 的審查方式建議 1）
+    await expect(employeesButton(page).locator(".ui-count")).toHaveText("2");
     const rowan = card(page, "rowan");
     await expect(rowan).toBeInViewport();
     await expect(section(rowan).getByText(summary(1, 1), { exact: true })).toBeVisible();
@@ -60,10 +61,11 @@ for (const width of [1280, 390]) {
     await pending.getByRole("button", { name: ct.employees.guidelineConfirm, exact: true }).click();
 
     await expect(section(rowan).getByText(summary(2, 0), { exact: true })).toBeVisible();
-    await expect(employeesButton(page).locator(".ui-count")).toHaveCount(0);
+    // 確認守則後剩 Sorrel 的審查方式建議（#191 前只算守則，會歸零）
+    await expect(employeesButton(page).locator(".ui-count")).toHaveText("1");
     await expect(item(rowan, text("g02")).getByRole("button", { name: ct.employees.guidelineRetire, exact: true })).toBeVisible();
 
-    await gotoCrewSection(page, ct.common.sectionLedger);
+    await gotoCrewSection(page, ct.common.sectionRecords);
     await crewContent(page).getByRole("combobox", { name: new RegExp(`^${ct.ledger.filterEvent}`) }).selectOption({ label: ct.ledger.eventGuideline });
     const first = page.getByRole("table", { name: ct.ledger.listLabel }).locator("tbody").getByRole("row").first();
     await expect(first).toContainText(ct.ledger.kindGuidelineConfirmed);

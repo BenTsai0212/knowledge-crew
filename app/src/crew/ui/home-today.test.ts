@@ -5,7 +5,7 @@ import { openDatabase, type Database } from "../../db/database";
 import { crewMigrations } from "../db/migrate";
 import { DEMO_RAW } from "../demo/load";
 import { demoSeed } from "../demo/seed";
-import { awaitingCount, DECIDE_TARGET, guidelineTarget, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget } from "./home-today";
+import { awaitingCount, decideTarget, guidelineTarget, homeSummary, homeToday, isHomeTodayEmpty, rowStatus, rowTarget } from "./home-today";
 import { canReviewOf, readToday, type Today, type TodayAssignment } from "./today";
 
 const read = (identity: string) => readToday(db, identity, "zh-TW", canReviewOf(clientConfig.access, identity));
@@ -92,7 +92,8 @@ describe("rowStatus、rowTarget", () => {
     expect(rowTarget(item({ id: "x" }), true)).toEqual({ section: "works", assignmentId: "x" });
     expect(rowTarget(item({ id: "x", returned: true }), false)).toEqual({ section: "works", assignmentId: "x" });
     expect(rowTarget(item({}), false)).toEqual({ section: "assignments" });
-    expect(DECIDE_TARGET).toEqual({ section: "trust" });
+    // #191：「等你決定」的審查方式建議到「員工」並捲到該員工（原本是「信任」）
+    expect(decideTarget({ employee: item({}).employee, workTypeId: "dev", count: 10 })).toEqual({ section: "employees", employeeId: "e" });
   });
 
   it("等確認的守則到「員工」並帶員工（捲到該員工卡，#145）", () => {

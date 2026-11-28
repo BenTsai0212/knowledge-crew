@@ -1,4 +1,4 @@
-/* 「員工」畫面（#37；#83 改為員工卡，設計規格 v3 第 6.5 節）：頁首與員工卡（桌機兩欄、窄螢幕一欄）。
+/* 「員工」畫面（#37；#83 改為員工卡，設計規格 v3 第 6.5 節）：頁首與員工卡（#191 起一欄，卡內有審查方式）。
    顏色與圓角只用 theme.json 的 CSS 變數（結構測試在 css.test.ts）；AI 員工畫面不用 mark */
 .crew-employees {
   display: grid;
@@ -23,9 +23,11 @@
   gap: 0.25rem;
 }
 
+/* 一欄（#191）：卡內有原本「信任」每類工作的時間軸，沿用原本全寬的版面（兩欄時 1280 只剩約 440px，事件文字會斷行）；
+   員工卡的少字版（設計規格 v5 第 3 節的兩欄）在之後的 Issue */
 .crew-employees__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 

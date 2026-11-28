@@ -4,7 +4,7 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import { theme } from "./support/client";
-import { assignmentTitle, crewFill, ct, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel, trustRow } from "./support/crew";
+import { assignmentTitle, crewFill, ct, gotoCrewSection, gotoRecordsStats, hasCrewDemo, openCrew, reviewPanel, trustRow } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -68,8 +68,8 @@ for (const width of [1280, 390]) {
       await shot(page, testInfo, "k17-panel");
     });
 
-    test("k13：「這次逐項看」展開全部、再按回到看重點；換一件後回到預設；工作帳本沒有新增事件", async ({ page }, testInfo) => {
-      await gotoCrewSection(page, ct.common.sectionLedger);
+    test("k13：「這次逐項看」展開全部、再按回到看重點；換一件後回到預設；紀錄沒有新增事件", async ({ page }, testInfo) => {
+      await gotoCrewSection(page, ct.common.sectionRecords);
       const newest = (await ledgerRows(page).first().textContent()) ?? "";
       await gotoCrewSection(page, ct.common.sectionWorks);
 
@@ -107,12 +107,12 @@ for (const width of [1280, 390]) {
       await expect(again.getByRole("button", { name: ct.review.fullOnce, exact: true })).toHaveAttribute("aria-pressed", "false");
       await expect(again.locator(".crew-collapsed")).toHaveCount(1);
 
-      await gotoCrewSection(page, ct.common.sectionLedger);
+      await gotoCrewSection(page, ct.common.sectionRecords);
       await expect(ledgerRows(page).first()).toHaveText(newest);
     });
 
-    test("信任頁與報表：Rowan、Juniper 那一格有抽查記號與說明；Linden 沒有；報表的抽查欄", async ({ page }, testInfo) => {
-      await gotoCrewSection(page, ct.common.sectionTrust);
+    test("員工頁的審查方式與紀錄的統計：Rowan、Juniper 那一格有抽查記號與說明；Linden 沒有；報表的抽查欄", async ({ page }, testInfo) => {
+      await gotoCrewSection(page, ct.common.sectionEmployees);
       const rowan = trustRow(page, "rowan", "support");
       await expect(rowan.locator(".crew-trust__dot[data-spot]")).toHaveCount(1);
       await expect(rowan.locator(".crew-trust__cell").filter({ has: page.locator(".crew-trust__dot[data-spot]") })).toHaveAttribute("aria-label", spotLabel(ct.trust.dotWrong));
@@ -129,6 +129,8 @@ for (const width of [1280, 390]) {
       await expect(rowan.locator(".crew-trust__dot[data-spot]")).toHaveCSS("outline-color", rgb(theme.colors.primary));
       await shot(page, testInfo, "trust-rowan", rowan);
 
+      // #191：報表在「紀錄」的「看統計」
+      await gotoRecordsStats(page);
       await expect(reportSpotCell(page, "rowan", "support")).toHaveText(crewFill(ct.trust.reportSpot, { count: 1, wrong: 1 }));
       await expect(reportSpotCell(page, "juniper", "dev")).toHaveText(crewFill(ct.trust.reportSpot, { count: 1, wrong: 0 }));
       await expect(reportSpotCell(page, "linden", "knowledge")).toHaveText(ct.trust.reportNone);
@@ -137,14 +139,15 @@ for (const width of [1280, 390]) {
       await shot(page, testInfo, "report", report(page));
     });
 
-    test("對 k17 按「通過」後：信任頁 Linden 出現抽查格與說明（通過 1）", async ({ page }) => {
+    test("對 k17 按「通過」後：員工頁 Linden 出現抽查格與說明（通過 1）", async ({ page }) => {
       const panel = await openWork(page, "k17");
       await panel.getByRole("button", { name: ct.review.accept, exact: true }).click();
       await expect(listItem(page, "k17").getByText(ct.review.spotTag, { exact: true })).toHaveCount(0);
-      await gotoCrewSection(page, ct.common.sectionTrust);
+      await gotoCrewSection(page, ct.common.sectionEmployees);
       const linden = trustRow(page, "linden", "knowledge");
       await expect(linden.locator(".crew-trust__dot[data-spot]")).toHaveCount(1);
       await expect(linden.getByText(spotSummary({ accepted: 1, wrong: 0, other: 0 }), { exact: true })).toBeVisible();
+      await gotoRecordsStats(page);
       await expect(reportSpotCell(page, "linden", "knowledge")).toHaveText(crewFill(ct.trust.reportSpot, { count: 1, wrong: 0 }));
       expect(await noHorizontalScroll(page)).toBe(true);
     });

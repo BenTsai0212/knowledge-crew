@@ -58,7 +58,7 @@ test.describe("桌機 1280", () => {
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 
-  test("主管：點「開始驗收」到「工作與驗收」該件；點看重點的建議到信任頁；回首頁件數仍在", async ({ page }) => {
+  test("主管：點「開始驗收」到「工作與驗收」該件；點看重點的建議到「員工」該員工的審查方式（#191）；回首頁件數仍在", async ({ page }) => {
     await openHomeAs(page, manager.id);
     const first = reviewButtons(page).first();
     const title = (await first.getAttribute("aria-label"))!.slice(`${ct.home.actionReview}${s.colon}`.length);
@@ -68,12 +68,13 @@ test.describe("桌機 1280", () => {
 
     expect(await gotoView(page, "home")).toBe(true);
     await group(page, ct.home.groupDecide).getByRole("button").first().click();
-    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionTrust, exact: true })).toHaveAttribute("aria-current", "page");
-    // 從導覽切到 AI 員工時是「總覽」（#134；#100 時是「工作與驗收」，子導覽沒有「今天」）
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionEmployees, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.locator(".crew-trust__row").first()).toBeVisible();
+    // 從導覽切到 AI 員工時是「工作」（#191；#134 時是「總覽」，#100 時是「工作與驗收」，子導覽沒有「今天」）
     expect(await gotoView(page, "home")).toBe(true);
     expect(await gotoView(page, "crew")).toBe(true);
-    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionOverview, exact: true })).toHaveAttribute("aria-current", "page");
-    await expect(crewSections(page).getByRole("button")).toHaveCount(6);
+    await expect(crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(crewSections(page).getByRole("button")).toHaveCount(4);
   });
 
   test("一般員工：只有看得到的工作、沒有驗收的按鈕與看重點的建議，側欄沒有待驗收件數", async ({ page }) => {

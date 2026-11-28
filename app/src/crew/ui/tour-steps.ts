@@ -32,7 +32,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     // 有等確認守則的員工卡（demo 是 Rowan）；沒有時是第一張卡的守則區塊（#151）
     targets: [".crew-employees__guidelines[data-pending]", ".crew-employees__guidelines"],
   },
-  { id: "trust", title: "trustTitle", body: "trustBody", go: { kind: "crew", target: { section: "trust" } }, targets: [".crew-trust__row", ".crew-trust"] },
+  { id: "trust", title: "trustTitle", body: "trustBody", go: { kind: "crew", target: { section: "employees" } }, targets: [".crew-trust__row", ".crew-employees"] },
   // 抽查（#166）：demo 的 k17 是 Linden 看重點期間的第 5 件；事後更正（#164）：demo 的 k01 已通過後更正（#171）
   { id: "spot", title: "spotTitle", body: "spotBody", go: { kind: "crew", target: { section: "works", assignmentId: "k17" } }, targets: [".crew-review__spot", ".crew-review__panel"] },
   {

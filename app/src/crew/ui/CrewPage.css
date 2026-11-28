@@ -11,3 +11,16 @@
 .crew-page textarea {
   border-color: var(--color-borderStrong);
 }
+
+/* 「工作」的「清單｜看板」與「紀錄」的「看統計」（#191）：切換在頁首下方，內容是原本的畫面 */
+.crew-view {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.crew-view__switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

@@ -20,8 +20,9 @@ const guideline = (id: string): TodayGuideline => ({ id, employee: suggestion.em
 const today = (over: Partial<HomeToday>): HomeToday => ({ canReview: true, failing: [], awaiting: [], decide: [], guidelines: [], inProgress: [], ...over });
 
 describe("sectionCounts", () => {
-  it("工作與驗收是待驗收件數（含有檢查沒通過的），信任是看重點的建議數", () => {
-    expect(sectionCounts(today({ failing: [assignment("a")], awaiting: [assignment("b"), assignment("c")], decide: [suggestion] }))).toEqual({ works: 3, trust: 1 });
+  it("工作是待驗收件數（含有檢查沒通過的），員工是等你決定的件數（審查方式的建議＋守則，#191）", () => {
+    expect(sectionCounts(today({ failing: [assignment("a")], awaiting: [assignment("b"), assignment("c")], decide: [suggestion] }))).toEqual({ works: 3, employees: 1 });
+    expect(sectionCounts(today({ decide: [suggestion], guidelines: [guideline("g1")] }))).toEqual({ employees: 2 });
   });
 
   it("進行中的交辦不算", () => {
@@ -30,7 +31,7 @@ describe("sectionCounts", () => {
 
   it("0 不顯示", () => {
     expect(sectionCounts(today({ awaiting: [assignment("a")] }))).toEqual({ works: 1 });
-    expect(sectionCounts(today({ decide: [suggestion] }))).toEqual({ trust: 1 });
+    expect(sectionCounts(today({ decide: [suggestion] }))).toEqual({ employees: 1 });
   });
 
   it("員工是等確認的守則數（#145），0 不顯示", () => {

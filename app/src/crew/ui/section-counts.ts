@@ -3,13 +3,13 @@
 import type { HomeToday } from "./home-today";
 import type { CrewSection } from "./sections";
 
-/** 「員工」是等確認的守則數（#145），「工作與驗收」是待驗收件數，「信任」是待決定的看重點的建議數；只給能驗收的身分，0 不顯示 */
+/** 「工作」是待驗收件數；「員工」是等你決定的件數（#191：審查方式的建議＋等確認的守則）；交辦、紀錄沒有數字。只給能驗收的身分，0 不顯示 */
 export function sectionCounts(today: HomeToday): Partial<Record<CrewSection, number>> {
   if (!today.canReview) return {};
   const counts: Partial<Record<CrewSection, number>> = {};
   const works = today.failing.length + today.awaiting.length;
   if (works > 0) counts.works = works;
-  if (today.decide.length > 0) counts.trust = today.decide.length;
-  if (today.guidelines.length > 0) counts.employees = today.guidelines.length;
+  const decide = today.decide.length + today.guidelines.length;
+  if (decide > 0) counts.employees = decide;
   return counts;
 }

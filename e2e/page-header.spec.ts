@@ -6,7 +6,8 @@ import { EVALS_PATH, gotoView, openApp, s, switchIdentity } from "./support/app"
 import { reviewer, reviewingUploader } from "./support/client";
 import { ct, crewSections, gotoCrewSection, hasCrewDemo, openCrew } from "./support/crew";
 
-const SECTIONS = ["sectionOverview", "sectionEmployees", "sectionAssignments", "sectionWorks", "sectionTrust", "sectionLedger"] as const;
+// #191：子頁改為 4 個（工作、員工、交辦、紀錄）
+const SECTIONS = ["sectionWorks", "sectionEmployees", "sectionAssignments", "sectionRecords"] as const;
 const h1 = (page: Page) => page.locator("h1");
 const greetings = new RegExp(`^(${[s.home.morning, s.home.afternoon, s.home.evening].join("|")})$`);
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
@@ -36,14 +37,14 @@ for (const viewport of [
       // 分頁在頁首內，是 nav（不是 tablist）
       await expect(header.getByRole("navigation", { name: ct.common.sectionsLabel })).toBeVisible();
       await expect(header.getByRole("tablist")).toHaveCount(0);
-      await expectOnlyH1(page, ct.common.sectionOverview);
+      await expectOnlyH1(page, ct.common.sectionWorks);
       for (const key of SECTIONS.slice(1)) {
         await gotoCrewSection(page, ct.common[key]);
         await expectOnlyH1(page, ct.common[key]);
         expect(await noHorizontalScroll(page)).toBe(true);
       }
       // 手機：目前的分頁（最後一個）捲進分頁列，看得見
-      await expect(crewSections(page).getByRole("button", { name: ct.common.sectionLedger, exact: true })).toBeInViewport();
+      await expect(crewSections(page).getByRole("button", { name: ct.common.sectionRecords, exact: true })).toBeInViewport();
     });
 
     test("待審與上傳：一個 h1、說明與分頁（tablist，左右鍵切換）；切換畫面後焦點在 h1", async ({ page }) => {

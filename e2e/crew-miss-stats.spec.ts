@@ -1,12 +1,12 @@
 // 「沒被標成重點」與事後更正的統計（#168 PR 2，crew ADR 0008 第 14、15 點）：員工頁守則的「被標沒做到 N 次」、
 // 信任頁的 missSummary、報表的「錯在沒標成重點的地方」欄，以及由事後更正觸發的層級變化文字。
-// k13 對守則選「沒做到」後退回（做錯了、勾「沒被標成重點」）→ 員工頁、信任頁與報表各加 1；k12 事後更正 → 報表的層級變化。
+// k13 對守則選「沒做到」後退回（做錯了、勾「沒被標成重點」）→ 員工頁、員工頁的審查方式與紀錄的統計各加 1；k12 事後更正 → 報表的層級變化。
 // 桌機 1280 與手機 390 各跑一次，截圖附在測試報告（`miss-*.png`）。只在有 crew/demo.json 的客戶執行；/api/ask 一律是 page.route 的假回應（openApp）。
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import type { DemoFile } from "../app/src/crew/demo/types";
 import { openApp, switchIdentity } from "./support/app";
 import { language, readClientJson } from "./support/client";
-import { assignmentTitle, crewFill, ct, employeeName, gotoCrewSection, hasCrewDemo, openCrew, reviewPanel, trustRow } from "./support/crew";
+import { assignmentTitle, crewFill, ct, employeeName, gotoCrewSection, gotoRecordsStats, hasCrewDemo, openCrew, reviewPanel, trustRow } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -54,7 +54,7 @@ for (const width of [1280, 390]) {
   test.describe(`${width}px`, () => {
     test.use({ viewport: { width, height: width === 390 ? 844 : 900 } });
 
-    test("虛構資料：員工頁 Rowan 的 g01 被標沒做到 1 次；信任頁與報表的統計", async ({ page }, testInfo) => {
+    test("虛構資料：員工頁 Rowan 的 g01 被標沒做到 1 次；員工頁的審查方式與紀錄的統計的統計", async ({ page }, testInfo) => {
       await gotoCrewSection(page, ct.common.sectionEmployees);
       const g01 = guidelineItem(page, "rowan", "g01");
       await expect(g01.locator(".crew-employees__guideline-not-done")).toHaveText(notDoneText(1));
@@ -63,7 +63,7 @@ for (const width of [1280, 390]) {
       expect(await noHorizontalScroll(page)).toBe(true);
       await shot(page, testInfo, "employee-g01", g01);
 
-      await gotoCrewSection(page, ct.common.sectionTrust);
+      // #191：審查方式的列在「員工」的員工卡內，報表在「紀錄」的「看統計」
       const rowan = trustRow(page, "rowan", "support");
       await expect(rowan.locator(".crew-trust__miss")).toHaveText(missSummary(0, 1));
       // 放在抽查的說明下方
@@ -73,6 +73,7 @@ for (const width of [1280, 390]) {
       await expect(trustRow(page, "sorrel", "content").locator(".crew-trust__miss")).toHaveCount(0);
       await shot(page, testInfo, "trust-rowan", rowan);
 
+      await gotoRecordsStats(page);
       await expect(report(page).getByRole("columnheader", { name: ct.trust.reportColumnNotInPoints, exact: true })).toHaveAttribute("title", ct.trust.reportColumnNotInPoints);
       for (const [employee, workType, count] of [["rowan", "support", "1"], ["linden", "knowledge", "1"], ["juniper", "dev", "0"], ["sorrel", "content", "0"]]) {
         const cell = notInPointsCell(page, employee, workType);
@@ -83,7 +84,7 @@ for (const width of [1280, 390]) {
       await shot(page, testInfo, "report", report(page));
     });
 
-    test("k13：守則選「沒做到」後退回（做錯了、沒被標成重點）→ 員工頁、信任頁與報表各加 1", async ({ page }) => {
+    test("k13：守則選「沒做到」後退回（做錯了、沒被標成重點）→ 員工頁、員工頁的審查方式與紀錄的統計各加 1", async ({ page }) => {
       const panel = await openWork(page, "k13");
       const notDone = panel.locator(".crew-review__followed-list").getByRole("group").first().getByRole("button", { name: ct.review.feedbackGuidelineNotDone, exact: true });
       await notDone.click();
@@ -97,8 +98,8 @@ for (const width of [1280, 390]) {
       await gotoCrewSection(page, ct.common.sectionEmployees);
       await expect(guidelineItem(page, "linden", "g05").locator(".crew-employees__guideline-not-done")).toHaveText(notDoneText(1));
 
-      await gotoCrewSection(page, ct.common.sectionTrust);
       await expect(trustRow(page, "linden", "knowledge").locator(".crew-trust__miss")).toHaveText(missSummary(1, 2));
+      await gotoRecordsStats(page);
       await expect(notInPointsCell(page, "linden", "knowledge")).toHaveText("2");
       // 一般的做錯了：層級變化仍是 reportChangeAutoReset
       await expect(reportRow(page, "linden", "knowledge")).toContainText(ct.trust.reportChangeAutoReset);
@@ -112,10 +113,11 @@ for (const width of [1280, 390]) {
       await panel.getByRole("button", { name: ct.review.correctionSubmit, exact: true }).click();
       await expect(panel.getByRole("button", { name: ct.review.correctionOpen, exact: true })).toHaveCount(0);
 
-      await gotoCrewSection(page, ct.common.sectionTrust);
+      await gotoCrewSection(page, ct.common.sectionEmployees);
+      await expect(trustRow(page, "linden", "knowledge").locator(".crew-trust__miss")).toHaveText(missSummary(2, 1));
+      await gotoRecordsStats(page);
       const linden = reportRow(page, "linden", "knowledge");
       await expect(linden).toContainText(ct.trust.reportChangeAutoResetCorrection);
-      await expect(trustRow(page, "linden", "knowledge").locator(".crew-trust__miss")).toHaveText(missSummary(2, 1));
       expect(await noHorizontalScroll(page)).toBe(true);
       await shot(page, testInfo, "report-correction", linden);
     });
