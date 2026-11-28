@@ -170,7 +170,7 @@ test.describe("手機 390", () => {
 test.describe("桌機 1280", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("子導覽仍是頁籤（底線、沒有框），決定列不固定", async ({ page }) => {
+  test("子導覽仍是頁籤（底線、沒有框）；決定列 sticky 在面板底部（#195）", async ({ page }) => {
     await openCrewAs(page, "manager");
     await gotoCrewSection(page, ct.common.sectionWorks);
     const works = sectionButton(page, ct.common.sectionWorks);
@@ -180,6 +180,7 @@ test.describe("桌機 1280", () => {
     });
     expect(style).toEqual({ radius: "0px", top: "0px", bottom: "2px" });
     await expect(countOf(works)).toHaveText(String(await awaitingItems(page).count()));
-    expect(await decisionBar(page).evaluate((el) => getComputedStyle(el).position)).toBe("static");
+    const bar = await decisionBar(page).evaluate((el) => ({ position: getComputedStyle(el).position, bottom: getComputedStyle(el).bottom }));
+    expect(bar).toEqual({ position: "sticky", bottom: "0px" });
   });
 });
