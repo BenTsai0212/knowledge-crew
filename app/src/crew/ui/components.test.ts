@@ -1,11 +1,11 @@
-// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節）：AI 標記、層級徽章、結論列、自動檢查列、收起的區塊；相對期限（#193）
+// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節）：AI 標記、層級徽章、結論、系統檢查的標籤、收起的區塊；相對期限（#193）
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { fill } from "../../client/i18n";
 import { clientConfig } from "../../client/load";
 import { crewStrings } from "../i18n";
-import { AiMark, CheckRow, CollapsedFields, ConclusionRow, DotMark, DotRow, dotsSummary, DueTag, dueTone, employeeOptionText, LevelBadge, relativeDueText, ScheduleLine, withEmployee } from "./components";
+import { AiMark, CheckTag, CollapsedFields, DotMark, DotRow, dotsSummary, DueTag, dueTone, employeeOptionText, LevelBadge, relativeDueText, ScheduleLine, VerdictLine, withEmployee } from "./components";
 import { shortDate } from "../time";
 import { checkLabel, checkSentence } from "./glossary";
 import css from "./components.css?raw";
@@ -56,54 +56,61 @@ describe("層級徽章", () => {
   });
 });
 
-describe("結論列", () => {
-  it("24px 圖示＋標題＋說明；未通過 danger、檢查中 warning，以分隔線隔開", () => {
-    const out = html(createElement(ConclusionRow, { tone: "fail", title: "T", description: "D" }));
-    expect(out).toContain('data-tone="fail"');
-    expect(out).toContain('width="24"');
-    expect(out).toMatch(/crew-conclusion__title">T<.*crew-conclusion__description">D</);
-    expect(rule(".crew-conclusion")).toContain("border-top: 1px solid var(--color-border)");
-    expect(rule('.crew-conclusion[data-tone="fail"]')).toContain("var(--color-danger)");
-    expect(rule('.crew-conclusion[data-tone="pending"]')).toContain("var(--color-warning)");
-    expect(rule(".crew-conclusion__title")).toContain("font-size: 18px");
-    expect(rule(".crew-conclusion__description")).toContain("font-size: 14px");
+describe("結論（#195）", () => {
+  const verdict = (tone: "pass" | "fail" | "pending") => html(createElement(VerdictLine, { tone, text: "T" }));
+
+  it("未通過：ui-verdict--bad、22px ✕ 圖示＋一句話；role=status", () => {
+    const out = verdict("fail");
+    expect(out).toContain('class="ui-verdict ui-verdict--bad crew-verdict"');
+    expect(out).toContain('role="status"');
+    expect(out).toContain('width="22"');
+    expect(out).toContain('d="M6 6l12 12M18 6L6 18"');
+    expect(out).toMatch(/<\/svg>T<\/p>/);
+  });
+
+  it("都通過：ui-verdict--ok 與勾；檢查中：ui-verdict--wait 與時鐘", () => {
+    expect(verdict("pass")).toContain("ui-verdict--ok");
+    expect(verdict("pass")).toContain('d="M5 12.5l4.5 4.5L19 7"');
+    expect(verdict("pending")).toContain("ui-verdict--wait");
+    expect(verdict("pending")).toContain('d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 7v5l3 2"');
+  });
+
+  it("舊的結論列樣式已移除", () => {
+    expect(cssText).not.toContain(".crew-conclusion");
+    expect(cssText).not.toContain(".crew-check");
   });
 });
 
-describe("自動檢查列", () => {
+describe("系統檢查的標籤（#195）", () => {
   const r = crewStrings("review", language);
-  const row = (status: "pass" | "fail" | "pending") => html(createElement(CheckRow, { name: "quote-match", status, language }));
+  const tag = (status: "pass" | "fail" | "pending") => html(createElement(CheckTag, { name: "quote-match", status, language }));
 
-  it("未通過：✕ 圖示、白話名稱與說明、右側「未通過」；1px danger 框，狀態粗體", () => {
-    const out = row("fail");
+  it("未通過：ui-check--bad（danger 框、粗體）、14px ✕ 圖示、白話名稱；螢幕閱讀器讀出「未通過」", () => {
+    const out = tag("fail");
+    expect(out).toContain('class="ui-check ui-check--bad"');
     expect(out).toContain('data-status="fail"');
+    expect(out).toContain('width="14"');
     expect(out).toContain('d="M6 6l12 12M18 6L6 18"');
-    expect(out).toContain(`crew-check__name">${checkLabel("quote-match", language)}<`);
-    expect(out).toContain(`crew-check__sentence">${checkSentence("quote-match", "fail", language)}<`);
-    expect(out).toContain(`crew-check__status">${r.checkFail}<`);
-    expect(rule('.crew-check[data-status="fail"]')).toContain("border-color: var(--color-danger)");
-    expect(rule('.crew-check[data-status="fail"] .crew-check__status')).toContain("font-weight: 700");
+    expect(out).toContain(`</svg>${checkLabel("quote-match", language)}<`);
+    expect(out).toContain(`<span class="visually-hidden">${fill(r.checkResult, { result: r.checkFail })}</span>`);
   });
 
-  it("通過：無框、success 勾、右側「通過」", () => {
-    const out = row("pass");
+  it("通過：ui-check--ok 與勾，讀出「通過」", () => {
+    const out = tag("pass");
+    expect(out).toContain('class="ui-check ui-check--ok"');
     expect(out).toContain('d="M5 12.5l4.5 4.5L19 7"');
-    expect(out).toContain(`crew-check__status">${r.checkPass}<`);
-    expect(rule(".crew-check")).toContain("border: 1px solid transparent");
-    expect(rule('.crew-check[data-status="pass"] .crew-icon')).toContain("color: var(--color-success)");
+    expect(out).toContain(fill(r.checkResult, { result: r.checkPass }));
   });
 
-  it("檢查中：warning 時鐘、「檢查中」，沒有說明句", () => {
-    const out = row("pending");
+  it("檢查中：ui-check--wait（warning 框）與時鐘，讀出「檢查中」；不另加說明句", () => {
+    const out = tag("pending");
+    expect(out).toContain('class="ui-check ui-check--wait"');
     expect(out).toContain('d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 7v5l3 2"');
-    expect(out).toContain(`crew-check__status">${r.checkPending}<`);
-    expect(out).not.toContain("crew-check__sentence");
-    expect(rule('.crew-check[data-status="pending"] .crew-icon')).toContain("color: var(--color-warning)");
+    expect(out).toContain(fill(r.checkResult, { result: r.checkPending }));
+    expect(out).not.toContain(checkSentence("quote-match", "pass", language)!);
   });
 
-  it("都不用整片底色；畫面上不再出現「執行中」", () => {
-    expect(rule(".crew-check")).toContain("background: transparent");
-    expect(cssText).not.toMatch(/\.crew-check[^{]*\{[^}]*background: var/);
+  it("畫面上不再出現「執行中」", () => {
     expect(crewStrings("review", "zh-TW").checkPending).toBe("檢查中");
     expect(crewStrings("review", "en").checkPending).toBe("Checking");
   });

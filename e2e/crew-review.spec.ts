@@ -1,4 +1,4 @@
-// 驗收面板 v3（#72 計畫第 7 點）：結論列、重點的標記與點選、退回原因的「影響信任」、手機寬度不破版。
+// 驗收面板（#72 計畫第 7 點；#195 的少字版）：結論、重點的標記與點選、退回原因的後果、手機寬度不破版。
 // 四種交件（回信、貼文、知識庫條目、程式修改）各自的畫面。只在有 crew/demo.json 的客戶執行；/api/ask 是假的回應（openApp）。
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
@@ -43,8 +43,10 @@ async function openWork(page: Page, id: string): Promise<Locator> {
   return panel;
 }
 
-// 重點卡（#168 起包在「員工自己說的」分區裡，所以只找卡片）；重點的按鈕不含逐條回饋的切換按鈕
-const pointsCard = (panel: Locator) => panel.locator("section.card").filter({ has: panel.page().getByRole("heading", { name: ct.review.points, exact: true }) });
+// 「請你確認」區（#195：標題是「AI ○○ 請你確認 N 處」，與系統檢查並排）；重點的按鈕不含逐條回饋的切換按鈕
+const pointsCard = (panel: Locator) => panel.locator(".crew-review__confirm");
+// 「?」說明（#193 的 Qmark：summary.ui-qmark，可存取名稱是 aria-label）
+const qmark = (scope: Locator, label: string) => scope.locator(`summary.ui-qmark[aria-label="${label}"]`);
 const pointButtons = (panel: Locator) => pointsCard(panel).locator("button.crew-review__point");
 
 test.beforeEach(async ({ page }) => {
@@ -54,26 +56,95 @@ test.beforeEach(async ({ page }) => {
   await gotoCrewSection(page, ct.common.sectionWorks);
 });
 
-test("結論列：未通過是「先別寄出」，檢查中是「還在檢查」，已驗收的工作沒有結論列", async ({ page }) => {
+test("結論：未通過是「先別寄出：報價對不上」（18px 粗體 danger），檢查中是「還在檢查」，已驗收的工作沒有結論", async ({ page }) => {
   const s14 = await openWork(page, "s14");
-  const fail = crewFill(ct.review.conclusionFail, { verb: ct.review.verbReply, checks: glossary.checkQuoteMatch });
-  await expect(s14.locator(".crew-conclusion[data-tone=fail]").getByText(fail, { exact: true })).toBeVisible();
+  const fail = crewFill(ct.review.verdictFail, { verb: ct.review.verbReply, reason: glossary.checkQuoteMatchShort });
+  const verdict = s14.locator(".crew-verdict[data-tone=fail]");
+  await expect(verdict).toHaveText(fail);
+  await expect(verdict).toHaveCSS("font-size", "18px");
+  await expect(verdict).toHaveCSS("font-weight", "700");
+  await expect(verdict).toHaveCSS("color", rgb(theme.colors.danger));
 
   const c11 = await openWork(page, "c11");
   const pending = crewFill(ct.review.conclusionPending, { checks: glossary.checkLinks });
-  await expect(c11.locator(".crew-conclusion[data-tone=pending]").getByText(pending, { exact: true })).toBeVisible();
+  await expect(c11.locator(".crew-verdict[data-tone=pending]")).toHaveText(pending);
 
   const recent = page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").filter({ hasText: ct.review.verdictAccepted }).first();
   await recent.click();
   const decided = crewContent(page).getByRole("article").first();
   await expect(decided.getByText(ct.review.verdictAccepted, { exact: true })).toBeVisible();
-  await expect(decided.locator(".crew-conclusion")).toHaveCount(0);
+  await expect(decided.locator(".crew-verdict")).toHaveCount(0);
   await expect(decided.getByText(ct.review.decisionReply, { exact: true })).toHaveCount(0);
+});
+
+// ---- 少字版（#195）：三種狀態共用的順序與元素 ----
+const STATES = [
+  { id: "s14", state: "全部看", badge: ".ui-badge--item", tip: () => ct.review.itemTipLabel },
+  { id: "k17", state: "抽查", badge: ".crew-review__spot", tip: () => ct.review.spotTipLabel },
+  { id: "k13", state: "只看標記處", badge: ".ui-way", tip: () => ct.review.lightTipLabel },
+];
+for (const width of [1280, 390]) {
+  for (const { id, state, badge, tip } of STATES) {
+    test(`${width}px・${state}（${id}）：標題＋徽章＋「?」→ 一行說明＋「詳細」→ 結論 → 請你確認＋系統檢查 → 交件 → 決定列`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const panel = await openWork(page, id);
+      const title = panel.getByRole("heading", { level: 2, name: titles.get(id)!, exact: true });
+      const parts = [
+        title,
+        panel.locator(`.crew-review__title-row ${badge}`),
+        qmark(panel.locator(".crew-review__title-row"), tip()),
+        panel.locator(".crew-review__line summary.ui-tip__link"),
+        panel.locator(".crew-verdict"),
+        panel.locator(".crew-review__confirm").getByRole("heading", { level: 3, name: ct.review.points }),
+        panel.locator(".crew-review__system").getByRole("heading", { level: 3, name: ct.review.checks, exact: true }),
+        panel.locator(".crew-review__decision"),
+      ];
+      for (const part of parts) await expect(part).toBeVisible();
+      await expect(panel.locator(".crew-review__line")).toContainText(employeeName(id === "s14" ? "rowan" : "linden"));
+      // 拿掉的大卡、分區標籤與說明段落（#195）
+      await expect(panel.locator(".crew-review__light, .crew-review__zone, .crew-review__self-reported, .crew-conclusion")).toHaveCount(0);
+      // 由上到下：標題列 → 說明 → 結論 → 兩區 → 交件 → 決定列（DOM 順序）
+      const order = await panel.evaluate((el) =>
+        [".crew-review__title-row", ".crew-review__line", ".crew-verdict", ".crew-review__pane", ".crew-review__decision"].map((sel) => {
+          const target = el.querySelector(sel);
+          return target === null ? -1 : [...el.querySelectorAll("*")].indexOf(target);
+        }),
+      );
+      expect(order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1]))).toBe(true);
+      // 兩區：720px 以上左右並排，窄時上下
+      const [a, b] = [(await panel.locator(".crew-review__confirm").boundingBox())!, (await panel.locator(".crew-review__system").boundingBox())!];
+      if (width >= 720) expect(a.x).toBeLessThan(b.x);
+      else expect(a.y).toBeLessThan(b.y);
+      // 「詳細」打開後有交件時間與輪次
+      await panel.locator(".crew-review__line summary.ui-tip__link").click();
+      await expect(panel.locator(".crew-review__line .ui-tip__body")).toContainText(crewFill(ct.review.detailsRound, { round: 1 }));
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
+}
+
+test("系統檢查的標籤：未通過是 danger 框＋粗體，通過是 success 字", async ({ page }) => {
+  const panel = await openWork(page, "s14");
+  const failed = panel.locator(".ui-check[data-status=fail]");
+  await expect(failed).toContainText(glossary.checkQuoteMatch);
+  await expect(failed).toHaveCSS("border-top-color", rgb(theme.colors.danger));
+  await expect(failed).toHaveCSS("font-weight", "700");
+  const passed = panel.locator(".ui-check[data-status=pass]").first();
+  await expect(passed).toHaveCSS("color", rgb(theme.colors.success));
+});
+
+test("點「請你確認」的一處：交件中同編號的位置加底線", async ({ page }) => {
+  const panel = await openWork(page, "s14");
+  await pointButtons(panel).nth(0).click();
+  const mark = panel.getByRole("article", { name: ct.review.deliverableReply }).locator('.crew-review__mark[data-point~="1"]').first();
+  await expect(mark).toHaveCSS("text-decoration-line", "underline");
+  await expect(mark).toBeInViewport();
 });
 
 test("重點：重點卡列出內容中的位置，內容中的對應文字有編號的標記", async ({ page }) => {
   const panel = await openWork(page, "s14");
-  const items = pointsCard(panel).getByRole("listitem");
+  const items = pointsCard(panel).locator(".crew-review__points > li");
   await expect(items).toHaveCount(2);
   await expect(items.nth(0)).toContainText(glossary.positionReplyP2);
   const body = panel.getByRole("article", { name: ct.review.deliverableReply });
@@ -192,12 +263,16 @@ test.describe("看重點（#102）：Linden 的 k13", () => {
   const label = (field: string) => demoLabel("k13", `kb/pre-orders#${field}`);
   const fieldName = (body: Locator, field: string) => body.locator("dt").filter({ hasText: label(field) });
 
-  test("「為什麼是看重點」說明卡；有重點與空白的欄位照樣顯示，其他欄位可以展開與收回；變更收成一行可以逐項列出", async ({ page }) => {
+  test("「只看標記處｜這次全部看」兩格與「?」；有重點與空白的欄位照樣顯示，其他欄位可以展開與收回；變更收成一行可以逐項列出", async ({ page }) => {
     const panel = await openWork(page, "k13");
-    const card = panel.getByRole("region", { name: ct.review.lightTitle });
-    await expect(card).toBeVisible();
-    await expect(card).toHaveCSS("border-top-color", rgb(theme.colors.success));
-    await expect(card).toContainText(employeeName("linden"));
+    const way = panel.getByRole("group", { name: ct.review.wayLabel, exact: true });
+    const mark = way.getByRole("button", { name: ct.review.levelLight, exact: true });
+    await expect(mark).toHaveAttribute("aria-pressed", "true");
+    await expect(mark).toHaveCSS("background-color", rgb(theme.colors.success));
+    await expect(way.getByRole("button", { name: ct.review.fullOnce, exact: true })).toHaveAttribute("aria-pressed", "false");
+    await qmark(panel, ct.review.lightTipLabel).click();
+    await expect(panel.locator(".ui-tip__body").filter({ hasText: employeeName("linden") }).first()).toBeVisible();
+    await qmark(panel, ct.review.lightTipLabel).click();
 
     const body = panel.getByRole("article", { name: ct.review.deliverableKb });
     for (const field of ["owner", "arrival", "effective-date"]) await expect(fieldName(body, field)).toBeVisible();
@@ -230,16 +305,18 @@ test.describe("看重點（#102）：Linden 的 k13", () => {
     await expect(panel.getByText(ct.review.decisionKb, { exact: true })).toBeVisible();
   });
 
-  test("「看審查方式」切到「員工」，看得到 Linden 的審查方式（#191；原本切到信任頁）", async ({ page }) => {
+  test("「?」裡的「看 Linden 的審查方式」切到「員工」，看得到 Linden 的審查方式（#191、#195）", async ({ page }) => {
     const panel = await openWork(page, "k13");
-    await panel.getByRole("button", { name: ct.review.lightTrust, exact: true }).click();
+    await qmark(panel, ct.review.lightTipLabel).click();
+    await panel.locator(".ui-tip__body button.link").filter({ hasText: employeeName("linden") }).click();
     await expect(crewSections(page).getByRole("button", { name: ct.common.sectionEmployees, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(trustRow(page, "linden", "knowledge")).toBeInViewport();
   });
 
-  test("逐項看的件（Rowan 的回信 s14）沒有說明卡，也沒有收起的欄位", async ({ page }) => {
+  test("全部看的件（Rowan 的回信 s14）是「全部看」徽章，沒有兩格，也沒有收起的欄位", async ({ page }) => {
     const panel = await openWork(page, "s14");
-    await expect(panel.getByRole("region", { name: ct.review.lightTitle })).toHaveCount(0);
+    await expect(panel.locator(".ui-badge--item")).toHaveText(ct.review.levelItem);
+    await expect(panel.getByRole("group", { name: ct.review.wayLabel, exact: true })).toHaveCount(0);
     await expect(panel.locator(".crew-collapsed, .crew-review__changes-collapsed")).toHaveCount(0);
   });
 
@@ -257,7 +334,7 @@ test.describe("看重點（#102）：Linden 的 k13", () => {
 
 // ---- 焦點（#153 第 1、2 點，WCAG 2.4.3） ----
 test.describe("焦點（#153）", () => {
-  const panelTitle = (panel: Locator) => panel.getByRole("heading", { level: 3 }).first();
+  const panelTitle = (panel: Locator) => panel.getByRole("heading", { level: 2 }).first();
 
   test("初次載入、自動選第一筆時焦點不移到面板；在清單以 Enter 選一筆後焦點在面板標題", async ({ page }) => {
     const works = crewSections(page).getByRole("button", { name: ct.common.sectionWorks, exact: true });

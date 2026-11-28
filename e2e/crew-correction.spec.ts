@@ -98,8 +98,8 @@ for (const width of [1280, 390]) {
     await expect(panel.getByText(withDate(ct.review.correctionDone))).toBeVisible();
     await expect(panel.getByText(crewFill(ct.review.correctionNoteShown, { note: "Cutoff is 15:00, not 17:00" }), { exact: true })).toBeVisible();
     await expect(open).toHaveCount(0);
-    await expect(panel.locator(".crew-level-badge")).toHaveText(crewFill(ct.review.levelBadge, { level: ct.review.levelItem }));
-    await expect(panel.getByRole("heading", { name: ct.review.lightTitle, exact: true })).toHaveCount(0);
+    await expect(panel.locator(".ui-badge--item")).toHaveText(ct.review.levelItem);
+    await expect(panel.getByRole("group", { name: ct.review.wayLabel, exact: true })).toHaveCount(0);
     expect(await noHorizontalScroll(page)).toBe(true);
     await shot(page, testInfo, "done");
 

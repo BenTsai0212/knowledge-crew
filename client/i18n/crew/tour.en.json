@@ -13,7 +13,7 @@
   "todayTitle": "Today's work",
   "todayBody": "Work handed in by AI employees waits here for your review; items with failing checks come first.",
   "reviewTitle": "Review panel",
-  "reviewBody": "The top half is what the employee marked (the spots to check, the guidelines it followed); the bottom half is the system checks. You decide to approve or return.",
+  "reviewBody": "“Please check” lists the spots the employee marked and the guidelines it followed; “System checks” are run by the system. You decide to approve or return.",
   "returnTitle": "Reasons for returning",
   "returnBody": "When you return work, pick one of three reasons: \"It's wrong\" sends this kind of work back to \"Check everything\"; with the other two, the review mode is unchanged.",
   "guidelinesTitle": "Guidelines",

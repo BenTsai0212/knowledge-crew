@@ -60,7 +60,9 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       await s14.click();
       const panel = reviewPanel(page, assignmentTitle("s14"));
       await expect(panel.locator(".crew-review__head .crew-due")).toHaveText(overdueText(2));
-      await expect(panel.locator(".crew-review__head").getByText(ct.common.priorityHigh, { exact: true })).toBeVisible();
+      // #195：優先順序與到期日放在「詳細」裡
+      await panel.locator(".crew-review__line summary.ui-tip__link").click();
+      await expect(panel.locator(".crew-review__line .ui-tip__body")).toContainText(ct.review.detailsPriorityHigh);
       expect(await noHorizontalScroll(page)).toBe(true);
     });
 

@@ -43,8 +43,9 @@ test("交辦 → 模擬交件 → 退回（做錯了）→ 員工頁的審查方
     workType: "knowledge",
     reason: ct.review.reasonWrong,
     beforeReturn: async (panel) => {
-      const points = panel.getByRole("heading", { name: ct.review.points, exact: true });
-      const checks = panel.getByRole("heading", { level: 5, name: ct.review.checks, exact: true });
+      // #195：「AI ○○ 請你確認 N 處」與「系統檢查」是 h3
+      const points = panel.getByRole("heading", { level: 3, name: ct.review.points });
+      const checks = panel.getByRole("heading", { level: 3, name: ct.review.checks, exact: true });
       const body = panel.getByRole("article", { name: ct.review.deliverableKb });
       await expect(points).toBeVisible();
       await expect(checks).toBeVisible();

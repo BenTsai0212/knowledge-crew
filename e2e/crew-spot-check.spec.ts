@@ -1,10 +1,10 @@
-// 抽查的畫面（#166，crew ADR 0008 第 7～11 點）：k17（Linden 看重點期間的第 5 件）是「這次抽查」卡片、內容逐項列出、清單有標籤；
-// k13（第 6 件）的「這次逐項看」只改這次怎麼看（不寫入、換一件後回到預設）；信任頁的抽查記號與說明、報表的抽查欄。
+// 抽查的畫面（#166，crew ADR 0008 第 7～11 點）：k17（Linden 看重點期間的第 5 件）是虛線框徽章「抽查：這次全部看」＋「?」（#195，沒有關閉按鈕）、內容逐項列出、清單有標籤；
+// k13（第 6 件）的「這次全部看」只改這次怎麼看（不寫入、換一件後回到預設）；信任頁的抽查記號與說明、報表的抽查欄。
 // 桌機 1280 與手機 390 各跑一次，截圖附在測試報告（`spot-*.png`）。只在有 crew/demo.json 的客戶執行；/api/ask 一律是 page.route 的假回應（openApp）。
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { openApp, switchIdentity } from "./support/app";
 import { theme } from "./support/client";
-import { assignmentTitle, crewFill, ct, gotoCrewSection, gotoRecordsStats, hasCrewDemo, openCrew, reviewPanel, trustRow } from "./support/crew";
+import { assignmentTitle, crewFill, ct, gotoCrewSection, gotoRecordsStats, employeeName, hasCrewDemo, openCrew, reviewPanel, trustRow } from "./support/crew";
 
 test.skip(!hasCrewDemo, "這個客戶沒有 crew/demo.json（沒有 crew 頁）");
 
@@ -49,34 +49,39 @@ for (const width of [1280, 390]) {
   test.describe(`${width}px`, () => {
     test.use({ viewport: { width, height: width === 390 ? 844 : 900 } });
 
-    test("k17：清單有「抽查」標籤；面板是「這次抽查」卡片（第 5 件）、層級仍是看重點、內容逐項列出", async ({ page }, testInfo) => {
+    test("k17：清單有「抽查」標籤；面板是抽查的徽章與「?」（第 5 件）、沒有關閉或收起的按鈕、內容逐項列出", async ({ page }, testInfo) => {
       await expect(listItem(page, "k17").getByText(ct.review.spotTag, { exact: true })).toBeVisible();
       await expect(listItem(page, "k13").getByText(ct.review.spotTag, { exact: true })).toHaveCount(0);
       const panel = await openWork(page, "k17");
-      const card = panel.getByRole("region", { name: ct.review.spotTitle });
-      await expect(card).toBeVisible();
-      await expect(card).toHaveCSS("border-top-color", rgb(theme.colors.warning));
-      await expect(card.getByText(crewFill(ct.review.spotWhy, { every: 5, ordinal: 5 }), { exact: true })).toBeVisible();
-      await expect(card.getByText(ct.review.spotRule, { exact: true })).toBeVisible();
-      await expect(card.getByRole("button", { name: ct.review.lightTrust, exact: true })).toBeVisible();
-      await expect(panel.getByRole("region", { name: ct.review.lightTitle })).toHaveCount(0);
+      const badge = panel.locator(".crew-review__spot");
+      await expect(badge).toHaveText(ct.review.spotTag);
+      await expect(badge).toHaveCSS("border-top-style", "dashed");
+      await expect(badge).toHaveCSS("border-top-color", rgb(theme.colors.text));
+      const tip = panel.locator(`summary.ui-qmark[aria-label="${ct.review.spotTipLabel}"]`);
+      await tip.click();
+      const body = panel.locator(".ui-tip__body").filter({ hasText: employeeName("linden") });
+      await expect(body).toBeVisible();
+      await expect(body).toContainText(crewFill(ct.review.spotTip, { employee: "", every: 5, ordinal: 5 }).trim());
+      await tip.click();
+      // 抽查不能關掉（ADR 0009「不能動的規則」）：標題列沒有任何按鈕，也沒有兩格
+      await expect(panel.locator(".crew-review__title-row").getByRole("button")).toHaveCount(0);
+      await expect(panel.getByRole("group", { name: ct.review.wayLabel, exact: true })).toHaveCount(0);
       await expect(panel.getByRole("button", { name: ct.review.fullOnce })).toHaveCount(0);
-      await expect(panel.locator(".crew-level-badge")).toHaveText(crewFill(ct.review.levelBadge, { level: ct.review.levelLight }));
       // 逐項看：沒有收起的欄位與收成一行的變更
       await expect(panel.locator(".crew-collapsed, .crew-review__changes-collapsed")).toHaveCount(0);
       expect(await noHorizontalScroll(page)).toBe(true);
       await shot(page, testInfo, "k17-panel");
     });
 
-    test("k13：「這次逐項看」展開全部、再按回到看重點；換一件後回到預設；紀錄沒有新增事件", async ({ page }, testInfo) => {
+    test("k13：「這次全部看」展開全部、再按「只看標記處」回到原本；換一件後回到預設；紀錄沒有新增事件", async ({ page }, testInfo) => {
       await gotoCrewSection(page, ct.common.sectionRecords);
       const newest = (await ledgerRows(page).first().textContent()) ?? "";
       await gotoCrewSection(page, ct.common.sectionWorks);
 
       const panel = await openWork(page, "k13");
-      const card = panel.getByRole("region", { name: ct.review.lightTitle });
+      const card = panel.getByRole("group", { name: ct.review.wayLabel, exact: true });
       await expect(card).toBeVisible();
-      await expect(panel.getByRole("region", { name: ct.review.spotTitle })).toHaveCount(0);
+      await expect(panel.locator(".crew-review__spot")).toHaveCount(0);
       const button = card.getByRole("button", { name: ct.review.fullOnce, exact: true });
       await expect(button).toHaveAttribute("aria-pressed", "false");
       await expect(panel.locator(".crew-collapsed")).toHaveCount(1);
@@ -86,18 +91,18 @@ for (const width of [1280, 390]) {
       // 鍵盤操作
       await button.focus();
       await page.keyboard.press("Enter");
-      const back = card.getByRole("button", { name: ct.review.fullOnceBack, exact: true });
-      await expect(back).toHaveAttribute("aria-pressed", "true");
-      await expect(back).toBeFocused();
-      await expect(card.getByText(ct.review.fullOnceNote, { exact: true })).toBeVisible();
+      await expect(button).toHaveAttribute("aria-pressed", "true");
+      await expect(button).toBeFocused();
+      const mark = card.getByRole("button", { name: ct.review.levelLight, exact: true });
+      await expect(mark).toHaveAttribute("aria-pressed", "false");
       await expect(panel.locator(".crew-collapsed, .crew-review__changes-collapsed")).toHaveCount(0);
-      await expect(panel.locator(".crew-level-badge")).toHaveText(crewFill(ct.review.levelBadge, { level: ct.review.levelLight }));
       expect(await noHorizontalScroll(page)).toBe(true);
       await shot(page, testInfo, "k13-after");
 
+      await mark.focus();
       await page.keyboard.press("Space");
-      await expect(card.getByRole("button", { name: ct.review.fullOnce, exact: true })).toHaveAttribute("aria-pressed", "false");
-      await expect(card.getByText(ct.review.fullOnceNote, { exact: true })).toHaveCount(0);
+      await expect(button).toHaveAttribute("aria-pressed", "false");
+      await expect(mark).toHaveAttribute("aria-pressed", "true");
       await expect(panel.locator(".crew-collapsed")).toHaveCount(1);
 
       // 按下後換到別的工作再回來：回到預設

@@ -1,11 +1,11 @@
-// 驗收面板 v3 的文案規則（#72 計畫第 2、4、5 點；設計規格 v3 第 6.2、7 節）：交件的種類、結論列、決定列的問句、
+// 驗收面板的文案規則（#72 計畫第 2、4、5 點；#195 改為設計規格 v5 的少字版）：交件的種類、結論、決定列的問句、
 // 重點在內容中的位置。純函式：文字一律取自 client/i18n/crew/review.<語言>.json 與 glossary 的翻譯檔。
 import { fill } from "../../../client/i18n";
 import type { LanguageCode } from "../../../client/types";
 import type { WorkCheck } from "../../trust/types";
 import type { ParsedBody } from "../../work/body";
 import { crewStrings } from "../../i18n";
-import { checkLabel, checkSentence, isCodePosition, positionLabel } from "../glossary";
+import { checkLabel, checkShort, isCodePosition, positionLabel } from "../glossary";
 import { canMark } from "./marked";
 
 /** 交件的種類：回信、貼文、知識庫條目、程式修改；其他工作類型是 null（用一般的寫法） */
@@ -21,32 +21,22 @@ const suffix = (d: Deliverable | null) => (d === null ? "Other" : SUFFIX[d]);
 /** 交件的稱呼（「回信草稿」等） */
 export const deliverableName = (d: Deliverable | null, language: LanguageCode) => crewStrings("review", language)[`deliverable${suffix(d)}` as const];
 
-/** 結論列的動詞（寄出、貼出、加進知識庫、通過） */
+/** 結論的動作（寄出、發布、加進知識庫、合併） */
 export const deliverableVerb = (d: Deliverable | null, language: LanguageCode) => crewStrings("review", language)[`verb${suffix(d)}` as const];
 
 /** 決定列的問句 */
 export const decisionQuestion = (d: Deliverable | null, language: LanguageCode) => crewStrings("review", language)[`decision${suffix(d)}` as const];
 
 /**
- * 結論列的對象：`decide` 是能驗收、還沒驗收；`view` 是不能驗收的身分看還沒驗收的工作；
- * `decided` 是已驗收的工作（不顯示結論列，畫面改顯示驗收結果）。
+ * 結論的對象：`decide` 是能驗收、還沒驗收；`view` 是不能驗收的身分看還沒驗收的工作；
+ * `decided` 是已驗收的工作（不顯示結論，畫面改顯示驗收結果）。
  */
 export type Audience = "decide" | "view" | "decided";
 
-export interface Conclusion {
-  tone: "fail" | "pending";
-  title: string;
-  /** 說明；其中的 `{employee}` 留給畫面以 withEmployee() 代入（員工名字前要加 AI 標記） */
-  description: string;
-}
-
-export interface ConclusionContext {
-  deliverable: Deliverable | null;
-  body: ParsedBody;
-  /** 重點數（`focus.points.length`） */
-  pointCount: number;
-  audience: Audience;
-  language: LanguageCode;
+/** 結論（#195，設計規格 v5 的 big-verdict）：一句話；`fail` 有檢查未通過、`pending` 有檢查中、`pass` 都通過 */
+export interface Verdict {
+  tone: "fail" | "pending" | "pass";
+  text: string;
 }
 
 /** 空白的必填欄位（`[required]` 且內容是空的）的名稱；沒有名稱時用鍵的白話 */
@@ -55,43 +45,32 @@ export function emptyRequiredFields(body: ParsedBody, language: LanguageCode): s
   return body.sections.filter((s) => s.key !== null && s.attrs.required && s.text === "").map((s) => s.label ?? positionLabel(s.key!, language));
 }
 
-/**
- * 結論列：有未通過的檢查時是 `fail`，沒有未通過但有檢查中時是 `pending`；全部通過、沒有檢查或已驗收時是 null。
- * `checks` 是每個檢查最新的一筆（reviewFocus() 的結果）。
- */
-export function conclusionOf(checks: readonly WorkCheck[], ctx: ConclusionContext): Conclusion | null {
-  if (ctx.audience === "decided") return null;
-  const t = crewStrings("review", ctx.language);
-  const names = (status: WorkCheck["status"]) =>
-    checks
-      .filter((c) => c.status === status)
-      .map((c) => checkLabel(c.name, ctx.language))
-      .join(t.listSeparator);
-  const failed = checks.filter((c) => c.status === "fail");
-  if (failed.length > 0) {
-    const values = { verb: deliverableVerb(ctx.deliverable, ctx.language), checks: names("fail") };
-    const title = fill(ctx.audience === "decide" ? t.conclusionFail : t.conclusionFailView, values);
-    const empty = failed.some((c) => c.name === "required-fields") ? emptyRequiredFields(ctx.body, ctx.language) : [];
-    const first =
-      empty.length > 0
-        ? fill(t.conclusionEmptyFields, { fields: empty.map((field) => fill(t.fieldQuote, { field })).join(t.listSeparator) })
-        : checkSentence(failed[0].name, "fail", ctx.language);
-    const second = pointsSentence(ctx);
-    return { tone: "fail", title, description: first === null ? second : fill(t.conclusionSentences, { first, second }) };
-  }
-  if (checks.some((c) => c.status === "pending")) {
-    return { tone: "pending", title: fill(t.conclusionPending, { checks: names("pending") }), description: t.conclusionPendingNote };
-  }
-  return null;
+/** 未通過的原因：第一個未通過檢查的簡短說明；必填欄位是空的時寫出欄位名稱；沒有簡短說明時是「{檢查名稱}未通過」 */
+function failReason(check: WorkCheck, body: ParsedBody, language: LanguageCode): string {
+  const t = crewStrings("review", language);
+  const empty = check.name === "required-fields" ? emptyRequiredFields(body, language) : [];
+  if (empty.length > 0) return fill(t.conclusionEmptyFields, { fields: empty.map((field) => fill(t.fieldQuote, { field })).join(t.listSeparator) });
+  return checkShort(check.name, language) ?? fill(t.verdictCheckFailed, { check: checkLabel(check.name, language) });
 }
 
-/** 結論列說明的第二句：重點標在哪裡 */
-function pointsSentence({ deliverable, body, pointCount, language }: ConclusionContext): string {
-  const t = crewStrings("review", language);
-  if (pointCount === 0) return t.conclusionNoPoints;
-  const marked = canMark(body) && body.points.length === pointCount && body.points.every((p) => p.length > 0);
-  const template = marked ? t.conclusionPointsMarked : t.conclusionPointsListed;
-  return fill(template, { count: pointCount, deliverable: deliverableName(deliverable, language) }, language);
+/**
+ * 結論：有未通過的檢查時「先別{動作}：{原因}」（不能驗收的身分不寫動作），沒有未通過但有檢查中時「還在檢查：…」，
+ * 都通過時「系統檢查都通過」；沒有檢查或已驗收時是 null。`checks` 是每個檢查最新的一筆（reviewFocus() 的結果）。
+ */
+export function verdictOf(checks: readonly WorkCheck[], ctx: { deliverable: Deliverable | null; body: ParsedBody; audience: Audience; language: LanguageCode }): Verdict | null {
+  if (ctx.audience === "decided" || checks.length === 0) return null;
+  const t = crewStrings("review", ctx.language);
+  const failed = checks.find((c) => c.status === "fail");
+  if (failed) {
+    const reason = failReason(failed, ctx.body, ctx.language);
+    const text = ctx.audience === "decide" ? fill(t.verdictFail, { verb: deliverableVerb(ctx.deliverable, ctx.language), reason }) : fill(t.verdictFailView, { reason });
+    return { tone: "fail", text };
+  }
+  const pending = checks.filter((c) => c.status === "pending");
+  if (pending.length > 0) {
+    return { tone: "pending", text: fill(t.conclusionPending, { checks: pending.map((c) => checkLabel(c.name, ctx.language)).join(t.listSeparator) }) };
+  }
+  return { tone: "pass", text: t.verdictPass };
 }
 
 /** 重點在內容中的一個位置；`code` 為 true 時畫面以等寬字顯示 */

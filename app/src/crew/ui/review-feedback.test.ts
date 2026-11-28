@@ -1,4 +1,4 @@
-// 驗收面板的自述／獨立檢查分區與逐條回饋（#168，crew ADR 0008 第 12～16 點）：純函式、readReviewPanel() 讀回的資料與面板的 HTML。
+// 驗收面板的請你確認與系統檢查（#195）與逐條回饋（#168，crew ADR 0008 第 12～16 點）：純函式、readReviewPanel() 讀回的資料與面板的 HTML。
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -60,27 +60,25 @@ describe("readReviewPanel 與面板（#168）", { timeout: DB_TIMEOUT }, () => {
   });
   afterAll(() => db.close());
 
-  it("待驗收的 k13（manager）：兩個分區、說明與選填提示；每個重點與守則一組切換按鈕，都沒選", async () => {
+  it("待驗收的 k13（manager）：請你確認與系統檢查兩區（#195）；每個重點與守則一組切換按鈕，都沒選", async () => {
     const k13 = await panel(db, "manager", "k13");
     expect(k13.feedback).toBeNull();
     const html = render(k13);
-    for (const text of [t.groupSelf, t.groupSelfHint, t.groupIndependent, t.groupIndependentHint, t.feedbackHint]) expect(html).toContain(text);
-    // 分區是 h4、卡片標題是 h5（面板標題是 h3，不跳級）
-    expect(html).toContain(`<h4 id="crew-review-zone-self">${t.groupSelf}</h4>`);
-    expect(html).toContain(`<h5 id="crew-review-points-title">${t.points}</h5>`);
-    expect(html).toContain(`<h5 id="crew-review-checks-title">${t.checks}</h5>`);
-    expect(html).toContain(`<h4 id="crew-review-zone-independent">${t.groupIndependent}</h4>`);
-    expect(html).toContain(`<h5 id="crew-review-followed-title">${t.followedTitle}</h5>`);
-    // 員工標出的分區在系統檢查的分區之前，重點在守則之前（#186 起分區標題與檢查卡標題同為「系統檢查」，以 id 比位置）
-    expect(html.indexOf('id="crew-review-zone-self"')).toBeLessThan(html.indexOf('id="crew-review-points-title"'));
-    expect(html.indexOf('id="crew-review-followed-title"')).toBeLessThan(html.indexOf('id="crew-review-zone-independent"'));
-    expect(html.indexOf('id="crew-review-zone-independent"')).toBeLessThan(html.indexOf('id="crew-review-checks-title"'));
+    // 拿掉「員工標出的」「系統檢查」分區與說明段落（#195）：兩區的標題是 h3（面板標題是 h2，不跳級）
+    for (const old of ["crew-review-zone-self", "crew-review-zone-independent", "crew-review-followed-title"]) expect(html).not.toContain(old);
+    expect(html).toMatch(/<h2 id="crew-review-title"/);
+    expect(html).toMatch(/<h3 id="crew-review-points-title">.*<\/h3>/);
+    expect(html).toContain(`<h3 id="crew-review-checks-title">${t.checks}</h3>`);
+    expect(html).toContain(fill(t.guidelineRow, { text: k13.guidelines[0].text }));
+    // 請你確認在系統檢查之前，重點在守則之前
+    expect(html.indexOf('id="crew-review-points-title"')).toBeLessThan(html.indexOf("crew-review__followed-list"));
+    expect(html.indexOf("crew-review__followed-list")).toBeLessThan(html.indexOf('id="crew-review-checks-title"'));
     const groups = k13.focus.points.length + k13.guidelines.length;
     expect(groups).toBeGreaterThan(1);
-    expect(count(html, 'role="group"')).toBe(groups);
+    expect(count(html, 'class="crew-review__feedback" role="group"')).toBe(groups);
     expect(count(html, `>${t.feedbackPointOk}<`)).toBe(k13.focus.points.length);
     expect(count(html, `>${t.feedbackGuidelineNotDone}<`)).toBe(k13.guidelines.length);
-    expect(count(html, 'aria-pressed="true"')).toBe(0);
+    expect(html).not.toMatch(/class="chip" data-result="\w+" aria-pressed="true"/);
     expect(html).toContain(`aria-label="${fill(t.feedbackFor, { item: feedbackItem(k13.focus.points[0]) })}"`);
   });
 
@@ -91,9 +89,9 @@ describe("readReviewPanel 與面板（#168）", { timeout: DB_TIMEOUT }, () => {
       guidelines: [{ guidelineId: "g05", result: "done" }],
     });
     const html = render(k12);
-    expect(html).toContain(t.groupSelf);
-    expect(html).not.toContain(t.feedbackHint);
-    expect(html).not.toContain('role="group"');
+    expect(html).toContain(`id="crew-review-points-title"`);
+    expect(html).not.toContain("crew-review__feedback\"");
+    expect(html).not.toContain('class="crew-review__feedback" role="group"');
     expect(count(html, `data-result="ok">${t.feedbackPointOk}<`)).toBe(1);
     expect(count(html, `data-result="problem">${t.feedbackPointProblem}<`)).toBe(1);
     expect(count(html, `data-result="done">${t.feedbackGuidelineDone}<`)).toBe(1);
@@ -102,13 +100,13 @@ describe("readReviewPanel 與面板（#168）", { timeout: DB_TIMEOUT }, () => {
   it("只能看的身分：沒有切換按鈕與選填提示", async () => {
     // 不能驗收（canDecide 為 false）的面板一律沒有按鈕；demo 中看得到 k13 的只能看身分也一樣
     const k13 = await panel(db, "manager", "k13");
-    expect(render({ ...k13, canDecide: false })).not.toContain('role="group"');
+    expect(render({ ...k13, canDecide: false })).not.toContain('class="crew-review__feedback" role="group"');
     for (const { id } of clientConfig.access.roles.filter((r) => !r.canReview)) {
       const p = await readReviewPanel(db, id, lang, "k13", false);
       if (p === null) continue;
       expect(p.canDecide, id).toBe(false);
-      expect(render(p), id).not.toContain('role="group"');
-      expect(render(p), id).not.toContain(t.feedbackHint);
+      expect(render(p), id).not.toContain('class="crew-review__feedback" role="group"');
+      expect(render(p), id).toContain(t.viewOnlyNote);
     }
   });
 

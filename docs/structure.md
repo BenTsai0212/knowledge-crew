@@ -266,7 +266,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/assign.ts`：「交辦」的資料整理（`readAssign()`：交辦清單與表單的選項，員工平常的來源與工作類型由 `usualOf()` 從交辦紀錄推得；`initialChoice()`：員工卡「交辦給 ○○」預選的員工與來源；`resultKey()`、`visibleAssignments()`：結果說明的文字鍵與清單的最近 4 件；`submitAssignment()`、`simulateAssignment()`：交辦與模擬交件；測試在 `assign.test.ts`）
 - `ui/AssignView.css`：「交辦」畫面的表單（員工單選卡、來源與工作類型、結果說明）與交辦清單
 - `ui/AssignView.tsx`：「交辦」畫面：交辦表單（依員工帶入來源與工作類型、結果說明）、交辦清單（最近 4 件，可看全部）與「模擬交件」（只呈現 `assign.ts` 的結果；表單與按鈕只給能驗收的身分）
-- `ui/components.tsx`：AI 員工畫面共用的元件（AI 標記、層級徽章、圓點 `DotMark`／`DotRow`／`dotsSummary()`（信任頁與員工卡共用）、結論列、自動檢查列、收起的區塊、相對期限 `DueTag`／`ScheduleLine`（#193，`ui-due` 系列）；樣式在 `components.css`，測試在 `components.test.ts`）
+- `ui/components.tsx`：AI 員工畫面共用的元件（AI 標記、層級徽章、圓點 `DotMark`／`DotRow`／`dotsSummary()`（信任頁與員工卡共用）、結論 `VerdictLine`、系統檢查的標籤 `CheckTag`（#195，`ui-verdict`、`ui-check`）、收起的區塊、相對期限 `DueTag`／`ScheduleLine`（#193，`ui-due` 系列）；樣式在 `components.css`，測試在 `components.test.ts`）
 - `ui/CrewPage.css`：crew 頁的頁首與子導覽（每個畫面一個 CSS 檔，只用 theme 的 CSS 變數；手機是可橫向滑動的按鈕列，#103）
 - `ui/CrewPage.tsx`：crew 頁：頁首、子導覽四個位置（工作、員工、交辦、紀錄；#191，ADR 0009 第二節）；畫面在 `SCREENS` 一行登錄，沒有的位置顯示「準備中」；收到的位置經 `resolveCrewTarget()`（舊的 id 對應到新位置）；「工作」「員工」帶數字（`section-counts.ts`，只給能驗收的身分）
 - `ui/css.test.ts`：結構測試：`ui/*.css` 不寫死顏色、只用 theme.json 有的變數
@@ -293,7 +293,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/refs.ts`：工作來源與外部編號的顯示（`assignmentRef()`、`workRef()`：repo 類是 `<repo>#<Issue>`、`PR #<編號>`，其他類型是來源名稱與編號，沒有編號時只有來源名稱；文字在 `common` 的 `ref*`）
 - `ui/review.ts`：「工作與驗收」的資料整理（`readWorkList()`：待驗收與最近驗收過；`readReviewPanel()`：依 `reviewFocus()` 的驗收面板與前幾輪，另有全文的解析結果、交件的種類、依照的守則與等確認的守則數（#147）；`initialSelection()`；測試在 `review.test.ts`）
 - `ui/review/BodyView.tsx`：驗收面板 v3 的重點卡與交件本身：依區塊列出內容，左側欄放名稱與「已修改」，重點畫底線＋上標編號；不能標出重點時退回純文字（測試在 `BodyView.test.ts`）
-- `ui/review/conclusion.ts`：驗收面板 v3 的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`conclusionOf()`：結論列；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
+- `ui/review/conclusion.ts`：驗收面板的文案規則（`deliverableOf()`：工作類型 → 交件的種類；`verdictOf()`：結論（#195）；`decisionQuestion()`：決定列的問句；`pointPlaces()`：重點在內容中的位置；測試在 `conclusion.test.ts`）
 - `ui/review/Correction.tsx`：驗收面板的事後更正（#164，crew ADR 0008）：「已通過」下方的「通過後發現有錯」按鈕與展開的表單（發現的問題、沒被標成重點、記成守則、送出前的提醒），已有更正時顯示日期與備註
 - `ui/review/Deliverables.tsx`：驗收面板 v3 的四種交件（回信、貼文、知識庫條目、程式修改）依原本的樣子呈現（測試在 `Deliverables.test.ts`）
 - `ui/review/feedback.ts`、`ui/review/FeedbackMarks.tsx`：驗收面板的逐條回饋（#168，crew ADR 0008 第 12～14 點）：選取的狀態與送出時的 `feedback`（`toggled()`、`feedbackInput()`、`storedMarks()`、組名的 `feedbackItem()`），重點與守則旁的切換按鈕（`aria-pressed`）與已驗收的唯讀標籤（測試在 `ui/review-feedback.test.ts`）
@@ -301,7 +301,7 @@ knowledge-crew 的程式（ADR 0002「新程式的位置」、ADR 0004）；crew
 - `ui/review/light.ts`：驗收面板的看重點（#102，規格 6.3）：「為什麼是看重點」的日期與次數（`lightReason()`，取自既有的驗收紀錄與層級決定）與收起的規則（`keptInLight()`、`splitFields()`：有重點與空白的欄位照樣顯示，其他欄位收起；測試在 `light.test.ts`）
 - `ui/review/marked.ts`：驗收面板 v3 的重點標記（`segments()`：依標記切片段；`canMark()`：能不能在內容中標出重點；測試在 `marked.test.ts`）
 - `ui/review/parts.tsx`：驗收面板 v3 的交件內容共用的小元件（上標的重點編號、依標記切開的內容、區塊的名稱欄與內容；四種交件與一般的寫法共用）
-- `ui/review/ReviewPanel.tsx`：驗收面板 v3：標題卡與結論列（退回原因與「沒被標成重點」，#168）、「員工自己說的」分區（重點＋這次依照的守則，#147；逐條回饋，#168）與「獨立檢查」分區（自動檢查；crew ADR 0008 第 16 點）、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡、「做錯了」時的「沒被標成重點」、「記成 ○○ 的守則」，#145、#168；手機展開退回原因時捲進畫面，#103）；看重點時另有說明卡（#102）
+- `ui/review/ReviewPanel.tsx`：驗收面板的少字版（#195，設計規格 v5）：標題列（標題＋審查方式徽章＋「?」；抽查是「抽查：這次全部看」徽章，只看標記處是「只看標記處｜這次全部看」兩格）、一行說明＋「詳細」、結論、「請你確認」（重點＋照守則，#147；逐條回饋，#168）與「系統檢查」兩區、交件本身、前幾輪、決定列（依交件種類的問句、三張退回原因卡、「做錯了」時的「沒被標成重點」、「記成 ○○ 的守則」，#145、#168；手機展開退回原因時捲進畫面，#103）
 - `ui/ReviewView.css`：「工作與驗收」畫面的清單與驗收面板（寬螢幕兩欄，窄螢幕清單在上；手機的決定列固定在底部分頁列之上，#103）
 - `ui/ReviewView.tsx`：「工作與驗收」畫面：呈現 `review.ts` 的清單，面板交給 `review/ReviewPanel.tsx`；進入時選取待驗收的第一筆（從原文的來源或首頁的今天的工作切過來時選那一件，#92、#96）；已回流的工作顯示「已收進知識庫」與「打開原文」，沒有上傳權限而沒有回流時註明原因；「通過」「退回」只給能驗收的身分，寫入後重新讀取（並通知 App 更新首頁與側欄的待驗收件數，#96）
 - `ui/section-counts.ts`：子導覽的數字（`sectionCounts()`：「工作」是待驗收件數，「員工」是等你決定的件數＝看重點的建議＋等確認的守則（#191），只給能驗收的身分；測試在 `section-counts.test.ts`，#103）

@@ -22,7 +22,7 @@ const WORKS: TourDestination = { kind: "crew", target: { section: "works" } };
 
 export const TOUR_STEPS: readonly TourStep[] = [
   { id: "today", title: "todayTitle", body: "todayBody", go: { kind: "home" }, targets: [".crew-home"] },
-  { id: "review", title: "reviewTitle", body: "reviewBody", go: WORKS, targets: [".crew-review__pair", ".crew-review__panel"] },
+  { id: "review", title: "reviewTitle", body: "reviewBody", go: WORKS, targets: [".crew-review__pane", ".crew-review__panel"] },
   { id: "return", title: "returnTitle", body: "returnBody", go: WORKS, targets: [".crew-review__decision", ".crew-review__panel"] },
   {
     id: "guidelines",

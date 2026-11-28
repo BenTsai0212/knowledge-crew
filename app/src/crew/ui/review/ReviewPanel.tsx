@@ -1,5 +1,6 @@
-// 驗收面板 v3（#72 計畫第 1、5 點；設計規格 v3 第 6.2 節）：標題卡（結論列）→ 重點＋自動檢查 → 交件本身 → 前幾輪 → 決定列。
-// 重點與依照的守則包在「員工自己說的」、自動檢查包在「獨立檢查」（#168，crew ADR 0008 第 16 點）；驗收時可以逐條回饋（第 12～14 點）。
+// 驗收面板的少字版（#195，設計規格 v5；畫面以 docs/crew/design/v5/screens/13a～13c 為準）：
+// 標題列（標題＋審查方式徽章＋「?」）→ 一行說明（員工・工作類型・相對期限＋「詳細」）→ 結論 → 請你確認＋系統檢查 → 交件 → 前幾輪 → 決定列。
+// 說明只放在「?」裡；四項必要功能的入口見 ADR 0009「不能動的規則」。驗收時可以逐條回饋（#168，crew ADR 0008 第 12～14 點）。
 // 資料只來自 readReviewPanel()；文字在 client/i18n/crew/review.<語言>.json。寫入行為與 v2 相同（createReview() 後重新讀取）。
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { fill } from "../../../client/i18n";
@@ -7,13 +8,15 @@ import type { LanguageCode } from "../../../client/types";
 import type { createReview, NewFeedback } from "../../db/store";
 import type { ChangesView, ReturnReason, SpotCheck } from "../../trust/types";
 import { crewStrings, type CrewTexts } from "../../i18n";
-import { CheckRow, ConclusionRow, LevelBadge, ScheduleLine, withEmployee } from "../components";
+import { DetailsTip } from "../../../ui/DetailsTip";
+import { Qmark } from "../../../ui/Qmark";
+import { CheckTag, DueTag, EmployeeName, formatDueDate, VerdictLine, withEmployee } from "../components";
 import type { ReviewPanel as PanelData, WorkListItem } from "../review";
 import { workTypeLabel } from "../labels";
 import { formatInZone, shortDate, shortDateTime } from "../../time";
 import { assignmentRef, workRef } from "../refs";
 import { BodyView, PointList, type ActivePoint } from "./BodyView";
-import { conclusionOf, decisionQuestion, deliverableName, type Audience } from "./conclusion";
+import { decisionQuestion, deliverableName, verdictOf, type Audience } from "./conclusion";
 import { CorrectionDone, CorrectionForm, type Correct } from "./Correction";
 import { FeedbackTag, FeedbackToggle } from "./FeedbackMarks";
 import { feedbackInput, GUIDELINE_RESULTS, NO_MARKS, POINT_RESULTS, storedMarks, toggled, type Marks } from "./feedback";
@@ -87,29 +90,58 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
     if (next !== null) revealPoint(bodyRef.current, next);
   };
   const audience: Audience = panel.canDecide ? "decide" : item.verdict !== null ? "decided" : "view";
-  const conclusion = conclusionOf(focus.checks, { deliverable, body, pointCount: focus.points.length, audience, language });
+  const verdict = verdictOf(focus.checks, { deliverable, body, audience, language });
   const name = deliverableName(deliverable, language);
-  const role = item.employee.roleNote;
+  const employee = item.employee.displayName;
   const workType = workTypeLabel(item.workTypeId, language);
-  const guidelineLabel = withEmployee(t.saveAsGuideline, { workType }, item.employee.displayName, language);
-  const meta = withEmployee(
-    role === null ? t.submittedByNoRole : t.submittedBy,
-    { role: role ?? "", deliverable: name, round: current.round, date: formatTime(current.submittedAt, language) },
-    item.employee.displayName,
-    language,
-  );
+  const guidelineLabel = withEmployee(t.saveAsGuideline, { workType }, employee, language);
+  // 「這次全部看」（#166）只在變更收成一行（只看標記處）時有作用
+  const way =
+    !focus.spotCheck && focus.level === "light" && panel.light
+      ? { reason: panel.light, fullOnce: focus.changes.mode === "summary" ? { on: fullOnce, set: setFullOnce } : undefined }
+      : null;
   return (
     <article ref={anchor} className="crew-review__panel" aria-labelledby="crew-review-title">
-      <header className="card crew-review__head">
-        <div className="crew-review__head-top">
-          <span className="muted crew-review__ref">{itemRef(item, t, language)}</span>
-          <LevelBadge level={focus.level}>{fill(t.levelBadge, { level: focus.level === "light" ? t.levelLight : t.levelItem })}</LevelBadge>
+      <header className="crew-review__head">
+        <div className="crew-review__title-row">
+          <h2 id="crew-review-title" tabIndex={-1}>
+            {item.title}
+          </h2>
+          {focus.spotCheck ? (
+            <SpotBadge spot={focus.spotCheck} employee={employee} language={language} t={t} />
+          ) : way ? (
+            <LightWay
+              reason={way.reason}
+              every={panel.spotEvery}
+              employee={employee}
+              language={language}
+              fullOnce={way.fullOnce}
+              onOpenEmployee={onOpenEmployee && (() => onOpenEmployee(item.employee.id))}
+              t={t}
+            />
+          ) : (
+            <>
+              <span className="ui-badge ui-badge--item" data-level="item">
+                {t.levelItem}
+              </span>
+              <Qmark label={t.itemTipLabel} align="right">
+                {withEmployee(t.itemTip, {}, employee, language)}
+              </Qmark>
+            </>
+          )}
         </div>
-        <h3 id="crew-review-title" tabIndex={-1}>
-          {item.title}
-        </h3>
-        <p className="muted">{meta}</p>
-        <ScheduleLine item={item} language={language} />
+        <p className="muted crew-review__line">
+          <EmployeeName name={employee} language={language} />
+          {t.lineSeparator}
+          {workType}
+          {item.due.kind !== "none" && (
+            <>
+              {t.lineSeparator}
+              <DueTag due={item.due} language={language} />
+            </>
+          )}{" "}
+          <DetailsTip items={detailItems(item, current, t, language)} language={language} />
+        </p>
         {item.verdict !== null && (
           <p>
             <span className="badge" data-verdict={item.verdict}>
@@ -139,76 +171,43 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
           </p>
         )}
         <KnowledgeStatus passage={panel.knowledgePassage} noUpload={noUpload} onOpenSource={onOpenSource} t={t} />
-        {conclusion && (
-          <ConclusionRow
-            tone={conclusion.tone}
-            title={conclusion.title}
-            description={withEmployee(conclusion.description, {}, item.employee.displayName, language)}
-          />
-        )}
+        {verdict && <VerdictLine tone={verdict.tone} text={verdict.text} />}
       </header>
-      {focus.spotCheck ? (
-        <SpotCard spot={focus.spotCheck} onOpenTrust={onOpenTrust} t={t} />
-      ) : (
-        focus.level === "light" &&
-        panel.light && (
-          <LightCard
-            reason={panel.light}
-            employee={item.employee.displayName}
-            workType={workType}
-            language={language}
-            onOpenTrust={onOpenTrust}
-            // 變更已逐項列出（沒標重點）時不需要「這次逐項看」
-            fullOnce={focus.changes.mode === "summary" ? { on: fullOnce, toggle: () => setFullOnce(!fullOnce) } : undefined}
-            t={t}
-          />
-        )
-      )}
 
-      <section className="crew-review__zone" aria-labelledby="crew-review-zone-self">
-        <h4 id="crew-review-zone-self">{t.groupSelf}</h4>
-        <p className="muted crew-review__by">{t.groupSelfHint}</p>
-        {panel.canDecide && <p className="muted crew-review__by">{t.feedbackHint}</p>}
-        <div className="crew-review__pair">
-          <section className="card crew-review__section" aria-labelledby="crew-review-points-title">
-            <h5 id="crew-review-points-title">{t.points}</h5>
-            <p className="muted crew-review__by">{withEmployee(t.pointsBy, { count: focus.points.length }, item.employee.displayName, language)}</p>
-            {focus.noPoints ? (
-              <p className="crew-review__notice" role="note">
-                {t.noPoints}
-              </p>
-            ) : (
-              <PointList points={focus.points} body={body} language={language} active={active} onToggle={toggle} aside={pointAside} />
-            )}
-          </section>
-          <FollowedCard
+      <section className="crew-review__pane" aria-label={t.paneLabel}>
+        <div className="crew-review__confirm">
+          <h3 id="crew-review-points-title">{withEmployee(t.pointsBy, { count: focus.points.length }, employee, language)}</h3>
+          {focus.noPoints ? (
+            <p className="crew-review__notice" role="note">
+              {t.noPoints}
+            </p>
+          ) : (
+            <PointList points={focus.points} body={body} language={language} active={active} onToggle={toggle} aside={pointAside} />
+          )}
+          <FollowedRows
             guidelines={panel.guidelines}
             pending={panel.pendingGuidelines}
-            employee={item.employee.displayName}
+            employee={employee}
             language={language}
             onOpenEmployee={onOpenEmployee && (() => onOpenEmployee(item.employee.id))}
             aside={guidelineAside}
             t={t}
           />
         </div>
-      </section>
-      <section className="crew-review__zone" aria-labelledby="crew-review-zone-independent">
-        <h4 id="crew-review-zone-independent">{t.groupIndependent}</h4>
-        <p className="muted crew-review__by">{t.groupIndependentHint}</p>
-        <section className="card crew-review__section" aria-labelledby="crew-review-checks-title">
-          <h5 id="crew-review-checks-title">{t.checks}</h5>
+        <div className="crew-review__system">
+          <h3 id="crew-review-checks-title">{t.checks}</h3>
           {focus.checks.length === 0 ? (
             <p className="muted">{t.checksEmpty}</p>
           ) : (
-            <ul className="crew-review__checks">
+            <ul className="crew-review__checks" aria-labelledby="crew-review-checks-title">
               {focus.checks.map((c) => (
                 <li key={c.name}>
-                  <CheckRow name={c.name} status={c.status} language={language} />
+                  <CheckTag name={c.name} status={c.status} language={language} />
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </div>
       </section>
 
       <div ref={bodyRef}>
@@ -227,7 +226,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
 
       {earlier.length > 0 && (
         <section className="card crew-review__section">
-          <h4>{t.earlier}</h4>
+          <h3>{t.earlier}</h3>
           {earlier.map((w) => (
             <details key={w.round} className="crew-review__details">
               <summary>{earlierRound(w.round, workRef(item.sourceKind, w.externalRef, language), t)}</summary>
@@ -280,70 +279,81 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
   );
 }
 
-interface LightCardProps {
-  reason: LightReason;
-  employee: string;
-  workType: string;
-  language: LanguageCode;
-  onOpenTrust?: () => void;
-  /** 「這次逐項看」的狀態與切換（#166）；沒有時不顯示按鈕 */
-  fullOnce?: { on: boolean; toggle: () => void };
-  t: Texts;
+/** 「詳細」的項目（#193）：來源與編號、交件時間、輪次、優先（一般不列）、到期日 */
+function detailItems(item: WorkListItem, current: PanelData["current"], t: Texts, language: LanguageCode): string[] {
+  const priority = item.priority === "high" ? t.detailsPriorityHigh : item.priority === "low" ? t.detailsPriorityLow : "";
+  return [
+    itemRef(item, t, language),
+    fill(t.detailsSubmitted, { date: formatTime(current.submittedAt, language) }),
+    fill(t.detailsRound, { round: current.round }),
+    priority,
+    item.dueAt === null ? "" : fill(t.detailsDue, { date: formatDueDate(item.dueAt, language) }),
+  ];
 }
 
-const TrustLink = ({ onOpenTrust, t }: { onOpenTrust?: () => void; t: Texts }) =>
-  onOpenTrust ? (
-    <button type="button" className="link" onClick={onOpenTrust}>
-      {t.lightTrust}
-    </button>
-  ) : null;
-
-/** 這次抽查（#166，crew ADR 0008 第 8、9 點）：warning 1px 框、警示圖示；每 N 件抽 1 件、這是第幾件、判定的規則 */
-function SpotCard({ spot, onOpenTrust, t }: { spot: SpotCheck; onOpenTrust?: () => void; t: Texts }) {
+/** 抽查（#166，ADR 0009「不能動的規則」）：虛線框徽章「抽查：這次全部看」＋「?」；沒有關閉或收起的按鈕 */
+function SpotBadge({ spot, employee, language, t }: { spot: SpotCheck; employee: string; language: LanguageCode; t: Texts }) {
   return (
-    <section className="crew-review__light crew-review__spot" aria-labelledby="crew-review-spot-title">
-      <svg className="crew-icon crew-review__light-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 3l9.5 17h-19z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-        <path d="M12 10v4M12 17v.01" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-      <div className="crew-review__light-text">
-        <h4 id="crew-review-spot-title">{t.spotTitle}</h4>
-        <p>{fill(t.spotWhy, { every: spot.every, ordinal: spot.ordinal })}</p>
-        <p>{t.spotRule}</p>
-        <TrustLink onOpenTrust={onOpenTrust} t={t} />
-      </div>
-    </section>
+    <>
+      <span className="ui-badge ui-badge--spot crew-review__spot" data-level="spot">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+          <rect x="4" y="4" width="16" height="16" rx="3" />
+          <circle cx="9" cy="9" r="1.3" />
+          <circle cx="15" cy="15" r="1.3" />
+          <circle cx="15" cy="9" r="1.3" />
+          <circle cx="9" cy="15" r="1.3" />
+        </svg>
+        {t.spotTag}
+      </span>
+      <Qmark label={t.spotTipLabel} align="right">
+        {withEmployee(t.spotTip, { every: spot.every, ordinal: spot.ordinal }, employee, language)}
+      </Qmark>
+    </>
   );
 }
 
-/** 為什麼是看重點（規格 6.3）：success 1px 框、盾牌圖示；何時同意、最近幾次沒有做錯、收起什麼、一次做錯了就改回逐項看 */
-function LightCard({ reason, employee, workType, language, onOpenTrust, fullOnce, t }: LightCardProps) {
-  const since = withEmployee(t.lightSince, { date: formatDate(reason.relaxedAt, language), workType, count: reason.recent }, employee, language);
+interface LightWayProps {
+  reason: LightReason;
+  every: number;
+  employee: string;
+  language: LanguageCode;
+  /** 「這次全部看」（#166：只影響這次怎麼看，不記錄）；沒有時兩格只是標示 */
+  fullOnce?: { on: boolean; set: (on: boolean) => void };
+  onOpenEmployee?: () => void;
+  t: Texts;
+}
+
+/** 只看標記處：「只看標記處｜這次全部看」兩格（ui-way）＋「?」（依據與規則，連到員工頁的審查方式） */
+function LightWay({ reason, every, employee, language, fullOnce, onOpenEmployee, t }: LightWayProps) {
+  const full = fullOnce?.on ?? false;
+  const option = (on: boolean, text: string, kind: "mark" | "all") => {
+    const className = `ui-way__opt${on ? ` ui-way__opt--${kind}` : ""}`;
+    return fullOnce ? (
+      <button type="button" className={className} aria-pressed={on} onClick={() => fullOnce.set(kind === "all")}>
+        {text}
+      </button>
+    ) : (
+      <span className={className}>{text}</span>
+    );
+  };
   return (
-    <section className="crew-review__light" aria-labelledby="crew-review-light-title">
-      <svg className="crew-icon crew-review__light-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9c-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-        <path d="M9 12l2 2l4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <div className="crew-review__light-text">
-        <h4 id="crew-review-light-title">{t.lightTitle}</h4>
-        <p>{since}</p>
-        <p>{t.lightRule}</p>
-        <TrustLink onOpenTrust={onOpenTrust} t={t} />
-        {fullOnce && (
-          <div className="crew-review__full-once">
-            <button type="button" className="secondary" aria-pressed={fullOnce.on} onClick={fullOnce.toggle}>
-              {fullOnce.on ? t.fullOnceBack : t.fullOnce}
+    <>
+      <span className="ui-way" role="group" aria-label={t.wayLabel} data-level="light">
+        {option(!full, t.levelLight, "mark")}
+        {option(full, t.fullOnce, "all")}
+      </span>
+      <Qmark label={t.lightTipLabel} align="right">
+        {withEmployee(t.lightTip, { count: reason.recent, date: shortDate(reason.relaxedAt, language), every }, employee, language)}
+        {onOpenEmployee && (
+          <>
+            <br />
+            <button type="button" className="link" onClick={onOpenEmployee}>
+              {withEmployee(t.openEmployeeWay, {}, employee, language)}
             </button>
-            {fullOnce.on && (
-              <span className="muted" role="status">
-                {t.fullOnceNote}
-              </span>
-            )}
-          </div>
+          </>
         )}
-      </div>
-    </section>
+      </Qmark>
+    </>
   );
 }
 
@@ -359,48 +369,49 @@ interface FollowedProps {
 }
 
 /**
- * 這次依照的守則（#147，crew ADR 0007 決定 5）：員工自述，有沒有做到由人判斷；不論層級都顯示。
- * 下方是等確認的守則（只有能驗收的身分，pending > 0）；沒有依照任何守則時只留這一行，兩者都沒有時不顯示。
+ * 這次依照的守則（#147，crew ADR 0007 決定 5）：「請你確認」最後一列「照守則：…」＋「?」（全文、何時記下、有沒有做到由你判斷）。
+ * 下方是等確認的守則（只有能驗收的身分，pending > 0）；兩者都沒有時不顯示。
  */
-function FollowedCard({ guidelines, pending, employee, language, onOpenEmployee, aside, t }: FollowedProps) {
+function FollowedRows({ guidelines, pending, employee, language, onOpenEmployee, aside, t }: FollowedProps) {
   if (guidelines.length === 0 && pending === 0) return null;
-  const pendingRow = pending > 0 && (
-    <div className="crew-review__followed-pending" role="note">
-      <p>{withEmployee(t.pendingGuidelines, { count: pending }, employee, language)}</p>
-      {onOpenEmployee && (
-        <button type="button" className="secondary" onClick={onOpenEmployee}>
-          {t.pendingGuidelinesOpen}
-        </button>
-      )}
-    </div>
-  );
-  if (guidelines.length === 0) return <div className="card crew-review__section crew-review__followed">{pendingRow}</div>;
   return (
-    <section className="card crew-review__section crew-review__followed" aria-labelledby="crew-review-followed-title">
-      <div className="crew-review__followed-head">
-        <h5 id="crew-review-followed-title">{t.followedTitle}</h5>
-        <span className="badge crew-review__self-reported">{withEmployee(t.followedBy, {}, employee, language)}</span>
-      </div>
-      <p className="muted crew-review__by">{t.followedJudge}</p>
-      <ul className="crew-review__followed-list">
-        {guidelines.map((g) => {
-          const extra = aside?.(g);
-          return (
-            <li key={g.id} className={extra ? "crew-review__followed-row" : undefined}>
-              <div className="crew-review__followed-text">
-                <span>{g.text}</span>
-                <span className="muted crew-review__followed-origin">
-                  {fill(g.proposerKind === "human" ? t.followedSavedOnReturn : t.followedConfirmed, { date: shortDate(g.since, language) }, language)}
+    <>
+      {guidelines.length > 0 && (
+        <ul className="crew-review__followed-list">
+          {guidelines.map((g) => {
+            const extra = aside?.(g);
+            const origin = fill(g.proposerKind === "human" ? t.followedSavedOnReturn : t.followedConfirmed, { date: shortDate(g.since, language) }, language);
+            return (
+              <li key={g.id} className="crew-review__followed-row">
+                <svg className="crew-review__followed-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                  <path d="M6 3h12v18l-6-4-6 4z" />
+                </svg>
+                <span className="crew-review__followed-text">{fill(t.guidelineRow, { text: g.text })}</span>
+                <Qmark label={t.guidelineTipLabel} align="right">
+                  {g.text}
+                  <br />
+                  {origin}
                   {g.retiredLater && t.followedRetiredLater}
-                </span>
-              </div>
-              {extra}
-            </li>
-          );
-        })}
-      </ul>
-      {pendingRow}
-    </section>
+                  {t.clauseSeparator}
+                  {t.guidelineJudge}
+                </Qmark>
+                {extra}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {pending > 0 && (
+        <div className="crew-review__followed-pending" role="note">
+          <p>{withEmployee(t.pendingGuidelines, { count: pending }, employee, language)}</p>
+          {onOpenEmployee && (
+            <button type="button" className="secondary" onClick={onOpenEmployee}>
+              {t.pendingGuidelinesOpen}
+            </button>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 

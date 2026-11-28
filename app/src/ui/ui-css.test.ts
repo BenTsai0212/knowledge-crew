@@ -62,6 +62,7 @@ const CLASSES = [
   "ui-way",
   "ui-mode", "ui-mode--light", "ui-mode--spot",
   "ui-check", "ui-check--bad", "ui-check--ok", "ui-check--wait",
+  "ui-verdict", "ui-verdict--bad", "ui-verdict--ok", "ui-verdict--wait",
   "ui-field", "ui-input", "ui-textarea", "ui-field--error", "ui-error-summary",
   "ui-choice", "ui-choice--on",
   "ui-disc",
@@ -139,6 +140,13 @@ describe("ui.css 的共用元件", () => {
     expect(rule(".ui-way")).toMatchObject({ "border-radius": "var(--radius-pill)" });
     expect(rule(".ui-way__opt--all")).toMatchObject({ background: "var(--color-text)" });
     expect(rule(".ui-way__opt--mark")).toMatchObject({ background: "var(--color-success)" });
+  });
+
+  it("結論（#195）：18px 粗體；未通過＝danger、都通過＝success、檢查中＝warning", () => {
+    expect(rule(".ui-verdict")).toMatchObject({ "font-size": "18px", "font-weight": "700" });
+    expect(rule(".ui-verdict--bad")).toEqual({ color: "var(--color-danger)" });
+    expect(rule(".ui-verdict--ok")).toEqual({ color: "var(--color-success)" });
+    expect(rule(".ui-verdict--wait")).toEqual({ color: "var(--color-warning)" });
   });
 
   it("驗收面板的狀態列：看重點是 success 框、抽查是墨色虛線框", () => {
