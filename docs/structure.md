@@ -86,8 +86,8 @@
 - `ConflictStatus.tsx`：比對狀態
 - `Conversation.tsx`：問答頁中間的對話
 - `cross-fade.ts`：切換語言、Light／Dark 的交叉淡換
-- `entity-icons.ts`：實體類型的圖示集
 - `DetailsTip.tsx`：「詳細」（#193）：文字按鈕打開小泡泡，內容是以分隔字（翻譯檔的 `detailsTipSeparator`）連接的項目，空的項目略過；開關規則同 `Qmark.tsx`
+- `entity-icons.ts`：實體類型的圖示集
 - `EntityIcon.tsx`：圖例的圖示
 - `EntityPanel.tsx`：圖譜頁的實體面板；桌機（`wide`）是右側整高欄的列與卡片（#336），展示模式的桌機也用（#349，相關實體依實體合併成一列）；手機（`sheet`）是底部面板的版面（#357）
 - `EntitySearch.tsx`：以名稱搜尋實體；`field` 是桌機圖譜頁首與手機圖譜上方的搜尋框（#336、#357）
@@ -125,8 +125,8 @@
 - `PathPanel.tsx`：圖譜頁的路徑面板；`panel` 是桌機「找路徑」打開的面板（#336）
 - `PresentationBar.tsx`：展示模式登入後的頂端列（不論寬度都取代 `Sidebar`／`MobileNav`；畫板 `H-QA`、`H-Graph`，#349）；`VITE_DEMO_COMPARE` 開啟時有「身分對照」按鈕，見 `docs/qa.md`「展示模式」「身分對照」
 - `ProductIcon.tsx`：頁首的產品 icon（favicon 在 `app/public/favicon.svg`，見 `docs/design.md`「產品 icon（K 晶格）」）
-- `Qmark.tsx`：「?」說明（#193）：18px 圓形按鈕（`ui-qmark`）打開小泡泡（`ui-tip`），`label` 是按鈕的可存取名稱；與 `DetailsTip.tsx` 共用 `TipBubble.tsx`
 - `qa-errors.ts`：問答錯誤的五類（見 `docs/qa.md`「錯誤」）
+- `Qmark.tsx`：「?」說明（#193）：18px 圓形按鈕（`ui-qmark`）打開小泡泡（`ui-tip`），`label` 是按鈕的可存取名稱；與 `DetailsTip.tsx` 共用 `TipBubble.tsx`
 - `refusal-next-steps.ts`：拒答下方的下一步與先確認要找的是哪一種（見 `docs/qa.md`「拒答」）
 - `report-helpers.ts`：問答的「回報有錯」組成回報
 - `ReportList.tsx`：待審頁的「回報」分頁
@@ -152,10 +152,10 @@
 - `SourceSheet.tsx`：手機的原文面板（底部面板，標題「原文 · 出處 N／M」，#354）與平板的滑出面板
 - `SourceText.tsx`：原文紙面，桌機與手機共用
 - `Tabs.tsx`：分頁元件，一種外觀兩種語意：`tabs`（tablist，左右鍵切換；待審、上傳）與 `nav`（`aria-current`；AI 員工的子頁）；放不下時橫向捲動、目前的分頁置中（#179），樣式是 `ui.css` 的 `ui-tabs`
-- `TipBubble.tsx`、`tip.ts`：「?」與「詳細」共用的小泡泡（`details/summary`）與開關規則：同一時間只開一個、Esc 關閉並把焦點放回按鈕（對話框中只關泡泡）、點泡泡外面關閉（測試在 `tip.test.ts`）
 - `theme.ts`：由 `client/theme.json` 設定 CSS 變數（深色模式用 `darkColors`）
 - `timeline-view.ts`：時間軸的區段與篩選、桌機與手機的年份分組、範圍與說法不同的純函式
 - `TimelinePage.tsx`：時間軸（見 `docs/graph.md`；桌機與手機是精簡卡片，#346、#358）
+- `TipBubble.tsx`、`tip.ts`：「?」與「詳細」共用的小泡泡（`details/summary`）與開關規則：同一時間只開一個、Esc 關閉並把焦點放回按鈕（對話框中只關泡泡）、點泡泡外面關閉（測試在 `tip.test.ts`）
 
 ### `app/src/graph/`
 
