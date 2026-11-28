@@ -86,7 +86,8 @@ for (const width of [1280, 390]) {
 
     test("k13：守則選「沒做到」後退回（做錯了、沒被標成重點）→ 員工頁、員工頁的審查方式與紀錄的統計各加 1", async ({ page }) => {
       const panel = await openWork(page, "k13");
-      const notDone = panel.locator(".crew-review__followed-list").getByRole("group").first().getByRole("button", { name: ct.review.feedbackGuidelineNotDone, exact: true });
+      // #195：守則列另有「?」（details 的 role 也是 group），只找逐條回饋的那一組
+      const notDone = panel.locator(".crew-review__followed-list .crew-review__feedback").first().getByRole("button", { name: ct.review.feedbackGuidelineNotDone, exact: true });
       await notDone.click();
       await expect(notDone).toHaveAttribute("aria-pressed", "true");
       await panel.getByRole("button", { name: ct.review.return, exact: true }).click();

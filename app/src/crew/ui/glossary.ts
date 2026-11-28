@@ -28,6 +28,11 @@ export function checkSentence(name: string, result: CheckStatus, language: Langu
   return lookup(`check${camel(name)}${result === "pass" ? "Pass" : "Fail"}`, language);
 }
 
+/** 未通過時的簡短說明（驗收面板的結論「先別寄出：報價對不上」，#195）；沒有對應時是 null。 */
+export function checkShort(name: string, language: LanguageCode): string | null {
+  return lookup(`check${camel(name)}Short`, language);
+}
+
 /** `reply/*`、`post/*`、`kb/*` 以外的位置（程式檔案路徑）：畫面以等寬字顯示。 */
 export const isCodePosition = (position: string) => !/^(reply|post|kb)\//.test(position);
 

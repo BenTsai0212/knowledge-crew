@@ -105,19 +105,21 @@ describe("readReviewPanel 的守則：匯入虛構資料後", () => {
     expect(p.pendingGuidelines).toBe(0);
   });
 
-  it("s01（沒有依照守則）：沒有「這次依照的守則」，只在同一位置留等確認的提示；s14 有標題、自述與提示；staff 都沒有", async () => {
+  it("s01（沒有依照守則）：沒有「照守則」列，只留等確認的提示；s14 有「照守則：…」與「?」（何時記下、由你判斷）與提示；staff 都沒有", async () => {
     const render = (data: NonNullable<Awaited<ReturnType<typeof panel>>>) =>
       renderToStaticMarkup(
         createElement(ReviewPanel, { anchor: { current: null }, panel: data, language: lang, saving: false, saveFailed: false, decide: async () => undefined, onOpenEmployee: () => undefined }),
       );
     const s01 = render((await panel("manager", "s01"))!);
-    expect(s01).not.toContain(t.followedTitle);
+    expect(s01).not.toContain("crew-review__followed-list");
     expect(s01).toContain(t.pendingGuidelinesOpen);
-    const s14 = render((await panel("manager", "s14"))!);
-    expect(s14).toContain(t.followedTitle);
-    expect(s14).toContain(t.followedJudge);
-    expect(s14).toContain(fill(t.followedBy, {}, lang).replace("{employee}", "").trim());
+    const s14data = (await panel("manager", "s14"))!;
+    const s14 = render(s14data);
+    expect(s14).toContain(fill(t.guidelineRow, { text: s14data.guidelines[0].text }));
+    expect(s14).toContain(`aria-label="${t.guidelineTipLabel}"`);
+    expect(s14).toContain(t.guidelineJudge);
     expect(s14).toContain(t.pendingGuidelinesOpen);
     expect(render((await panel("staff", "s01"))!)).not.toContain("crew-review__followed");
   });
+
 });

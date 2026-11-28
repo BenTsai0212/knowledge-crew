@@ -98,10 +98,11 @@ test.describe("冒煙（主管，桌機）", () => {
     await gotoCrewSection(page, ct.common.sectionWorks);
     await expect(page.getByRole("navigation", { name: ct.review.listLabel }).getByRole("button").first()).toBeVisible();
     const panel = crewContent(page).getByRole("article");
-    await expect(panel.getByRole("heading", { name: ct.review.points, exact: true })).toBeVisible();
-    await expect(panel.getByRole("heading", { level: 5, name: ct.review.checks, exact: true })).toBeVisible();
-    // 自動檢查列（#66）：每一項檢查是 .crew-check；「執行中」改為「檢查中」
-    await expect(panel.locator(".crew-check").first()).toBeVisible();
+    // #195：「AI ○○ 請你確認 N 處」與「系統檢查」是 h3
+    await expect(panel.getByRole("heading", { level: 3, name: ct.review.points })).toBeVisible();
+    await expect(panel.getByRole("heading", { level: 3, name: ct.review.checks, exact: true })).toBeVisible();
+    // 系統檢查（#195）：每一項檢查是一個 .ui-check 標籤；「執行中」改為「檢查中」
+    await expect(panel.locator(".ui-check").first()).toBeVisible();
     await expect(crewContent(page)).not.toContainText("執行中");
     await expectAiMarks(page);
   });
@@ -188,6 +189,6 @@ test.describe("手機", () => {
     await item.scrollIntoViewIfNeeded();
     await item.click();
     await expect(item).toHaveAttribute("aria-current", "true");
-    await expect(crewContent(page).getByRole("article").getByRole("heading", { level: 3 })).toBeInViewport();
+    await expect(crewContent(page).getByRole("article").getByRole("heading", { level: 2 }).first()).toBeInViewport();
   });
 });

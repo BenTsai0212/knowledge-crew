@@ -121,7 +121,7 @@ test.describe("手機 390", () => {
     await gotoCrewSection(page, ct.common.sectionWorks);
     await reviewList(page).getByRole("button").filter({ hasText: k13Title }).click();
     const panel = reviewPanel(page, k13Title);
-    await expect(panel.getByRole("region", { name: ct.review.lightTitle })).toBeVisible();
+    await expect(panel.getByRole("group", { name: ct.review.wayLabel, exact: true })).toBeVisible();
     const bar = panel.locator(".crew-review__decision");
     await expect(bar).toBeVisible();
 

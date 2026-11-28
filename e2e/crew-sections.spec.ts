@@ -6,6 +6,7 @@ import { gotoView, openApp, switchIdentity } from "./support/app";
 import {
   assignmentTitle,
   crewContent,
+  crewFill,
   crewSections,
   ct,
   employeeName,
@@ -122,10 +123,12 @@ for (const viewport of [
       await expect(trustRow(page, "sorrel", "content").getByRole("button", { name: ct.trust.agreeRelax, exact: true })).toBeVisible();
       await expect(employeeCard(page, "sorrel").getByRole("heading", { level: 2 })).toBeInViewport();
 
-      // k17 是 Linden 的抽查：面板的「看審查方式的紀錄」到 Linden 的員工卡
+      // k13 是 Linden 的只看標記處：「?」裡的「看 Linden 的審查方式」到 Linden 的員工卡（#195：抽查的 k17 照設計沒有這個連結）
       await gotoCrewSection(page, ct.common.sectionWorks);
-      await workList(page).getByRole("button").filter({ hasText: assignmentTitle("k17") }).click();
-      await reviewPanel(page, assignmentTitle("k17")).getByRole("button", { name: ct.review.lightTrust, exact: true }).click();
+      await workList(page).getByRole("button").filter({ hasText: assignmentTitle("k13") }).click();
+      const k13 = reviewPanel(page, assignmentTitle("k13"));
+      await k13.locator(`summary.ui-qmark[aria-label="${ct.review.lightTipLabel}"]`).click();
+      await k13.getByRole("button", { name: crewFill(ct.review.openEmployeeWay, { employee: employeeName("linden") }), exact: true }).click();
       await expect(sectionButton(page, ct.common.sectionEmployees)).toHaveAttribute("aria-current", "page");
       await expect(trustRow(page, "linden", "knowledge")).toBeVisible();
       await expect(employeeCard(page, "linden").getByRole("heading", { level: 2 })).toBeInViewport();

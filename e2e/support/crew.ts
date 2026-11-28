@@ -179,7 +179,7 @@ export const tourReplay = (page: Page) => page.getByRole("button", { name: ct.to
 // 每一步：標題、應在的畫面（首頁或 crew 的子頁）、標出的區塊（owner：區塊所在的員工卡）
 const TOUR = [
   { title: () => ct.tour.todayTitle, section: null, target: ".crew-home" },
-  { title: () => ct.tour.reviewTitle, section: () => ct.common.sectionWorks, target: ".crew-review__pair" },
+  { title: () => ct.tour.reviewTitle, section: () => ct.common.sectionWorks, target: ".crew-review__pane" },
   { title: () => ct.tour.returnTitle, section: () => ct.common.sectionWorks, target: ".crew-review__decision" },
   { title: () => ct.tour.guidelinesTitle, section: () => ct.common.sectionEmployees, target: ".crew-employees__guidelines[data-pending]", owner: "rowan" },
   { title: () => ct.tour.trustTitle, section: () => ct.common.sectionEmployees, target: ".crew-trust__row" },

@@ -154,15 +154,15 @@ async function walk(page: Page): Promise<void> {
   ).toBeVisible();
   await scan(page, scans, "工作與驗收（事後更正表單打開）", CREW);
 
-  // 抽查（#166）：k17 的「這次抽查」卡片、k13 按下「這次逐項看」後各掃一次
+  // 抽查（#166）：k17 的「抽查：這次全部看」徽章（#195）、k13 按下「這次全部看」後各掃一次
   const workList = page.getByRole("navigation", { name: ct.review.listLabel });
   await workList.getByRole("button").filter({ hasText: assignmentTitle("k17") }).click();
-  await expect(content.getByRole("region", { name: ct.review.spotTitle })).toBeVisible();
+  await expect(content.locator(".crew-review__spot")).toHaveText(ct.review.spotTag);
   await scan(page, scans, "工作與驗收（抽查）", CREW);
   await workList.getByRole("button").filter({ hasText: assignmentTitle("k13") }).click();
   await content.getByRole("button", { name: ct.review.fullOnce, exact: true }).click();
-  await expect(content.getByRole("button", { name: ct.review.fullOnceBack, exact: true })).toBeVisible();
-  await scan(page, scans, "工作與驗收（這次逐項看）", CREW);
+  await expect(content.getByRole("button", { name: ct.review.fullOnce, exact: true })).toHaveAttribute("aria-pressed", "true");
+  await scan(page, scans, "工作與驗收（這次全部看）", CREW);
 
   // 紀錄的事件（原本的「工作帳本」）與統計（原本信任頁上方的總表，#191）
   await gotoCrewSection(page, ct.common.sectionRecords);

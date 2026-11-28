@@ -1,4 +1,4 @@
-// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節「元件」）：AI 標記、層級徽章、圓點（#83）、結論列、自動檢查列、收起的區塊。
+// AI 員工畫面共用的元件（#66，設計規格 v3 第 4 節「元件」）：AI 標記、層級徽章、圓點（#83）、結論、系統檢查的標籤、收起的區塊。
 // 文字在 client/i18n/crew/common.<語言>.json；樣式在 components.css（只用 theme.json 的變數）。
 import { Fragment, type ReactNode } from "react";
 import { fill } from "../../client/i18n";
@@ -8,10 +8,9 @@ import type { CheckStatus, Dot, ReviewLevel } from "../trust/types";
 import { SOON_DAYS, type RelativeDue } from "../work/due";
 import { crewStrings } from "../i18n";
 import { shortDate } from "../time";
-import { checkLabel, checkSentence } from "./glossary";
+import { checkLabel } from "./glossary";
 import "./components.css";
 
-type Tone = "fail" | "pending";
 const ICON_PATH: Record<CheckStatus, string> = {
   fail: "M6 6l12 12M18 6L6 18",
   pass: "M5 12.5l4.5 4.5L19 7",
@@ -219,31 +218,30 @@ export function DotLegendCorrected({ language }: { language: LanguageCode }) {
   );
 }
 
-/** 結論列：未通過（danger）或檢查中（warning）；沒有問題時畫面不放這個元件。 */
-export function ConclusionRow({ tone, title, description }: { tone: Tone; title: string; description: ReactNode }) {
+const VERDICT_CLASS = { fail: "ui-verdict--bad", pass: "ui-verdict--ok", pending: "ui-verdict--wait" } as const satisfies Record<CheckStatus, string>;
+
+/** 結論（#195，設計規格 v5 的 big-verdict）：圖示＋一句 18px 粗體；未通過 danger、都通過 success、檢查中 warning。文字寫出結果，圖示只是輔助。 */
+export function VerdictLine({ tone, text }: { tone: CheckStatus; text: string }) {
   return (
-    <div className="crew-conclusion" data-tone={tone}>
-      <Icon status={tone} size={24} />
-      <p className="crew-conclusion__title">{title}</p>
-      <p className="crew-conclusion__description">{description}</p>
-    </div>
+    <p className={`ui-verdict ${VERDICT_CLASS[tone]} crew-verdict`} role="status" data-tone={tone}>
+      <Icon status={tone} size={22} />
+      {text}
+    </p>
   );
 }
 
 const CHECK_TEXT = { pass: "checkPass", fail: "checkFail", pending: "checkPending" } as const satisfies Record<CheckStatus, string>;
+const CHECK_CLASS = { fail: "ui-check--bad", pass: "ui-check--ok", pending: "ui-check--wait" } as const satisfies Record<CheckStatus, string>;
 
-/** 自動檢查列：圖示＋白話名稱與說明＋右側狀態。未通過有 danger 框，通過與檢查中無框；都不用底色。 */
-export function CheckRow({ name, status, language }: { name: string; status: CheckStatus; language: LanguageCode }) {
-  const sentence = checkSentence(name, status, language);
+/** 系統檢查的標籤（#195，ui-check）：未通過＝danger 框＋✕＋粗體；通過＝勾＋success 字；檢查中＝warning 框。結果另給螢幕閱讀器（不只靠顏色與圖示）。 */
+export function CheckTag({ name, status, language }: { name: string; status: CheckStatus; language: LanguageCode }) {
+  const t = crewStrings("review", language);
   return (
-    <div className="crew-check" data-status={status}>
-      <Icon status={status} size={20} />
-      <span className="crew-check__text">
-        <span className="crew-check__name">{checkLabel(name, language)}</span>
-        {sentence !== null && <span className="crew-check__sentence">{sentence}</span>}
-      </span>
-      <span className="crew-check__status">{crewStrings("review", language)[CHECK_TEXT[status]]}</span>
-    </div>
+    <span className={`ui-check ${CHECK_CLASS[status]}`} data-status={status}>
+      <Icon status={status} size={14} />
+      {checkLabel(name, language)}
+      <span className="visually-hidden">{fill(t.checkResult, { result: t[CHECK_TEXT[status]] })}</span>
+    </span>
   );
 }
 

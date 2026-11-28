@@ -86,6 +86,8 @@ export interface ReviewPanel {
   knowledgePassage: string | null;
   /** 看重點時「為什麼是看重點」的依據（#102）；逐項看時是 null */
   light: LightReason | null;
+  /** 只看標記處期間每幾件抽查 1 件（「?」的說明，#195） */
+  spotEvery: number;
   /** 最新一輪的變更（目前語言）：看重點時收成一行，「逐項列出」展開時用 */
   changeItems: WorkChange[];
   /** 最新一輪依照的守則（員工自述，#147）；沒有時是空陣列 */
@@ -249,6 +251,7 @@ export async function readReviewPanel(
     deliverable: deliverableOf(item.workTypeId),
     knowledgePassage: current.review?.verdict === "accepted" ? await readFlowbackPassage(db, identity, current.id) : null,
     light: level === "light" ? lightReason(reviews, decisions, DEMO_PARAMS.window) : null,
+    spotEvery: DEMO_PARAMS.spotEvery,
     changeItems: current.changes,
     guidelines: followedGuidelines(followed, current.submittedAt, language),
     pendingGuidelines: pendingGuidelineCount(all, canReview),

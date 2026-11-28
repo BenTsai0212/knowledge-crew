@@ -34,21 +34,24 @@ for (const width of [1280, 390]) {
       await switchIdentity(page, "manager");
     });
 
-    test("主管打開 Rowan 的 s14：這次依照的守則（Rowan 自述）與等確認的提示，點了到員工頁", async ({ page }) => {
+    test("主管打開 Rowan 的 s14：「照守則：…」與「?」（何時記下、由你判斷）、等確認的提示，點了到員工頁", async ({ page }) => {
       const panel = await openWork(page, "s14");
-      const followed = panel.getByRole("region", { name: ct.review.followedTitle, exact: true });
-      await expect(followed).toBeVisible();
-      const badge = followed.locator(".crew-review__self-reported");
-      await expect(badge).toContainText(employeeName("rowan"));
-      for (const part of around(ct.review.followedBy)) await expect(badge).toContainText(part);
-      await expect(followed.getByText(ct.review.followedJudge, { exact: true })).toBeVisible();
-      const g01 = followed.getByRole("listitem").filter({ hasText: guidelineText("g01") });
-      await expect(g01).toContainText(around(ct.review.followedSavedOnReturn, { date: "\u0000" })[0] ?? "");
+      // #195：守則是「請你確認」最後一列，說明只放在「?」裡
+      const followed = panel.locator(".crew-review__confirm");
+      const g01 = followed.locator(".crew-review__followed-list > li").filter({ hasText: guidelineText("g01") });
+      await expect(g01.locator(".crew-review__followed-text")).toHaveText(crewFill(ct.review.guidelineRow, { text: guidelineText("g01") }));
+      await g01.locator(`summary.ui-qmark[aria-label="${ct.review.guidelineTipLabel}"]`).click();
+      const tip = g01.locator(".ui-tip__body");
+      await expect(tip).toBeVisible();
+      await expect(tip).toContainText(ct.review.guidelineJudge);
+      await expect(tip).toContainText(around(ct.review.followedSavedOnReturn, { date: "\u0000" })[0] ?? "");
       // #151：日期是員工卡、工作帳本的短格式（MM/DD），不是含年份的長格式
-      await expect(g01).toContainText(shortDay(guidelines.find((g) => g.id === "g01")!.proposedAt));
-      await expect(g01).not.toContainText("2026");
+      await expect(tip).toContainText(shortDay(guidelines.find((g) => g.id === "g01")!.proposedAt));
+      await expect(tip).not.toContainText("2026");
+      await page.keyboard.press("Escape");
+      await expect(tip).toBeHidden();
 
-      const pending = followed.getByRole("note");
+      const pending = followed.locator(".crew-review__followed-pending");
       await expect(pending).toContainText(employeeName("rowan"));
       if (!ct.review.pendingGuidelines.includes(", plural")) {
         for (const part of around(ct.review.pendingGuidelines, { count: 1 })) await expect(pending).toContainText(part);

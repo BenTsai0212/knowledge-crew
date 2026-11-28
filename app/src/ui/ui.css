@@ -382,8 +382,16 @@ button.ui-row:hover {
 
 .ui-way__opt {
   padding: 3px 12px;
+  border: 0;
   border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
   color: var(--color-textMuted);
+}
+
+/* 兩格是按鈕時（驗收面板的「只看標記處｜這次全部看」，#195） */
+button.ui-way__opt {
+  cursor: pointer;
 }
 
 .ui-way__opt--all {
@@ -457,6 +465,34 @@ button.ui-row:hover {
 
 .ui-check--wait {
   border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+/* ---------- 結論（v5 的 big-verdict，#195）：一句 18px 粗體；未通過＝danger、都通過＝success、檢查中＝warning ---------- */
+.ui-verdict {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.ui-verdict svg {
+  flex: none;
+}
+
+.ui-verdict--bad {
+  color: var(--color-danger);
+}
+
+.ui-verdict--ok {
+  color: var(--color-success);
+}
+
+.ui-verdict--wait {
   color: var(--color-warning);
 }
 

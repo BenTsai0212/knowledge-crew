@@ -172,23 +172,34 @@ describe("readReviewPanel：匯入虛構資料後", () => {
     expect(k13.focus.changes.mode).toBe("summary");
   });
 
-  // #166：k17 是「這次抽查」卡片、沒有「這次逐項看」；k13 是「為什麼是看重點」＋「這次逐項看」（aria-pressed）
-  it("面板：k17 是「這次抽查」卡片（第 5 件），k13 是「為什麼是看重點」與「這次逐項看」", async () => {
+  // #195：k17 是虛線框徽章「抽查：這次全部看」＋「?」（沒有關閉或收起的按鈕）；k13 是「只看標記處｜這次全部看」兩格＋「?」
+  it("面板：k17 是抽查的徽章（第 5 件）、沒有兩格；k13 是兩格與「?」，連到員工頁", async () => {
     const t = crewStrings("review", lang);
     const html = async (id: string) =>
-      renderToStaticMarkup(createElement(ReviewPanel, { anchor: { current: null }, panel: (await panel(db, "manager", id))!, language: lang, saving: false, saveFailed: false, decide: async () => {} }));
+      renderToStaticMarkup(
+        createElement(ReviewPanel, {
+          anchor: { current: null },
+          panel: (await panel(db, "manager", id))!,
+          language: lang,
+          saving: false,
+          saveFailed: false,
+          decide: async () => {},
+          onOpenEmployee: () => {},
+        }),
+      );
     const k17 = await html("k17");
-    expect(k17).toContain(t.spotTitle);
-    expect(k17).toContain(t.spotRule);
-    expect(k17).toContain(t.spotWhy.replace("{every}", "5").replace("{ordinal}", "5"));
-    expect(k17).not.toContain(t.lightTitle);
-    expect(k17).not.toContain(t.fullOnce);
-    expect(k17).toContain(`data-level="light"`);
+    expect(k17).toMatch(new RegExp(`class="ui-badge ui-badge--spot crew-review__spot" data-level="spot">.*${t.spotTag}</span>`));
+    expect(k17).toContain(`aria-label="${t.spotTipLabel}"`);
+    expect(k17).toContain(fill(t.spotTip, { employee: "Linden", every: 5, ordinal: 5 }));
+    expect(k17).not.toContain("ui-way");
+    expect(k17).not.toContain(t.lightTipLabel);
     const k13 = await html("k13");
-    expect(k13).toContain(t.lightTitle);
-    expect(k13).not.toContain(t.spotTitle);
+    expect(k13).toContain(`<span class="ui-way" role="group" aria-label="${t.wayLabel}" data-level="light">`);
+    expect(k13).toContain(`aria-pressed="true">${t.levelLight}</button>`);
     expect(k13).toContain(`aria-pressed="false">${t.fullOnce}</button>`);
-    expect(k13).not.toContain(t.fullOnceNote);
+    expect(k13).toContain(`aria-label="${t.lightTipLabel}"`);
+    expect(k13).toContain(fill(t.openEmployeeWay, { employee: "Linden" }));
+    expect(k13).not.toContain(t.spotTag);
   });
 
   it("manager 打開 k13（Linden × 知識庫整理，看重點）：變更收成摘要、全文收起、可以驗收", async () => {
