@@ -190,7 +190,7 @@ describe("readReviewPanel：匯入虛構資料後", () => {
     const k17 = await html("k17");
     expect(k17).toMatch(new RegExp(`class="ui-badge ui-badge--spot crew-review__spot" data-level="spot">.*${t.spotTag}</span>`));
     expect(k17).toContain(`aria-label="${t.spotTipLabel}"`);
-    expect(k17).toContain(fill(t.spotTip, { employee: "Linden", every: 5, ordinal: 5 }));
+    expect(k17).toContain(fill(t.spotTip, { every: 5, ordinal: 5 }).split("{employee}").at(-1)!);
     expect(k17).not.toContain("ui-way");
     expect(k17).not.toContain(t.lightTipLabel);
     const k13 = await html("k13");
@@ -198,7 +198,7 @@ describe("readReviewPanel：匯入虛構資料後", () => {
     expect(k13).toContain(`aria-pressed="true">${t.levelLight}</button>`);
     expect(k13).toContain(`aria-pressed="false">${t.fullOnce}</button>`);
     expect(k13).toContain(`aria-label="${t.lightTipLabel}"`);
-    expect(k13).toContain(fill(t.openEmployeeWay, { employee: "Linden" }));
+    expect(k13).toMatch(new RegExp(`<button type="button" class="link">.*Linden.*${fill(t.openEmployeeWay, {}).split("{employee}").at(-1)!}</button>`));
     expect(k13).not.toContain(t.spotTag);
   });
 

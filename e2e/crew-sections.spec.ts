@@ -6,7 +6,6 @@ import { gotoView, openApp, switchIdentity } from "./support/app";
 import {
   assignmentTitle,
   crewContent,
-  crewFill,
   crewSections,
   ct,
   employeeName,
@@ -128,7 +127,7 @@ for (const viewport of [
       await workList(page).getByRole("button").filter({ hasText: assignmentTitle("k13") }).click();
       const k13 = reviewPanel(page, assignmentTitle("k13"));
       await k13.locator(`summary.ui-qmark[aria-label="${ct.review.lightTipLabel}"]`).click();
-      await k13.getByRole("button", { name: crewFill(ct.review.openEmployeeWay, { employee: employeeName("linden") }), exact: true }).click();
+      await k13.locator(".ui-tip__body button.link").filter({ hasText: employeeName("linden") }).click();
       await expect(sectionButton(page, ct.common.sectionEmployees)).toHaveAttribute("aria-current", "page");
       await expect(trustRow(page, "linden", "knowledge")).toBeVisible();
       await expect(employeeCard(page, "linden").getByRole("heading", { level: 2 })).toBeInViewport();

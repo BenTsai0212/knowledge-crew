@@ -108,7 +108,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
             {item.title}
           </h2>
           {focus.spotCheck ? (
-            <SpotBadge spot={focus.spotCheck} employee={employee} t={t} />
+            <SpotBadge spot={focus.spotCheck} employee={employee} language={language} t={t} />
           ) : way ? (
             <LightWay
               reason={way.reason}
@@ -125,7 +125,7 @@ export function ReviewPanel({ anchor, panel, language, saving, saveFailed, decid
                 {t.levelItem}
               </span>
               <Qmark label={t.itemTipLabel} align="right">
-                {fill(t.itemTip, { employee })}
+                {withEmployee(t.itemTip, {}, employee, language)}
               </Qmark>
             </>
           )}
@@ -292,7 +292,7 @@ function detailItems(item: WorkListItem, current: PanelData["current"], t: Texts
 }
 
 /** 抽查（#166，ADR 0009「不能動的規則」）：虛線框徽章「抽查：這次全部看」＋「?」；沒有關閉或收起的按鈕 */
-function SpotBadge({ spot, employee, t }: { spot: SpotCheck; employee: string; t: Texts }) {
+function SpotBadge({ spot, employee, language, t }: { spot: SpotCheck; employee: string; language: LanguageCode; t: Texts }) {
   return (
     <>
       <span className="ui-badge ui-badge--spot crew-review__spot" data-level="spot">
@@ -306,7 +306,7 @@ function SpotBadge({ spot, employee, t }: { spot: SpotCheck; employee: string; t
         {t.spotTag}
       </span>
       <Qmark label={t.spotTipLabel} align="right">
-        {fill(t.spotTip, { employee, every: spot.every, ordinal: spot.ordinal })}
+        {withEmployee(t.spotTip, { every: spot.every, ordinal: spot.ordinal }, employee, language)}
       </Qmark>
     </>
   );
@@ -343,12 +343,12 @@ function LightWay({ reason, every, employee, language, fullOnce, onOpenEmployee,
         {option(full, t.fullOnce, "all")}
       </span>
       <Qmark label={t.lightTipLabel} align="right">
-        {fill(t.lightTip, { employee, count: reason.recent, date: shortDate(reason.relaxedAt, language), every }, language)}
+        {withEmployee(t.lightTip, { count: reason.recent, date: shortDate(reason.relaxedAt, language), every }, employee, language)}
         {onOpenEmployee && (
           <>
             <br />
             <button type="button" className="link" onClick={onOpenEmployee}>
-              {fill(t.openEmployeeWay, { employee })}
+              {withEmployee(t.openEmployeeWay, {}, employee, language)}
             </button>
           </>
         )}

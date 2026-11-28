@@ -59,7 +59,9 @@ for (const width of [1280, 390]) {
       await expect(badge).toHaveCSS("border-top-color", rgb(theme.colors.text));
       const tip = panel.locator(`summary.ui-qmark[aria-label="${ct.review.spotTipLabel}"]`);
       await tip.click();
-      await expect(panel.locator(".ui-tip__body").filter({ hasText: crewFill(ct.review.spotTip, { employee: employeeName("linden"), every: 5, ordinal: 5 }) })).toBeVisible();
+      const body = panel.locator(".ui-tip__body").filter({ hasText: employeeName("linden") });
+      await expect(body).toBeVisible();
+      await expect(body).toContainText(crewFill(ct.review.spotTip, { employee: "", every: 5, ordinal: 5 }).trim());
       await tip.click();
       // 抽查不能關掉（ADR 0009「不能動的規則」）：標題列沒有任何按鈕，也沒有兩格
       await expect(panel.locator(".crew-review__title-row").getByRole("button")).toHaveCount(0);

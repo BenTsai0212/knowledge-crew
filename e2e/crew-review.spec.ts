@@ -308,7 +308,7 @@ test.describe("看重點（#102）：Linden 的 k13", () => {
   test("「?」裡的「看 Linden 的審查方式」切到「員工」，看得到 Linden 的審查方式（#191、#195）", async ({ page }) => {
     const panel = await openWork(page, "k13");
     await qmark(panel, ct.review.lightTipLabel).click();
-    await panel.getByRole("button", { name: crewFill(ct.review.openEmployeeWay, { employee: employeeName("linden") }), exact: true }).click();
+    await panel.locator(".ui-tip__body button.link").filter({ hasText: employeeName("linden") }).click();
     await expect(crewSections(page).getByRole("button", { name: ct.common.sectionEmployees, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(trustRow(page, "linden", "knowledge")).toBeInViewport();
   });
